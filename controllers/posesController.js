@@ -5,6 +5,7 @@
 
 import poseRepository from '../services/poses/poseRepository.js';
 import poseEngine from '../services/poses/poseEngine.js';
+import poseHealth from '../services/poses/poseHealth.js';
 import { resolveCharacterSync } from '../services/characterContext.js';
 
 /**
@@ -14,11 +15,20 @@ export async function getAllPoses(req, res) {
     try {
         const characterId = getCurrentCharacterId(req);
         const posesData = await poseRepository.loadPoses(characterId);
-        
+
+        // Health is computed at load so a pose that cannot perform never looks
+        // identical to one that can. Additive: existing fields are untouched.
+        let poses = posesData.poses;
+        try {
+            poses = await poseHealth.annotatePoses(characterId, posesData.poses);
+        } catch (healthError) {
+            console.warn('⚠️ Could not annotate pose health:', healthError.message);
+        }
+
         res.json({
             success: true,
             characterId,
-            poses: posesData.poses,
+            poses,
             templates: posesData.templates
         });
     } catch (error) {
@@ -243,6 +253,34 @@ export async function getPosesByCategory(req, res) {
 }
 
 /**
+ * Per-part safety posture for the current character.
+ *
+ * The pose editor uses this to refuse to add a quarantined part and to render its
+ * `blockReason` verbatim. That text is the written instruction for what a human
+ * has to do to clear the block; summarising it in the UI would throw away the
+ * only actionable part.
+ */
+export async function getPartSafety(req, res) {
+    try {
+        const characterId = getCurrentCharacterId(req);
+        const parts = await poseHealth.getPartSafetySummary(characterId);
+
+        res.json({
+            success: true,
+            characterId,
+            parts
+        });
+    } catch (error) {
+        console.error('Error loading part safety:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load part safety',
+            message: error.message
+        });
+    }
+}
+
+/**
  * Get pose templates
  */
 export async function getTemplates(req, res) {
@@ -374,6 +412,7 @@ function getCurrentCharacterId(req) {
 
 export default {
     getAllPoses,
+    getPartSafety,
     getPose,
     createPose,
     updatePose,

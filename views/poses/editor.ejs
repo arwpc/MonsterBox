@@ -53,6 +53,42 @@
           </div>
         </div>
 
+        <!-- Motion character: how the pose gets to its target, and how exactly it lands -->
+        <div class="mb-panel" style="margin-bottom: var(--mb-space-3);">
+          <div class="mb-panel-header">
+            <h2 class="mb-panel-title"><i class="bi bi-activity"></i> Motion</h2>
+          </div>
+          <div class="mb-panel-body">
+            <div class="mb-field">
+              <label for="poseTransitionDuration" class="mb-field-label">Transition duration (ms)</label>
+              <input type="number" id="poseTransitionDuration" class="mb-input" min="0" max="20000" step="100"
+                     placeholder="blank = move at the servo's own speed"
+                     title="How long the move to this pose should take. Blank sends one command and lets the servo travel at its own speed.">
+            </div>
+            <div class="mb-field">
+              <label for="poseTransitionProfile" class="mb-field-label">Easing</label>
+              <select id="poseTransitionProfile" class="mb-select" title="Shape of the motion over the transition duration">
+                <option value="ease_in_out">Ease in / out (default)</option>
+                <option value="linear">Linear</option>
+                <option value="ease_in">Ease in</option>
+                <option value="ease_out">Ease out</option>
+                <option value="overshoot">Overshoot</option>
+                <option value="bounce">Bounce</option>
+              </select>
+              <div class="mb-text-muted mb-text-sm">Only has an effect when a transition duration is set.</div>
+            </div>
+            <div class="mb-field">
+              <label for="poseJitter" class="mb-field-label">Jitter (&deg;)</label>
+              <input type="number" id="poseJitter" class="mb-input" min="0" max="15" step="0.5" placeholder="0"
+                     title="Random variation added each time this pose plays, so it never lands twice in exactly the same place.">
+              <div class="mb-text-muted mb-text-sm">
+                Applied inside each part's safe window — jitter shrinks near a limit rather than crossing it.
+                A part with no measured window gets none.
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Optional Audio -->
         <div class="mb-panel" style="margin-bottom: var(--mb-space-3);">
           <div class="mb-panel-header">

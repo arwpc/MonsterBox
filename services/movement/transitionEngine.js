@@ -7,6 +7,7 @@
  */
 
 import { record } from './movementTelemetry.js';
+import { getEffectiveWindow, clampIntoWindow } from '../poses/poseBounds.js';
 
 /**
  * Collection of easing functions.
@@ -83,6 +84,53 @@ const EASING = {
 
 /** Interval between step callbacks in milliseconds (~50Hz). */
 const STEP_INTERVAL_MS = 20;
+
+/**
+ * Interval between HARDWARE frames of a stepped multi-servo transition.
+ *
+ * Deliberately slower than STEP_INTERVAL_MS. Each frame is a full batchMoveServos
+ * call, which re-reads the character's parts and calibration and takes the safety
+ * layer's locks; 50Hz of that on an SD-card-backed Pi buys nothing a servo can
+ * express. ~12Hz is well above the rate at which these servos actually slew.
+ */
+const FRAME_INTERVAL_MS = 80;
+
+/** Hard ceiling on frames per transition, so a long duration cannot flood the bus. */
+const MAX_FRAMES = 64;
+
+/** Below this travel, easing is invisible and a single command is honest. */
+const MIN_STEPPED_DELTA_DEG = 3;
+
+/** Below this duration there is no room to ease; go straight there. */
+const MIN_STEPPED_DURATION_MS = 250;
+
+// ---- Believed servo position -------------------------------------------------
+// Easing needs a starting angle, and these servos have no feedback. This is the
+// last angle we COMMANDED, which is a belief, not a measurement — named that way
+// on purpose. A part we have never commanded has no entry, and a transition
+// without a start angle degrades to a single move rather than inventing one.
+const _believedAngles = new Map(); // `${characterId}:${partId}` -> degrees
+
+function believedKey(characterId, partId) {
+    return `${characterId}:${String(partId)}`;
+}
+
+/** Last angle commanded for a part, or null if it has never been commanded. */
+function getBelievedAngle(characterId, partId) {
+    const value = _believedAngles.get(believedKey(characterId, partId));
+    return value == null ? null : value;
+}
+
+/** Record the angle we just commanded for a part. */
+function setBelievedAngle(characterId, partId, angle) {
+    if (angle == null || !Number.isFinite(Number(angle))) return;
+    _believedAngles.set(believedKey(characterId, partId), Number(angle));
+}
+
+/** Forget all believed positions (test hook / after an emergency stop). */
+function clearBelievedAngles() {
+    _believedAngles.clear();
+}
 
 /**
  * Self-correcting high-resolution timer that maintains consistent tick rate.
@@ -271,9 +319,93 @@ async function transitionServo(partId, fromAngle, toAngle, durationMs, easingNam
     });
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function throwIfAborted(signal) {
+    if (signal && signal.aborted) {
+        const err = new Error('Transition aborted');
+        err.name = 'AbortError';
+        throw err;
+    }
+}
+
+/**
+ * Decide how each part should be moved: eased over time, or in one command.
+ *
+ * A part is only stepped when all of these hold:
+ *   - we believe where it currently is (no feedback exists, so a start angle we
+ *     have not commanded ourselves would be a guess),
+ *   - it has far enough to travel for easing to be visible,
+ *   - it is NOT on a serialized power group. Frame-stepping a fused-rail part
+ *     would take the rail's mutex and its cooldown once per frame — turning a
+ *     2 s move into half a minute of repeated inrush on the exact rail whose
+ *     fuse has blown before. Those parts get one command, as they always have.
+ */
+async function planParts(characterId, parts, options) {
+    const steppable = [];
+    const direct = [];
+
+    for (const part of parts) {
+        const partId = String(part.partId);
+        const rawTarget = part.value ?? (part.target && part.target.angleDeg) ?? part.angleDeg;
+        if (rawTarget == null) continue;
+        const toAngle = Number(rawTarget);
+        if (!Number.isFinite(toAngle)) continue;
+
+        const entry = { partId, toAngle };
+
+        if (options.stepped === false) {
+            direct.push(entry);
+            continue;
+        }
+
+        let window = null;
+        try {
+            window = await getEffectiveWindow(characterId, part.partId);
+        } catch (_) { /* treat as unknown; the hardware layer still clamps */ }
+
+        if (window && (window.blocked || window.powerGroup)) {
+            direct.push(entry);
+            continue;
+        }
+
+        const fromAngle = part.currentValue != null
+            ? Number(part.currentValue)
+            : getBelievedAngle(characterId, partId);
+
+        if (fromAngle == null || !Number.isFinite(fromAngle)) {
+            direct.push(entry);
+            continue;
+        }
+
+        if (Math.abs(toAngle - fromAngle) < MIN_STEPPED_DELTA_DEG) {
+            direct.push(entry);
+            continue;
+        }
+
+        // Intermediate frames must respect the same window as the endpoints —
+        // an overshoot easing curve is otherwise a bounds violation with a nice name.
+        entry.fromAngle = window ? clampIntoWindow(fromAngle, window.lo, window.hi) : fromAngle;
+        entry.toAngle = window ? clampIntoWindow(toAngle, window.lo, window.hi) : toAngle;
+        entry.lo = window ? window.lo : null;
+        entry.hi = window ? window.hi : null;
+        steppable.push(entry);
+    }
+
+    return { steppable, direct };
+}
+
 /**
  * Transition multiple servos simultaneously to their target positions.
- * Used by idleLoopService to move all claimed servos in a pose together.
+ * Used by idleLoopService and the pose engine to move all servos in a pose together.
+ *
+ * When a duration is given and the start angles are known, this now really eases:
+ * intermediate positions are computed from the named easing curve and issued as
+ * whole-pose frames, so `transitionProfile` finally describes something that
+ * happens. Parts that cannot be stepped safely fall back to the single batched
+ * command this function has always issued.
  *
  * @param {number|string} characterId - Character ID (for context/logging)
  * @param {Array<{partId: string|number, value: number, currentValue?: number}>} parts - Parts to transition
@@ -281,6 +413,8 @@ async function transitionServo(partId, fromAngle, toAngle, durationMs, easingNam
  * @param {number} [options.durationMs=2000] - Transition duration
  * @param {string} [options.easing='ease_in_out'] - Easing function name
  * @param {number} [options.maxSpeedDegPerSec] - Speed limit
+ * @param {boolean} [options.stepped] - Force stepping on/off (default: auto)
+ * @param {number} [options.frameIntervalMs] - Hardware frame interval
  * @param {AbortSignal} [options.signal] - Cancellation signal
  * @returns {Promise<Array>} Results from each servo transition
  */
@@ -297,17 +431,10 @@ async function transitionServos(characterId, parts, options = {}) {
     }
 
     // Check abort signal before starting
-    if (signal && signal.aborted) {
-        const err = new Error('Transition aborted');
-        err.name = 'AbortError';
-        throw err;
-    }
+    throwIfAborted(signal);
 
     const startTime = Date.now();
 
-    // For PCA9685 servos: send target angles in one batch command.
-    // The servo hardware moves at its own speed — no need for 50Hz intermediate steps.
-    // This avoids spawning hundreds of Python subprocesses per transition.
     let hwService = null;
     try {
         const hw = await import('../hardwareService/index.js');
@@ -315,31 +442,100 @@ async function transitionServos(characterId, parts, options = {}) {
     } catch (_) {}
 
     if (hwService && typeof hwService.batchMoveServos === 'function') {
-        // Support both formats: { value } (movement system) and { target: { angleDeg } } (poses)
-        const commands = parts.map(p => ({
-            partId: String(p.partId),
-            angleDeg: p.value ?? (p.target && p.target.angleDeg) ?? p.angleDeg
-        })).filter(c => c.angleDeg != null);
         try {
-            // Pass the character explicitly: part IDs are only unique within a
-            // character, and resolving against the mutable selectedCharacter on disk
-            // can land a command on a different physical channel.
-            const batchResult = await hwService.batchMoveServos(commands, { characterId });
+            const frameIntervalMs = Math.max(20, Number(options.frameIntervalMs) || FRAME_INTERVAL_MS);
+            const wantsStepping = options.stepped !== false && durationMs >= MIN_STEPPED_DURATION_MS;
+            const plan = wantsStepping
+                ? await planParts(characterId, parts, options)
+                : { steppable: [], direct: parts.map(p => ({
+                      partId: String(p.partId),
+                      toAngle: Number(p.value ?? (p.target && p.target.angleDeg) ?? p.angleDeg)
+                  })).filter(c => Number.isFinite(c.toAngle)) };
+
+            const results = [];
+
+            // Frames for the eased parts, all moving together.
+            if (plan.steppable.length > 0) {
+                let easedDurationMs = Math.max(durationMs, MIN_STEPPED_DURATION_MS);
+                if (maxSpeedDegPerSec && maxSpeedDegPerSec > 0) {
+                    const maxDelta = plan.steppable.reduce(
+                        (m, p) => Math.max(m, Math.abs(p.toAngle - p.fromAngle)), 0);
+                    const minDurationMs = (maxDelta / maxSpeedDegPerSec) * 1000;
+                    if (easedDurationMs < minDurationMs) easedDurationMs = Math.ceil(minDurationMs);
+                }
+
+                const frames = Math.min(MAX_FRAMES, Math.max(2, Math.round(easedDurationMs / frameIntervalMs)));
+                const easingFn = EASING[easing] || EASING.ease_in_out;
+                const tracks = plan.steppable.map(p => ({
+                    ...p,
+                    angles: precomputeAngles(p.fromAngle, p.toAngle, frames, easingFn)
+                        // Overshoot/bounce curves leave the endpoints' span on purpose;
+                        // the window is not negotiable, so re-clamp every frame.
+                        .map(a => clampIntoWindow(a, p.lo, p.hi))
+                }));
+
+                const perFrameMs = easedDurationMs / frames;
+                let lastFrameResult = null;
+
+                for (let frame = 0; frame < frames; frame++) {
+                    throwIfAborted(signal);
+                    const frameStart = Date.now();
+                    const commands = tracks.map(t => ({ partId: t.partId, angleDeg: t.angles[frame] }));
+                    lastFrameResult = await hwService.batchMoveServos(commands, { characterId });
+                    const spent = Date.now() - frameStart;
+                    const remaining = perFrameMs - spent;
+                    if (remaining > 1 && frame < frames - 1) await sleep(remaining);
+                }
+
+                const elapsed = Date.now() - startTime;
+                for (let i = 0; i < tracks.length; i++) {
+                    setBelievedAngle(characterId, tracks[i].partId, tracks[i].toAngle);
+                    results.push({
+                        partId: tracks[i].partId,
+                        fromAngle: tracks[i].fromAngle,
+                        toAngle: tracks[i].toAngle,
+                        actualDurationMs: elapsed,
+                        steps: frames,
+                        eased: true,
+                        easing,
+                        success: lastFrameResult?.results?.[i]?.success !== false
+                    });
+                }
+            }
+
+            // Everything that could not be eased: one batched command, as before.
+            if (plan.direct.length > 0) {
+                throwIfAborted(signal);
+                // Pass the character explicitly: part IDs are only unique within a
+                // character, and resolving against the mutable selectedCharacter on disk
+                // can land a command on a different physical channel.
+                const batchResult = await hwService.batchMoveServos(
+                    plan.direct.map(c => ({ partId: c.partId, angleDeg: c.toAngle })),
+                    { characterId }
+                );
+                const elapsed = Date.now() - startTime;
+                for (let i = 0; i < plan.direct.length; i++) {
+                    setBelievedAngle(characterId, plan.direct[i].partId, plan.direct[i].toAngle);
+                    results.push({
+                        partId: plan.direct[i].partId,
+                        fromAngle: null,
+                        toAngle: plan.direct[i].toAngle,
+                        actualDurationMs: elapsed,
+                        steps: 1,
+                        batch: true,
+                        success: batchResult.results?.[i]?.success !== false
+                    });
+                }
+            }
+
             const elapsed = Date.now() - startTime;
             // record(characterId, servoPartId, metric, value) — was called with the
             // wrong shape, corrupting telemetry (characterId='cycle_time_ms', etc.).
             record(characterId, '*', 'cycle_time_ms', elapsed);
             record(characterId, '*', 'commands_per_second', parts.length / (elapsed / 1000 || 1));
-            return commands.map((c, i) => ({
-                partId: c.partId,
-                fromAngle: null,
-                toAngle: c.angleDeg,
-                actualDurationMs: elapsed,
-                steps: 1,
-                batch: true,
-                success: batchResult.results?.[i]?.success !== false
-            }));
+            return results;
         } catch (err) {
+            if (err.name === 'AbortError') throw err;
             console.warn('[TransitionEngine] Batch move failed, falling back to individual:', err.message);
         }
     }
@@ -399,4 +595,17 @@ function computeTransitionAngles(fromAngle, toAngle, durationMs, easingName = 'e
     return { angles, intervalMs: STEP_INTERVAL_MS, totalSteps };
 }
 
-export { EASING, STEP_INTERVAL_MS, transitionServo, transitionServos, computeTransitionAngles, precomputeAngles };
+export {
+    EASING,
+    STEP_INTERVAL_MS,
+    FRAME_INTERVAL_MS,
+    MIN_STEPPED_DELTA_DEG,
+    MIN_STEPPED_DURATION_MS,
+    transitionServo,
+    transitionServos,
+    computeTransitionAngles,
+    precomputeAngles,
+    getBelievedAngle,
+    setBelievedAngle,
+    clearBelievedAngles
+};

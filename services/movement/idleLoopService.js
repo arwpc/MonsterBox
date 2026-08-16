@@ -10,14 +10,21 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getRandomIdlePose } from './poseLibrary.js';
-import { claimServo, releaseAll, getActiveClaims, PRIORITY } from './priorityManager.js';
+import { getRandomIdlePose, poseAngles } from './poseLibrary.js';
+import { claimServo, releaseAll, getActiveClaims, getOwner, PRIORITY } from './priorityManager.js';
+import { applyPoseJitter, getEffectiveWindow, clampIntoWindow } from '../poses/poseBounds.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_DIR = path.resolve(__dirname, '../../data');
 
 const OWNER = 'idle-loop';
+
+/** How often micro-motion re-commands the held servos. */
+const MICRO_TICK_MS = 250;
+
+/** Micro-motion below this is smaller than a servo's own resolution — skip the command. */
+const MICRO_MIN_DELTA_DEG = 0.2;
 
 // Default movement config written when none exists
 const DEFAULT_CONFIG = {
@@ -26,7 +33,12 @@ const DEFAULT_CONFIG = {
         minHoldMs: 3000,
         maxHoldMs: 8000,
         transitionDurationMs: 2000,
-        defaultEasing: 'ease_in_out'
+        defaultEasing: 'ease_in_out',
+        // Eased, time-stepped transitions. Turn off for one command per move.
+        steppedTransitions: true,
+        jitterDeg: 0,
+        // Bias next-pose selection toward nearby positions (see poseLibrary).
+        distanceWeighting: true
     },
     microMovement: {
         enabled: false,
@@ -46,6 +58,11 @@ let currentPoseId = null;
 let loopTimeout = null;
 let transitionEngine = null;
 let currentAbort = null; // AbortController for the in-flight servo transition
+// Where we believe the driven servos currently are — the input to distance-weighted
+// selection and the centre point micro-motion oscillates around.
+let currentAngles = {};
+let microTimer = null;
+let microTracks = null;
 
 /**
  * Lazily load transitionEngine so the module can still be imported
@@ -100,21 +117,149 @@ function randomHoldMs(idleConfig, holdVariance) {
 }
 
 /**
+ * Stop any in-flight micro-motion. Servos stay wherever the last micro tick put
+ * them, which is by construction inside the same window as the pose itself.
+ */
+function stopMicroMotion() {
+    if (microTimer) {
+        clearInterval(microTimer);
+        microTimer = null;
+    }
+    microTracks = null;
+}
+
+/**
+ * Breathe and drift around the held pose.
+ *
+ * A pose that lands and then holds perfectly still for eight seconds is the other
+ * half of why an idle loop reads as a machine. Two slow out-of-phase sinusoids are
+ * enough to break that, as long as they stay small.
+ *
+ * Every offset is clamped into the part's own window, so micro-motion is bounded
+ * twice: by its configured amplitude, and by the same calibrated limits the pose
+ * itself obeys.
+ *
+ * @param {Object} microConfig - microMovement section of movement config
+ * @param {Array<{partId: string, base: number, lo: number|null, hi: number|null}>} tracks
+ */
+function startMicroMotion(microConfig, tracks) {
+    stopMicroMotion();
+    // Opt-in only: an absent flag must not start a servo oscillating.
+    if (!microConfig || microConfig.enabled !== true || tracks.length === 0) return;
+
+    const breathAmp = Math.abs(Number(microConfig.breathingAmplitudeDeg) || 0);
+    const breathPeriod = Math.max(500, Number(microConfig.breathingPeriodMs) || 4000);
+    const driftAmp = Math.abs(Number(microConfig.driftAmplitudeDeg) || 0);
+    const driftPeriod = Math.max(500, Number(microConfig.driftPeriodMs) || 7000);
+    if (breathAmp <= 0 && driftAmp <= 0) return;
+
+    // A phase per part so they do not all breathe in lockstep, which would read
+    // as one mechanism rather than a body.
+    const startedAt = Date.now();
+    microTracks = tracks.map((track, index) => ({
+        ...track,
+        phase: (index * Math.PI * 2) / Math.max(1, tracks.length),
+        last: track.base
+    }));
+
+    microTimer = setInterval(() => {
+        if (!running || !microTracks) return;
+        const elapsed = Date.now() - startedAt;
+        const commands = [];
+
+        for (const track of microTracks) {
+            // Another subsystem taking the servo (jaw, head tracking, a scene) must
+            // win immediately, not at the end of the hold.
+            const owner = getOwner(track.partId);
+            if (!owner || owner.owner !== OWNER) continue;
+
+            const breath = breathAmp * Math.sin((2 * Math.PI * elapsed) / breathPeriod + track.phase);
+            const drift = driftAmp * Math.sin((2 * Math.PI * elapsed) / driftPeriod + track.phase * 0.5);
+            const target = clampIntoWindow(
+                Math.round((track.base + breath + drift) * 10) / 10,
+                track.lo,
+                track.hi
+            );
+            if (Math.abs(target - track.last) < MICRO_MIN_DELTA_DEG) continue;
+            track.last = target;
+            commands.push({ partId: track.partId, value: target });
+        }
+
+        if (commands.length === 0) return;
+
+        getTransitionEngine().then(engine => {
+            if (!engine || typeof engine.transitionServos !== 'function') return;
+            // stepped:false — a micro offset is a single small command, not a ramp.
+            return engine.transitionServos(characterId, commands, { stepped: false, durationMs: 0 });
+        }).then(() => {
+            for (const command of commands) currentAngles[command.partId] = command.value;
+        }).catch(err => {
+            console.warn('[IdleLoop] Micro-motion command failed:', err.message);
+        });
+    }, MICRO_TICK_MS);
+}
+
+/**
+ * Build the micro-motion tracks for the servo parts we just moved.
+ * Parts on a shared fused rail are excluded: repeatedly energizing a serialized
+ * rail to wobble by a degree is exactly the stacked inrush that group exists to
+ * prevent.
+ */
+async function buildMicroTracks(parts) {
+    const tracks = [];
+    for (const part of parts) {
+        const angle = part.value ?? (part.target && part.target.angleDeg) ?? part.angleDeg;
+        if (angle == null) continue;
+        let window;
+        try {
+            window = await getEffectiveWindow(characterId, part.partId);
+        } catch (_) {
+            continue;
+        }
+        if (window.blocked || window.powerGroup) continue;
+        // No window means nothing bounds the wobble — skip rather than guess.
+        if (window.lo == null && window.hi == null) continue;
+        tracks.push({
+            partId: String(part.partId),
+            base: clampIntoWindow(Number(angle), window.lo, window.hi),
+            lo: window.lo,
+            hi: window.hi
+        });
+    }
+    return tracks;
+}
+
+/**
  * Execute one iteration of the idle loop.
  */
 async function loopIteration() {
     if (!running) return;
 
+    stopMicroMotion();
+
     const config = await loadConfig(characterId);
     const idleConfig = config.idle || DEFAULT_CONFIG.idle;
 
-    // Pick a weighted random idle pose, excluding current
-    const pose = await getRandomIdlePose(characterId, currentPoseId);
+    // Pick a weighted random idle pose, excluding current. Selection is biased
+    // toward positions near where the character already is: uniform weighting over
+    // a library whose extremes are 60 degrees apart produces a windshield wiper.
+    const pose = await getRandomIdlePose(characterId, currentPoseId, {
+        currentAngles: idleConfig.distanceWeighting === false ? null : currentAngles,
+        halfWeightDeg: idleConfig.distanceHalfWeightDeg,
+        minMoveDeg: idleConfig.minMoveDeg
+    });
     if (!pose || !Array.isArray(pose.parts) || pose.parts.length === 0) {
         console.log('[IdleLoop] No idle pose available, pausing...');
         scheduleNext(idleConfig.maxHoldMs);
         return;
     }
+
+    // Per-pose jitter, applied inside each part's calibrated window before anything
+    // is claimed or commanded, so the pose that gets executed IS the jittered one
+    // and the position we record afterwards is the position we actually sent.
+    const jitterDeg = pose.jitterDeg > 0 ? pose.jitterDeg : (idleConfig.jitterDeg || 0);
+    const jittered = await applyPoseJitter(pose, characterId, { jitterDeg });
+    const activePose = jittered.pose;
 
     // A pose part is servo-like only if it carries an angle. transitionServos drops
     // everything else, so lights and actuators in an idle pose used to be silently
@@ -126,7 +271,7 @@ async function loopIteration() {
     // a light or actuator id there just blocks it for no reason.
     const claimedParts = [];
     const otherParts = [];
-    for (const part of pose.parts) {
+    for (const part of activePose.parts) {
         if (!hasAngle(part)) {
             otherParts.push(part);
             continue;
@@ -154,9 +299,12 @@ async function loopIteration() {
                 // Make the transition cancellable so stop() can abort it instead of
                 // letting servos keep driving toward the target after the loop stops.
                 currentAbort = new AbortController();
+                // Per-pose duration wins over the character default, so a slow
+                // menacing turn and a quick glance can live in the same library.
                 await engine.transitionServos(characterId, claimedParts, {
-                    durationMs: idleConfig.transitionDurationMs || 2000,
-                    easing: pose.transitionProfile || idleConfig.defaultEasing || 'ease_in_out',
+                    durationMs: activePose.transitionDurationMs || idleConfig.transitionDurationMs || 2000,
+                    easing: activePose.transitionProfile || idleConfig.defaultEasing || 'ease_in_out',
+                    stepped: idleConfig.steppedTransitions !== false,
                     signal: currentAbort.signal
                 });
             } else if (claimedParts.length > 0) {
@@ -170,8 +318,12 @@ async function loopIteration() {
                     const { executePose } = await import('../poses/poseEngine.js');
                     await executePose({
                         characterId,
-                        poseId: pose.id,
-                        pose: Object.assign({}, pose, { parts: otherParts })
+                        poseId: activePose.id,
+                        // Jitter is already applied and health already decided the pose
+                        // is performable — re-doing either here would double-jitter and
+                        // re-read the same files for nothing.
+                        pose: Object.assign({}, activePose, { parts: otherParts }),
+                        options: { jitter: false, skipHealthCheck: true }
                     });
                 } catch (err) {
                     console.warn('[IdleLoop] Non-servo pose parts failed, continuing:', err.message);
@@ -184,10 +336,23 @@ async function loopIteration() {
         }
     }
 
-    currentPoseId = pose.id;
+    currentPoseId = activePose.id;
+    // Record where we actually sent things (post-jitter), because that is what the
+    // next selection measures distance from and what micro-motion oscillates about.
+    currentAngles = Object.assign({}, currentAngles, poseAngles(activePose));
 
     // Hold for random duration
-    const holdMs = randomHoldMs(idleConfig, pose.holdVariance ?? 500);
+    const holdMs = randomHoldMs(idleConfig, activePose.holdVariance ?? 500);
+
+    if (!isTestMode && claimedParts.length > 0) {
+        try {
+            const tracks = await buildMicroTracks(claimedParts);
+            startMicroMotion(config.microMovement || DEFAULT_CONFIG.microMovement, tracks);
+        } catch (err) {
+            console.warn('[IdleLoop] Could not start micro-motion:', err.message);
+        }
+    }
+
     scheduleNext(holdMs);
 }
 
@@ -218,6 +383,10 @@ export async function start(charId) {
         stop();
     }
 
+    // Believed positions are per-character; part ids repeat across characters, so
+    // carrying them over would measure distance against another character's servo.
+    if (String(charId) !== String(characterId)) currentAngles = {};
+
     characterId = charId;
     running = true;
     currentPoseId = null;
@@ -239,6 +408,11 @@ export function stop() {
 
     console.log(`[IdleLoop] Stopping idle loop for character ${characterId}`);
     running = false;
+
+    // Micro-motion runs on its own interval between poses. Leaving it alive after
+    // stop() would keep issuing servo commands with nobody minding the loop —
+    // "stop" has to mean stopped.
+    stopMicroMotion();
 
     if (loopTimeout) {
         clearTimeout(loopTimeout);

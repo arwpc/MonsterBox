@@ -51,7 +51,7 @@
       ],
       "weight": 10,
       "holdVariance": 800,
-      "transitionProfile": "ease_in_out",
+      "transitionProfile": "ease_out",
       "parts": [
         {
           "partId": 15,
@@ -61,7 +61,9 @@
           }
         }
       ],
-      "created": "2026-03-27T00:00:00.000Z"
+      "created": "2026-03-27T00:00:00.000Z",
+      "transitionDurationMs": 900,
+      "jitterDeg": 2
     },
     {
       "id": 3,
@@ -73,7 +75,7 @@
       ],
       "weight": 10,
       "holdVariance": 800,
-      "transitionProfile": "ease_in_out",
+      "transitionProfile": "ease_out",
       "parts": [
         {
           "partId": 15,
@@ -84,7 +86,9 @@
         }
       ],
       "created": "2026-03-27T00:00:00.000Z",
-      "notes": "Head clamped 135 -> 118: part 15 has no real calibrated bounds (auto 0-180), so nothing downstream would have stopped 135."
+      "notes": "Head clamped 135 -> 118: part 15 has no real calibrated bounds (auto 0-180), so nothing downstream would have stopped 135.",
+      "transitionDurationMs": 900,
+      "jitterDeg": 2
     },
     {
       "id": 4,
@@ -137,7 +141,9 @@
         }
       ],
       "created": "2026-03-27T00:00:00.000Z",
-      "notes": "Forearm (part 5) removed — no bounds established anywhere and it shares the arm fuse. Survives as a head micro-drift so scenes/idle referencing pose 5 keep working. Restore the forearm here once part 5 is calibrated."
+      "notes": "Forearm (part 5) removed — no bounds established anywhere and it shares the arm fuse. Survives as a head micro-drift so scenes/idle referencing pose 5 keep working. Restore the forearm here once part 5 is calibrated.",
+      "transitionDurationMs": 2000,
+      "jitterDeg": 2
     },
     {
       "id": 6,
@@ -190,7 +196,9 @@
         }
       ],
       "created": "2026-03-27T00:00:00.000Z",
-      "notes": "Head clamped 45 -> 64. Elbow dropped so the idle loop stays head-only."
+      "notes": "Head clamped 45 -> 64. Elbow dropped so the idle loop stays head-only.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 2.5
     },
     {
       "id": 8,
@@ -246,7 +254,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Barely-there weight shift off baseline."
+      "notes": "Barely-there weight shift off baseline.",
+      "transitionDurationMs": 2500,
+      "jitterDeg": 2
     },
     {
       "id": 10,
@@ -269,7 +279,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Mirror of pose 9."
+      "notes": "Mirror of pose 9.",
+      "transitionDurationMs": 2500,
+      "jitterDeg": 2
     },
     {
       "id": 11,
@@ -292,7 +304,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Returns to baseline; the loop's resting beat."
+      "notes": "Returns to baseline; the loop's resting beat.",
+      "transitionDurationMs": 2000,
+      "jitterDeg": 1.5
     },
     {
       "id": 12,
@@ -315,7 +329,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Wider, slower look left — reads as listening."
+      "notes": "Wider, slower look left — reads as listening.",
+      "transitionDurationMs": 2200,
+      "jitterDeg": 2
     },
     {
       "id": 13,
@@ -338,7 +354,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Mirror of pose 12."
+      "notes": "Mirror of pose 12.",
+      "transitionDurationMs": 2200,
+      "jitterDeg": 2
     },
     {
       "id": 14,
@@ -350,7 +368,7 @@
       ],
       "weight": 6,
       "holdVariance": 300,
-      "transitionProfile": "linear",
+      "transitionProfile": "ease_out",
       "parts": [
         {
           "partId": 15,
@@ -361,7 +379,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Fast 3-degree tic off baseline; the \"not quite dead\" beat."
+      "notes": "Fast 3-degree tic off baseline; the \"not quite dead\" beat.",
+      "transitionDurationMs": 500,
+      "jitterDeg": 2.5
     },
     {
       "id": 15,
@@ -384,7 +404,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Held stare at the left edge of the safe band."
+      "notes": "Held stare at the left edge of the safe band.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 2
     },
     {
       "id": 16,
@@ -407,7 +429,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Held stare at the right edge of the safe band."
+      "notes": "Held stare at the right edge of the safe band.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 2
     },
     {
       "id": 17,
@@ -430,7 +454,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Deliberate slow sweep to the left extreme — the \"did you hear that\" beat."
+      "notes": "Deliberate slow sweep to the left extreme — the \"did you hear that\" beat.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 1.5
     },
     {
       "id": 18,
@@ -453,7 +479,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Mirror of pose 17."
+      "notes": "Mirror of pose 17.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 1.5
     },
     {
       "id": 19,
@@ -465,7 +493,7 @@
       ],
       "weight": 1,
       "holdVariance": 200,
-      "transitionProfile": "linear",
+      "transitionProfile": "ease_out",
       "parts": [
         {
           "partId": 15,
@@ -476,7 +504,8 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Hard linear snap back to baseline — the head-turn punchline after a slow seek."
+      "notes": "Hard linear snap back to baseline — the head-turn punchline after a slow seek.",
+      "transitionDurationMs": 400
     },
     {
       "id": 20,
@@ -799,7 +828,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Head turned away with the hand latched on — the standing \"waiting in the dark\" look. Clear with pose 28."
+      "notes": "Head turned away with the hand latched on — the standing \"waiting in the dark\" look. Clear with pose 28.",
+      "transitionDurationMs": 3500,
+      "jitterDeg": 1.5
     },
     {
       "id": 31,
@@ -812,7 +843,7 @@
       ],
       "weight": 1,
       "holdVariance": 600,
-      "transitionProfile": "ease_in_out",
+      "transitionProfile": "ease_out",
       "parts": [
         {
           "partId": 15,
@@ -823,7 +854,9 @@
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Opening beat: the character registers a guest and turns toward them. Head only, so it composes with anything."
+      "notes": "Opening beat: the character registers a guest and turns toward them. Head only, so it composes with anything.",
+      "transitionDurationMs": 1200,
+      "jitterDeg": 1.5
     },
     {
       "id": 32,
@@ -933,6 +966,33 @@
       ],
       "created": "2026-08-15T23:42:37.323Z",
       "notes": "Closing beat and scene reset: head to baseline, lamp dark, and a 550 ms retract that exactly undoes pose 33. Deliberately omits the elbow — use pose 23 for that."
+    },
+    {
+      "id": 35,
+      "name": "Neutral Home (Head)",
+      "category": "idle",
+      "description": "Head centred at rest. The elbow-free home position — pose 1 is blocked while part 4 is quarantined, and the idle loop needs a neutral it can actually reach.",
+      "concurrent": true,
+      "tags": [
+        "idle",
+        "home",
+        "reset"
+      ],
+      "weight": 14,
+      "holdVariance": 800,
+      "transitionDurationMs": 2500,
+      "transitionProfile": "ease_in_out",
+      "jitterDeg": 1.5,
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        }
+      ],
+      "notes": "Authored v9.2.0. Uses only part 15 (head), confirmed working; 99 deg is inside the measured 60-120 window."
     }
   ],
   "templates": {

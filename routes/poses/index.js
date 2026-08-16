@@ -43,6 +43,10 @@ router.get('/', async (req, res, next) => {
 
 router.get('/api/poses', posesController.getAllPoses);
 
+// Per-part safety posture (quarantine state, blockReason, angle window) so the
+// editor can refuse to build a pose out of a part the hardware layer will refuse.
+router.get('/api/part-safety', posesController.getPartSafety);
+
 // Get pose templates
 router.get('/templates', posesController.getTemplates);
 

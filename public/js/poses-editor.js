@@ -18,14 +18,54 @@
       return JSON.parse(el.textContent || '{}') || {};
     } catch (e) { return {}; }
   })();
+
+  /* -- Feedback + destructive confirm -------------------------------------
+     Uses the shared helpers from /js/mb-dialogs.js. Both degrade safely if
+     that script is missing so the editor never silently swallows an error or
+     silently deletes a pose. */
+  function notify(message, severity) {
+    if (window.mbToast) { window.mbToast(message, severity || 'info'); return; }
+    setStatus(message);
+  }
+
+  function confirmDestructive(title, detail, confirmLabel, onConfirm) {
+    if (window.mbConfirm) {
+      window.mbConfirm({ title: title, detail: detail, confirmLabel: confirmLabel })
+        .then(function (ok) { if (ok) onConfirm(); });
+      return;
+    }
+    if (window.confirm(title + '\n\n' + detail)) onConfirm();
+  }
   var editingPoseId = (__boot.editPoseId === 0 || __boot.editPoseId) ? __boot.editPoseId : null;
   var characterId   = (__boot.characterId === 0 || __boot.characterId) ? __boot.characterId : null;
 
   var allParts = [];
   var allPoses = [];
   var sounds = [];
+  // partId (string) -> safety descriptor from /poses/api/part-safety
+  var partSafety = {};
 
   function $(id) { return document.getElementById(id); }
+
+  function safetyFor(partId) {
+    return partSafety[String(partId)] || null;
+  }
+
+  function isQuarantined(partId) {
+    var s = safetyFor(partId);
+    return !!(s && s.blocked);
+  }
+
+  // Text from hardware-safety.json is operator-facing instructions. It goes on the
+  // page verbatim, so it must be escaped rather than interpolated into markup.
+  function escapeHtml(text) {
+    return String(text == null ? '' : text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
   function setStatus(msg) {
     var el = $('poseEditorStatus');
@@ -62,7 +102,8 @@
     Promise.all([
       apiGet('/api/parts').then(function(j) { allParts = (j.success && j.parts) ? j.parts : []; }),
       apiGet('/poses/api/poses').then(function(j) { allPoses = (j.success && j.poses) ? j.poses : []; }),
-      apiGet('/api/sounds').then(function(j) { sounds = (j.success && j.sounds) ? j.sounds : []; }).catch(function() { sounds = []; })
+      apiGet('/api/sounds').then(function(j) { sounds = (j.success && j.sounds) ? j.sounds : []; }).catch(function() { sounds = []; }),
+      apiGet('/poses/api/part-safety').then(function(j) { partSafety = (j.success && j.parts) ? j.parts : {}; }).catch(function() { partSafety = {}; })
     ]).then(function() {
       renderParts();
       renderPosesList();
@@ -104,17 +145,67 @@
     var color = typeColors[part.type] || 'var(--mb-secondary)';
     var typeLabel = (part.type || '').replace(/_/g, ' ');
 
-    var html = '<div class="part-card" id="part-card-' + part.id + '">';
+    var safety = safetyFor(part.id);
+    var blocked = isQuarantined(part.id);
+
+    var html = '<div class="part-card' + (blocked ? ' part-card-blocked' : '') + '" id="part-card-' + part.id + '">';
     html += '<div class="part-header">';
-    html += '<div class="form-check"><input type="checkbox" class="form-check-input part-include" id="inc-' + part.id + '" data-part-id="' + part.id + '"></div>';
+    html += '<div class="form-check"><input type="checkbox" class="form-check-input part-include" id="inc-' + part.id + '" data-part-id="' + part.id + '"' +
+            (blocked ? ' disabled' : '') + '></div>';
     html += '<span class="part-type-badge text-white" style="background:' + color + ';">' + typeLabel + '</span>';
-    html += '<strong class="small">' + (part.name || 'Part ' + part.id) + '</strong>';
-    html += '<button class="btn btn-sm btn-outline-info p-0 px-1 ms-auto part-test-btn" data-part-id="' + part.id + '" title="Test this part"><i class="bi bi-play-fill"></i></button>';
+    html += '<strong class="small">' + escapeHtml(part.name || 'Part ' + part.id) + '</strong>';
+    if (blocked) {
+      html += '<span class="badge bg-danger ms-1" style="font-size:0.6rem;"><i class="bi bi-slash-circle"></i> QUARANTINED</span>';
+    }
+    html += '<button class="btn btn-sm btn-outline-info p-0 px-1 ms-auto part-test-btn" data-part-id="' + part.id + '"' +
+            (blocked ? ' disabled title="Quarantined — motion is refused by hardware safety limits"' : ' title="Test this part"') +
+            '><i class="bi bi-play-fill"></i></button>';
     html += '</div>';
+
+    if (blocked) {
+      // blockReason verbatim. It is already written, it is good, and it names the
+      // physical step needed to clear the block — paraphrasing it loses that.
+      html += '<div class="alert alert-danger py-2 px-2 mb-0 mt-1" style="font-size:0.75rem;">';
+      html += '<strong>Cannot be added to a pose.</strong> The hardware safety layer refuses all motion on this part.';
+      if (safety && safety.blockReason) {
+        html += '<div class="mt-1" style="white-space:pre-wrap;">' + escapeHtml(safety.blockReason) + '</div>';
+      }
+      html += '</div>';
+      html += '</div>';
+      return html;
+    }
+
     html += '<div class="part-controls">';
     html += renderPartControls(part);
+    html += renderPartSafetyNote(part);
     html += '</div></div>';
     return html;
+  }
+
+  // Non-blocking cautions: a capped speed/duration, a shared fused rail, or an
+  // angle window that is a guess rather than a measurement.
+  function renderPartSafetyNote(part) {
+    var safety = safetyFor(part.id);
+    if (!safety) return '';
+    var notes = [];
+
+    if (part.type === 'servo' && (safety.minAngle != null || safety.maxAngle != null)) {
+      notes.push('Safe window ' + (safety.minAngle != null ? safety.minAngle : '?') + '&deg;–' +
+                 (safety.maxAngle != null ? safety.maxAngle : '?') + '&deg;');
+    }
+    if (part.type === 'servo' && safety.placeholderCalibration) {
+      notes.push('Uncalibrated — bounds are an auto-generated placeholder, not a measurement');
+    }
+    if (safety.powerGroup) {
+      notes.push('Shares the &quot;' + escapeHtml(safety.powerGroup) + '&quot; fused rail — moves are serialized');
+    }
+    if (safety.maxSpeedPct != null) notes.push('Speed capped at ' + safety.maxSpeedPct + '%');
+    if (safety.maxDurationMs != null) notes.push('Duration capped at ' + safety.maxDurationMs + 'ms');
+    if (safety.noRetractBelowMin) notes.push('Retraction is disabled (part is at its mechanical minimum)');
+
+    if (notes.length === 0) return '';
+    return '<div class="mb-text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-shield-exclamation"></i> ' +
+           notes.join(' &middot; ') + '</div>';
   }
 
   function renderPartControls(part) {
@@ -128,6 +219,14 @@
           if (m.name === 'Max' && m.value != null) max = m.value;
         });
         val = Math.round((min + max) / 2);
+      }
+      // The effective safe window always wins over the markers: authoring an angle
+      // the hardware layer is going to clamp anyway just hides the clamp.
+      var sSafety = safetyFor(part.id);
+      if (sSafety) {
+        if (sSafety.minAngle != null && sSafety.minAngle > min) min = sSafety.minAngle;
+        if (sSafety.maxAngle != null && sSafety.maxAngle < max) max = sSafety.maxAngle;
+        if (val < min || val > max) val = Math.round((min + max) / 2);
       }
       html += '<div class="d-flex align-items-center gap-2">';
       html += '<small class="text-muted">' + min + '&deg;</small>';
@@ -175,6 +274,9 @@
   function bindPartEvents(part) {
     var card = $('part-card-' + part.id);
     if (!card) return;
+    // A quarantined part has no controls to bind — and must have no way to be
+    // included, tested, or saved into a pose.
+    if (isQuarantined(part.id)) return;
 
     // Include checkbox styling
     var inc = card.querySelector('.part-include');
@@ -243,6 +345,9 @@
     allParts.forEach(function(part) {
       var card = $('part-card-' + part.id);
       if (!card) return;
+      // Second gate. The checkbox is disabled for quarantined parts, but a pose is
+      // persisted data on a machine that moves — this must not depend on the DOM.
+      if (isQuarantined(part.id)) return;
       var inc = card.querySelector('.part-include');
       if (!inc || !inc.checked) return;
 
@@ -351,13 +456,13 @@
   function savePose() {
     var name = ($('poseName') || {}).value || '';
     if (!name.trim()) {
-      alert('Please enter a pose name.');
+      notify('Please enter a pose name.', 'warning');
       return;
     }
 
     var parts = collectPoseParts();
     if (parts.length === 0) {
-      alert('Please select at least one part for the pose.');
+      notify('Please select at least one part for the pose.', 'warning');
       return;
     }
 
@@ -368,6 +473,22 @@
       concurrent: !!($('poseConcurrent') || {}).checked,
       parts: parts
     };
+
+    var durationRaw = (($('poseTransitionDuration') || {}).value || '').trim();
+    if (durationRaw !== '') {
+      var duration = parseInt(durationRaw, 10);
+      if (!isNaN(duration) && duration > 0) poseData.transitionDurationMs = duration;
+    }
+    var profile = (($('poseTransitionProfile') || {}).value || '').trim();
+    if (profile) poseData.transitionProfile = profile;
+
+    var jitterRaw = (($('poseJitter') || {}).value || '').trim();
+    if (jitterRaw !== '') {
+      var jitter = parseFloat(jitterRaw);
+      // Mirrors MAX_JITTER_DEG in services/poses/poseBounds.js, which enforces it
+      // again server-side — this is convenience, not the guarantee.
+      if (!isNaN(jitter) && jitter > 0) poseData.jitterDeg = Math.min(jitter, 15);
+    }
 
     // Add audio info as notes
     var audioType = ($('audioType') || {}).value;
@@ -417,6 +538,9 @@
     $('poseCategory').value = pose.category || '';
     $('poseDescription').value = pose.description || '';
     $('poseConcurrent').checked = !!pose.concurrent;
+    $('poseTransitionDuration').value = pose.transitionDurationMs != null ? pose.transitionDurationMs : '';
+    $('poseTransitionProfile').value = pose.transitionProfile || 'ease_in_out';
+    $('poseJitter').value = pose.jitterDeg != null ? pose.jitterDeg : '';
 
     // Parse audio from notes
     var notes = pose.notes || '';
@@ -442,10 +566,18 @@
     });
 
     // Check and set values for pose parts
+    var quarantinedInPose = [];
     (pose.parts || []).forEach(function(pp) {
       var partId = String(pp.partId);
       var card = $('part-card-' + partId);
       if (!card) return;
+
+      // An existing pose can reference a part that has since been quarantined.
+      // Surface it instead of silently re-checking a control that is now disabled.
+      if (isQuarantined(partId)) {
+        quarantinedInPose.push(partId);
+        return;
+      }
 
       var inc = card.querySelector('.part-include');
       if (inc) { inc.checked = true; card.classList.add('included'); }
@@ -483,25 +615,37 @@
     });
 
     updateDeleteButton();
-    setStatus('Loaded pose: ' + pose.name);
+    if (quarantinedInPose.length > 0) {
+      setStatus('Loaded "' + pose.name + '" — part(s) ' + quarantinedInPose.join(', ') +
+                ' are quarantined and were left out. Saving will drop them.');
+    } else {
+      setStatus('Loaded pose: ' + pose.name);
+    }
   }
 
   // ============ DELETE POSE ============
   function deletePose(poseId) {
     var pose = allPoses.find(function(p) { return p.id === poseId; });
     var name = pose ? pose.name : 'Pose ' + poseId;
-    if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
-
-    setStatus('Deleting...');
-    apiDelete('/poses/' + poseId).then(function(j) {
-      if (j.success) {
-        setStatus('Pose deleted');
-        if (editingPoseId === poseId) clearForm();
-        loadAll();
-      } else {
-        setStatus('Delete failed: ' + (j.error || j.message || 'unknown'));
+    // Styled, named confirmation — a native confirm dialog cannot show WHAT is
+    // about to be destroyed and is a poor target one-handed on a phone.
+    confirmDestructive(
+      'Delete this pose?',
+      '"' + name + '" will be removed permanently. This cannot be undone.',
+      'Delete pose',
+      function () {
+        setStatus('Deleting...');
+        apiDelete('/poses/' + poseId).then(function(j) {
+          if (j.success) {
+            setStatus('Pose deleted');
+            if (editingPoseId === poseId) clearForm();
+            loadAll();
+          } else {
+            setStatus('Delete failed: ' + (j.error || j.message || 'unknown'));
+          }
+        }).catch(function() { setStatus('Delete error'); });
       }
-    }).catch(function() { setStatus('Delete error'); });
+    );
   }
 
   function updateDeleteButton() {
@@ -525,9 +669,21 @@
     var html = '';
     allPoses.forEach(function(p) {
       var isActive = editingPoseId === p.id;
+      var status = (p.health && p.health.status) || null;
+      var statusTitle = '';
+      if (p.health && p.health.reasons && p.health.reasons.length) {
+        statusTitle = p.health.reasons.map(function(r) {
+          return r.message + (r.blockReason ? ' — ' + r.blockReason : '');
+        }).join('\n');
+      }
       html += '<div class="d-flex align-items-center py-1 px-1 rounded mb-1 pose-list-item' + (isActive ? ' bg-primary bg-opacity-10' : '') + '" data-pose-id="' + p.id + '" style="cursor:pointer;">';
-      html += '<span class="badge bg-secondary me-1" style="font-size:0.6rem;">' + (p.category || '') + '</span>';
-      html += '<span class="small flex-grow-1 text-truncate">' + (p.name || 'Pose ' + p.id) + '</span>';
+      if (status === 'blocked') {
+        html += '<span class="badge bg-danger me-1" style="font-size:0.6rem;" title="' + escapeHtml(statusTitle) + '"><i class="bi bi-slash-circle"></i></span>';
+      } else if (status === 'degraded') {
+        html += '<span class="badge bg-warning text-dark me-1" style="font-size:0.6rem;" title="' + escapeHtml(statusTitle) + '"><i class="bi bi-exclamation-triangle"></i></span>';
+      }
+      html += '<span class="badge bg-secondary me-1" style="font-size:0.6rem;">' + escapeHtml(p.category || '') + '</span>';
+      html += '<span class="small flex-grow-1 text-truncate">' + escapeHtml(p.name || 'Pose ' + p.id) + '</span>';
       html += '<span class="badge bg-dark me-1" style="font-size:0.6rem;">' + ((p.parts && p.parts.length) || 0) + '</span>';
       html += '<button class="btn btn-sm btn-outline-danger p-0 px-1 pose-delete-btn" data-pose-id="' + p.id + '" title="Delete pose"><i class="bi bi-trash"></i></button>';
       html += '</div>';
@@ -581,6 +737,9 @@
     $('poseCategory').value = '';
     $('poseDescription').value = '';
     $('poseConcurrent').checked = false;
+    $('poseTransitionDuration').value = '';
+    $('poseTransitionProfile').value = 'ease_in_out';
+    $('poseJitter').value = '';
     $('audioType').value = 'none';
     toggleAudioSection();
     document.querySelectorAll('.part-include').forEach(function(cb) {

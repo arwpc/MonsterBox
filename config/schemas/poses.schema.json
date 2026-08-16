@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "MonsterBox poses.json",
-  "description": "Per-character pose library. Requires characterId, poses array, templates object. Each pose requires id, name, parts array.",
+  "description": "Per-character pose library. Requires characterId, poses array, templates object. Each pose requires id, name, parts array. Optional playback fields (jitterDeg, transitionDurationMs, transitionProfile, tags, weight, holdVariance) are honoured by services/poses/poseEngine.js and the idle loop; jitterDeg is always applied INSIDE the part's calibrated/safety window by services/poses/poseBounds.js, never outside it.",
   "type": "object",
   "required": ["characterId", "poses"],
   "properties": {
@@ -14,7 +14,22 @@
         "properties": {
           "id": { "type": ["string", "number"] },
           "name": { "type": "string" },
-          "parts": { "type": "array" }
+          "parts": { "type": "array" },
+          "category": { "type": "string" },
+          "description": { "type": "string" },
+          "notes": { "type": "string" },
+          "concurrent": { "type": "boolean" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "weight": { "type": "number" },
+          "holdVariance": { "type": "number" },
+          "jitterDeg": { "type": "number" },
+          "transitionDurationMs": { "type": "number" },
+          "transitionProfile": {
+            "type": "string",
+            "enum": ["linear", "ease_in", "ease_out", "ease_in_out", "overshoot", "bounce"]
+          },
+          "created": { "type": "string" },
+          "modified": { "type": "string" }
         }
       }
     },
