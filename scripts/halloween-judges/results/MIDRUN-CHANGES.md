@@ -13,3 +13,8 @@ Round-4 changes (all agents):
 - orlok only: SMALL CHILDREN guardrail (Emily-treatment for kids; magic/fortune requests always granted)
 
 Post-run plan: orlok validation re-run (--count 5, all personas) on new config for A/B vs his 125 old-config baseline.
+
+## Round 5-6 additions (2026-08-16, ~06:00Z)
+- orlok: kid-mode persistence rule (post-validation); scare-escalation rule (post-validation) — his panel+validation blocks were complete before both.
+- dragomir (after his panel block completed): THE SECRET (the Count was Vlad Țepeș, revealed in fragments), war stories on request (KB_Dragomir_War_Stories cAFLQXaOggcJz8Y8Jxfq), Romanian war cries.
+- groundbreaker (BEFORE his panel block started — his whole block tests this): Rock War canon (threw rocks at the Turks in 1462), the secret he can't keep ("VLAD. ... OOPS."), oath shout to the knight (KB_Groundbreaker_Rock_War GGY8fq3qaCkUCYeByx9j).
