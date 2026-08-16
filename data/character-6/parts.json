@@ -1,1 +1,56 @@
-[]
+[
+  {
+    "id": "1",
+    "characterId": 6,
+    "name": "Renfield Shake Motor",
+    "type": "motor",
+    "model": "motor_jeep_wagoneer_wiper",
+    "driver": "BTS7960",
+    "rpwmPin": 27,
+    "lpwmPin": 22,
+    "renPin": 17,
+    "lenPin": 17,
+    "enableMode": "dual",
+    "minSpeed": 0,
+    "maxSpeed": 100,
+    "description": "12V motor that shakes Renfield up and down \u2014 'the signature'. Pins are placeholders until hardware install.",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true,
+    "config": {
+      "maxDuration": 5000,
+      "controlBoard": "BTS7960"
+    },
+    "controlBoard": "BTS7960",
+    "updated": "2025-10-17T19:23:33.217Z",
+    "modelId": "motor_jeep_wagoneer_wiper"
+  },
+  {
+    "id": "2",
+    "characterId": 6,
+    "name": "Speaker Renfield",
+    "type": "speaker",
+    "description": "Main speaker",
+    "config": {
+      "audioDeviceId": "default",
+      "volume": 85
+    },
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true
+  },
+  {
+    "id": "3",
+    "characterId": 6,
+    "name": "Microphone Renfield",
+    "type": "microphone",
+    "deviceIndex": 0,
+    "sampleRate": 16000,
+    "channels": 1,
+    "description": "Main microphone",
+    "created": "2025-10-14T00:00:00.000Z",
+    "enabled": true,
+    "config": {
+      "deviceId": "alsa_input.usb-HHWei_Technology_Co.__Ltd._USB_Camera_HHW001-02.analog-stereo"
+    },
+    "updated": "2025-10-17T19:23:01.992Z"
+  }
+]

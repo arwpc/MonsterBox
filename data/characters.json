@@ -50,5 +50,11 @@
     "name": "Groundbreaker",
     "elevenLabsAgentId": "agent_4201k6s9y384f9v9hqmg67ygc645",
     "activeImage": "groundbreaker.jpg"
+  },
+  {
+    "id": 6,
+    "name": "Renfield",
+    "elevenLabsAgentId": "agent_1501m04ks76jf5svnxb70zyvz6s1",
+    "activeImage": "renfield.jpg"
   }
 ]
