@@ -13,9 +13,11 @@
 
 Legend: 🔴 blocking / broken · 🟡 reliability / intermittent · 🟢 mitigated, long-term fix pending · ⚪ constraint / gotcha (not a defect)
 
-> **Operator: start here.** The highest-value physical check on the fleet right now is
-> **Orlok part 4 (Elbow) — six commanded moves, zero acoustic signature.** Measure the ch4/ch5
-> rail with a multimeter before trusting anything on that rail (it also gates part 5's bounds).
+> **Operator: start here.** Part 4 (Elbow) is now **confirmed physically dead** by the
+> operator and is software-quarantined, so the open question has moved from *"is it broken?"*
+> to **"what is the ch4/ch5 rail actually doing?"** — measure it before trusting anything on
+> that rail, because it still gates part 5 (Forearm), which may well be fine. After that:
+> trace part 3's wiring, and swap part 2 onto part 1's known-good MDD10A channel.
 > Details in the Orlok section below.
 
 ---
@@ -23,15 +25,26 @@ Legend: 🔴 blocking / broken · 🟡 reliability / intermittent · 🟢 mitiga
 ## Per-Animatronic Hardware
 
 ### Orlok — char 3 · `192.168.8.120` (primary dev box)
-**No longer "fully operational."** The v9.0.0 hardware pass (2026-08-15) found one dead
-actuator, one part quarantined for unsafe wiring, one part whose "calibration" turned out to
-be test residue, and — most seriously — an elbow that accepts commands in total silence.
-Software safety limits now live in `config/hardware-safety.json` (enforced by
-`services/hardwareService/safetyLimits.js`). Working and confirmed this session: the jaw
-(part 10) and the head (part 15); the arm actuator (part 1) was audible.
+**No longer "fully operational."** The v9.0.0 hardware pass (2026-08-15) found a dead elbow
+servo (since operator-confirmed), a dead left-arm actuator, a part quarantined for
+contradictory wiring, and a part whose "calibration" turned out to be residue left by a unit
+test. Software safety limits now live in `config/hardware-safety.json` (enforced by
+`services/hardwareService/safetyLimits.js`), and parts 3 and 4 are blocked outright there.
 
-- 🔴 **Part 4 (Elbow) accepted six commanded moves with ZERO acoustic signature — CHECK THIS
-  FIRST WITH A MULTIMETER.** Verified 2026-08-15: six commanded moves totalling ~95° of travel
+**Confirmed working:** jaw (part 10), head (part 15), Hand of Azura lamp (part 8), speaker
+(6), microphone (7), webcam (9), PIR sensor (14), and the right-arm actuator (part 1).
+**Confirmed dead:** elbow (4), left-arm actuator (2). **Blocked pending a human:** bow (3).
+**Unknown:** forearm (5) — may be fine, gated on the rail question.
+
+- 🔴 **Part 4 (Elbow) is PHYSICALLY DEAD — operator-confirmed 2026-08-15 ("the elbow is
+  jacked"), and now software-quarantined.** `config/hardware-safety.json` sets
+  `blockAllMotion` on part 4 so a dead servo cannot take the shared fuse with it; the
+  re-enable instruction is one line in that file. Diagnosis history below, kept because it is
+  a worked example of *how* the silence was read — and of how nearly it was read wrongly.
+  The remaining open question is the **power/rail** state, which the operator is working out.
+  **Part 5 (Forearm) may still be good** and has not been ruled out; it needs bounds
+  established once the rail is settled.
+- ⚪ *(historical detail for part 4)* Six commanded moves totalling ~95° of travel
   produced **no audible servo noise at all**, while the much smaller jaw servo (part 10, PCA
   ch3) and the arm actuator were plainly audible on the same microphone during the same
   session. The command path reported success — but there is no encoder feedback, so success
@@ -98,10 +111,12 @@ Software safety limits now live in `config/hardware-safety.json` (enforced by
   `python3 servo_cli.py move_to_pca 4 …` skips every clamp, block and power-group
   serialization — including part 3's `blockAllMotion`. Needs a guard at the wrapper
   boundary before the safety layer can be considered complete.
-- 🟡 **Part 8 (Hand of Azura) light is UNPROVEN.** GPIO 16 was verified driving
-  `ip → op`, `HIGH → lo`, but **no optical change was detectable** — the lamp is most likely
-  outside the webcam's field of view. This is not "working" and not "broken"; it needs a
-  human to look at the lamp while the pin is toggled.
+- 🟢 **Part 8 (Hand of Azura) light WORKS** — operator-confirmed 2026-08-15 ("it's been
+  good"). GPIO 16 was already verified driving `ip → op`, `HIGH → lo`; the automated check
+  reported it UNPROVEN only because **no optical change was detectable from the head-mounted
+  webcam**, which does not point at the lamp. Worth keeping as a worked example: an
+  instrument's blind spot read as a fault, and the honest "unproven" verdict was the correct
+  output at the time — the lamp was never actually in doubt, the camera was.
 - 🔴 **Agent-path jaw opening is shallow.** The jaw moves correctly and stays inside its
   calibrated 63–131 window (v9.0.0 stopped the 0–180 over-drive), but opening **tops out
   around 77–79° against a 131° ceiling** because the conversational agent's audio RMS is low
@@ -249,6 +264,24 @@ and reachable.
 
 ---
 
+- 🟡 **`/api/system/volume` GET and PUT use different scales.** GET returns a **0.0–1.0
+  fraction** (`routes/api/systemRoutes.js:166`, straight from `wpctl get-volume`), while PUT
+  expects **0–100** (`:185`, `parseInt`). Any client that round-trips the value without
+  converting shows 65% volume as "0" and writes back something meaningless. The control bar
+  normalises explicitly, but the API itself should pick one scale. *Found 2026-08-15 by the
+  control bar reading its own slider back as zero.*
+- ⚪ **There is no `/api/characters`.** The fleet character list lives at
+  `/setup/characters/api/characters`; `/api/characters` returns the 404 **HTML page**, so a
+  client that does not check `content-type` gets a parse error rather than a clear 404. Worth
+  a redirect or a real alias, since the intuitive path is the one that does not exist.
+- ⚪ **The browser suite cannot run while the service is running.** `playwright.config.js`
+  spawns its own server on 3200, and `services/resource/singleInstance.js` refuses a second
+  MonsterBox process unconditionally — correctly, since two servers on one Pi would both reach
+  for the same GPIO and I²C. The consequence is that `npm run test:browser` always failed on a
+  live node with `MonsterBox already running (PID …). Exiting.` Use
+  **`npm run test:browser:solo`** (added v9.0.0), which stops the service, runs the suite, and
+  restarts it on every exit path including Ctrl-C.
+
 ## Test Suite (known-flaky)
 
 Intermittent failures noted in `CLAUDE.md` — they pass on retry and are treated as
@@ -360,6 +393,13 @@ Plus one that was not flake at all:
 ---
 
 ## Recently Fixed (for reference)
+
+- ~~**The panic button never reached the fleet.**~~ — fixed **v9.0.0**. `public/js/dashboard.js`
+  fired `POST /api/orchestration/stop-all`, which **does not exist and returns 404**. The real
+  routes are `/api/orchestration/emergency-stop` and `/api/orchestration/stop-all-queue-loops`.
+  Audio and scene-queue stops did land, so the button appeared to work — the fleet-wide stop
+  silently did nothing. Both the dashboard and the new global control bar now call the routes
+  that exist, verified by HTTP status.
 
 - ~~Hardware commands resolved to the WRONG character's physical channel~~ — fixed **v9.0.0**.
   `controlPart()` and `batchMoveServos()` read `selectedCharacter` off disk on every call and

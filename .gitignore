@@ -95,3 +95,10 @@ data/calibration_profiles.json
 
 # Operator-pinned discovery nodes (node-local runtime state)
 data/manual-nodes.json
+
+# Throwaway probe scripts (must live in-repo for node_modules resolution)
+tmp-*.mjs
+tmp-*.cjs
+tmp-*.js
+mb-shot.mjs
+.scratch/

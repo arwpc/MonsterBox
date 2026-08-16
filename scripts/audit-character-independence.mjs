@@ -39,7 +39,14 @@ const EXCLUDE_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', 'coverage',
   'playwright-report', 'test-results', '.vscode', '.idea',
   'data', 'audio-library', 'public/audio',
+  // Throwaway probe scripts. They live inside the repo because Node resolves
+  // node_modules by walking up from the script, so a scratch file outside the
+  // tree cannot import playwright. Gitignored, never shipped, and not code.
+  '.scratch',
 ]);
+
+// Same reasoning for loose scratch files that tools drop in the repo root.
+const EXCLUDE_FILE_PATTERN = /(^|\/)(tmp-|mb-shot)[^/]*\.(mjs|cjs|js)$/;
 const EXCLUDE_FILES = new Set([
   'docs/development/STABILIZATION-AUDIT.md',
   'docs/development/STABILIZATION-PLAN.md',
@@ -58,6 +65,7 @@ function walk(dir, out = []) {
     }
     const rel = path.relative(REPO_ROOT, path.join(dir, entry.name));
     if (EXCLUDE_FILES.has(rel)) continue;
+    if (EXCLUDE_FILE_PATTERN.test(rel)) continue;
     out.push(path.join(dir, entry.name));
   }
   return out;
