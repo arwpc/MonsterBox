@@ -99,6 +99,7 @@ nav:
   - Development:
       - Development Process: development/development-process.md
       - v9.0 Retrospective & Roadmap: development/V9-RETROSPECTIVE-AND-ROADMAP.md
+      - v9.0 Persona Reviews: development/V9-PERSONA-REVIEWS.md
       - Backend Architecture: development/backend-architecture.md
       - Node Discovery (mDNS): development/NODE-DISCOVERY.md
       - AI Integration Guide: development/ai-integration-guide.md
