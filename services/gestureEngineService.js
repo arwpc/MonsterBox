@@ -248,15 +248,31 @@ function conversationState(characterId) {
 
 // ---------------------------------------------------------------- execution
 
+/**
+ * Lights are gesture instruments, not props — the Hand of Azura leading a glow by
+ * 200 ms is what makes the arm that follows read as intentional.
+ *
+ * Uses the same control path as the scene executor: light parts take 'turnOn' /
+ * 'turnOff' actions through controlPart, NOT a dedicated light function. An
+ * earlier guess at a controlLight() helper silently failed every light step, and
+ * since most recipes pair one servo with one light, that quietly reduced them to
+ * the single-part motion this whole design exists to refuse.
+ */
 async function setLight(characterId, partId, level) {
     const hw = await import('./hardwareService/index.js').then(m => m.default || m);
-    if (typeof hw.controlLight === 'function') {
-        return hw.controlLight({ partId: String(partId), state: level > 0 ? 'on' : 'off', brightness: level, characterId });
+    if (typeof hw.controlPart !== 'function') {
+        throw new Error('hardware service exposes no controlPart');
     }
-    if (typeof hw.setLight === 'function') {
-        return hw.setLight(String(partId), level > 0, { brightness: level, characterId });
+    const result = await hw.controlPart(
+        String(partId),
+        level > 0 ? 'turnOn' : 'turnOff',
+        { brightness: level, duration: 0 },
+        { characterId }
+    );
+    if (!result || !result.success) {
+        throw new Error((result && result.error) || 'light control failed');
     }
-    throw new Error('no light control available on the hardware service');
+    return result;
 }
 
 /**

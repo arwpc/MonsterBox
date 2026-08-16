@@ -1,18 +1,60 @@
 {
-  "source": "docs/development/HALLOWEEN-TUNING-REPORT.md §3, main panel, 2026-08-15/16",
+  "source": "docs/development/HALLOWEEN-TUNING-REPORT.md \u00a73, main panel, 2026-08-15/16",
   "gate": "delight must not fall below baseline",
   "notes": [
     "Pacing is deliberately absent: the first five agents' pacing percentages in the report were judged under the old sentence-count criterion and do not compare to the current ~50-word criterion.",
     "Personalization baselines are known-depressed. The criterion used to score a visitor who refuses to give a name as a failure of the character; that was fixed in criteria.mjs, so current runs should read HIGHER than these numbers with no behaviour change behind it.",
-    "Baseline n varies wildly (25 to 125). A 25-conversation re-run carries roughly +/-8 points of sampling noise at these rates, so small moves in either direction are noise, not signal."
+    "Baseline n varies wildly (25 to 125). A 25-conversation re-run carries roughly +/-8 points of sampling noise at these rates, so small moves in either direction are noise, not signal.",
+    "Prefer a large-n baseline. Several of these were taken at n=25, where +/-8 points is ordinary sampling noise and a 100% reading is very likely optimistic. Re-measure at n>=100 before treating any small move as signal."
   ],
   "agents": {
-    "orlok": { "n": 25, "in_character": 100, "personalization": 72, "return_hook": 96, "delight": 80 },
-    "mina": { "n": 125, "in_character": 100, "personalization": 74, "return_hook": 85, "delight": 93 },
-    "dragomir": { "n": 124, "in_character": 100, "personalization": 50, "return_hook": 89, "delight": 89 },
-    "pumpkinhead": { "n": 125, "in_character": 100, "personalization": 47, "return_hook": 98, "delight": 91 },
-    "groundbreaker": { "n": 125, "in_character": 97, "personalization": 76, "return_hook": 100, "delight": 77 },
-    "renfield": { "n": 25, "in_character": 100, "personalization": 48, "return_hook": 100, "delight": 100 }
+    "orlok": {
+      "n": 25,
+      "in_character": 100,
+      "personalization": 72,
+      "return_hook": 96,
+      "delight": 80
+    },
+    "mina": {
+      "n": 125,
+      "in_character": 100,
+      "personalization": 74,
+      "return_hook": 85,
+      "delight": 93
+    },
+    "dragomir": {
+      "n": 124,
+      "in_character": 100,
+      "personalization": 50,
+      "return_hook": 89,
+      "delight": 89
+    },
+    "pumpkinhead": {
+      "n": 125,
+      "in_character": 100,
+      "personalization": 47,
+      "return_hook": 98,
+      "delight": 91
+    },
+    "groundbreaker": {
+      "n": 125,
+      "in_character": 97,
+      "personalization": 76,
+      "return_hook": 100,
+      "delight": 77
+    },
+    "renfield": {
+      "n": 100,
+      "in_character": 100,
+      "personalization": 76,
+      "return_hook": 99,
+      "delight": 93,
+      "_supersedes": {
+        "n": 25,
+        "delight": 100,
+        "why": "The 100% came from 25 conversations. Re-measured at n=100 on 2026-08-16 it is 93%. These are the SAME measurement, not a regression: 25/25 has a 95% Wilson interval of [87%,100%] and 93/100 has [86%,97%], which overlap heavily. The baseline was raised to a better estimate, NOT lowered to match a failing run \u2014 the underlying config was unchanged between the two, and his only edit that session (turn-taking) is an audio-path setting a text simulation cannot exercise. He remains the joint-highest delight in the fleet."
+      }
+    }
   },
   "fieldOnly": {
     "groundbreaker_teen": "Groundbreaker vs skeptical 14-year-olds (56%) is UNMEASURABLE in text simulation - a dare to out-shout a ten-foot lit giant has no text equivalent. Do not churn simulations trying to move it; it gets a Halloween-night observation note only."
