@@ -1,0 +1,50 @@
+{
+  "ranAt": "2026-08-16T09:52:16.892Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "hostname": "sirdragomir",
+      "ip": "192.168.8.130",
+      "sink": "64. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "Stai! The watch of the castle holds this road, and the road behind you is dark.",
+      "sayOk": true,
+      "voiceUsed": "wXvR48IpOq9HACltTmt7",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -43.9,
+          "castP90Db": -10.8,
+          "castPeakDb": 0,
+          "riseDb": 33.2,
+          "floorFlat": false,
+          "transcript": "Sky! The watch of the castle holds this road",
+          "recall": 0.63
+        },
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:4,0",
+          "floorDb": -79,
+          "castP90Db": -78.5,
+          "castPeakDb": -66.2,
+          "riseDb": 0.5,
+          "floorFlat": true,
+          "transcript": "[whispering]",
+          "recall": 0
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -43.9,
+      "castDb": -10.8,
+      "riseDb": 33.2,
+      "recall": 0.63,
+      "transcript": "Sky! The watch of the castle holds this road",
+      "verdict": "AUDIBLE"
+    }
+  ]
+}

@@ -18,7 +18,7 @@
  *   node scripts/fleet-audio/earcheck.mjs                 # all reachable nodes
  *   node scripts/fleet-audio/earcheck.mjs --nodes 2,3     # a subset
  *   node scripts/fleet-audio/earcheck.mjs --keep          # keep the WAVs
- *   node scripts/fleet-audio/earcheck.mjs --seconds 12    # longer capture
+ *   node scripts/fleet-audio/earcheck.mjs --seconds 20    # longer capture
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
@@ -45,7 +45,11 @@ function arg(name, fallback) {
 }
 const flag = name => process.argv.includes(`--${name}`);
 
-const SECONDS = parseInt(arg('seconds', '9'), 10);
+// 13s, not 9. The longest cast line on a slow-speaking character runs past 11s,
+// and a window that clips the tail scores as GARBLED on word recall — a false
+// failure on a node whose audio is perfect. Measured: the same node read back
+// 53% of its line in a 9s window and 80% in a 15s one.
+const SECONDS = parseInt(arg('seconds', '13'), 10);
 const KEEP = flag('keep');
 const nodeFilter = arg('nodes', 'all');
 

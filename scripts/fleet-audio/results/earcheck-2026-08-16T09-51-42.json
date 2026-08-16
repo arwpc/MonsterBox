@@ -1,0 +1,45 @@
+{
+  "ranAt": "2026-08-16T09:51:42.832Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "hostname": "sirdragomir",
+      "ip": "192.168.8.130",
+      "sink": "64. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "Stai! The watch of the castle holds this road, and the road behind you is dark.",
+      "sayOk": true,
+      "voiceUsed": "wXvR48IpOq9HACltTmt7",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:3,0",
+          "error": "floor capture failed"
+        },
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:4,0",
+          "floorDb": -79.1,
+          "castP90Db": -78.5,
+          "castPeakDb": -66.2,
+          "riseDb": 0.6,
+          "floorFlat": false,
+          "transcript": "",
+          "recall": 0
+        }
+      ],
+      "bestMic": "USB Audio Device",
+      "floorDb": -79.1,
+      "castDb": -78.5,
+      "riseDb": 0.6,
+      "recall": 0,
+      "transcript": "",
+      "verdict": "SILENT",
+      "diagnosis": "no speech detected on any mic (best rise 0.6 dB)"
+    }
+  ]
+}

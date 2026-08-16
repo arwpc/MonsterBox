@@ -99,6 +99,16 @@ ${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "rm -rf ${REMOTE_PATH}/playw
 echo "Syncing code to ${IP_ADDRESS}..."
 RSYNC_DRY=""
 if [ "$DRY_RUN" = "1" ]; then RSYNC_DRY="-n"; fi
+# rsync's exit status is checked explicitly rather than left to `set -e`.
+#
+# Nodes accumulate a few root-owned paths the deploy user cannot replace —
+# certs/, and a stray root-owned data/ai-config/ left by an old context-fallback
+# bug. rsync reports those as exit 23 ("partial transfer due to error") even
+# though every file that matters synced fine. Under `set -e` that aborted the
+# script BEFORE the service restart, so the new code landed but the node kept
+# running the old build and the deploy looked like it had done nothing at all.
+# That is exactly how a fleet ends up silently running mixed versions.
+set +e
 ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'node_modules' \
     --exclude 'data/character-*/parts.json' \
@@ -113,6 +123,18 @@ ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'playwright-diagnostics' \
     --exclude 'ARCHIVE' \
     ./ ${REMOTE_USER}@${IP_ADDRESS}:${REMOTE_PATH}/
+RSYNC_RC=$?
+set -e
+# 0 = clean. 23/24 = some files skipped (permissions, or vanished mid-copy):
+# warn loudly and carry on to the restart. Anything else is a real failure.
+if [ "$RSYNC_RC" -eq 23 ] || [ "$RSYNC_RC" -eq 24 ]; then
+    echo -e "${YELLOW}⚠ rsync exit ${RSYNC_RC}: some files were skipped (usually root-owned certs/ or a stray root-owned data/ai-config/).${NC}"
+    echo -e "${YELLOW}  Continuing to the restart — but if this node keeps behaving like an old build, check what was skipped above.${NC}"
+    echo -e "${YELLOW}  To clear the common cause: sudo rm -rf ${REMOTE_PATH}/data/ai-config${NC}"
+elif [ "$RSYNC_RC" -ne 0 ]; then
+    echo "✗ rsync failed with exit ${RSYNC_RC} — refusing to restart the node on a partial deploy."
+    exit "$RSYNC_RC"
+fi
 if [ "$DRY_RUN" = "1" ]; then
     echo -e "${YELLOW}Dry-run complete. Skipping remote key/dependencies/restart steps.${NC}"
     exit 0
