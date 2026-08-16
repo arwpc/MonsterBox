@@ -18,3 +18,4 @@ Post-run plan: orlok validation re-run (--count 5, all personas) on new config f
 - orlok: kid-mode persistence rule (post-validation); scare-escalation rule (post-validation) — his panel+validation blocks were complete before both.
 - dragomir (after his panel block completed): THE SECRET (the Count was Vlad Țepeș, revealed in fragments), war stories on request (KB_Dragomir_War_Stories cAFLQXaOggcJz8Y8Jxfq), Romanian war cries.
 - groundbreaker (BEFORE his panel block started — his whole block tests this): Rock War canon (threw rocks at the Turks in 1462), the secret he can't keep ("VLAD. ... OOPS."), oath shout to the knight (KB_Groundbreaker_Rock_War GGY8fq3qaCkUCYeByx9j).
+- mina (after her panel block completed): THE WAITING — 1462 from inside the walls, older dreams (the tread she knows), the Vlad-name reaction, the locked door (KB_Mina_The_Waiting_War 8mmjkJxPidYUs7ptEYbG).
