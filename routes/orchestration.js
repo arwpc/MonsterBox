@@ -8,7 +8,8 @@ const router = express.Router();
 router.get('/', function (req, res) {
     res.renderWithLayout('orchestration/index', {
         title: 'Orchestration Control - MonsterBox',
-        page: 'orchestration'
+        page: 'orchestration',
+        styles: ['/css/mb-orchestration.css']
     });
 });
 

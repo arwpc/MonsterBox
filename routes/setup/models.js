@@ -11,7 +11,8 @@ const router = express.Router();
 router.get('/', (req, res) => {
     res.renderWithLayout('setup/models', {
         title: 'Setup Models - MonsterBox',
-        page: 'setup-models'
+        page: 'setup-models',
+        styles: ['/css/setup-models.css']
     });
 });
 

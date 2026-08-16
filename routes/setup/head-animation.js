@@ -49,6 +49,7 @@ router.get('/', async (req, res) => {
         title: 'Setup Head Animation - MonsterBox',
         page: 'setup-head-animation',
         pageTitle: 'Head Animation',
+      styles: '/css/head-animation.css',
         error: 'No character selected. Please select a character from the navigation menu.',
         currentCharacter: null,
         currentCharacterName: 'No Character'
@@ -63,6 +64,7 @@ router.get('/', async (req, res) => {
         title: 'Setup Head Animation - MonsterBox',
         page: 'setup-head-animation',
         pageTitle: 'Head Animation',
+      styles: '/css/head-animation.css',
         error: 'Selected character not found. Please select a valid character.',
         currentCharacter: null,
         currentCharacterName: 'Character Not Found'
@@ -73,6 +75,7 @@ router.get('/', async (req, res) => {
       title: 'Setup Head Animation - MonsterBox',
       page: 'setup-head-animation',
       pageTitle: 'Head Animation',
+      styles: '/css/head-animation.css',
       currentCharacter: currentCharacter,
       currentCharacterName: character.name,
       character: character

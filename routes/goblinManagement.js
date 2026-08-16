@@ -15,7 +15,8 @@ router.get('/', (req, res) => {
     res.renderWithLayout('goblin-management/index', {
         title: 'Goblin Management - MonsterBox',
         page: 'goblin-management',
-        pageTitle: 'Goblin Management'
+        pageTitle: 'Goblin Management',
+        styles: ['/css/mb-goblin-management.css']
     });
 });
 

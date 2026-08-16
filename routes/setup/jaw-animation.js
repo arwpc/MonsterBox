@@ -65,6 +65,7 @@ router.get('/', async (req, res) => {
         title: 'Setup Jaw Animation - MonsterBox',
         page: 'setup-jaw-animation',
         pageTitle: 'Jaw Animation',
+      styles: '/css/jaw-animation.css',
         error: 'No character selected. Please select a character from the navigation menu.',
         currentCharacter: null,
         currentCharacterName: 'No Character'
@@ -80,6 +81,7 @@ router.get('/', async (req, res) => {
         title: 'Setup Jaw Animation - MonsterBox',
         page: 'setup-jaw-animation',
         pageTitle: 'Jaw Animation',
+      styles: '/css/jaw-animation.css',
         error: 'Selected character not found. Please select a valid character.',
         currentCharacter: null,
         currentCharacterName: 'Character Not Found'
@@ -90,6 +92,7 @@ router.get('/', async (req, res) => {
       title: 'Setup Jaw Animation - MonsterBox',
       page: 'setup-jaw-animation',
       pageTitle: 'Jaw Animation',
+      styles: '/css/jaw-animation.css',
       currentCharacter: currentCharacter,
       currentCharacterName: character.name,
       character: character

@@ -12,7 +12,8 @@ router.get('/', async (req, res) => {
     try {
         res.renderWithLayout('setup/system', {
             title: 'Setup System - MonsterBox',
-            page: 'setup-system'
+            page: 'setup-system',
+            styles: ['/css/setup-system.css']
         });
     } catch (error) {
         console.error('Error rendering system setup page:', error);

@@ -153,6 +153,7 @@ router.get('/unified', async (req, res) => {
         res.renderWithLayout('setup/unified-calibration', {
             title: 'Unified Calibration - MonsterBox',
             page: 'setup-calibration-unified',
+            styles: '/css/unified-calibration.css',
 
             parts: positionableParts,
             testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true')

@@ -62,6 +62,7 @@ router.get('/', async (req, res) => {
             characterId,
             characterName,
             activeTab: req.query.tab || 'overview',
+            styles: '/css/ai-settings.css',
             scripts: ['/js/ai-settings.js']
         });
     } catch (error) {
@@ -85,6 +86,7 @@ router.get('/stt', async (req, res) => {
             activeTab: 'stt',
             characterId,
             characterName,
+            styles: '/css/ai-settings.css',
             scripts: ['/js/ai-settings-stt.js']
         });
     } catch (error) {
@@ -108,6 +110,7 @@ router.get('/tts', async (req, res) => {
             activeTab: 'tts',
             characterId,
             characterName,
+            styles: '/css/ai-settings.css',
             scripts: ['/js/ai-settings-tts.js']
         });
     } catch (error) {

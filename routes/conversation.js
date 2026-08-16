@@ -1063,7 +1063,34 @@ async function enableLurkSuperpowers(characterId) {
 }
 
 // Helper: disable all lurk superpowers
-async function disableLurkSuperpowers(characterId) {
+
+/**
+ * Disarm everything that can autonomously start motion on this node, and persist
+ * the off state — the full lurk shutdown, not just the sub-features.
+ *
+ * Factored out so the panic route can call it directly. `disableLurkSuperpowers`
+ * alone turns off jaw/head/random-pose/motion-sensor but leaves the lurk master
+ * flag set and the motion watcher running, so the scare re-triggers the moment the
+ * guest moves — which is exactly the failure a panic stop has to prevent.
+ */
+export async function disarmLurkCompletely(characterId) {
+  lurkMotionWatcher.stop();
+  const results = await disableLurkSuperpowers(characterId);
+  results.motionSensor = { enabled: false };
+
+  const dataDir = getDataDir(characterId);
+  const stateFile = path.resolve(dataDir, 'lurk-mode-state.json');
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.writeFile(stateFile, JSON.stringify({
+    enabled: false, sleeping: false, timestamp: Date.now(), results
+  }, null, 2), 'utf8');
+  return results;
+}
+
+// Exported so the panic route can disarm this node DIRECTLY. Panic previously
+// relied on the fleet fan-out reaching this node over its own loopback HTTPS,
+// which is both slower and able to fail exactly when it matters most.
+export async function disableLurkSuperpowers(characterId) {
   const results = { jaw: null, headTracking: null, randomPose: null, motionSensor: null };
 
   try {

@@ -34,7 +34,8 @@ router.get('/', (req, res) => {
     res.renderWithLayout('video-library/index', {
         title: 'Video Library - MonsterBox',
         page: 'video-library',
-        pageTitle: 'Video Library'
+        pageTitle: 'Video Library',
+        styles: ['/css/mb-video-library.css']
     });
 });
 

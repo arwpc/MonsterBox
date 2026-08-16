@@ -79,6 +79,24 @@ router.post('/', express.json(), async (req, res) => {
         localActions.push(runLocal('idle-loop', () => idleSvc.stop()));
     }
 
+    // Disarm the AUTONOMOUS triggers on THIS node directly. Halting playback is not
+    // enough: lurk, the motion sensor and head tracking can all start motion on
+    // their own, so leaving them armed means the frightened guest backing away trips
+    // the sensor and fires the scare again, seconds after the operator hit stop.
+    // Doing it locally rather than waiting for the fleet fan-out to reach this node
+    // over its own loopback is both faster and one less thing to fail.
+    if (characterId != null) {
+        localActions.push(runLocal('disarm-superpowers', async () => {
+            const conv = await import('../conversation.js');
+            if (typeof conv.disarmLurkCompletely !== 'function') {
+                throw new Error('disarmLurkCompletely unavailable');
+            }
+            // Full shutdown: sub-features AND the lurk master flag AND the motion
+            // watcher. Disabling only the sub-features leaves the trigger armed.
+            await conv.disarmLurkCompletely(characterId);
+        }));
+    }
+
     const local = await Promise.all(localActions);
 
     // Then the fleet, which may include unreachable nodes and therefore timeouts.
