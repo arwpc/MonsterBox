@@ -23,7 +23,9 @@ test.describe('Fleet Command Center', () => {
 
     test('loads with the correct title and heading', async () => {
         expect(await page.title()).toContain('Orchestration');
-        await expect(page.locator('h4:has-text("Fleet Command Center")')).toBeVisible();
+        // Heading level is presentation, not contract: it moved h4 -> h1 in the
+        // design-system pass. Assert the page says what it is, at whatever level.
+        await expect(page.getByText('Fleet Command Center').first()).toBeVisible();
     });
 
     test('shows the command log with a ready message', async () => {

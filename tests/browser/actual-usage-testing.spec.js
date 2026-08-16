@@ -629,8 +629,10 @@ test.describe('4. Setup Home', () => {
     await page.goto(`${BASE}/setup`);
     await ready(page);
 
-    // Should have navigation cards
-    const cards = page.locator('.card, .setup-card');
+    // Should have navigation cards. Includes the mb-* design-system classes:
+    // the migration renamed .card to .mb-card, which made this count 0 on a page
+    // that renders ten perfectly good tiles.
+    const cards = page.locator('.card, .setup-card, .mb-card, .mb-tile');
     const count = await cards.count();
     console.log(`  Found ${count} setup cards`);
     expect(count).toBeGreaterThan(0);
@@ -1421,8 +1423,9 @@ test.describe('17. First Run', () => {
     await page.goto(`${BASE}/first-run`);
     await ready(page);
 
-    // Character cards
-    const cards = page.locator('.character-card, .first-run-card, .card');
+    // Character cards. Same design-system rename as the setup page — the cards
+    // now carry .mb-card (plus .skull-card here), not Bootstrap's .card.
+    const cards = page.locator('.character-card, .first-run-card, .card, .mb-card, .skull-card');
     const count = await cards.count();
     console.log(`  Found ${count} character cards on first run`);
     expect(count).toBeGreaterThan(0);

@@ -59,11 +59,18 @@ test.describe('AI Settings Overview', () => {
     });
 
     test('should show STT and TTS cards with correct links', async () => {
-        // Look for Configure buttons in the card body (visible, not dropdown)
-        const sttBtn = page.locator('.card a[href="/ai-settings/stt"]');
+        // Match the LINK rather than the card's class — the design system
+        // migrated Bootstrap `.card` to `.mb-card`, which broke this test while
+        // the page itself was perfectly fine, and a selector pinned to one era's
+        // class names reports a redesign as a regression.
+        //
+        // The same links also appear as hidden items in the nav dropdown, so
+        // those are excluded: the thing being asserted is that an operator can
+        // SEE a Configure control on the page, not merely that the href exists.
+        const sttBtn = page.locator('a[href="/ai-settings/stt"]:not(.dropdown-item)');
         await expect(sttBtn.first()).toBeVisible();
 
-        const ttsBtn = page.locator('.card a[href="/ai-settings/tts"]');
+        const ttsBtn = page.locator('a[href="/ai-settings/tts"]:not(.dropdown-item)');
         await expect(ttsBtn.first()).toBeVisible();
     });
 
