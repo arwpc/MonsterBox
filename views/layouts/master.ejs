@@ -29,6 +29,9 @@ var __isBootswatch = __bootswatchThemes.indexOf(__themeVal) !== -1;
     <!-- MonsterBox Design System (Phase 2 foundation) -->
     <link href="/css/tokens.css" rel="stylesheet">
     <link href="/css/components.css" rel="stylesheet">
+    <!-- Responsive layer: must load AFTER components.css so its max-width
+         overrides win. Makes every shared component usable on a phone. -->
+    <link href="/css/mb-responsive.css" rel="stylesheet">
     <!-- Page chrome: applies to any view with a .mb-cluster-* root class -->
     <link href="/css/mb-page-chrome.css" rel="stylesheet">
     <!-- Cluster-specific styles -->
@@ -117,12 +120,27 @@ var __isBootswatch = __bootswatchThemes.indexOf(__themeVal) !== -1;
                                 <!-- Footer -->
                                 <%- include('../components/footer') %>
 
+                                    <%
+                                    // Global control bar: the same controls in the same place on
+                                    // every page. The conversation view carries its own richer
+                                    // operator bar (mb-opbar), so it opts out to avoid stacking two.
+                                    var __mbShowControlBar = (typeof includeControlBar === 'undefined')
+                                        ? ((typeof page === 'undefined') || page !== 'conversation')
+                                        : !!includeControlBar;
+                                    %>
+                                    <% if (__mbShowControlBar) { %>
+                                        <%- include('../components/control-bar') %>
+                                    <% } %>
+
                                     <!-- Bootstrap JS - Local with CDN fallback -->
                                     <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 
                                     <!-- Core MonsterBox JS -->
                                     <script src="/js/monsterbox4.js"></script>
                                     <script src="/js/character-menu.js"></script>
+                                    <% if (__mbShowControlBar) { %>
+                                        <script src="/js/mb-control-bar.js" defer></script>
+                                    <% } %>
 
                                     <!-- Initialize Bootstrap tooltips globally -->
                                     <script>

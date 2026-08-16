@@ -9,6 +9,7 @@
  *   1. validate:schemas          — per-character data files conform to schemas
  *   2. audit:resolver             — no direct character-state reads outside allowlist
  *   3. audit:independence         — bias-pattern ratchet (Pillar 5; stub no-op if absent)
+ *   3b. audit:design-system      — UI consistency ratchet; counts may only shrink
  *   4. test:smoke                  — unit-level sanity pass
  *   5. test:pact                   — per-character contract suite
  *
@@ -33,6 +34,7 @@ const STEPS = [
   { name: 'validate:schemas',     cmd: 'npm', args: ['run', '--silent', 'validate:schemas'], timeoutMs: 10_000 },
   { name: 'audit:resolver',       cmd: 'npm', args: ['run', '--silent', 'audit:resolver'],   timeoutMs: 10_000 },
   { name: 'audit:independence',   cmd: 'npm', args: ['run', '--silent', 'audit:independence'], timeoutMs: 10_000 },
+  { name: 'audit:design-system',  cmd: 'npm', args: ['run', '--silent', 'audit:design-system'], timeoutMs: 20_000 },
   { name: 'test:smoke',           cmd: 'npm', args: ['run', '--silent', 'test:smoke'],       timeoutMs: 60_000 },
   { name: 'test:pact',            cmd: 'npm', args: ['run', '--silent', 'test:pact'],        timeoutMs: 30_000 },
 ];

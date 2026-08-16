@@ -25,6 +25,27 @@ const __dirname = path.dirname(__filename);
 const MJPG_STREAMER_URL = 'http://127.0.0.1:8090';
 const MJPG_STREAM_ENDPOINT = `${MJPG_STREAMER_URL}/?action=stream`;
 
+/**
+ * Did a Python wrapper report success?
+ *
+ * Prefers the parsed JSON envelope. The string fallback exists because some
+ * wrappers still print a bare word, but it used to be a raw substring test —
+ * so any output containing "success" anywhere passed, including the word
+ * "unsuccessful" and log lines that merely mention it. stdout also carries
+ * pca9685_control's log JSON, which makes an accidental match easy. Matching on
+ * a word boundary keeps the fallback without the false positives.
+ */
+function wrapperSucceeded(out, parsed) {
+    if (parsed && typeof parsed === 'object') {
+        if (parsed.success === true) return true;
+        if (parsed.success === false) return false;
+        if (typeof parsed.status === 'string') return parsed.status === 'success';
+    }
+    if (typeof out !== 'string') return false;
+    if (/unsuccessful/i.test(out)) return false;
+    return /(^|[^a-zA-Z])success(ful)?([^a-zA-Z]|$)/.test(out);
+}
+
 function parsePythonJSON(out) {
     if (!out) return null;
     const lines = String(out).trim().split(/\r?\n/).filter(Boolean);
@@ -113,7 +134,7 @@ const HARDWARE_CONTROLLERS = {
                 }
 
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 return {
                     success,
                     partType: 'motor',
@@ -155,7 +176,7 @@ const HARDWARE_CONTROLLERS = {
                     out = await runWrapper('motor_cli.py', ['forward', '0', '100', String(directionPin), String(pwmPin)]);
                 }
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 return {
                     success,
                     partType: 'motor',
@@ -250,7 +271,7 @@ const HARDWARE_CONTROLLERS = {
                         return null;
                     } catch { return null; }
                 })();
-                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
 
                 return {
                     success,
@@ -323,7 +344,7 @@ const HARDWARE_CONTROLLERS = {
                         return null;
                     } catch { return null; }
                 })();
-                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
 
                 return {
                     success,
@@ -360,7 +381,7 @@ const HARDWARE_CONTROLLERS = {
                         return null;
                     } catch { return null; }
                 })();
-                const success = parsed ? (parsed.status === 'success' || parsed.success === true) : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
 
                 return {
                     success,
@@ -389,14 +410,14 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['move_to_pca', String(channel), '180'];
                     if (address != null) args.push(String(address));
                     const out = await runWrapper('servo_cli.py', args);
-                    const success = typeof out === 'string' && out.includes('success');
+                    const success = wrapperSucceeded(out, null);
                     const key = `pca_ch${channel}`;
                     if (success) HARDWARE_CONTROLLERS._lightState[key] = 'on';
                     return { success, partType: 'light', channel, state: 'on', rawOutput: out, message: success ? `PCA9685 ch${channel} light on` : 'Light on failed' };
                 }
                 const out = await runWrapper('light_cli.py', [String(pin), 'on', String(duration || 0)]);
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 if (success) HARDWARE_CONTROLLERS._lightState[pin] = 'on';
                 return {
                     success,
@@ -419,14 +440,14 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['move_to_pca', String(channel), '0'];
                     if (address != null) args.push(String(address));
                     const out = await runWrapper('servo_cli.py', args);
-                    const success = typeof out === 'string' && out.includes('success');
+                    const success = wrapperSucceeded(out, null);
                     const key = `pca_ch${channel}`;
                     if (success) HARDWARE_CONTROLLERS._lightState[key] = 'off';
                     return { success, partType: 'light', channel, state: 'off', rawOutput: out, message: success ? `PCA9685 ch${channel} light off` : 'Light off failed' };
                 }
                 const out = await runWrapper('light_cli.py', [String(pin), 'off']);
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 if (success) HARDWARE_CONTROLLERS._lightState[pin] = 'off';
                 return {
                     success,
@@ -452,7 +473,7 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['move_to_pca', String(channel), angle];
                     if (address != null) args.push(String(address));
                     const out = await runWrapper('servo_cli.py', args);
-                    const success = typeof out === 'string' && out.includes('success');
+                    const success = wrapperSucceeded(out, null);
                     if (success) HARDWARE_CONTROLLERS._lightState[key] = newState;
                     return { success, partType: 'light', channel, state: newState, action: 'toggle', rawOutput: out, message: success ? `PCA9685 ch${channel} light ${newState}` : 'Light toggle failed' };
                 }
@@ -460,7 +481,7 @@ const HARDWARE_CONTROLLERS = {
                 const newState = currentState === 'on' ? 'off' : 'on';
                 const out = await runWrapper('light_cli.py', [String(pin), newState, '0']);
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 if (success) HARDWARE_CONTROLLERS._lightState[pin] = newState;
                 return {
                     success,
@@ -488,7 +509,7 @@ const HARDWARE_CONTROLLERS = {
                     const state = brightness > 0 ? 'on' : 'off';
                     const out2 = await runWrapper('light_cli.py', [String(pin), state, '0']);
                     const parsed2 = parsePythonJSON(out2);
-                    const success2 = parsed2 ? parsed2.status === 'success' : (typeof out2 === 'string' && out2.indexOf('success') !== -1);
+                    const success2 = wrapperSucceeded(out2, parsed2);
                     return {
                         success: success2,
                         partType: 'led',
@@ -508,7 +529,7 @@ const HARDWARE_CONTROLLERS = {
                 if (typeof duration === 'number') args.push(String(duration));
                 const out = await runWrapper('led_cli.py', args);
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 if (!success) {
                     // PWM path failed; try a simple digital on/off as a real-hardware fallback
                     return await tryDigitalFallback();
@@ -562,7 +583,7 @@ const HARDWARE_CONTROLLERS = {
             try {
                 const out = await runWrapper('light_cli.py', [String(pin), newState, '0']);
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 if (success) HARDWARE_CONTROLLERS._lightState[pin] = newState;
                 return {
                     success,
@@ -618,7 +639,7 @@ const HARDWARE_CONTROLLERS = {
                     console.log(`🧭 Python call => servo_cli.py ${args.join(' ')}`);
 
                     const result = await runWrapper('servo_cli.py', args);
-                    const success = typeof result === 'string' && result.includes('success');
+                    const success = wrapperSucceeded(result, null);
                     return {
                         success,
                         partType: 'servo',
@@ -633,7 +654,7 @@ const HARDWARE_CONTROLLERS = {
                     const result = await servoService.moveToAngle({ partId, angleDeg });
 
                     // Convert string result to structured response
-                    const success = typeof result === 'string' && result.includes('success');
+                    const success = wrapperSucceeded(result, null);
 
                     return {
                         success: success,
@@ -670,7 +691,7 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['rotate_continuous_pca', String(channel), String(effectiveDirection), String(speedInt), String(durInt)];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
-                    const success = typeof result === 'string' && result.includes('success');
+                    const success = wrapperSucceeded(result, null);
                     return {
                         success,
                         partType: 'servo',
@@ -689,7 +710,7 @@ const HARDWARE_CONTROLLERS = {
                     // regardless of the requested duration (which the response echoed).
                     const result = await servoService.rotateContinuous({ channel: pin, direction: effectiveDirection, speed, duration });
 
-                    const success = typeof result === 'string' && result.includes('success');
+                    const success = wrapperSucceeded(result, null);
 
                     return {
                         success: success,
@@ -720,7 +741,7 @@ const HARDWARE_CONTROLLERS = {
                     const args = ['rotate_continuous_pca', String(channel), 'stop', '0', '100'];
                     if (address != null) args.push(String(address));
                     const result = await runWrapper('servo_cli.py', args);
-                    const success = typeof result === 'string' && result.includes('success');
+                    const success = wrapperSucceeded(result, null);
                     return {
                         success,
                         partType: 'servo',
@@ -733,7 +754,7 @@ const HARDWARE_CONTROLLERS = {
                 } else {
                     const result = await servoService.stop({ channel: pin });
 
-                    const success = typeof result === 'string' && result.includes('success');
+                    const success = wrapperSucceeded(result, null);
 
                     return {
                         success: success,
@@ -762,7 +783,7 @@ const HARDWARE_CONTROLLERS = {
             try {
                 const out = await stepperService.moveSteps({ stepPin, dirPin, direction, steps, stepDelayUs, enablePin });
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 return {
                     success,
                     partType: 'stepper',
@@ -784,7 +805,7 @@ const HARDWARE_CONTROLLERS = {
             try {
                 const out = await stepperService.rotate({ stepPin, dirPin, direction, revolutions, microstepping, rpm, enablePin });
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 return {
                     success,
                     partType: 'stepper',
@@ -807,7 +828,7 @@ const HARDWARE_CONTROLLERS = {
             try {
                 const out = await stepperService.stop({ enablePin });
                 const parsed = parsePythonJSON(out);
-                const success = parsed ? parsed.status === 'success' : (typeof out === 'string' && out.indexOf('success') !== -1);
+                const success = wrapperSucceeded(out, parsed);
                 return {
                     success,
                     partType: 'stepper',
@@ -1894,7 +1915,7 @@ export async function batchMoveServos(commands, options = {}) {
         try {
             const args = pcaPairs.map(p => `${p.channel}:${p.angle}`);
             const out = await runWrapper('servo_cli.py', ['batch_pca', ...args]);
-            const success = typeof out === 'string' && out.includes('success');
+            const success = wrapperSucceeded(out, null);
             for (const p of pcaPairs) {
                 results.push({ success, partId: p.partId, angleDeg: p.angle, batch: true });
             }
@@ -1911,7 +1932,7 @@ export async function batchMoveServos(commands, options = {}) {
         try {
             const out = await runInPowerGroup(characterId, p.safety,
                 () => runWrapper('servo_cli.py', ['batch_pca', `${p.channel}:${p.angle}`]));
-            const success = typeof out === 'string' && out.includes('success');
+            const success = wrapperSucceeded(out, null);
             results.push({ success, partId: p.partId, angleDeg: p.angle, serialized: true });
         } catch (e) {
             results.push({ success: false, partId: p.partId, error: e.message, serialized: true });

@@ -1,50 +1,29 @@
 /**
- * Motor Hardware Service
- * Thin wrapper around existing Python motor control scripts
+ * Motor Hardware Service — UNWIRED, DO NOT USE
+ * ---------------------------------------------------------------------------
+ * This module is not imported anywhere, and its CLI contract does not match the
+ * wrapper it calls:
+ *
+ *   it sends ['control', pin, direction, speed, duration] but motor_cli.py expects
+ *   <direction> <speed> <duration_ms> <dir_pin> <pwm_pin> — so `speed` would be read as
+ *   a GPIO pin number and an arbitrary pin would be driven.
+ *
+ * It is kept only because deleting a file is harder to notice than a thrown
+ * error. Calling it throws instead of silently addressing the wrong hardware —
+ * a friendly-looking API that drives arbitrary GPIO is worse than no API.
+ *
+ * The working implementation is HARDWARE_CONTROLLERS.motor in ./index.js.
  */
 
-import { runWrapper, validateArgs } from './exec.js';
-
-/**
- * Control motor movement
- * @param {Object} params - Motor parameters
- * @param {number} params.pin - Motor control pin
- * @param {string} params.direction - 'forward', 'backward', or 'stop'
- * @param {number} params.speed - Speed percentage (0-100)
- * @param {number} params.duration - Duration in milliseconds
- * @returns {Promise<string>} - Command result
- */
-export async function controlMotor({ pin, direction, speed = 50, duration = 1000 }) {
-    validateArgs([pin, direction], 2);
-    
-    if (!['forward', 'backward', 'stop'].includes(direction)) {
-        throw new Error(`Invalid direction: ${direction}. Must be 'forward', 'backward', or 'stop'`);
-    }
-    
-    const args = [
-        'control',
-        String(pin),
-        direction,
-        String(speed),
-        String(duration)
-    ];
-    
-    return await runWrapper('motor_cli.py', args);
+function unwired(name) {
+    throw new Error(
+        name + ' is unwired and its argument order does not match motor_cli.py. ' +
+        'Use HARDWARE_CONTROLLERS.motor from services/hardwareService/index.js instead.'
+    );
 }
 
-/**
- * Stop motor
- * @param {Object} params - Motor parameters
- * @param {number} params.pin - Motor control pin
- * @returns {Promise<string>} - Command result
- */
-export async function stopMotor({ pin }) {
-    validateArgs([pin], 1);
-    
-    return await controlMotor({ pin, direction: 'stop', duration: 100 });
-}
+export async function controlMotor() { unwired('controlMotor'); }
 
-export default {
-    controlMotor,
-    stopMotor
-};
+export async function stopMotor() { unwired('stopMotor'); }
+
+export default { controlMotor, stopMotor };

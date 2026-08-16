@@ -55,17 +55,25 @@ function withDefaults(pose) {
 
 /**
  * Get poses tagged "idle" for a character.
- * Falls back to all poses if none are tagged "idle".
+ *
+ * Returns ONLY poses explicitly tagged "idle". This used to fall back to every
+ * pose in the library when nothing was tagged — which fails open on a live
+ * animatronic: remove the last idle tag and the loop starts picking gesture
+ * poses at random, driving arms, actuators and lights that were authored to be
+ * fired deliberately by a scene. An idle loop with nothing to play should do
+ * nothing, which the caller already handles.
  *
  * @param {number|string} characterId
- * @returns {Promise<Array>} Filtered pose array with defaults applied
+ * @returns {Promise<Array>} Idle-tagged poses with defaults applied
  */
 export async function getIdlePoses(characterId) {
     const allPoses = await loadPoses(characterId);
-    const withDefs = allPoses.map(withDefaults);
+    const idleTagged = allPoses.map(withDefaults).filter(p => p.tags.includes('idle'));
 
-    const idleTagged = withDefs.filter(p => p.tags.includes('idle'));
-    return idleTagged.length > 0 ? idleTagged : withDefs;
+    if (idleTagged.length === 0 && allPoses.length > 0) {
+        console.warn(`[poseLibrary] Character ${characterId} has ${allPoses.length} poses but none tagged "idle" — idle loop will stay still. Tag the poses you want it to pick.`);
+    }
+    return idleTagged;
 }
 
 /**

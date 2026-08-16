@@ -764,3 +764,138 @@
   .mb-btn-lg       { min-height: 48px; font-size: var(--mb-text-base); }
   .mb-heading-1    { font-size: var(--mb-text-3xl); }
 }
+
+/* ==========================================================================
+   Control Bar
+   --------------------------------------------------------------------------
+   A persistent bar carrying the controls an operator must never have to go
+   looking for: which character is live, whether it is armed, master volume,
+   stop-everything, and emergency stop.
+
+   Anchored to the bottom on every screen size — on a phone that is where the
+   thumb is, and on a desktop it reads as a transport bar rather than another
+   navigation strip competing with the header.
+   ========================================================================== */
+.mb-control-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--mb-z-sticky, 900);
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-4);
+  height: var(--mb-control-bar-height, 64px);
+  padding: 0 var(--mb-space-4);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: color-mix(in srgb, var(--mb-bg-1) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--mb-border-default);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Keep page content clear of the fixed bar. */
+body.mb-has-control-bar {
+  padding-bottom: calc(var(--mb-control-bar-height, 64px) + env(safe-area-inset-bottom, 0px));
+}
+
+.mb-control-bar-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-3);
+  min-width: 0;              /* lets the name truncate instead of pushing */
+  flex: 0 1 auto;
+}
+
+.mb-control-bar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--mb-radius-full, 999px);
+  object-fit: cover;
+  border: 1px solid var(--mb-border-default);
+  flex: 0 0 auto;
+}
+
+.mb-control-bar-name {
+  font-family: var(--mb-font-display);
+  letter-spacing: var(--mb-tracking-wide);
+  color: var(--mb-fg-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mb-control-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.mb-control-bar-status {
+  display: flex;
+  align-items: center;
+  gap: var(--mb-space-2);
+  color: var(--mb-fg-secondary);
+  font-size: var(--mb-text-sm);
+}
+
+/* --- Hold-to-confirm ---------------------------------------------------
+   An emergency stop has to be instant to reach but impossible to hit by
+   accident — a confirmation dialog fails the first requirement, a bare button
+   fails the second. Holding satisfies both: no dialog, but a brush against the
+   screen does nothing. The fill is the feedback that the hold is registering.
+   ----------------------------------------------------------------------- */
+.mb-hold {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  touch-action: manipulation;   /* no double-tap zoom on a control */
+}
+
+.mb-hold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--mb-accent-blood);
+  transform: scaleX(var(--mb-hold-progress, 0));
+  transform-origin: left center;
+  transition: transform 60ms linear;
+}
+
+.mb-hold[data-holding="true"] {
+  color: var(--mb-fg-on-accent);
+}
+
+.mb-hold-label {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mb-hold::after { transition: none; }
+}
+
+/* --- Responsive ------------------------------------------------------- */
+@media (max-width: 768px) {
+  .mb-control-bar {
+    gap: var(--mb-space-2);
+    padding: 0 var(--mb-space-3);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* The character name is the first thing to go — the avatar still identifies
+     it, and the controls matter more than the label. */
+  .mb-control-bar-name,
+  .mb-control-bar-status {
+    display: none;
+  }
+
+  .mb-control-bar-actions {
+    gap: var(--mb-space-2);
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

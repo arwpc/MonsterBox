@@ -1,0 +1,65 @@
+<%
+/*
+ * Global Control Bar
+ * ------------------------------------------------------------------
+ * The controls an operator must never have to go looking for, in the same
+ * place on every page: which character is live, whether the core subsystems
+ * are healthy, master volume, and stop-everything.
+ *
+ * Rendered from views/layouts/master.ejs on every page. The conversation page
+ * carries its own richer operator bar (`mb-opbar`) and opts out via
+ * `includeControlBar: false` so the two never stack.
+ *
+ * Health dots are populated from live probes by /js/mb-control-bar.js — never
+ * from persisted state, because a stored "enabled: true" has already been
+ * caught claiming a connection that did not exist.
+ */
+%>
+<div class="mb-control-bar" role="toolbar" aria-label="Operator control bar" id="mbControlBar">
+
+  <div class="mb-control-bar-identity">
+    <a href="/setup/characters"
+       class="mb-control-bar-avatar-link"
+       title="Change character"
+       aria-label="Change character">
+      <img class="mb-control-bar-avatar"
+           id="mbControlBarAvatar"
+           src="/images/characters/placeholder.png"
+           alt=""
+           onerror="this.style.display='none'">
+    </a>
+    <span class="mb-control-bar-name" id="mbControlBarName">—</span>
+  </div>
+
+  <!-- Live subsystem health. Each dot is a live probe, not a stored flag. -->
+  <div class="mb-control-bar-status" id="mbControlBarHealth" aria-live="polite">
+    <span class="mb-dot mb-dot-idle" id="mbHealthService" title="Server: checking…" aria-label="Server status"></span>
+    <span class="mb-mono mb-text-xs" id="mbHealthText">checking…</span>
+  </div>
+
+  <div class="mb-control-bar-actions">
+    <label class="mb-field mb-hide-sm" style="margin:0;">
+      <span class="mb-field-label mb-text-xs" for="mbControlBarVolume">Volume</span>
+      <input type="range" class="mb-range" id="mbControlBarVolume"
+             min="0" max="100" step="5" value="90"
+             title="Master speaker volume" aria-label="Master speaker volume">
+    </label>
+
+    <a class="mb-btn mb-btn-ghost mb-btn-sm mb-btn-icon mb-only-sm"
+       href="/setup/system" title="System settings" aria-label="System settings">
+      <i class="bi bi-sliders"></i>
+    </a>
+
+    <!-- Hold to fire: instant to reach, impossible to trigger by accident. -->
+    <button type="button"
+            class="mb-btn mb-btn-danger mb-hold"
+            id="mbStopEverything"
+            data-hold-ms="600"
+            title="Hold to stop everything — scenes, audio, idle, head, jaw, AI">
+      <span class="mb-hold-label">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        <span class="mb-hide-sm">Hold to Stop</span>
+      </span>
+    </button>
+  </div>
+</div>

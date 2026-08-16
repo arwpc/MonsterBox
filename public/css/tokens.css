@@ -18,7 +18,35 @@
    ========================================================================== */
 
 /* ---------- Font imports (single location — removed from main.css/input.css in Phase 4) ---------- */
-@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Creepster&display=swap');
+/* ---------- Self-hosted fonts ----------------------------------------------
+   These were @import'ed from fonts.googleapis.com, which made the app's
+   typography depend on WAN access — on the one night of the year this thing
+   has to work, the network is the least reliable part of the setup. Served
+   locally instead; the stack still degrades to system fonts if a file is
+   missing. font-display:swap keeps text visible while they load.
+   -------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/vt323-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Press Start 2P';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/pressstart2p-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Creepster';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/creepster-latin.woff2') format('woff2');
+}
+
 
 /* ==========================================================================
    Default theme: Haunted Console

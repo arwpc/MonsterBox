@@ -6,6 +6,7 @@
  * Unified navigation with consolidated features
  */
 
+import { execSync } from 'child_process';
 import express from 'express';
 import fs from 'fs/promises';
 import https from 'https';
@@ -142,6 +143,22 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : (config.port ||
 // Initialize app.locals.config so the very first request gets the startup character
 app.locals.config = config;
 app.locals._mainPort = PORT;
+
+// Resolve the build commit ONCE at startup. The navbar template used to shell out
+// to `git rev-parse` on every single page render — a subprocess and an SD-card
+// read per page view, on a Pi, with a hardcoded path that silently failed on
+// every node except the primary dev box.
+app.locals.gitCommit = (function () {
+    try {
+        return execSync('git rev-parse --short HEAD', {
+            cwd: path.resolve(__dirname),
+            encoding: 'utf8',
+            timeout: 2000
+        }).trim();
+    } catch (_) {
+        return 'unknown';
+    }
+})();
 
 // Schema validation — surface per-character data shape issues at startup.
 // Never crash: failing subsystems are recorded on app.locals.subsystemHealth

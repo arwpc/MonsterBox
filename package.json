@@ -78,7 +78,8 @@
     "audit:independence": "node scripts/audit-character-independence.mjs",
     "test:pact": "BASE_URL=http://localhost:3100 mocha --require tests/setup.js tests/pact --reporter spec --exit --timeout 10000",
     "test:pact:character": "node scripts/pact-runner.mjs",
-    "gate": "node scripts/gate.mjs"
+    "gate": "node scripts/gate.mjs",
+    "audit:design-system": "node scripts/audit-design-system.mjs"
   },
   "keywords": [
     "animatronic",

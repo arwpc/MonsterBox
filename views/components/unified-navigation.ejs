@@ -1,12 +1,9 @@
 <%
-// Get git commit hash for version display
-let gitCommit = 'unknown';
-try {
-    const { execSync } = require('child_process');
-    gitCommit = execSync('git rev-parse --short HEAD', { cwd: '/home/remote/MonsterBox', encoding: 'utf8' }).trim();
-} catch (e) {
-    // Fallback if git command fails
-}
+// Build commit is resolved once at startup into app.locals.gitCommit (server.js).
+// This template used to shell out to `git rev-parse` on EVERY page render, with a
+// hardcoded path that only ever worked on one node.
+// NB: a `var gitCommit` here would hoist and shadow the locals value with undefined.
+var __gitCommit = (typeof gitCommit !== 'undefined' && gitCommit) ? gitCommit : 'unknown';
 
 // Page name mapping for navbar display
 var __pageNames = {
@@ -38,7 +35,7 @@ var __currentPageName = __pageNames[page] || '';
 %>
 <nav class="navbar navbar-expand-lg bg-body-tertiary sticky-top">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="MonsterBox v<%= typeof appVersion !== 'undefined' ? appVersion : '6.0.0' %> (commit: <%= gitCommit %>)">
+        <a class="navbar-brand" href="/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="MonsterBox v<%= typeof appVersion !== 'undefined' && appVersion ? appVersion : 'unknown' %> (commit: <%= __gitCommit %>)">
             <i class="bi bi-robot"></i> MonsterBox
         </a>
 

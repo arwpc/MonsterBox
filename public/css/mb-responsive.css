@@ -1,0 +1,313 @@
+/* ==========================================================================
+   MonsterBox Responsive Layer
+   --------------------------------------------------------------------------
+   The design system in tokens.css + components.css was built desktop-first and
+   had almost no responsive rules. This layer makes every shared component work
+   on a phone held one-handed in a dark garage, without forking any component.
+
+   Rules:
+     - Mobile-first overrides live in max-width queries so desktop keeps its
+       existing appearance exactly.
+     - Never hard-code a colour or size — reference tokens from tokens.css.
+     - Breakpoints match the documented tokens:
+         sm 480px · md 768px · lg 1024px · xl 1440px
+
+   Loaded from views/layouts/master.ejs AFTER components.css.
+   ========================================================================== */
+
+/* ==========================================================================
+   Pointer-aware interaction
+   --------------------------------------------------------------------------
+   Hover styles on a touch screen "stick" after a tap, leaving buttons looking
+   permanently focused. Scope every hover affordance to devices that can
+   actually hover, and give touch devices a real pressed state instead.
+   ========================================================================== */
+@media (hover: none) {
+  .mb-btn:hover,
+  .mb-card-interactive:hover,
+  .mb-tab:hover,
+  .mb-chip:hover {
+    background: inherit;
+    border-color: inherit;
+    transform: none;
+  }
+}
+
+@media (pointer: coarse) {
+  /* 44px is the smallest reliably tappable target. Anything the operator has to
+     hit while an animatronic is moving needs to be at least that. */
+  .mb-btn,
+  .mb-select,
+  .mb-input,
+  .mb-tab,
+  .mb-check,
+  .mb-switch {
+    min-height: 44px;
+  }
+
+  .mb-btn-sm {
+    min-height: 40px;
+    padding: var(--mb-space-2) var(--mb-space-4);
+  }
+
+  .mb-btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mb-btn-icon.mb-btn-sm {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+
+  /* Bigger thumb + rail: servo sliders are dragged with a fingertip. */
+  .mb-range {
+    height: 36px;
+  }
+}
+
+/* ==========================================================================
+   Layout — stack below md
+   ========================================================================== */
+@media (max-width: 768px) {
+  .mb-row,
+  .mb-row-sm {
+    flex-wrap: wrap;
+  }
+
+  /* A between-row on a phone becomes a stack, or the two ends collide. */
+  .mb-row-between {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--mb-space-3);
+  }
+
+  .mb-row-between > * {
+    width: 100%;
+  }
+
+  /* Button groups become full-width segmented controls. */
+  .mb-btn-group {
+    width: 100%;
+  }
+
+  .mb-btn-group .mb-btn {
+    flex: 1 1 0;
+  }
+
+  .mb-panel-header,
+  .mb-panel-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--mb-space-2);
+  }
+
+  .mb-panel-body {
+    padding: var(--mb-space-4);
+  }
+
+  /* Reclaim horizontal space — on a 390px screen, padding is the enemy. */
+  .container-fluid {
+    padding-left: var(--mb-space-3);
+    padding-right: var(--mb-space-3);
+  }
+}
+
+/* ==========================================================================
+   Typography — tighten the scale on small screens
+   ========================================================================== */
+@media (max-width: 480px) {
+  .mb-heading-1 { font-size: var(--mb-text-2xl); }
+  .mb-heading-2 { font-size: var(--mb-text-xl); }
+  .mb-heading-3 { font-size: var(--mb-text-lg); }
+
+  /* Long identifiers (part names, device ids, file paths) must not force the
+     page to scroll sideways. */
+  .mb-mono,
+  .mb-input-mono {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ==========================================================================
+   Tables — become cards below md
+   --------------------------------------------------------------------------
+   A parts or fleet table is unreadable at 390px. Rather than a horizontal
+   scroll nobody discovers, each row becomes a card and each cell is labelled
+   from its `data-label`. Markup requirement: every <td> carries
+   data-label="<column heading>".
+   ========================================================================== */
+@media (max-width: 768px) {
+  .mb-table.mb-table-stack thead {
+    /* Visually hidden, still read by screen readers on the labels below. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .mb-table.mb-table-stack,
+  .mb-table.mb-table-stack tbody,
+  .mb-table.mb-table-stack tr,
+  .mb-table.mb-table-stack td {
+    display: block;
+    width: 100%;
+  }
+
+  .mb-table.mb-table-stack tr {
+    margin-bottom: var(--mb-space-3);
+    border: 1px solid var(--mb-border-default);
+    border-radius: var(--mb-radius-md);
+    background: var(--mb-bg-2);
+    padding: var(--mb-space-2) var(--mb-space-3);
+  }
+
+  .mb-table.mb-table-stack td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--mb-space-3);
+    border: none;
+    border-bottom: 1px solid var(--mb-border-subtle);
+    padding: var(--mb-space-2) 0;
+    text-align: right;
+  }
+
+  .mb-table.mb-table-stack td:last-child {
+    border-bottom: none;
+  }
+
+  .mb-table.mb-table-stack td::before {
+    content: attr(data-label);
+    color: var(--mb-fg-secondary);
+    font-size: var(--mb-text-sm);
+    text-align: left;
+    flex: 0 0 auto;
+  }
+
+  /* Tables not opted into stacking at least scroll without breaking the page. */
+  .mb-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ==========================================================================
+   Tabs — scroll horizontally instead of wrapping into a pile
+   ========================================================================== */
+@media (max-width: 768px) {
+  .mb-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .mb-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mb-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
+/* ==========================================================================
+   Modals — full-screen sheets on a phone
+   ========================================================================== */
+@media (max-width: 768px) {
+  .mb-modal-dialog {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mb-modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Footer actions stack and stay reachable above the home indicator. */
+  .mb-modal-footer {
+    flex-direction: column-reverse;
+    gap: var(--mb-space-2);
+    padding-bottom: calc(var(--mb-space-4) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mb-modal-footer > .mb-btn {
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Toasts — full width at the bottom on mobile, clear of the control bar
+   ========================================================================== */
+@media (max-width: 768px) {
+  .mb-toast-region {
+    left: var(--mb-space-3);
+    right: var(--mb-space-3);
+    bottom: calc(var(--mb-control-bar-height, 64px) + env(safe-area-inset-bottom, 0px) + var(--mb-space-3));
+    top: auto;
+    align-items: stretch;
+  }
+
+  .mb-toast {
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Forms — single column, and stop iOS zooming on focus
+   ========================================================================== */
+@media (max-width: 768px) {
+  .mb-field {
+    width: 100%;
+  }
+
+  .mb-input-group {
+    flex-wrap: wrap;
+  }
+
+  /* iOS Safari zooms the viewport when a focused input's font-size is < 16px.
+     That zoom is disorienting mid-task and never reverts cleanly. */
+  .mb-input,
+  .mb-select,
+  .mb-textarea {
+    font-size: max(16px, var(--mb-text-base));
+  }
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+.mb-hide-sm { }
+.mb-only-sm { display: none; }
+
+@media (max-width: 768px) {
+  .mb-hide-sm { display: none !important; }
+  .mb-only-sm { display: revert; }
+}
+
+@media (min-width: 1440px) {
+  /* Stop line lengths becoming unreadable on a wide monitor. */
+  .mb-measure { max-width: 72ch; }
+}
+
+/* Respect the notch / home indicator on the whole page, not just the bar. */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
