@@ -70,7 +70,7 @@
     "name": "Elbow",
     "type": "servo",
     "pin": null,
-    "description": "RDS51150SG 150kg 270\u00b0 robot servo - steel gears, double bearing, 18T spline, 9-12.6V",
+    "description": "RDS51150SG 150kg 270° robot servo - steel gears, double bearing, 18T spline, 9-12.6V",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
@@ -179,7 +179,7 @@
     },
     "created": "2025-10-06T02:14:37.260Z",
     "enabled": true,
-    "updated": "2026-04-13T19:29:20.125Z",
+    "updated": "2026-08-16T04:16:26.915Z",
     "modelId": "arducam-b0205"
   },
   {
