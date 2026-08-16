@@ -1,0 +1,22 @@
+{
+  "ranAt": "2026-08-16T09:39:31.469Z",
+  "moment": "Audio step proof 2",
+  "base": "https://localhost:3000",
+  "rehearsalVolume": null,
+  "rows": [
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "expectedLines": 0,
+      "best": {
+        "label": "Streaming Camera",
+        "floorDb": -43.1,
+        "loudDb": -41.2,
+        "riseDb": 1.9,
+        "recall": null,
+        "transcript": "[pause]"
+      },
+      "verdict": "NO-LINES-CAST"
+    }
+  ]
+}

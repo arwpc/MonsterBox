@@ -1,0 +1,50 @@
+{
+  "ranAt": "2026-08-16T09:27:40.631Z",
+  "moment": "The Dusk Ceremony — the yard wakes",
+  "base": "https://localhost:3000",
+  "rehearsalVolume": "0.30",
+  "rows": [
+    {
+      "id": 2,
+      "name": "Mina",
+      "expectedLines": 1,
+      "best": {
+        "label": "Streaming Camera",
+        "floorDb": -46.5,
+        "p90Db": -45.6,
+        "riseDb": 0.8,
+        "recall": 0.09090909090909091,
+        "transcript": "The sun stands down. The watch stands up. Hear me, Warner Castle. The night shift begins. Alarm!"
+      },
+      "verdict": "SILENT"
+    },
+    {
+      "id": 3,
+      "name": "Orlok",
+      "expectedLines": 1,
+      "best": {
+        "label": "USB Camera",
+        "floorDb": -49.3,
+        "p90Db": -48.2,
+        "riseDb": 1.1,
+        "recall": 0.14285714285714285,
+        "transcript": "The sun stands down. The watch stands up. Hear me, Royal Captain. The night shift begins. Now!"
+      },
+      "verdict": "SILENT"
+    },
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "expectedLines": 1,
+      "best": {
+        "label": "Streaming Camera",
+        "floorDb": -43.5,
+        "p90Db": -42.2,
+        "riseDb": 1.3,
+        "recall": 0.9166666666666666,
+        "transcript": "The sun stands down. The watch stands up. Hear me, Warner Castle. The night shift begins. Larm!"
+      },
+      "verdict": "SILENT"
+    }
+  ]
+}

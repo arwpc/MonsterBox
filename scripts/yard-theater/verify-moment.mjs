@@ -41,6 +41,13 @@ const moment = JSON.parse(readFileSync(momentPath, 'utf8'));
 
 const BASE = arg('base', 'https://localhost:3000');
 const REHEARSAL_VOLUME = arg('volume', null);
+// Per-node override, e.g. --volume-map 2=0.55,3=0.5,4=0.35. The rigs are not
+// matched: measured 2026-08-16, the node on the louder amplifier carries across
+// the room at 0.30, while the two on Unitek Y-247A adapters are inaudible below
+// ~0.5. Per-node values belong on the command line, not baked in here.
+const VOLUME_MAP = new Map((arg('volume-map', '') || '').split(',').filter(Boolean)
+  .map(p => p.split('=')).map(([id, v]) => [parseInt(id, 10), v]));
+const volumeFor = id => VOLUME_MAP.get(id) ?? REHEARSAL_VOLUME;
 const KEEP = flag('keep');
 const PAD = parseInt(arg('pad', '10'), 10); // seconds of capture beyond the moment's own waits
 
@@ -133,7 +140,13 @@ function measure(wav) {
   }
   const sorted = [...frames].sort((a, b) => a - b);
   const at = q => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))];
-  return { medianDb: at(0.5), p90Db: at(0.9), seconds: n / rate };
+  // A percentile is the wrong statistic for a whole show: one 8 s line inside a
+  // 96 s window is ~8% of frames, so p90 lands in the silence and a perfectly
+  // audible node scores as SILENT — measured, not theorised. Score the loudest
+  // ~4 seconds instead, which means the same thing whatever the window length.
+  const loudCount = Math.min(frames.length, Math.max(4, Math.ceil(4 / 0.25)));
+  const loudDb = sorted.slice(-loudCount).reduce((a, b) => a + b, 0) / loudCount;
+  return { medianDb: at(0.5), p90Db: at(0.9), loudDb, seconds: n / rate };
 }
 
 async function scribe(wav) {
@@ -169,12 +182,14 @@ console.log(`Instrumenting ${nodes.length} node(s), ${seconds}s capture window\n
 const originalVolumes = new Map();
 let rows = [];
 try {
-  if (REHEARSAL_VOLUME) {
+  if (REHEARSAL_VOLUME || VOLUME_MAP.size) {
     for (const n of nodes) {
+      const want = volumeFor(n.id);
+      if (!want) continue;
       const v = getVolume(n);
       originalVolumes.set(n.id, v);
-      const ok = setVolume(n, REHEARSAL_VOLUME);
-      console.log(`   ${n.name}: sink volume ${v} -> ${REHEARSAL_VOLUME}${ok ? '' : ' (FAILED to set)'}`);
+      const ok = setVolume(n, want);
+      console.log(`   ${n.name}: sink volume ${v} -> ${want}${ok ? '' : ' (FAILED to set)'}`);
     }
     console.log('');
   }
@@ -210,8 +225,8 @@ try {
       const tr = await scribe(c.path);
       const rec = expected.length ? Math.max(...expected.map(e => recall(e, tr.text) ?? 0)) : null;
       scored.push({
-        label: c.dev.label, floorDb: +m.medianDb.toFixed(1), p90Db: +m.p90Db.toFixed(1),
-        riseDb: +(m.p90Db - m.medianDb).toFixed(1), recall: rec, transcript: tr.text, error: tr.error
+        label: c.dev.label, floorDb: +m.medianDb.toFixed(1), loudDb: +m.loudDb.toFixed(1),
+        riseDb: +(m.loudDb - m.medianDb).toFixed(1), recall: rec, transcript: tr.text, error: tr.error
       });
       if (!KEEP) { try { sh(`rm -f "${c.path}"`); } catch { /* best effort */ } }
     }
@@ -227,7 +242,7 @@ try {
 
     console.log(`── ${n.name} (${expected.length} line(s) cast)`);
     if (best) {
-      console.log(`   mic ${best.label}: floor ${best.floorDb} dB, p90 ${best.p90Db} dB (rise ${best.riseDb}), recall ${best.recall == null ? 'n/a' : (best.recall * 100).toFixed(0) + '%'}`);
+      console.log(`   mic ${best.label}: floor ${best.floorDb} dB, loudest-4s ${best.loudDb} dB (rise ${best.riseDb}), recall ${best.recall == null ? 'n/a' : (best.recall * 100).toFixed(0) + '%'}`);
       console.log(`   scribe: "${(best.transcript || '(nothing)').slice(0, 200)}"`);
     }
     console.log(`   VERDICT: ${row.verdict}\n`);

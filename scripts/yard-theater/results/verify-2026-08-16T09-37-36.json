@@ -1,0 +1,50 @@
+{
+  "ranAt": "2026-08-16T09:37:36.950Z",
+  "moment": "The Dusk Ceremony — the yard wakes",
+  "base": "https://localhost:3000",
+  "rehearsalVolume": null,
+  "rows": [
+    {
+      "id": 2,
+      "name": "Mina",
+      "expectedLines": 1,
+      "best": {
+        "label": "Streaming Camera",
+        "floorDb": -43.9,
+        "loudDb": -37.5,
+        "riseDb": 6.5,
+        "recall": 1,
+        "transcript": "The sun stands down. The watch stands up. Hear me, Warder Castle. The night shift begins. La'am! The light is going. I can feel it through the wood. Come near, whoever you are. The castle is waking, and I am listening. Now, in my own words, the one that counts the most to me, my father's words."
+      },
+      "verdict": "HEARD"
+    },
+    {
+      "id": 3,
+      "name": "Orlok",
+      "expectedLines": 1,
+      "best": {
+        "label": "USB Camera",
+        "floorDb": -47.8,
+        "loudDb": -36.4,
+        "riseDb": 11.3,
+        "recall": 1,
+        "transcript": "The sun stands down. The watch stands up. Hear me, Warner Castle! The night shift begins. Now! Night. My jurisdiction. Warner Castle receives you. Come closer."
+      },
+      "verdict": "HEARD"
+    },
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "expectedLines": 1,
+      "best": {
+        "label": "Streaming Camera",
+        "floorDb": -43.1,
+        "loudDb": -30.2,
+        "riseDb": 13,
+        "recall": 0.9166666666666666,
+        "transcript": "The sun stands down. The watch stands up. Hear me, Warner Castle. The night shift begins. La'arn! In my best self, I feel really good. I live in my body. I feel safe to be me. I am on this earth. Here, tomorrow will be still, a wonderful sight to see. Come closer."
+      },
+      "verdict": "HEARD"
+    }
+  ]
+}
