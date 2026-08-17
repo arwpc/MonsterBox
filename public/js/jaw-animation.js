@@ -9,6 +9,7 @@
 
   var currentCharacterId = null;
   var pollingInterval = null;
+  var pollBusy = false; // in-flight guard: on a loaded Pi a poll can outlive the interval period
   var isPlaying = false;
   var playbackTimer = null;
   var currentConfig = {};
@@ -559,10 +560,13 @@
 
   function startPolling() {
     stopPolling();
+    pollBusy = false;
     pollingInterval = setInterval(function() {
+      if (document.hidden) return;
       if (!isPlaying || !currentCharacterId) { stopPolling(); return; }
+      if (pollBusy) return;
       pollAudioLevels();
-    }, 60);
+    }, 100);
   }
 
   function stopPolling() {
@@ -570,6 +574,7 @@
   }
 
   function pollAudioLevels() {
+    pollBusy = true;
     fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/audio-levels')
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -580,7 +585,8 @@
           updateAudioDisplay(amp, smoothed, angle);
         }
       })
-      .catch(function() {});
+      .catch(function() {})
+      .then(function() { pollBusy = false; });
   }
 
   function updateAudioDisplay(current, smoothed, angle) {

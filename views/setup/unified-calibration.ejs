@@ -488,12 +488,22 @@
     function updateUI() {
       if (!currentProfile) return;
 
-      // Update bounds display
-      document.getElementById('minBound').textContent = currentProfile.bounds.minP.toFixed(3);
-      document.getElementById('maxBound').textContent = currentProfile.bounds.maxP.toFixed(3);
+      // Update bounds display. Absolute-servo profiles carry {minAngle,maxAngle}
+      // in degrees while open-loop ones carry normalized {minP,maxP}; reading
+      // minP unconditionally threw for servo profiles (and for bounds:null
+      // placeholders), aborting updateUI and leaving the page half-rendered.
+      const bounds = currentProfile.bounds || {};
+      const isAbsServo = !!(currentProfile.capability && currentProfile.capability.kind === 'absolute-servo');
+      const fmtBound = (value) => {
+        if (typeof value !== 'number' || !isFinite(value)) return '—';
+        return isAbsServo ? value + '°' : value.toFixed(3);
+      };
+      document.getElementById('minBound').textContent = fmtBound(isAbsServo ? bounds.minAngle : bounds.minP);
+      document.getElementById('maxBound').textContent = fmtBound(isAbsServo ? bounds.maxAngle : bounds.maxP);
 
       // Update capability
-      document.getElementById('statusCapability').textContent = currentProfile.capability.kind;
+      document.getElementById('statusCapability').textContent =
+        (currentProfile.capability && currentProfile.capability.kind) || '—';
 
       // Update presets list
       renderPresets();
@@ -1047,7 +1057,10 @@
         var response = await fetch('/api/parts/' + part.id + '/test', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'test' })
+          // A servo test needs a target angle: bare {action:'test'} is rejected
+          // with a 400, which painted healthy hardware as FAIL. 90° is safe —
+          // the server clamps through calibration + safety limits.
+          body: JSON.stringify({ action: 'moveToAngle', params: { angleDeg: 90, duration: 500 } })
         });
 
         var data = await response.json();

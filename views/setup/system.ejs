@@ -1024,6 +1024,20 @@
   /* ─── Tab 3: Logs ──────────────────────────────────────────────────────────── */
   var logAutoTimer = null;
 
+  // Shared start/stop so the checkbox handler and the tab-change handler can't
+  // get out of step. Each tick spawns journalctl + 2×tail server-side, so the
+  // timer must only run while the logs tab is actually in front.
+  function startLogAutoRefresh() {
+    if (logAutoTimer) return;
+    logAutoTimer = setInterval(function () {
+      if (document.hidden) return;
+      loadLogs();
+    }, 5000);
+  }
+  function stopLogAutoRefresh() {
+    if (logAutoTimer) { clearInterval(logAutoTimer); logAutoTimer = null; }
+  }
+
   function loadLogs() {
     var source = $('#logSource').value;
     var lines = $('#logLines').value;
@@ -1056,11 +1070,24 @@
   $('#logAutoRefresh').addEventListener('change', function () {
     if (this.checked) {
       loadLogs();
-      logAutoTimer = setInterval(loadLogs, 5000);
+      startLogAutoRefresh();
     } else {
-      if (logAutoTimer) { clearInterval(logAutoTimer); logAutoTimer = null; }
+      stopLogAutoRefresh();
     }
   });
+
+  // Firefox restores checkbox state across reloads, which used to leave the
+  // box ticked with no timer behind it. Auto-refresh is scoped to the visible
+  // logs tab now, so at load only start if that tab is somehow already active;
+  // otherwise the tab-change handler starts it on entry and state still agrees.
+  (function () {
+    var box = $('#logAutoRefresh');
+    var logsPane = document.getElementById('logs');
+    if (box && box.checked && logsPane && logsPane.classList.contains('active')) {
+      loadLogs();
+      startLogAutoRefresh();
+    }
+  })();
 
   /* ─── System Volume ──────────────────────────────────────────────────────── */
   function loadVolume() {
@@ -1800,7 +1827,14 @@
       if (target === '#overview') { startGaugeRefresh(); }
       else { stopGaugeRefresh(); }
       if (target === '#performance') { loadPerfHistory(currentPeriod); }
-      if (target === '#logs') { loadLogs(); }
+      // Logs auto-refresh had no else branch, so leaving the tab kept spawning
+      // journalctl every 5s. Ticked box + hidden tab now means "resume on return".
+      if (target === '#logs') {
+        loadLogs();
+        if ($('#logAutoRefresh').checked) startLogAutoRefresh();
+      } else {
+        stopLogAutoRefresh();
+      }
       if (target === '#settings') { loadSettings(); loadPresets(); }
       if (target === '#ssh') { loadSSHKeys(); }
       if (target === '#templates') { loadTemplates(); }

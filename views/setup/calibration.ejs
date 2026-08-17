@@ -2176,6 +2176,11 @@
     var calMotionTrackingActive = false;
     var calHeadTrackingEnabled = false;
     var calTrackingPollInterval = null;
+    // Webcam id the server-side tracker was STARTED with. selectPart()
+    // reassigns `selected` before the teardown runs, so stop requests keyed
+    // off `selected` were going to the wrong part (or nowhere) and the OpenCV
+    // tracker + head sweep kept running until a service restart.
+    var calTrackedWebcamId = null;
 
     function renderAdvancedTab(part) {
       var advDefault = document.getElementById('advancedDefault');
@@ -2208,6 +2213,11 @@
     }
 
     function initCalMotionTracking(part) {
+      // Re-selecting a webcam (same or different) resets the UI flags below;
+      // without an explicit stop first, the server-side tracker started by the
+      // previous render would be orphaned with no UI aware of it.
+      stopCalMotionTracking();
+
       var enableCb = document.getElementById('calEnableMotionTracking');
       var paramsDiv = document.getElementById('calMotionTrackingParams');
       var statusDiv = document.getElementById('calMotionTrackingStatus');
@@ -2475,6 +2485,8 @@
       var statusText = document.getElementById('calTrackingStatusText');
       if (statusText) statusText.textContent = 'Starting motion tracking...';
       calMotionTrackingActive = true;
+      // Recorded before the request so an in-flight start still gets stopped
+      calTrackedWebcamId = selected.id;
 
       fetch('/setup/calibration/api/webcam/motion-tracking/start', {
         method: 'POST',
@@ -2497,18 +2509,33 @@
 
     function stopCalMotionTracking() {
       calMotionTrackingActive = false;
+      calHeadTrackingEnabled = false;
       if (calTrackingPollInterval) {
         clearInterval(calTrackingPollInterval);
         calTrackingPollInterval = null;
       }
-      if (!selected || selected.type !== 'webcam') return;
+      // Key the stop off the id tracking was started with, NOT `selected` —
+      // by the time a part switch tears this down, `selected` is already the
+      // newly-clicked part and an early return here orphaned the tracker.
+      var webcamId = calTrackedWebcamId;
+      if (webcamId == null) return;
+      calTrackedWebcamId = null;
       var statusText = document.getElementById('calTrackingStatusText');
       if (statusText) statusText.textContent = 'Stopping...';
+
+      // Head tracking rides on the tracker: with the tracker gone it keeps
+      // scan-sweeping the head servo, so disable it unconditionally first
+      // (idempotent; the enabled flag may already have been reset by a re-render).
+      fetch('/setup/calibration/api/webcam/motion-tracking/head-tracking/disable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webcamId: webcamId })
+      }).catch(function () { });
 
       fetch('/setup/calibration/api/webcam/motion-tracking/stop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ webcamId: selected.id })
+        body: JSON.stringify({ webcamId: webcamId })
       })
         .then(function (r) { return r.json(); })
         .then(function () {
@@ -2530,8 +2557,13 @@
 
     function startCalTrackingStatusPolling() {
       if (calTrackingPollInterval) clearInterval(calTrackingPollInterval);
+      // Busy flag: on a loaded Pi a status request can outlive the interval
+      // period, and stacked requests only make the overlay lag worse.
+      var statusPollBusy = false;
       calTrackingPollInterval = setInterval(function () {
-        if (!calMotionTrackingActive || !selected) return;
+        if (document.hidden) return;
+        if (!calMotionTrackingActive || !selected || statusPollBusy) return;
+        statusPollBusy = true;
         fetch('/setup/calibration/api/webcam/motion-tracking/status?webcamId=' + encodeURIComponent(selected.id))
           .then(function (r) { return r.json(); })
           .then(function (result) {
@@ -2549,8 +2581,9 @@
               }
             }
           })
-          .catch(function () { });
-      }, 50);
+          .catch(function () { })
+          .then(function () { statusPollBusy = false; });
+      }, 100);
     }
 
     function calSetHeadTrackingUI(enabled) {
@@ -2607,7 +2640,46 @@
       }
     }
 
+    // Navigating away is the one teardown path no click handler covers: the
+    // orphaned OpenCV tracker eats ~a core and keeps sweeping the head servo
+    // until service restart. sendBeacon is the only delivery the browser
+    // guarantees during unload; keepalive fetch is the fallback.
+    window.addEventListener('pagehide', function () {
+      var webcamId = calTrackedWebcamId;
+      if (webcamId == null) return;
+      calTrackedWebcamId = null;
+      var payload = JSON.stringify({ webcamId: webcamId });
+      var sent = false;
+      if (navigator.sendBeacon) {
+        try {
+          var blob = new Blob([payload], { type: 'application/json' });
+          navigator.sendBeacon('/setup/calibration/api/webcam/motion-tracking/head-tracking/disable', blob);
+          sent = navigator.sendBeacon('/setup/calibration/api/webcam/motion-tracking/stop', blob);
+        } catch (e) { sent = false; }
+      }
+      if (!sent) {
+        fetch('/setup/calibration/api/webcam/motion-tracking/head-tracking/disable', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true
+        }).catch(function () { });
+        fetch('/setup/calibration/api/webcam/motion-tracking/stop', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true
+        }).catch(function () { });
+      }
+    });
+
     function calEmergencyStopAllServos() {
+      // Each stop resolves to { part, ok } instead of rejecting, so one dead
+      // part can't hide the outcome of the rest — an e-stop that lies about
+      // success is worse than none.
+      function trackedStop(part, url) {
+        return fetch(url, { method: 'POST' })
+          .then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (d) {
+              return { part: part, ok: r.ok && d && d.success === true };
+            });
+          })
+          .catch(function () { return { part: part, ok: false }; });
+      }
       fetch('/setup/calibration/api/parts')
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -2615,19 +2687,26 @@
           var stops = [];
           allParts.filter(function (p) { return p.type === 'servo' && String((p.config && p.config.servoType) || 'standard') === 'continuous'; })
             .forEach(function (servo) {
-              stops.push(fetch('/setup/calibration/api/continuous_servo/' + encodeURIComponent(servo.id) + '/jog', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ direction: 'stop', speed: 0, duration: 0 })
-              }));
+              // The old continuous_servo/:id/jog endpoint no longer exists (404);
+              // the calibration adapter's stop route is the real one.
+              stops.push(trackedStop(servo, '/api/calibration/' + encodeURIComponent(servo.id) + '/stop'));
             });
           allParts.filter(function (p) { return p.type === 'linear_actuator'; })
             .forEach(function (act) {
-              stops.push(fetch('/setup/calibration/api/linear_actuator/' + encodeURIComponent(act.id) + '/stop', { method: 'POST' }));
+              stops.push(trackedStop(act, '/setup/calibration/api/linear_actuator/' + encodeURIComponent(act.id) + '/stop'));
             });
           return Promise.all(stops);
         })
-        .then(function () { showToast('Emergency stop executed.', 'success'); })
+        .then(function (results) {
+          var failed = results.filter(function (res) { return !res.ok; });
+          if (failed.length === 0) {
+            showToast('Emergency stop executed.', 'success');
+          } else {
+            showToast('Emergency stop FAILED for: ' + failed.map(function (f) {
+              return f.part.name || ('part #' + f.part.id);
+            }).join(', '), 'error');
+          }
+        })
         .catch(function (e) { showToast('Emergency stop failed: ' + e.message, 'error'); });
     }
 
@@ -2640,6 +2719,30 @@
         globalLiveTestInterval = null;
         globalIsLiveTestRunning = false;
       }
+
+      // Stop the previous panel's mic VU polling.
+      //
+      // This used to only ever push onto window._calMicVuIntervals — nothing read
+      // that array or cleared it. Selecting a part starts a VU loop, and every
+      // later selection started ANOTHER one on top, because innerHTML below throws
+      // away the DOM but not the timers. Each loop polls /api/audio-levels, and
+      // each of those spawns a fresh Python interpreter that has to initialise
+      // ALSA (~350ms, 6.5KB of stderr). Four part selections meant four loops
+      // fighting for the CPU on a Pi 4 — which is why the whole animatronic got
+      // progressively slower the more parts you touched.
+      if (window._calMicVuIntervals) {
+        window._calMicVuIntervals.forEach(clearInterval);
+      }
+      window._calMicVuIntervals = [];
+
+      // Same leak, motion-sensor flavour: the poll handle lives inside the
+      // motion_sensor branch's closure and its only clear is a click handler
+      // whose DOM the innerHTML below destroys. Each orphan keeps spawning a
+      // gpio read every 150ms forever, so the registry mirrors the VU fix.
+      if (window._calSensorIntervals) {
+        window._calSensorIntervals.forEach(clearInterval);
+      }
+      window._calSensorIntervals = [];
 
       // Handle null part (no selection)
       if (!part) {
@@ -2669,6 +2772,22 @@
             if (st) st.textContent = `${part.name} (ID: ${part.id}) ${dir} at ${speed}%…`;
             console.log(`Continuous servo: ${part.name} (ID: ${part.id}) direction: ${dir}, speed: ${speed}%, duration: ${duration}ms`);
             try {
+              if (dir === 'stop') {
+                // Stop must NOT go through /nudge: {delta:0} short-circuits
+                // server-side as "already at target" and never touches the
+                // hardware, so the red button silently did nothing.
+                const response = await fetch(`/api/calibration/${encodeURIComponent(part.id)}/stop`, { method: 'POST' });
+                const data = await response.json().catch(() => ({}));
+                if (response.ok && data.success) {
+                  if (st) st.textContent = `${part.name} stopped`;
+                } else {
+                  if (st) st.textContent = 'Stop failed';
+                  console.log(`Failed to stop continuous servo ${part.name}:`, response.status);
+                }
+                setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+                return;
+              }
+
               // Map direction to nudge delta
               let delta = 0;
               if (dir === 'cw') delta = 0.1;
@@ -3052,6 +3171,11 @@
           var vuBusy = false, vuInterval = null, vuPeak = 0;
           function updateCalMicVU() {
             if (vuBusy) return;
+            // A backgrounded tab still ran this forever. Each poll spawns a Python
+            // process on the Pi, so a calibration page left open in another tab
+            // during a show was quietly taxing the box for a meter nobody was
+            // looking at.
+            if (document.hidden) return;
             vuBusy = true;
             fetch('/setup/audio/api/audio-levels?deviceId=' + encodeURIComponent(devId) + '&deviceType=input')
               .then(function (r) { return r.json(); })
@@ -3515,6 +3639,8 @@
           // Fast poll using gpioget (~3ms per read, no GPIO handle leak)
           var pollBusy = false;
           sensorPollTimer = setInterval(async function () {
+            // Hidden tab: nobody can see the indicator, so don't burn CPU on reads
+            if (document.hidden) return;
             if (!sensorMonitoringActive || pollBusy) return;
             pollBusy = true;
             try {
@@ -3552,6 +3678,11 @@
               pollBusy = false;
             }
           }, 150);
+          // Register in the window-scoped registry so renderControls' teardown
+          // can kill the loop when the panel's DOM (and this closure's only
+          // stop button) is thrown away by a part switch.
+          if (!window._calSensorIntervals) window._calSensorIntervals = [];
+          window._calSensorIntervals.push(sensorPollTimer);
         }
 
         toggleBtn.addEventListener('click', function () {
@@ -3675,45 +3806,29 @@
     async function setMarkerFromCurrent(fieldId, name) {
       if (!selected) return;
 
+      // The old type-specific /status endpoints never report currentAngle /
+      // currentPosition, so this used to silently save whatever stale number
+      // was in the text box. The calibration position store is the only
+      // source of truth for "current" — and if it doesn't know, we refuse
+      // rather than record a value the hardware never held.
       let currentValue = null;
       try {
-        // Try hardware-based position first
-        if (selected.type === 'servo') {
-          const servoType = String(selected.config?.servoType || 'standard').toLowerCase();
-          if (servoType !== 'continuous') {
-            const statusResponse = await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(selected.id)}/status`).catch(() => null);
-            if (statusResponse && statusResponse.ok) {
-              const statusData = await statusResponse.json().catch(() => null);
-              if (statusData && statusData.currentAngle !== undefined) {
-                currentValue = statusData.currentAngle;
-              }
-            }
-          }
-        } else if (selected.type === 'linear_actuator') {
-          const statusResponse = await fetch(`/setup/calibration/api/linear_actuator/${encodeURIComponent(selected.id)}/status`).catch(() => null);
-          if (statusResponse && statusResponse.ok) {
-            const statusData = await statusResponse.json().catch(() => null);
-            if (statusData && statusData.currentPosition !== undefined) {
-              currentValue = statusData.currentPosition;
+        const posResponse = await fetch(`/api/calibration/${encodeURIComponent(selected.id)}/position`).catch(() => null);
+        if (posResponse && posResponse.ok) {
+          const posData = await posResponse.json().catch(() => null);
+          if (posData && posData.success) {
+            if (posData.kind === 'absolute-servo') {
+              if (Number.isFinite(posData.currentAngle)) currentValue = posData.currentAngle;
+            } else if (Number.isFinite(posData.currentP)) {
+              currentValue = posData.currentP;
             }
           }
         }
-      } catch (_) { /* ignore hardware errors; will fallback */ }
+      } catch (_) { /* treated as unknown position below */ }
 
-      // Hardware value wins; otherwise fallback to the input field value
-      if (currentValue === null || isNaN(currentValue)) {
-        const el = document.getElementById(fieldId);
-        const raw = el ? el.value : '';
-        if (raw === '') {
-          showToast('Enter a value first or move hardware to a position', 'error');
-          return;
-        }
-        const num = Number(raw);
-        if (isNaN(num)) {
-          showToast('Invalid number', 'error');
-          return;
-        }
-        currentValue = num;
+      if (!Number.isFinite(currentValue)) {
+        showToast(`Current position unknown — move the part first, then set ${name}`, 'error');
+        return;
       }
 
       // Reflect in field

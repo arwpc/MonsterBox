@@ -497,9 +497,11 @@
           '<button class="btn btn-sm btn-outline-primary bm-goto-btn" data-p="0.75">75%</button>' +
           '<button class="btn btn-sm btn-outline-primary bm-goto-btn" data-p="1">Max</button>' +
         '</div>' +
+        // The nudge route reads absolute-servo deltas in DEGREES, so the
+        // open-loop-style +/-0.1 moved 0.1 deg per press and looked dead.
         '<div class="d-flex gap-1 justify-content-center mt-1">' +
-          '<button class="btn btn-sm btn-primary bm-nudge-btn" data-delta="-0.1"><i class="bi bi-dash-lg"></i></button>' +
-          '<button class="btn btn-sm btn-primary bm-nudge-btn" data-delta="0.1"><i class="bi bi-plus-lg"></i></button>' +
+          '<button class="btn btn-sm btn-primary bm-nudge-btn" data-delta="-5"><i class="bi bi-dash-lg"></i></button>' +
+          '<button class="btn btn-sm btn-primary bm-nudge-btn" data-delta="5"><i class="bi bi-plus-lg"></i></button>' +
         '</div>';
       fetchPosition(part.id);
 
@@ -756,7 +758,10 @@
       body: JSON.stringify({ action: 'read' })
     }).then(function (r) { return r.json(); }).then(function (j) {
       if (j.success) {
-        setCtrlStatus('Sensor: ' + (j.value != null ? j.value : 'OK'));
+        // The API reports { testResult: { motionDetected } } — there is no
+        // j.value, so the old read always printed "Sensor: OK".
+        var d = j.testResult && j.testResult.motionDetected;
+        setCtrlStatus('Sensor: ' + (d ? 'MOTION' : 'no motion'));
       } else {
         setCtrlStatus('Read failed');
       }

@@ -352,12 +352,12 @@
     // Auto-refresh streams every 5 seconds (disabled in test mode to let Playwright reach networkidle)
     try {
       if (!(window && window.MB_TEST_MODE)) {
-        setInterval(refreshStreams, 5000);
+        streamsRefreshTimer = setInterval(function () { refreshStreams(true); }, 5000);
       }
     } catch (_) { /* ignore */ }
 
-    // Initial stream load
-    setTimeout(refreshStreams, 1000);
+    // Initial stream load (automatic path, so silent)
+    setTimeout(function () { refreshStreams(true); }, 1000);
 
     // Add change handlers for device selectors
     document.getElementById('default-sink').addEventListener('change', function () {
@@ -494,6 +494,11 @@
   function updateMicPartsUI() {
     const container = document.getElementById('mic-parts-list');
     if (!container) return;
+    // Stop the previous render's meters BEFORE rebuilding: innerHTML throws
+    // away the DOM but not the timers, so every re-render used to orphan one
+    // 150ms ALSA poll per mic part with no way left to stop it.
+    micVuMeterIds.forEach(stopVUMeterMonitoring);
+    micVuMeterIds = [];
     const parts = (currentConfig && currentConfig.microphoneParts) || [];
     if (parts.length === 0) {
       container.innerHTML = '<div class="list-group-item mb-text-muted">No microphone parts found</div>';
@@ -540,9 +545,11 @@
     // Bind handlers and start VU monitoring per part
     parts.forEach(function (part) {
       const devId = (part.config && part.config.deviceId) || 'default';
-      // VU meter start — disabled in test mode to avoid continuous polling
+      // VU meter start — disabled in test mode to avoid continuous polling.
+      // Registered so the next render (and unload) can stop it.
       if (!(window && window.MB_TEST_MODE)) {
         startVUMeterMonitoring(devId, 'input', 'mic-vu-' + part.id);
+        micVuMeterIds.push('mic-vu-' + part.id);
       }
       // Sensitivity change
       const sensEl = document.getElementById('mic-sens-' + part.id);
@@ -1047,6 +1054,9 @@
 
   const vuMeterBusy = {};
   const vuMeterErrorCount = {};
+  // Meter ids auto-started by updateMicPartsUI — the per-part meters have no
+  // toggle button, so this registry is the only handle for stopping them
+  let micVuMeterIds = [];
 
   function startVUMeterMonitoring(deviceId, deviceType, meterId) {
     // Stop existing monitoring for this meter
@@ -1069,6 +1079,8 @@
     vuMeterErrorCount[meterId] = 0;
 
     vuMeterIntervals[meterId] = setInterval(async function () {
+      // Hidden tab: each poll spawns an ALSA sampler nobody can see
+      if (document.hidden) return;
       if (vuMeterBusy[meterId]) return; // prevent overlapping fetches
       vuMeterBusy[meterId] = true;
       try {
@@ -1145,7 +1157,17 @@
   }
 
   // Stream Management
-  async function refreshStreams() {
+  let streamsRefreshTimer = null;
+  let streamsRefreshBusy = false;
+
+  // `silent` marks the automatic (interval / initial-load) path. The 5s
+  // interval combined with the toast's 5s lifetime kept a "Streams refreshed"
+  // toast permanently on screen — burying real errors and stealing clicks —
+  // so only the manual Refresh button may toast.
+  async function refreshStreams(silent) {
+    if (document.hidden) return;
+    if (streamsRefreshBusy) return;
+    streamsRefreshBusy = true;
     try {
       const response = await fetch('/setup/audio/api/active-streams');
       const data = await response.json();
@@ -1170,12 +1192,20 @@
         streamsContainer.innerHTML = '<div class="mb-text-muted">No active audio streams</div>';
       }
 
-      showNotification('Streams refreshed: ' + (data.streams ? data.streams.length : 0) + ' active', 'success');
+      if (!silent) {
+        showNotification('Streams refreshed: ' + (data.streams ? data.streams.length : 0) + ' active', 'success');
+      }
     } catch (error) {
       console.error('Error refreshing streams:', error);
       const streamsContainer = document.getElementById('active-streams');
       streamsContainer.innerHTML = '<div class="text-danger">Error loading streams</div>';
-      showNotification('Failed to refresh streams', 'error');
+      if (silent) {
+        console.warn('Auto stream refresh failed:', error && error.message);
+      } else {
+        showNotification('Failed to refresh streams', 'error');
+      }
+    } finally {
+      streamsRefreshBusy = false;
     }
   }
 
@@ -1579,6 +1609,8 @@
   window.addEventListener('beforeunload', function() {
     if (listenInEventSource) stopListenIn();
     if (talkThroughActive) stopTalkThrough();
+    micVuMeterIds.forEach(stopVUMeterMonitoring);
+    micVuMeterIds = [];
   });
 
 </script>

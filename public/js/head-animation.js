@@ -13,6 +13,7 @@
 
   var currentCharacterId = null;
   var pollingInterval = null;
+  var pollBusy = false; // in-flight guard: on a loaded Pi a poll can outlive the interval period
   var isOpenCVActive = false;
   var isHeadTrackingOn = false;
   var currentConfig = {};
@@ -708,10 +709,13 @@
 
   function startPolling() {
     stopPolling();
+    pollBusy = false;
     pollingInterval = setInterval(function() {
+      if (document.hidden) return;
       if (!isOpenCVActive || !currentCharacterId) { stopPolling(); return; }
+      if (pollBusy) return;
       pollStatus();
-    }, 60);
+    }, 100);
   }
 
   function stopPolling() {
@@ -719,6 +723,7 @@
   }
 
   function pollStatus() {
+    pollBusy = true;
     fetch('/setup/head-animation/api/head-tracking/' + currentCharacterId + '/status')
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -727,7 +732,8 @@
           updateStatusDisplay(data);
         }
       })
-      .catch(function() {});
+      .catch(function() {})
+      .then(function() { pollBusy = false; });
   }
 
   function updateStatusDisplay(data) {

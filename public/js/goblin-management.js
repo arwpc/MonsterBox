@@ -10,7 +10,7 @@ class GoblinManager {
         this.autoRefresh = true;
         this.refreshInterval = null;
         this.statusFilter = 'all';
-        this.lockTimers = new Map();
+        this.lockTimer = null; // single shared countdown ticker for locked cards
 
         this.init();
     }
@@ -849,28 +849,36 @@ class GoblinManager {
     }
 
     updateLockTimers() {
-        // Clear existing timers
-        this.lockTimers.forEach(timer => clearInterval(timer));
-        this.lockTimers.clear();
+        // One shared ticker instead of one interval per locked Goblin. The old
+        // per-goblin timers each called renderGoblinGrid() every second — a full
+        // innerHTML rebuild that destroyed hover/click state N times a second
+        // with N locked Goblins. Countdowns are now patched in place; a full
+        // re-render only happens when a lock actually expires (state change).
+        if (this.lockTimer) {
+            clearInterval(this.lockTimer);
+            this.lockTimer = null;
+        }
 
-        // Set up new timers for locked Goblins
-        this.goblins.forEach(goblin => {
-            if (goblin.locked && goblin.lockExpiresAt) {
-                const timer = setInterval(() => {
-                    const remaining = this.getLockTimeRemaining(goblin);
-                    if (remaining <= 0) {
-                        clearInterval(timer);
-                        this.lockTimers.delete(goblin.id);
-                        this.loadGoblins(); // Refresh to get updated lock status
-                    } else {
-                        // Update display
-                        this.renderGoblinGrid();
-                    }
-                }, 1000);
+        const lockedGoblins = this.goblins.filter(g => g.locked && g.lockExpiresAt);
+        if (!lockedGoblins.length) return;
 
-                this.lockTimers.set(goblin.id, timer);
+        this.lockTimer = setInterval(() => {
+            let anyExpired = false;
+            lockedGoblins.forEach(goblin => {
+                const remaining = this.getLockTimeRemaining(goblin);
+                if (remaining <= 0) {
+                    anyExpired = true;
+                    return;
+                }
+                const timerEl = document.querySelector(`[data-goblin-id="${goblin.id}"] .mb-lock-timer`);
+                if (timerEl) timerEl.textContent = this.formatTime(remaining);
+            });
+            if (anyExpired) {
+                clearInterval(this.lockTimer);
+                this.lockTimer = null;
+                this.loadGoblins(); // Refresh to get updated lock status
             }
-        });
+        }, 1000);
     }
 
     getLockTimeRemaining(goblin) {
