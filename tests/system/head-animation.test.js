@@ -271,20 +271,25 @@ describe('Head Animation API', () => {
         })
         .expect(200);
 
-      // Test sweep should use calibrated bounds
+      // v9.3.0 contract: a sweep on a servo with NO measured calibration is
+      // REFUSED with 409 (it used to sweep the placeholder 0-180 across
+      // unmeasured hardware). Assert whichever contract applies to the servo
+      // this character actually has, instead of demanding 200 always.
       const sweepRes = await request(BASE_URL)
-        .post(`/setup/head-animation/api/head-tracking/${CHARACTER_ID}/test-sweep`)
-        .expect(200);
+        .post(`/setup/head-animation/api/head-tracking/${CHARACTER_ID}/test-sweep`);
 
-      expect(sweepRes.body).to.have.property('success', true);
-      expect(sweepRes.body).to.have.property('minAngle');
-      expect(sweepRes.body).to.have.property('maxAngle');
-      expect(sweepRes.body).to.have.property('steps').that.is.an('array');
-
-      // If the servo is calibrated, min and max should match calibrated values
       if (calibratedServo.calibrated) {
+        expect(sweepRes.status).to.equal(200);
+        expect(sweepRes.body).to.have.property('success', true);
+        expect(sweepRes.body).to.have.property('minAngle');
+        expect(sweepRes.body).to.have.property('maxAngle');
+        expect(sweepRes.body).to.have.property('steps').that.is.an('array');
         expect(sweepRes.body.minAngle).to.equal(calibratedServo.minAngle);
         expect(sweepRes.body.maxAngle).to.equal(calibratedServo.maxAngle);
+      } else {
+        expect(sweepRes.status).to.equal(409);
+        expect(sweepRes.body).to.have.property('success', false);
+        expect(String(sweepRes.body.error)).to.match(/no measured calibration/i);
       }
     });
 

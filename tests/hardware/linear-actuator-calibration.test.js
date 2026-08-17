@@ -18,7 +18,7 @@ const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
     before(async function() {
         // Create a test linear actuator part
         const response = await request(BASE_URL)
-            .post('/setup/parts/api/parts')
+            .post('/setup/calibration/api/parts')
             .send({
                 name: 'Test Calibration Actuator',
                 type: 'linear_actuator',
@@ -38,7 +38,7 @@ const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
         // Clean up test part
         if (testPartId) {
             await request(BASE_URL)
-                .delete(`/setup/parts/api/parts/${testPartId}`)
+                .delete(`/setup/calibration/api/parts/${testPartId}`)
                 .expect(200);
         }
     });

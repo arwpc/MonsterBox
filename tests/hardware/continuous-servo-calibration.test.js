@@ -18,7 +18,7 @@ const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
     before(async function() {
         // Create a test continuous servo part
         const response = await request(BASE_URL)
-            .post('/setup/parts/api/parts')
+            .post('/setup/calibration/api/parts')
             .send({
                 name: 'Test Continuous Servo',
                 type: 'servo',
@@ -45,7 +45,7 @@ const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
         // let it throw, and say so loudly if it did not work.
         if (!testPartId) return;
         try {
-            const res = await request(BASE_URL).delete(`/setup/parts/api/parts/${testPartId}`);
+            const res = await request(BASE_URL).delete(`/setup/calibration/api/parts/${testPartId}`);
             if (res.status !== 200) {
                 console.error(`⚠️  Test part ${testPartId} was NOT removed (HTTP ${res.status}). ` +
                               'Delete it by hand — it is a fake part in live character data.');
