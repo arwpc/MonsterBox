@@ -2,7 +2,10 @@
 
 All notable changes to MonsterBox are documented in this file.
 
-## [9.2.1] - 2026-08-16 — Mina's servos were never broken, and the controls now do what they say
+## [9.3.0] - 2026-08-16 — Mina's servos were never broken, and calibration finally lets you calibrate
+
+*Started as 9.2.1 (the first seven commits carry that label); released as 9.3.0 — the
+supervised-calibration override is a behavioural addition, not a patch.*
 
 An evening session on the Mina node, driven by one complaint: "the neck and eye servos
 rarely work, the jaw barely moves, and everything gets slower the more I use it." All of it
@@ -66,6 +69,22 @@ confirmed.
   `startTime`; goblin reconnect spam (63% of an 8.5 MB nightly log) is throttled;
   `pactl`-less nodes now get default sink/source via `wpctl`; start-all no longer dials
   Renfield's deliberately-null address.
+
+### Added — supervised calibration override
+
+- The operator could not calibrate: the safety window (which encodes the *previous*
+  measurement, or a guess) clamped every attempt to measure past it — "stops me at 120°
+  when I want to go to 197°" — and homing was stopped short of the endstop by the duration
+  cap, then recorded as homed anyway (`OpenLoopLinearAdapter.home` ignored refusals
+  entirely). The calibration surfaces (nudge, home, jog-raw, and the calibration page's
+  manual angle control via `goto {calibrationOverride:true}`) now relax the angle window
+  and duration cap, loudly. **Never relaxed, override or not:** `blockAllMotion`
+  quarantines, `noRetractBelowMin`, speed caps, and fused-rail power-group serialization.
+  Automated sweeps, preset recalls, Monster Builder, scenes, poses and superpowers stay
+  fully clamped. Six unit tests pin the semantics.
+- Fleet deploys now exclude node-local operational state (`calibration_profiles.json`,
+  actuator positions, super-powers/lurk state, `app-config.json`) — a deploy brings code,
+  never another machine's measurements.
 
 ### Voice
 

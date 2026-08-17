@@ -15,6 +15,36 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
+## What's New — v9.3.0 (August 2026) — Mina's servos were never broken, and calibration finally lets you calibrate
+
+An evening session on the Mina node plus a fleet-wide audit. Highlights (full detail in
+`CHANGELOG.md`):
+
+- **Every UI servo command was silently becoming "go to 50°"** — the part-test route ignored
+  the request shape the Pose Editor and calibration pages actually send. Mina's "dead" neck
+  was additionally frozen by a zero-width calibration window (`{108,108}`) captured while the
+  first bug hid the motion. Both are fixed and can't recur: `isDegenerateWindow()` refuses
+  zero-span bounds at every writer, and the parts test route honors all caller shapes
+  (including motor `stop`, which used to *drive the motor forward at 100%*).
+- **Supervised calibration override** — the calibration page's manual controls, nudge, homing
+  and jog-raw can now measure a part's *real* travel past the previously-configured safety
+  window, and homing reaches the physical endstop. Quarantines, retract blocks, speed caps
+  and fused-rail serialization never relax. Runtime paths stay fully clamped.
+- **The progressive-slowdown family is gone**: leaked VU/sensor/status polling loops (each
+  spawning a ~350 ms Python+ALSA process, stacking per page interaction) were found by a
+  five-dimension adversarially-verified audit and fixed across calibration, audio, system and
+  motion-tracking pages, along with the dead audio-levels cache behind them.
+- **Controls tell the truth now**: the continuous-servo Stop that stopped nothing, the
+  EMERGENCY STOP that 404'd into a green toast, sweeps/homing/jogs that reported success for
+  refused drives, and phantom calibration positions from swallowed hardware refusals.
+- **Character independence in the hot paths**: `characterId` threaded through scene execution,
+  head tracking (with failure back-off), and jaw/head calibration lookups.
+- **Hygiene**: the ElevenLabs API key no longer leaks into the world-readable log, deploys no
+  longer overwrite a node's own calibration/state, `wpctl`-first audio control on nodes
+  without `pactl`, and ~70% less log spam on SD cards.
+- **Orlok's voice** matches the owner's vocal-profile research on both the agent and
+  say/scene paths (stability 0.3, octave-dropped chest voice), ear-checked live.
+
 ## What's New — v9.2.0 (August 2026) — Right voice, body that moves together, show that reaches the yard
 
 Includes v9.1.0, which was opened and superseded in the same session and never shipped

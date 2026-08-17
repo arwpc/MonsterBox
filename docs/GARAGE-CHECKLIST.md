@@ -199,6 +199,13 @@ powered and on the network.
       absent, because their lines fall consecutively. Use
       `moments/dusk-ceremony-3node.json` until they are erected.
 
+- [ ] **Re-check every node's volume after any reboot.** `wpctl` volume is node-local
+      runtime state — it is not in git, not deployed, and does not survive a reboot.
+      Canonical values are in `scripts/yard-theater/speaker-volumes.json`; re-apply with
+      `node scripts/fleet-audio/apply-volumes.mjs`. Also check the Dashboard's **Mute
+      Speaker** toggle — a mute left on plays TTS but silently skips every library/scene
+      sound (v9.3.0 at least says so now).
+
 ---
 
 ## Rough edges you may hit — found in the pre-flight hardware pass
