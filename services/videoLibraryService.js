@@ -26,7 +26,18 @@ async function acquireLock() {
         if (!isLocked) {
             try {
                 const pid = parseInt(await fs.readFile(lockfilePath, 'utf8'), 10);
-                if (pid && pid !== process.pid) {
+                if (!Number.isFinite(pid) || pid <= 0) {
+                    // An empty or garbage lock file parses to NaN — which is
+                    // falsy, so it used to slip past BOTH the dead-PID removal
+                    // and the unreadable-file catch below, and the lock then
+                    // timed out into a FATAL on every service restart until
+                    // someone deleted the file by hand. A lock that names no
+                    // live holder is stale by definition — clear it.
+                    console.warn('⚠️ Removing unreadable/empty video library lock file');
+                    await fs.unlink(lockfilePath).catch(() => {});
+                    continue;
+                }
+                if (pid !== process.pid) {
                     try {
                         process.kill(pid, 0); // Check if process exists
                     } catch {
