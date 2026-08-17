@@ -24,8 +24,13 @@ export class OpenLoopLinearAdapter {
   getCapabilities() { return { kind: 'openloop-linear', invert: this.invert }; }
 
   selectBin(requestedPwmPct) {
-    const candidates = (this.motion.bins || []).filter(b => b.pwmPct <= requestedPwmPct).sort((a, b) => b.pwmPct - a.pwmPct);
-    return candidates[0] || (this.motion.bins && this.motion.bins[0]) || { pwmPct: 50, unitsPerSec: 0.2 };
+    // Ignore corrupt bins outright: a null/NaN/zero unitsPerSec divides into
+    // Infinity downstream, i.e. a motor commanded with no stop time. Bad bins
+    // reached disk through the old learn-openloop endpoint (fixed), but stored
+    // profiles may still carry them.
+    const usable = (this.motion.bins || []).filter(b => Number.isFinite(b.unitsPerSec) && b.unitsPerSec > 0);
+    const candidates = usable.filter(b => b.pwmPct <= requestedPwmPct).sort((a, b) => b.pwmPct - a.pwmPct);
+    return candidates[0] || usable[0] || { pwmPct: 50, unitsPerSec: 0.2 };
   }
 
   /**

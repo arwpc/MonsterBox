@@ -3,7 +3,7 @@ import AbsoluteServoAdapter from './adapters/AbsoluteServoAdapter.js';
 import OpenLoopLinearAdapter from './adapters/OpenLoopLinearAdapter.js';
 import ContinuousServoAdapter from './adapters/ContinuousServoAdapter.js';
 import { clampAngle, clampP, getGlobalSpeedCap, setGlobalSpeedCap } from './planner.js';
-import { getCalibrationStore } from './store.js';
+import { getCalibrationStore, isDegenerateWindow, calibratedBounds } from './store.js';
 import { loadParts } from '../../controllers/partsController.js';
 import actuatorPositionStore from '../../services/actuatorPositionStore.js';
 import hardwareService from '../../services/hardwareService/index.js';
@@ -19,9 +19,16 @@ const positionState = new Map();
 try {
   actuatorPositionStore.recoverFromCrash();
   const persisted = actuatorPositionStore.loadAll();
-  for (const [partId, state] of Object.entries(persisted)) {
+  for (const [key, state] of Object.entries(persisted)) {
+    // Keys are namespaced "characterId:partId" (legacy records may be a bare
+    // partId). parseInt on "2:4" yields 2 — which filed the actuator's restored
+    // position under a different part entirely (part 2, a servo) while the real
+    // part 4 booted as "Unknown - Home Required" and got homed into an endstop
+    // it was already sitting on. Take the LAST segment as the part id.
+    const partId = parseInt(String(key).split(':').pop(), 10);
+    if (!Number.isFinite(partId)) continue;
     if (state.currentP != null) {
-      positionState.set(parseInt(partId, 10), {
+      positionState.set(partId, {
         currentP: state.currentP,
         positionKnown: state.positionKnown !== false,
         confidence: state.confidence || 'tracked',
@@ -36,6 +43,25 @@ try {
 /** Check if a profile represents an absolute servo */
 function isAbsoluteServo(profile) {
   return profile && profile.capability && profile.capability.kind === 'absolute-servo';
+}
+
+/**
+ * Refuse to store an angle window that would pin the servo where it stands.
+ *
+ * set-min/set-max both record the servo's CURRENT angle, so if the part is not
+ * actually moving, an operator ends up setting both at the same spot. Saving that
+ * clamps every future command to one value — the part becomes permanently frozen,
+ * and it looks exactly like the dead servo the operator was trying to diagnose.
+ * Refusing here keeps the previous window intact and says what to check instead.
+ *
+ * @returns {string|null} operator-facing reason to refuse, or null to proceed.
+ */
+function rejectDegenerateBounds(bounds, which) {
+  if (!isDegenerateWindow(bounds)) return null;
+  return `Cannot set ${which}: min and max would both be ${bounds.minAngle}°, ` +
+    `which would lock this servo at that angle and stop it moving at all. ` +
+    `Move the servo to a genuinely different position before setting ${which} — ` +
+    `if it is not moving, fix that first (check the channel, the signal lead and the servo itself).`;
 }
 
 /** Check if a profile is an open-loop type (linear actuator or continuous servo) */
@@ -120,10 +146,18 @@ async function getOrAutoCreateProfile(partId) {
         motion = {};
         bounds = { minAngle: 0, maxAngle: 180 };
       }
+    } else if (part.type === 'motor' || part.type === 'stepper') {
+      // These drive like open-loop linear parts (time-at-speed, no feedback).
+      // Stamping `{kind: part.type}` instead persisted a capability no adapter
+      // understands, so every later control on the part 400'd/500'd forever and
+      // the auto-created record even blocked the UI's own recovery path.
+      capability = { kind: 'openloop-linear' };
+      motion = { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.2 }, { pwmPct: 90, unitsPerSec: 0.4 }], settleMs: 150 };
+      bounds = null;
     } else {
-      capability = { kind: part.type };
-      motion = {};
-      bounds = {};
+      // No adapter exists for this type (speaker, webcam, sensor, ...) —
+      // return null rather than persist an undrivable capability.
+      return null;
     }
 
     profile = {
@@ -173,10 +207,38 @@ router.get('/:partId/position', async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to get position', message: String(err) }); }
 });
 
+const KNOWN_CAPABILITY_KINDS = new Set(['absolute-servo', 'openloop-linear', 'continuous-servo']);
+
 router.post('/:partId/profile', express.json(), async (req, res) => {
   try {
     const partId = parseInt(req.params.partId, 10);
     const profile = Object.assign({}, req.body, { partId, version: 1, lastCalibratedAt: new Date().toISOString() });
+
+    // This is the one bounds writer that used to accept the body verbatim —
+    // no capability check, no numeric check, no degenerate-window check — so a
+    // stale page (or one bad request) could persist min==max and freeze the
+    // part, sidestepping every guard on set-min/set-max.
+    if (!profile.capability || !KNOWN_CAPABILITY_KINDS.has(profile.capability.kind)) {
+      return res.status(400).json({
+        success: false,
+        error: `Profile requires capability.kind of: ${[...KNOWN_CAPABILITY_KINDS].join(', ')}`
+      });
+    }
+    if (profile.bounds) {
+      for (const key of ['minAngle', 'maxAngle', 'minP', 'maxP']) {
+        if (profile.bounds[key] != null && !Number.isFinite(Number(profile.bounds[key]))) {
+          return res.status(400).json({ success: false, error: `bounds.${key} must be a finite number` });
+        }
+      }
+      if (isDegenerateWindow(profile.bounds)) {
+        return res.status(409).json({
+          success: false,
+          error: 'Refusing bounds with zero usable span — this would lock the part at one position. ' +
+                 'Move the part between captures; if it is not moving, diagnose that first.'
+        });
+      }
+    }
+
     await store.upsert(profile);
     // Flush adapter but preserve position state
     adapterCache.delete(partId);
@@ -234,8 +296,10 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         res.json({ success: true, message: `Nudged by ${delta}°`, currentAngle: newAngle, currentP: angleToP(newAngle) });
       } else {
         const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
-        // FIX: Apply calibration bounds to nudge (was missing before)
-        const bounds = (profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) ? profile.bounds : null;
+        // FIX: Apply calibration bounds to nudge (was missing before).
+        // calibratedBounds() so a degenerate/placeholder window cannot pin it.
+        const measuredNudge = calibratedBounds(profile);
+        const bounds = (measuredNudge && measuredNudge.minP != null && measuredNudge.maxP != null) ? measuredNudge : null;
         const rawP = currentP + delta;
         const newP = clampP(rawP, bounds);
         await adapter.gotoNormalized(newP, { speedPct, durationMs });
@@ -285,7 +349,23 @@ router.post('/:partId/jog-raw', express.json(), async (req, res) => {
     const speed = (typeof speedPct === 'number' && speedPct > 0 && speedPct <= 100) ? speedPct : 50;
     const duration = (typeof durationMs === 'number' && durationMs > 0) ? Math.min(durationMs, 30000) : 1500;
     console.log(`🔓 jog-raw: partId=${partId}, dir=${direction}, speed=${speed}%, duration=${duration}ms (NO LIMITS)`);
-    await hardwareService.controlPart(String(partId), 'jog', { direction, speed, duration });
+    // controlPart never throws — a quarantined part (blockAllMotion /
+    // noRetractBelowMin, the guards written FOR this bounds-bypassing endpoint)
+    // and a failed wrapper both come back as {success:false}. Discarding that
+    // told the operator "Done" for a refused jog, hiding the blockReason that
+    // explains what to check, exactly when they are judging physical range.
+    const ctx = await resolveCharacter(req);
+    const result = await hardwareService.controlPart(String(partId), 'jog',
+      { direction, speed, duration },
+      ctx && ctx.id != null ? { characterId: ctx.id } : undefined);
+    if (!result || result.success === false) {
+      const blocked = !!(result && result.blockedBySafetyLimit);
+      return res.status(blocked ? 403 : 502).json({
+        success: false,
+        blockedBySafetyLimit: blocked,
+        error: (result && result.error) || 'Raw jog failed'
+      });
+    }
     res.json({ success: true, message: `Raw jog ${direction} for ${duration}ms at ${speed}%` });
   } catch (err) {
     console.error('jog-raw failed:', err);
@@ -383,7 +463,11 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       // calibrated servo past its bounds holds it against a mechanical stop —
       // and then the configured safety window on top of it.
       const safeAngle = guard.adjusted && guard.adjusted.angleDeg != null ? guard.adjusted.angleDeg : angle;
-      const targetAngle = clampAngle(safeAngle, profile.bounds);
+      // calibratedBounds(), not profile.bounds: the raw record can carry a
+      // placeholder span or a degenerate (min==max) window, and clamping with
+      // either pins the servo at one angle on the very page whose job is to
+      // diagnose why it will not move. The safe accessor withholds both.
+      const targetAngle = clampAngle(safeAngle, calibratedBounds(profile));
       if (targetAngle !== angle) {
         console.warn(`🛡️  goto clamped part ${partId}: ${angle}° → ${targetAngle}° (calibrated bounds)`);
       }
@@ -398,7 +482,8 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       }
       const guardP = await checkSafety(req, partId, {});
       if (!guardP.ok) return res.status(403).json(guardP);
-      const bounds = (profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) ? profile.bounds : null;
+      const measured = calibratedBounds(profile);
+      const bounds = (measured && measured.minP != null && measured.maxP != null) ? measured : null;
       const clampedP = clampP(p, bounds);
 
       // Mark moving for crash recovery
@@ -442,6 +527,8 @@ router.post('/:partId/set-min', express.json(), async (req, res) => {
         bounds.minAngle = bounds.maxAngle;
         bounds.maxAngle = tmp;
       }
+      const refusal = rejectDegenerateBounds(bounds, 'min');
+      if (refusal) return res.status(409).json({ success: false, error: refusal, bounds: profile.bounds });
       profile.bounds = bounds;
       profile.autoGenerated = false;
       await store.upsert(profile);
@@ -476,6 +563,8 @@ router.post('/:partId/set-max', express.json(), async (req, res) => {
         bounds.minAngle = bounds.maxAngle;
         bounds.maxAngle = tmp;
       }
+      const refusal = rejectDegenerateBounds(bounds, 'max');
+      if (refusal) return res.status(409).json({ success: false, error: refusal, bounds: profile.bounds });
       profile.bounds = bounds;
       profile.autoGenerated = false;
       await store.upsert(profile);
@@ -516,13 +605,31 @@ router.post('/:partId/learn-openloop', express.json(), async (req, res) => {
     if (!Array.isArray(probes) || probes.length < 2) return res.status(400).json({ success: false, error: 'Need at least 2 probes' });
     const profile = await getOrAutoCreateProfile(partId);
     if (!profile || !profile.motion || profile.motion.type !== 'time-at-speed') return res.status(400).json({ success: false, error: 'Part must have time-at-speed motion model' });
-    const bins = probes.map(p => ({ pwmPct: p.pwmPct, unitsPerSec: Math.abs((p.toP - p.fromP)) / (p.msRun / 1000) }));
+    // Accept both probe shapes: the unified page posts {pwmPct, msRun,
+    // measuredDeltaP}; the documented contract was {pwmPct, msRun, fromP, toP}.
+    // Reading only toP/fromP produced unitsPerSec = NaN, which JSON persisted
+    // as null — and every consumer that divides by that rate then commanded a
+    // duration of Infinity. Validate the rate before it can be stored.
+    const bins = probes.map(p => {
+      const delta = Math.abs(p.measuredDeltaP != null ? Number(p.measuredDeltaP) : (Number(p.toP) - Number(p.fromP)));
+      const secs = Number(p.msRun) / 1000;
+      const rate = delta / secs;
+      if (!Number.isFinite(rate) || rate <= 0) {
+        throw Object.assign(new Error(`Probe at ${p.pwmPct}% did not measure any movement — re-run it with the part actually moving`), { statusCode: 400 });
+      }
+      return { pwmPct: Number(p.pwmPct), unitsPerSec: rate };
+    });
     profile.motion = Object.assign({}, profile.motion, { bins, settleMs: profile.motion.settleMs || 120 });
     await store.upsert(profile);
     // Flush adapter so it picks up the new motion model
     adapterCache.delete(partId);
     res.json({ success: true, message: 'Motion model learned', motion: profile.motion });
-  } catch (err) { console.error(err); res.status(500).json({ success: false, error: 'Failed to learn motion', message: String(err) }); }
+  } catch (err) {
+    if (err && err.statusCode === 400) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
+    console.error(err); res.status(500).json({ success: false, error: 'Failed to learn motion', message: String(err) });
+  }
 });
 
 router.get('/:partId/sensors', async (req, res) => {

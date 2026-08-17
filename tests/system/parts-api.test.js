@@ -144,6 +144,45 @@ describe('Parts API', function () {
             expect(res.body.part.type).to.equal('servo');
         });
 
+        it('honours the angle in the Pose-Editor request shape', async function () {
+            // The servo branch used to read only req.body.position, so the shape
+            // the Pose Editor and calibration pages actually send —
+            // {action:'moveToAngle', params:{angleDeg}} — silently fell through
+            // to a default of 50°. Every servo went to the same place no matter
+            // what was asked, and the response still claimed success. The message
+            // now echoes the commanded angle, which this asserts on.
+            var safety = await import('../../services/hardwareService/safetyLimits.js');
+            var cfg = await import('../../services/configService.js');
+            var characterId = (await cfg.readConfig()).selectedCharacter;
+
+            var listRes = await apiGet('/api/parts');
+            var servos = listRes.body.parts.filter(function (p) { return p.type === 'servo'; });
+            var servo = null;
+            for (var i = 0; i < servos.length; i++) {
+                if (await safety.isTestSafePart(characterId, servos[i].id)) { servo = servos[i]; break; }
+            }
+            if (!servo) { this.skip(); return; }
+
+            var res = await apiPost('/api/parts/' + servo.id + '/test', {
+                action: 'moveToAngle', params: { angleDeg: 77, duration: 100 }
+            });
+            expect(res.status).to.equal(200);
+            expect(res.body.message, 'the commanded angle must reach the hardware layer')
+                .to.contain('77');
+        });
+
+        it('rejects a servo test that names no angle at all', async function () {
+            var listRes = await apiGet('/api/parts');
+            var servo = listRes.body.parts.filter(function (p) { return p.type === 'servo'; })[0];
+            if (!servo) { this.skip(); return; }
+
+            var res = await apiPost('/api/parts/' + servo.id + '/test', { action: 'moveToAngle' });
+            // A missing angle used to become a silent move to 50°. Refusing is
+            // the only honest answer: the caller's intent is unknown.
+            expect(res.status).to.equal(400);
+            expect(res.body).to.have.property('success', false);
+        });
+
         it('refuses a quarantined part and says why', async function () {
             // The safety layer is only real if it holds at the HTTP boundary. A
             // quarantined part previously returned 200 with a message that read

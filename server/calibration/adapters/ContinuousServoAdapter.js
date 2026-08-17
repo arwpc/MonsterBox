@@ -31,10 +31,18 @@ export default class ContinuousServoAdapter {
 
     // Estimated position tracking (0 = neutral, -1 = max CCW, +1 = max CW)
     this.estimatedPosition = 0;
-    this.currentP = 0.5;
     this.lastDir = undefined;
     this.isRunning = false;
   }
+
+  // currentP is DERIVED from estimatedPosition, never stored separately. The
+  // two used to be independent fields kept in sync by hand, and every external
+  // writer (set-min/set-max, restart position restore) set only currentP — so
+  // after "Set Max" the store said p=1 while the adapter still planned from
+  // p=0.5 and the next goto drove 3+ seconds into a stop the part was already
+  // on. An accessor pair makes desync impossible (mirrors AbsoluteServoAdapter).
+  get currentP() { return (this.estimatedPosition + 1) / 2; }
+  set currentP(p) { this.estimatedPosition = Math.max(-1, Math.min(1, (Number(p) * 2) - 1)); }
 
   /** Settle time (post-movement delay for mechanical damping) */
   get settleMs() { return this.motion.settleMs || 150; }
@@ -166,10 +174,14 @@ export default class ContinuousServoAdapter {
       return { success: true, message: 'Already at target' };
     }
 
-    // Calculate direction and duration based on delta
+    // Calculate direction and duration based on delta. An explicit caller
+    // duration wins (the nudge route forwards the operator's "ms" box, which
+    // used to be silently discarded), still capped for safety.
     const speedPct = opts.speedPct ?? this.motion.defaultSpeedPct ?? 30;
     const maxDuration = 2000; // Max 2 seconds for safety
-    let durationMs = Math.min(maxDuration, Math.round(Math.abs(delta) * 4000)); // ~4 seconds for full range
+    let durationMs = Number.isFinite(Number(opts.durationMs)) && Number(opts.durationMs) > 0
+      ? Math.min(maxDuration, Math.round(Number(opts.durationMs)))
+      : Math.min(maxDuration, Math.round(Math.abs(delta) * 4000)); // ~4 seconds for full range
 
     // Endpoint overdrive: add extra time when moving to endstops
     const isEndpoint = targetP <= ENDPOINT_THRESHOLD || targetP >= (1 - ENDPOINT_THRESHOLD);

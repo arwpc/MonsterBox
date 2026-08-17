@@ -116,10 +116,26 @@ router.get('/:id', async (req, res) => {
 /**
  * POST /:id/test — Test a part (type-aware dispatch)
  *
- * For servos: { position, duration }
+ * For servos: { position } or { action: 'moveToAngle', params: { angleDeg } }
  * For motion_sensor: {} (read) or { action: 'detectMotion', params: { duration: 10 } }
  * For lights: { action: 'on'|'off' }
  */
+
+/**
+ * First argument that is a real, finite number; null if there is none.
+ *
+ * Deliberately not `a ?? b`: the values come off JSON request bodies where a
+ * caller may send "" or null for "unset", and `??` would accept "" and hand
+ * NaN to the hardware layer. 0 is a legitimate angle and must survive.
+ */
+function firstNumber(...candidates) {
+    for (const candidate of candidates) {
+        if (candidate == null || candidate === '') continue;
+        const value = Number(candidate);
+        if (Number.isFinite(value)) return value;
+    }
+    return null;
+}
 
 /**
  * Build a truthful response for a part-test result.
@@ -204,9 +220,29 @@ router.post('/:id/test', express.json(), async (req, res) => {
                 });
             }
         } else if (partType === 'servo') {
-            const { position = 50, duration = 1000 } = req.body;
-            const result = await controlPart(part.id, 'moveToAngle', { angleDeg: parseInt(position) }, hw);
-            return testResponse(res, result, part, `Part ${part.name} tested at position ${position}`);
+            // Callers disagree on where the angle lives. The Pose Editor and the
+            // calibration pages send {action:'moveToAngle', params:{angleDeg}}, while
+            // older callers send a bare {position}. This branch only ever read
+            // `position`, so every {angleDeg} request silently fell through to the
+            // default of 50 — the servo moved to 50° no matter what was asked for,
+            // and the response still said success. That is why servos looked like
+            // they "sometimes" worked: they always went to the same place.
+            const angle = firstNumber(
+                params.angleDeg, params.position, params.angle,
+                req.body.angleDeg, req.body.position, req.body.angle
+            );
+            const duration = firstNumber(params.duration, req.body.duration) ?? 1000;
+
+            if (angle == null) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Servo test requires an angle (params.angleDeg or position)',
+                    part
+                });
+            }
+
+            const result = await controlPart(part.id, 'moveToAngle', { angleDeg: angle, duration }, hw);
+            return testResponse(res, result, part, `Part ${part.name} moved to ${angle}°`);
         } else if (partType === 'light' || partType === 'led') {
             const rawAction = action || 'on';
             // Map short actions to controller method names
@@ -215,7 +251,13 @@ router.post('/:id/test', express.json(), async (req, res) => {
             const result = await controlPart(part.id, lightAction, params, hw);
             return testResponse(res, result, part, `Light ${part.name} ${lightAction}`);
         } else if (partType === 'linear_actuator') {
-            const direction = (params && params.direction) || 'extend';
+            // The Pose Editor sends the direction AS the action ({action:'retract'})
+            // with no params.direction. Reading only params.direction meant every
+            // retract request silently defaulted to 'extend' — the dropdown was
+            // inert and the actuator always drove one way, wrong direction included.
+            const direction = (params && params.direction)
+                || ((action === 'retract' || action === 'extend') ? action : null)
+                || 'extend';
             let duration = Math.min((params && params.duration) || 1000, 2000);
             const speed = (params && params.speed) || 100;
             let projectedP = null;
@@ -279,6 +321,14 @@ router.post('/:id/test', express.json(), async (req, res) => {
 
             return testResponse(res, result, part, `Actuator ${part.name} ${direction}`);
         } else if (partType === 'motor') {
+            // The calibration page's red Stop sends {action:'stop'}. This branch
+            // never read `action`, so Stop fell through to direction 'forward' at
+            // 100% for a second — the panic control DROVE the motor instead of
+            // stopping it, and reported success. Honour a stop before anything else.
+            if (action === 'stop' || (params && params.direction === 'stop')) {
+                const result = await controlPart(part.id, 'stop', {}, hw);
+                return testResponse(res, result, part, `Motor ${part.name} stopped`);
+            }
             const direction = (params && params.direction) || 'forward';
             let duration = Math.min((params && params.duration) || 1000, 2000);
             const speed = (params && params.speed) || 100;

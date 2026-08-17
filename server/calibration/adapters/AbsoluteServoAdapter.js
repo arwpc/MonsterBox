@@ -44,10 +44,24 @@ export class AbsoluteServoAdapter {
     const clamped = Math.max(0, Math.min(180, angleDeg));
     try {
       // Invert is applied system-wide in controlPart() via calibration profile
-      await hardwareService.controlPart(String(this.partId), 'moveToAngle', {
+      const result = await hardwareService.controlPart(String(this.partId), 'moveToAngle', {
         angleDeg: clamped,
-        duration: (opts && opts.timeoutMs) || 1000
-      });
+        // Accept both spellings: the nudge route sends durationMs, older callers
+        // sent timeoutMs; reading only one silently discarded the operator's value.
+        duration: (opts && (opts.durationMs || opts.timeoutMs)) || 1000
+      }, opts && opts.characterId != null ? { characterId: opts.characterId } : undefined);
+
+      // controlPart NEVER throws — refusals and wrapper failures come back as
+      // {success:false}. Swallowing that here advanced currentAngle for a servo
+      // that never received a valid command, so the calibration page showed a
+      // confident phantom position — and set-min/set-max then persisted bounds
+      // built from angles the servo never reached. The open-loop sibling
+      // (OpenLoopLinearAdapter) already guards this; mirror it.
+      if (result && result.success === false) {
+        const err = new Error(result.error || 'Hardware refused the move');
+        err.blockedBySafetyLimit = !!result.blockedBySafetyLimit;
+        throw err;
+      }
       this.currentAngle = clamped;
     } catch (err) {
       console.error('AbsoluteServoAdapter move failed', err);

@@ -919,7 +919,38 @@ router.post('/api/parts/:id/markers', express.json(), async (req, res) => {
         const markers = Array.isArray(parts[idx].markers) ? parts[idx].markers : [];
         const i2 = markers.findIndex(m => m.name === name);
         const next = { name: name.trim(), kind, locked: !!locked };
-        if (kind === 'absolute') { next.value = value; if (unit) next.unit = unit; }
+        if (kind === 'absolute') {
+            // Markers are a first-class calibration source — the jaw and
+            // head-tracking guardrails read Min/Max straight from here. This
+            // endpoint used to store anything at all: a non-numeric value made
+            // NaN guardrails (both clamp comparisons false → NO clamp on an
+            // unmeasured servo), and a Min==Max pair pinned the part at one
+            // angle. Validate like the profile writers do.
+            const num = Number(value);
+            if (!Number.isFinite(num)) {
+                return res.status(400).json({ success: false, error: 'Marker value must be a finite number' });
+            }
+            if (parts[idx].type === 'servo' && (num < 0 || num > 180)) {
+                return res.status(400).json({ success: false, error: 'Servo marker must be within 0-180°' });
+            }
+            if (parts[idx].type === 'servo' && (name.trim() === 'Min' || name.trim() === 'Max')) {
+                const sibling = markers.find(m => m.name === (name.trim() === 'Min' ? 'Max' : 'Min'));
+                const sibVal = sibling ? Number(sibling.value) : null;
+                if (sibVal != null && Number.isFinite(sibVal)) {
+                    const minA = name.trim() === 'Min' ? num : sibVal;
+                    const maxA = name.trim() === 'Min' ? sibVal : num;
+                    if ((maxA - minA) < 1) {
+                        return res.status(409).json({
+                            success: false,
+                            error: `Refusing ${name.trim()} = ${num}°: the Min/Max window would collapse to nothing ` +
+                                   `and lock the servo at one angle. Move the servo to a genuinely different position first.`
+                        });
+                    }
+                }
+            }
+            next.value = num;
+            if (unit) next.unit = unit;
+        }
         if (kind === 'preset') { next.speed = speed; next.durationMs = durationMs; }
         if (i2 === -1) markers.push(next); else markers[i2] = next;
         parts[idx].markers = markers;
