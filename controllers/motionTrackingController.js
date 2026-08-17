@@ -504,19 +504,23 @@ async function getAvailableServoParts() {
  * Uses calibration_profiles.json bounds (minAngle/maxAngle) for absolute-servo parts.
  * Falls back to parts.json markers if no calibration profile exists.
  */
-async function loadHeadTrackingGuardrails(servoId) {
+async function loadHeadTrackingGuardrails(servoId, characterId) {
+  // Part ids repeat across characters, so both the store lookup and the cache
+  // must be character-scoped — an unscoped cache handed one character's window
+  // to another character's servo of the same id.
+  const cacheKey = `${characterId != null ? characterId : 'sel'}:${servoId}`;
   try {
     // Check cache first
-    if (headTrackingGuardrails.has(servoId)) {
-      return headTrackingGuardrails.get(servoId);
+    if (headTrackingGuardrails.has(cacheKey)) {
+      return headTrackingGuardrails.get(cacheKey);
     }
 
-    let minAngle = -90;
-    let maxAngle = 90;
+    let minAngle = null;
+    let maxAngle = null;
 
     // Primary source: calibration_profiles.json via calibration store
     const calibrationStore = getCalibrationStore();
-    const profile = await calibrationStore.get(servoId);
+    const profile = await calibrationStore.get(servoId, characterId);
 
     if (profile && profile.bounds) {
       if (typeof profile.bounds.minAngle === 'number') minAngle = profile.bounds.minAngle;
@@ -539,17 +543,31 @@ async function loadHeadTrackingGuardrails(servoId) {
       }
     }
 
-    const guardrails = { minAngle, maxAngle };
+    // No measured window (or a nonsense one) means "do not autonomously drive
+    // this servo" — NOT "assume -90..90". Every absolute servo here is 0-180,
+    // so the old -90..90 default mapped half the camera frame to negative
+    // angles that the daemon floor-clamped to 0: the head sat pinned at 0°
+    // while the UI showed it "tracking". A pinned window (min==max) is the
+    // frozen-neck failure and is equally unusable.
+    let guardrails = null;
+    if (Number.isFinite(minAngle) && Number.isFinite(maxAngle) && (maxAngle - minAngle) >= 1) {
+      guardrails = { minAngle, maxAngle };
+    }
 
-    // Cache for 60 seconds
-    headTrackingGuardrails.set(servoId, guardrails);
-    setTimeout(() => headTrackingGuardrails.delete(servoId), 60000);
+    // Cache for 60 seconds (null too — a missing calibration should not be
+    // re-fetched 20x/second)
+    headTrackingGuardrails.set(cacheKey, guardrails);
+    setTimeout(() => headTrackingGuardrails.delete(cacheKey), 60000);
 
-    console.log('Loaded head tracking guardrails for servo ' + servoId + ': ' + minAngle + '°..' + maxAngle + '°');
+    if (guardrails) {
+      console.log('Loaded head tracking guardrails for servo ' + servoId + ': ' + minAngle + '°..' + maxAngle + '°');
+    } else {
+      console.warn('Head tracking: servo ' + servoId + ' has no usable calibrated window — refusing to drive it until it is calibrated');
+    }
     return guardrails;
   } catch (error) {
     console.warn('Could not load head tracking guardrails:', error.message);
-    return { minAngle: -90, maxAngle: 90 };
+    return null;
   }
 }
 
@@ -589,6 +607,25 @@ async function detectServoType(servoId) {
  * Internal: Map motion position to servo control and command hardware
  * Supports both positional and continuous rotation servos with calibration guardrails
  */
+// Consecutive-failure back-off per webcam. Without it a mis-resolved servo
+// ("Part 2 not found") was retried and logged 20x/second — 10,409 identical
+// error lines in one night on one node, all written to an SD card.
+const HEAD_DRIVE_BACKOFF_MS = 60000;
+const HEAD_DRIVE_MAX_FAILURES = 5;
+
+function recordHeadDriveResult(state, webcamId, ok, detail) {
+  if (ok) {
+    state.failCount = 0;
+    return;
+  }
+  state.failCount = (state.failCount || 0) + 1;
+  if (state.failCount === HEAD_DRIVE_MAX_FAILURES) {
+    state.backoffUntil = Date.now() + HEAD_DRIVE_BACKOFF_MS;
+    console.warn('Head tracking: ' + HEAD_DRIVE_MAX_FAILURES + ' consecutive servo failures for webcam '
+      + webcamId + (detail ? ' (' + detail + ')' : '') + ' — pausing drive for ' + (HEAD_DRIVE_BACKOFF_MS / 1000) + 's');
+  }
+}
+
 async function maybeDriveHead(webcamId, status) {
   const cfg = headTrackingConfigs.get(webcamId);
   if (!cfg || !cfg.enabled) return;
@@ -597,6 +634,21 @@ async function maybeDriveHead(webcamId, status) {
   const state = headTrackingStates.get(webcamId) || { lastPanDeg: 0, lastCmdAt: 0, servoType: null, scanDir: 1, lastTargetAt: 0 };
   const minIntervalMs = 50;
   if (now - state.lastCmdAt < minIntervalMs) return;
+  if (state.backoffUntil && now < state.backoffUntil) return;
+  if (state.backoffUntil && now >= state.backoffUntil) { state.backoffUntil = 0; state.failCount = 0; }
+
+  // Pin the character the moment tracking first drives. controlPart falls back
+  // to the node's selectedCharacter when no characterId is given, so a
+  // selection change (or a test flipping it) mid-session re-resolved the servo
+  // id against a different character's parts — the source of the
+  // "Part 2 not found" flood and, worse, of driving another character's channel.
+  if (cfg.characterId == null) {
+    try {
+      const appCfg = await readConfig();
+      cfg.characterId = appCfg && appCfg.selectedCharacter != null ? appCfg.selectedCharacter : null;
+    } catch (_) { /* keep null — controlPart falls back as before */ }
+  }
+  const hwOpts = cfg.characterId != null ? { characterId: cfg.characterId } : undefined;
 
   // If no target detected, enter scanning sweep mode
   if (!status || !status.target_detected) {
@@ -606,6 +658,17 @@ async function maybeDriveHead(webcamId, status) {
     // Wait 3 seconds of no target before scanning
     if (now - state.lastTargetAt < 3000) return;
 
+    // The scan sweep drives the servo with no operator watching, so it gets the
+    // same guardrails as target tracking. It used to command raw center±range/2
+    // (default -30..+30 with centerDeg 0!) with no clamp at all — parking an
+    // absolute servo hard against its 0° floor and re-commanding it 20x/sec.
+    const guardrails = await loadHeadTrackingGuardrails(cfg.panServoId, cfg.characterId);
+    if (!guardrails) {
+      state.lastCmdAt = now; // still rate-limit the (cached) refusal path
+      headTrackingStates.set(webcamId, state);
+      return;
+    }
+
     // Scanning sweep: slowly pan left-to-right
     var range = (typeof cfg.rangeDeg === 'number' ? cfg.rangeDeg : 60);
     var center = (typeof cfg.centerDeg === 'number' ? cfg.centerDeg : 90);
@@ -613,14 +676,22 @@ async function maybeDriveHead(webcamId, status) {
     var scanDir = state.scanDir || 1;
     var next = state.lastPanDeg + (scanSpeed * scanDir);
 
-    // Reverse at limits
-    var minLimit = center - (range / 2);
-    var maxLimit = center + (range / 2);
+    // Reverse at limits: the configured scan window intersected with the
+    // measured window, so a wide rangeDeg cannot push past calibration.
+    var minLimit = Math.max(center - (range / 2), guardrails.minAngle);
+    var maxLimit = Math.min(center + (range / 2), guardrails.maxAngle);
+    if (minLimit > maxLimit) return; // configured window entirely outside calibration
     if (next >= maxLimit) { next = maxLimit; state.scanDir = -1; }
     if (next <= minLimit) { next = minLimit; state.scanDir = 1; }
 
     if (cfg.panServoId != null) {
-      hardwareService.controlPart(cfg.panServoId, 'moveToAngle', { angleDeg: next }).catch(() => {});
+      hardwareService.controlPart(cfg.panServoId, 'moveToAngle', { angleDeg: next }, hwOpts)
+        .then(function (result) {
+          recordHeadDriveResult(state, webcamId, !(result && result.success === false), result && result.error);
+        })
+        .catch(function (e) {
+          recordHeadDriveResult(state, webcamId, false, e && e.message);
+        });
     }
     state.lastPanDeg = next;
     state.lastCmdAt = now;
@@ -664,14 +735,16 @@ async function maybeDriveHead(webcamId, status) {
         direction: direction,
         speed: speed,
         duration: duration
-      })
+      }, hwOpts)
         .then(function (result) {
           if (result && !result.success) {
             console.warn('Head tracking servo failed:', result.message || result.error);
           }
+          recordHeadDriveResult(state, webcamId, !(result && result.success === false), result && (result.message || result.error));
         })
         .catch(function (e) {
           console.warn('Head tracking servo error:', e && e.message);
+          recordHeadDriveResult(state, webcamId, false, e && e.message);
         });
     } else {
       // Positional servo: move to specific angle with calibration guardrails
@@ -683,7 +756,13 @@ async function maybeDriveHead(webcamId, status) {
       var next = state.lastPanDeg + (target - state.lastPanDeg) * smooth;
 
       // Load and apply calibration guardrails
-      loadHeadTrackingGuardrails(cfg.panServoId).then(function (guardrails) {
+      loadHeadTrackingGuardrails(cfg.panServoId, cfg.characterId).then(function (guardrails) {
+        if (!guardrails) {
+          // No measured window — refuse to drive (warned once by the loader).
+          state.lastCmdAt = now;
+          headTrackingStates.set(webcamId, state);
+          return;
+        }
         // Clamp to calibration limits to prevent over-rotation
         var minLimit = guardrails.minAngle;
         var maxLimit = guardrails.maxAngle;
@@ -692,14 +771,16 @@ async function maybeDriveHead(webcamId, status) {
 
         console.log('Head tracking (positional): target=' + target.toFixed(1) + ', smoothed=' + next.toFixed(1) + ', limits=[' + minLimit + '..' + maxLimit + ']');
 
-        hardwareService.controlPart(cfg.panServoId, 'moveToAngle', { angleDeg: next })
+        hardwareService.controlPart(cfg.panServoId, 'moveToAngle', { angleDeg: next }, hwOpts)
           .then(function (result) {
             if (result && !result.success) {
               console.warn('Head tracking servo failed:', result.message || result.error);
             }
+            recordHeadDriveResult(state, webcamId, !(result && result.success === false), result && (result.message || result.error));
           })
           .catch(function (e) {
             console.warn('Head tracking servo error:', e && e.message);
+            recordHeadDriveResult(state, webcamId, false, e && e.message);
           });
 
         state.lastPanDeg = next;
@@ -729,6 +810,9 @@ export const enableHeadTracking = async (req, res) => {
       enabled: true,
       panServoId: panServoId,
       tiltServoId: tiltServoId,
+      // Pin the character at enable time so a later selection change cannot
+      // re-resolve the servo id against a different character's parts.
+      characterId: params.characterId != null ? params.characterId : (req.body && req.body.characterId != null ? req.body.characterId : null),
       centerDeg: typeof params.centerDeg === 'number' ? params.centerDeg : 0,
       rangeDeg: typeof params.rangeDeg === 'number' ? params.rangeDeg : 60,
       invertPan: !!params.invertPan,
@@ -886,6 +970,8 @@ export function enableHeadTrackingForWebcam(webcamId, config) {
     enabled: true,
     panServoId: config.panServoId,
     tiltServoId: config.tiltServoId || null,
+    // Pin the character at enable time (see enableHeadTracking above).
+    characterId: config.characterId != null ? config.characterId : null,
     centerDeg: typeof config.centerDeg === 'number' ? config.centerDeg : 0,
     rangeDeg: typeof config.rangeDeg === 'number' ? config.rangeDeg : 60,
     invertPan: !!config.invertPan,

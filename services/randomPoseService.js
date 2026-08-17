@@ -125,7 +125,7 @@ class RandomPoseService {
             }
 
             // Scale pose targets by amplitude for safety
-            const scaledPose = this.scalePoseAmplitude(pose, amplitude);
+            const scaledPose = await this.scalePoseAmplitude(pose, amplitude, characterId);
 
             // Execute the scaled pose. Pass the pre-scaled pose through so the
             // amplitude limit actually reaches the hardware — previously the
@@ -152,24 +152,42 @@ class RandomPoseService {
      * Scale pose amplitude for safety
      * Reduces movement range to prevent aggressive motions
      */
-    scalePoseAmplitude(pose, amplitude) {
+    async scalePoseAmplitude(pose, amplitude, characterId) {
         // Create a copy of the pose with scaled targets
         const scaledPose = JSON.parse(JSON.stringify(pose));
 
-        scaledPose.parts = scaledPose.parts.map(part => {
+        const { getEffectiveWindow } = await import('./poses/poseBounds.js');
+
+        scaledPose.parts = await Promise.all(scaledPose.parts.map(async part => {
             if (part.type === 'servo' && part.target && part.target.angleDeg !== undefined) {
-                // Scale servo angles toward center (90 degrees)
-                const center = 90;
+                // Scale toward the part's own calibrated midpoint, not a literal
+                // 90°. For an off-centre window (Mina's jaw is 22..91, midpoint
+                // 56.5) pulling toward 90 INCREASED the deviation: a subtle
+                // near-closed pose at 25° "scaled down" to 77° — nearly wide
+                // open. The safety scaling was opening mouths, not closing them.
+                let center = 90;
+                try {
+                    const win = await getEffectiveWindow(characterId, part.partId);
+                    if (win && win.lo != null && win.hi != null) {
+                        center = (win.lo + win.hi) / 2;
+                    }
+                } catch (_) { /* keep 90 for parts with no window */ }
                 const offset = part.target.angleDeg - center;
                 part.target.angleDeg = center + (offset * amplitude);
-            } else if (part.type === 'linear_actuator' && part.target && part.target.position !== undefined) {
-                // Scale actuator positions toward center (50%)
-                const center = 50;
-                const offset = part.target.position - center;
-                part.target.position = center + (offset * amplitude);
+            } else if (part.type === 'linear_actuator' && part.target) {
+                // Pose actuator targets carry `distance` (+ direction), never
+                // `position` — the old `target.position` branch was dead code,
+                // so actuators ran their FULL configured travel regardless of
+                // the requested amplitude. Scale the distance instead.
+                if (part.target.distance !== undefined) {
+                    part.target.distance = Math.round(part.target.distance * amplitude);
+                }
+                if (part.target.duration !== undefined) {
+                    part.target.duration = Math.round(part.target.duration * amplitude);
+                }
             }
             return part;
-        });
+        }));
 
         return scaledPose;
     }

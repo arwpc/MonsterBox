@@ -56,6 +56,12 @@ let running = false;
 let characterId = null;
 let currentPoseId = null;
 let loopTimeout = null;
+// Incremented by every start()/stop(). An in-flight loopIteration compares its
+// captured generation before rescheduling: a stale chain exits instead of
+// carrying on. Without this, a second start during a 2s pose transition left
+// TWO chains driving the same servos toward different poses, and stop() could
+// only ever kill the newest one.
+let generation = 0;
 let transitionEngine = null;
 let currentAbort = null; // AbortController for the in-flight servo transition
 // Where we believe the driven servos currently are — the input to distance-weighted
@@ -234,6 +240,10 @@ async function buildMicroTracks(parts) {
  */
 async function loopIteration() {
     if (!running) return;
+    const myGeneration = generation;
+    // A chain is stale the moment start() or stop() bumps the generation —
+    // checked again after every await below.
+    const stale = () => !running || myGeneration !== generation;
 
     stopMicroMotion();
 
@@ -250,7 +260,7 @@ async function loopIteration() {
     });
     if (!pose || !Array.isArray(pose.parts) || pose.parts.length === 0) {
         console.log('[IdleLoop] No idle pose available, pausing...');
-        scheduleNext(idleConfig.maxHoldMs);
+        if (!stale()) scheduleNext(idleConfig.maxHoldMs);
         return;
     }
 
@@ -286,7 +296,7 @@ async function loopIteration() {
     if (claimedParts.length === 0 && otherParts.length === 0) {
         // All servos preempted — pause and retry later (don't spin)
         console.log('[IdleLoop] All servos preempted by higher priority, pausing...');
-        scheduleNext(idleConfig.maxHoldMs);
+        if (!stale()) scheduleNext(idleConfig.maxHoldMs);
         return;
     }
 
@@ -353,7 +363,7 @@ async function loopIteration() {
         }
     }
 
-    scheduleNext(holdMs);
+    if (!stale()) scheduleNext(holdMs);
 }
 
 /**
@@ -389,6 +399,7 @@ export async function start(charId) {
 
     characterId = charId;
     running = true;
+    generation += 1;
     currentPoseId = null;
 
     console.log(`[IdleLoop] Starting idle loop for character ${characterId}`);
@@ -408,6 +419,7 @@ export function stop() {
 
     console.log(`[IdleLoop] Stopping idle loop for character ${characterId}`);
     running = false;
+    generation += 1;
 
     // Micro-motion runs on its own interval between poses. Leaving it alive after
     // stop() would keep issuing servo commands with nobody minding the loop —

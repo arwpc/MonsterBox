@@ -145,7 +145,9 @@ async function getAvailableServos(characterId) {
       // instead. Hold the placeholder aside and prefer real markers.
       let placeholderBounds = null;
       try {
-        const profile = await calibrationStore.get(servo.id);
+        // Character-scoped: part ids repeat across characters, and an unscoped
+        // lookup resolves against the node's selectedCharacter instead.
+        const profile = await calibrationStore.get(servo.id, characterId);
         if (profile) {
           if (profile.capability && profile.capability.kind) {
             servoKind = profile.capability.kind;
@@ -181,18 +183,24 @@ async function getAvailableServos(characterId) {
         }
       }
 
-      // Last resort: no real calibration and no markers — fall back to the
-      // placeholder rather than reporting no bounds at all.
+      // Last resort: no real calibration and no markers — expose the
+      // placeholder span for DISPLAY but do not report it as calibration.
+      // Flipping `calibrated: true` here made the head page's Test Sweep
+      // compute its endpoints from the 0-180 guess and drive an unmeasured
+      // servo across its full mechanical span — the exact damage recorded in
+      // config/hardware-safety.json for a forearm servo on a fused rail.
+      let placeholder = false;
       if (!calibrated && placeholderBounds) {
         minAngle = placeholderBounds.minAngle;
         maxAngle = placeholderBounds.maxAngle;
-        calibrated = true;
+        placeholder = true;
       }
 
       results.push({
         id: String(servo.id),
         name: servo.name || `Servo #${servo.id}`,
         calibrated,
+        placeholder,
         minAngle,
         maxAngle,
         servoKind,

@@ -36,7 +36,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { execFile } from 'child_process';
 import { fileURLToPath } from 'url';
-import { claimServo, releaseServo, isAvailable, PRIORITY } from './movement/priorityManager.js';
+import { claimServo, releaseServo, isAvailable, getOwner, PRIORITY } from './movement/priorityManager.js';
 import { getPartSafety } from './hardwareService/safetyLimits.js';
 import jawServoDaemon from './jawServoDaemon.js';
 import { readHeadTrackingConfig } from './headAnimationSuperPowerService.js';
@@ -73,6 +73,10 @@ const DEFAULT_IDLE_DRIFT_MS = 10000;
 
 /** characterId -> session state */
 const sessions = new Map();
+
+// cid -> timestamp of a stopSpeaking() that arrived before its session existed.
+// Consulted by startSpeaking so a stop/start race cannot orphan the tick timer.
+const pendingStops = new Map();
 
 function clamp(v, lo, hi) {
   return v < lo ? lo : (v > hi ? hi : v);
@@ -293,6 +297,8 @@ function stepHead(s, target, slewDegPerSec) {
  */
 async function startSpeaking(characterId, options = {}) {
   const cid = String(characterId);
+  const startedAt = Date.now();
+  pendingStops.delete(cid);
   try {
     const existing = getSession(cid);
     let head = existing && existing.head;
@@ -304,6 +310,15 @@ async function startSpeaking(characterId, options = {}) {
     const mv = await loadMovementConfig(characterId);
     const co = (mv && mv.speechCoExpression) || {};
     if (co.enabled === false) return { started: false, reason: 'disabled by config' };
+
+    // A stop that raced past us while we were resolving the head means this
+    // utterance is already over — starting the tick timer now would leave it
+    // running with nothing to ever stop it.
+    const stopStamp = pendingStops.get(cid);
+    if (stopStamp != null && stopStamp >= startedAt) {
+      pendingStops.delete(cid);
+      return { started: false, reason: 'stop arrived before start completed' };
+    }
 
     const s = ensureSession(cid, head);
     s.head = head;
@@ -371,6 +386,17 @@ function _speechTick(cid) {
   const s = getSession(cid);
   if (!s || !s.speaking) return;
 
+  // claimServo preempts silently — there is no eviction callback — so a scene
+  // or gesture taking the head mid-utterance left this timer writing angles
+  // 10x/second AGAINST the new owner. Stand down the moment the claim is gone
+  // (the idle loop's micro-motion already guards itself the same way).
+  const owner = getOwner(s.head.partId);
+  if (!owner || owner.owner !== SPEECH_OWNER) {
+    if (s.speechTimer) { clearInterval(s.speechTimer); s.speechTimer = null; }
+    s.speaking = false;
+    return;
+  }
+
   const t = Date.now() - s.t0;
   const h = s.head;
 
@@ -394,7 +420,16 @@ function _speechTick(cid) {
 function stopSpeaking(characterId, options = {}) {
   const cid = String(characterId);
   const s = getSession(cid);
-  if (!s) return { stopped: false };
+  if (!s) {
+    // startSpeaking is fired unawaited and spends hundreds of ms in
+    // resolveHead() before the session exists. A short utterance ("Yes.")
+    // finishes first, this stop finds nothing, and the late start then runs
+    // the 10Hz head timer forever — wandering the head and holding the servo
+    // claim so idle liveliness can never run. Record the stop so the late
+    // start can see it arrived and stand down.
+    pendingStops.set(cid, Date.now());
+    return { stopped: false };
+  }
 
   if (s.speechTimer) { clearInterval(s.speechTimer); s.speechTimer = null; }
   s.speaking = false;

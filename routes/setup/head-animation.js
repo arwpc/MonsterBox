@@ -464,19 +464,48 @@ router.post('/api/head-tracking/:charId/test-sweep', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Pan servo not found' });
     }
 
-    const minAngle = servo.calibrated && servo.minAngle != null ? servo.minAngle : 0;
-    const maxAngle = servo.calibrated && servo.maxAngle != null ? servo.maxAngle : 180;
+    // A sweep is a full-range excursion — that is only safe on a MEASURED
+    // range. Defaulting an uncalibrated servo to 0/180 is how a servo on a
+    // fused rail got driven 0↔180 at full speed three times (see the part-5
+    // history in config/hardware-safety.json). Refuse instead.
+    if (!servo.calibrated || servo.minAngle == null || servo.maxAngle == null) {
+      return res.status(409).json({
+        success: false,
+        error: `Pan servo ${servo.name || config.panServoId} has no measured calibration — ` +
+               `sweep refused. Calibrate it on /setup/calibration first.`
+      });
+    }
+    const minAngle = servo.minAngle;
+    const maxAngle = servo.maxAngle;
     const centerAngle = Math.round((minAngle + maxAngle) / 2);
 
     // Sweep: center -> min -> max -> center
     const steps = [centerAngle, minAngle, maxAngle, centerAngle];
     const delay = 500;
 
+    const stepResults = [];
     for (let i = 0; i < steps.length; i++) {
-      await hardwareService.controlPart(config.panServoId, 'moveToAngle', { angleDeg: steps[i] });
+      // Pass the page's character — controlPart otherwise resolves the servo id
+      // against the node's selectedCharacter — and keep the result: reporting
+      // "Sweep completed" for four refused moves told the operator a dead
+      // servo was fine.
+      const result = await hardwareService.controlPart(config.panServoId, 'moveToAngle',
+        { angleDeg: steps[i] }, { characterId: charId });
+      stepResults.push({ angle: steps[i], success: !(result && result.success === false), error: result && result.error });
       if (i < steps.length - 1) {
         await new Promise(resolve => setTimeout(resolve, delay));
       }
+    }
+
+    const failed = stepResults.filter(s => !s.success);
+    if (failed.length > 0) {
+      return res.status(failed.some(f => /quarantined|safety/i.test(String(f.error))) ? 409 : 502).json({
+        success: false,
+        error: `Sweep failed on ${failed.length} of ${stepResults.length} moves: ${failed[0].error || 'hardware refused'}`,
+        steps: stepResults,
+        minAngle,
+        maxAngle
+      });
     }
 
     res.json({
