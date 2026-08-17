@@ -591,8 +591,13 @@ class OrchestrationService {
     async startAllQueueLoops() {
         console.log('🎬 Starting all queue loops...');
 
+        // Controllable nodes only. Iterating the raw list dialled Renfield's
+        // deliberately-null address on every start-all
+        // ("https://null:3000/... ENOTFOUND null") — the exact fan-out
+        // isValidHost() exists to prevent, and the documented reason his
+        // config entry carries ip: null in the first place.
         const results = await Promise.allSettled(
-            this.getAnimatronics().map(async (animatronic) => {
+            this.getControllableAnimatronics().map(async (animatronic) => {
                 try {
                     const sceneId = animatronic.defaultSceneId;
                     if (!sceneId) {

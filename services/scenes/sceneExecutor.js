@@ -211,7 +211,10 @@ async function executePartStep(step, characterId, emit) {
   const action = step.action;
   if (!partId || !action) throw new Error('part.step requires partId and action');
   emit && emit({ type: 'step', status: 'start', stepType: 'part', partId, action });
-  const r = await hardwareService.controlPart(String(partId), String(action), step.params || {});
+  // { characterId }: without it controlPart resolves the part id against the
+  // node's selectedCharacter — playing character 5's scene on a node selected
+  // to character 3 drove character 3's PCA9685 channels.
+  const r = await hardwareService.controlPart(String(partId), String(action), step.params || {}, { characterId });
   emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'part', partId, action, result: r });
   if (!r || !r.success) throw new Error((r && r.error) || 'Part action failed');
   return r;
@@ -402,9 +405,15 @@ async function executeServoStep(step, characterId, emit) {
   }
 
   if (targetAngle == null) throw new Error('servo.step requires angle or valid preset');
+  // A preset saved in the legacy {name, position} shape resolves to NaN here
+  // (preset.p is undefined) — fail the step visibly rather than hand NaN to
+  // the hardware layer, where it becomes an unpredictable pulse width.
+  if (!Number.isFinite(Number(targetAngle))) {
+    throw new Error(`servo.step resolved a non-numeric angle from preset "${presetName}" — re-save the preset on the calibration page`);
+  }
 
   emit && emit({ type: 'step', status: 'start', stepType: 'servo', partId, angle: targetAngle, duration, usePreset, presetName });
-  const r = await hardwareService.controlPart(String(partId), 'moveToAngle', { angleDeg: targetAngle, duration });
+  const r = await hardwareService.controlPart(String(partId), 'moveToAngle', { angleDeg: targetAngle, duration }, { characterId });
   emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'servo', partId, result: r });
   if (!r || !r.success) throw new Error((r && r.error) || 'Servo move failed');
   return r;
@@ -465,7 +474,7 @@ async function executeMotorStep(step, characterId, emit) {
   }
 
   emit && emit({ type: 'step', status: 'start', stepType: 'motor', partId, direction, speed: effectiveSpeed, duration: effectiveDuration, usePreset, presetName });
-  const r = await hardwareService.controlPart(String(partId), 'control', { direction, speed: effectiveSpeed, duration: effectiveDuration });
+  const r = await hardwareService.controlPart(String(partId), 'control', { direction, speed: effectiveSpeed, duration: effectiveDuration }, { characterId });
 
   // Persist updated position estimate
   if (step._projectedP != null) {
@@ -538,7 +547,7 @@ async function executeLinearActuatorStep(step, characterId, emit) {
   const action = direction === 'retract' ? 'retract' : 'extend';
 
   emit && emit({ type: 'step', status: 'start', stepType: 'linear-actuator', partId, direction, speed: effectiveSpeed, duration: effectiveDuration, usePreset, presetName });
-  const r = await hardwareService.controlPart(String(partId), action, { speed: effectiveSpeed, duration: effectiveDuration });
+  const r = await hardwareService.controlPart(String(partId), action, { speed: effectiveSpeed, duration: effectiveDuration }, { characterId });
 
   // Persist updated position estimate
   if (step._projectedP != null) {
@@ -557,7 +566,7 @@ async function executeLightStep(step, characterId, emit) {
   // Light parts use 'turnOn' and 'turnOff' actions
   const action = state === 'on' ? 'turnOn' : 'turnOff';
   emit && emit({ type: 'step', status: 'start', stepType: 'light', partId, state, brightness, duration });
-  const r = await hardwareService.controlPart(String(partId), action, { brightness, duration });
+  const r = await hardwareService.controlPart(String(partId), action, { brightness, duration }, { characterId });
   emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'light', partId, result: r });
   if (!r || !r.success) throw new Error((r && r.error) || 'Light control failed');
   return r;
@@ -725,7 +734,7 @@ async function executeHardwareStep(step, characterId, emit) {
       const defaultPartId = params.channel || params.partId || params.id;
       if (defaultPartId) {
         emit && emit({ type: 'step', status: 'start', stepType: 'hardware', action, partId: defaultPartId });
-        const r = await hardwareService.controlPart(String(defaultPartId), String(action), params);
+        const r = await hardwareService.controlPart(String(defaultPartId), String(action), params, { characterId });
         emit && emit({ type: 'step', status: r && r.success ? 'complete' : 'error', stepType: 'hardware', action, partId: defaultPartId, result: r });
         if (!r || !r.success) throw new Error((r && r.error) || `Hardware action '${action}' failed`);
         return r;

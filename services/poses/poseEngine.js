@@ -225,8 +225,14 @@ async function executePosePart(part, options, characterId) {
 
             case 'light':
             case 'led': {
-                // Editor writes `state`, engine originally read only `action`.
-                const action = target.action || target.state || 'toggle';
+                // Editor writes `state: 'on'|'off'`, but the light controller
+                // only implements turnOn/turnOff/toggle — passing 'on' through
+                // raised "Action 'on' not supported" and the light never fired
+                // during pose playback (while the editor's own Test button,
+                // which sends 'turnOn', worked). Map the editor vocabulary to
+                // controller methods before dispatch.
+                const stateMap = { on: 'turnOn', off: 'turnOff', turnOn: 'turnOn', turnOff: 'turnOff', toggle: 'toggle' };
+                const action = stateMap[target.action || target.state] || 'toggle';
                 const result = await controlPart(String(partId), action, {
                     brightness: target.brightness || 100,
                     duration: target.durationMs ?? target.duration ?? 1000
