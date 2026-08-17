@@ -267,7 +267,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
         const toDelete = [];
 
         for (const [sessionId, connection] of this.activeConnections.entries()) {
-            const age = now - connection.startTime.getTime();
+            // A connection registered without a startTime (or with one that was
+            // serialized to a string) crashed this timer with an uncaught
+            // exception — 21 process-fatal hits in one night's log on one node.
+            // Treat an unknown start as "just started": it will age out on a
+            // later pass once a real timestamp discrepancy no longer matters.
+            const startMs = connection.startTime instanceof Date
+                ? connection.startTime.getTime()
+                : Number(new Date(connection.startTime || now));
+            const age = now - (Number.isFinite(startMs) ? startMs : now);
 
             // Headless sessions are owned by an explicit on/off toggle, not by a
             // browser lifetime. Reaping a live one on age would silently switch the

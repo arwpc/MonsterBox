@@ -502,7 +502,16 @@ class GoblinManagerService {
             return { success: true, attempted: 0, reconnected: 0 };
         }
 
-        console.log(`🔄 Attempting to reconnect ${offlineGoblins.length} offline goblins...`);
+        // Log the attempt at most once every 10 minutes. This line used to print
+        // on every ~30s retry and, with goblins permanently offline, became 63%
+        // of an 8.5MB service log in one night — pure SD-card wear. The retry
+        // behaviour is unchanged; only the narration is throttled. State CHANGES
+        // (went offline / reconnected) still log every time below.
+        const now = Date.now();
+        if (!this._lastReconnectLogAt || (now - this._lastReconnectLogAt) > 10 * 60 * 1000) {
+            console.log(`🔄 Attempting to reconnect ${offlineGoblins.length} offline goblins... (retrying every cycle; this line logs at most every 10min)`);
+            this._lastReconnectLogAt = now;
+        }
 
         const results = await Promise.allSettled(
             offlineGoblins.map(goblin => this.pingGoblin(goblin.id))

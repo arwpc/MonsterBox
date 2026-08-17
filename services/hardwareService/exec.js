@@ -59,9 +59,15 @@ export function runPy(args, options = {}) {
         childProcess.on('exit', (code) => {
             clearTimeout(timeout);
 
-            const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
-            console.log(`🔧 Process exited with code ${code} after ${elapsedSec}s`);
-            console.log(`🔧 stdout length: ${stdout.length}, stderr length: ${stderr.length}`);
+            // These two lines were printed unconditionally, ignoring
+            // enableLogging:false — so every silent caller (VU meters poll
+            // several times a second) still wrote two log lines per spawn.
+            // The service log runs on an SD card; respect the caller's ask.
+            if (config.enableLogging) {
+                const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
+                console.log(`🔧 Process exited with code ${code} after ${elapsedSec}s`);
+                console.log(`🔧 stdout length: ${stdout.length}, stderr length: ${stderr.length}`);
+            }
 
             if (code === 0) {
                 // Success - log stdout as success, stderr as info (not error)

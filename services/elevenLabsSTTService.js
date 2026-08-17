@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 import FormData from 'form-data';
-import elevenLabsConfigService from './elevenLabsConfigService.js';
+import elevenLabsConfigService, { describeApiError } from './elevenLabsConfigService.js';
 
 class ElevenLabsSTTService {
     constructor() {
@@ -51,7 +51,7 @@ class ElevenLabsSTTService {
                 sampleRates: [8000, 16000, 22050, 44100, 48000]
             };
         } catch (error) {
-            console.error('Error getting STT capabilities:', error);
+            console.error('Error getting STT capabilities:', describeApiError(error));
             throw error;
         }
     }
@@ -271,7 +271,7 @@ class ElevenLabsSTTService {
                 result
             };
         } catch (error) {
-            console.error('STT test error:', error);
+            console.error('STT test error:', describeApiError(error));
             return {
                 success: false,
                 error: error.message

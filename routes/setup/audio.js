@@ -551,9 +551,21 @@ router.post('/api/move-stream', async (req, res) => {
     }
 });
 
-// Real-time audio level monitoring with caching for performance
+// Real-time audio level monitoring with caching for performance.
+//
+// The TTL must exceed the measurement cost or the cache can never hit: the
+// mic probe is a hard-coded 100ms capture that lands at ~350-385ms wall, so the
+// old 80ms TTL — combined with stamping entries with the request START time —
+// meant every entry was born expired. Measured hit rate: exactly 0%, while 7
+// meters on one page drove ~7.5 python+ALSA spawns/second at ~87% of the Pi's
+// total CPU. 500ms still refreshes a VU meter at 2Hz.
 const audioLevelCache = new Map();
-const CACHE_TTL = 80; // Cache for 80ms — short enough for responsive VU meters
+const CACHE_TTL = 500;
+
+// One in-flight probe per device, shared by every concurrent caller. Four
+// meters on the same deviceId used to spawn four simultaneous ALSA opens of
+// one device for the identical measurement.
+const audioLevelInflight = new Map();
 
 // Periodic cache cleanup to prevent memory leaks
 setInterval(() => {
@@ -580,74 +592,82 @@ router.get('/api/audio-levels', async (req, res) => {
         if (deviceType === 'input') {
             const cacheKey = `input:${deviceId || 'default'}`;
             const cached = audioLevelCache.get(cacheKey);
-            const now = Date.now();
 
             // Return cached value if still fresh
-            if (cached && (now - cached.timestamp) < CACHE_TTL) {
+            if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
                 return res.json(cached.data);
             }
 
-            // Get microphone level — 100ms sample for reliable peak detection
-            if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Getting level for input device: ${deviceId}`);
-            const result = await runWrapper('microphone_cli.py', [
-                'get_level',
-                deviceId || 'default',
-                '16000',  // Sample rate
-                '1',
-                '0.1'     // 100ms sample for accurate peak detection
-            ], { timeoutMs: 2000, enableLogging: false });
+            // Coalesce concurrent callers onto one probe per device.
+            let probe = audioLevelInflight.get(cacheKey);
+            if (!probe) {
+                probe = (async () => {
+                    // Get microphone level — 100ms sample for reliable peak detection
+                    if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Getting level for input device: ${deviceId}`);
+                    const result = await runWrapper('microphone_cli.py', [
+                        'get_level',
+                        deviceId || 'default',
+                        '16000',  // Sample rate
+                        '1',
+                        '0.1'     // 100ms sample for accurate peak detection
+                    ], { timeoutMs: 2000, enableLogging: false });
 
-            if (result) {
-                try {
-                    const data = JSON.parse(result);
-                    const level = data.level || 0;
-                    if (process.env.MB_DEBUG_AUDIO === '1') console.log(`🎤 Input level: ${level} for device: ${deviceId}`);
-
+                    let level = 0;
+                    if (result) {
+                        try {
+                            const data = JSON.parse(result);
+                            level = data.level || 0;
+                        } catch (parseError) {
+                            console.warn('Failed to parse microphone level:', parseError.message);
+                        }
+                    } else {
+                        console.warn('No output from microphone_cli.py');
+                    }
                     const responseData = {
                         success: true,
-                        level: level,
+                        level,
                         deviceId: deviceId || 'default',
                         type: 'input'
                     };
-
-                    // Cache the result
-                    audioLevelCache.set(cacheKey, { data: responseData, timestamp: now });
-
-                    res.json(responseData);
-                } catch (parseError) {
-                    console.warn('Failed to parse microphone level:', parseError);
-                    res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: 'input' });
-                }
-            } else {
-                console.warn('No output from microphone_cli.py');
-                res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: 'input' });
+                    // Timestamp at COMPLETION. Stamping the request start time
+                    // made every entry ~350ms old at write — already expired.
+                    audioLevelCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
+                    return responseData;
+                })().finally(() => audioLevelInflight.delete(cacheKey));
+                audioLevelInflight.set(cacheKey, probe);
             }
+            res.json(await probe);
         } else {
-            // For output, try to get sink volume level as a proxy for activity
+            // Output: report the sink's volume SETTING (parsed from wpctl state)
+            // as the meter value. It is not a live signal level, but it is
+            // honest about which sink is selected and how loud it is set — the
+            // old code looked for a `volume` property no parser ever produced,
+            // so the meter was permanently 0 while paying an uncached
+            // `wpctl status` fork per 150ms poll.
+            const cacheKey = `output:${deviceId || 'default'}`;
+            const cached = audioLevelCache.get(cacheKey);
+            if (cached && (Date.now() - cached.timestamp) < CACHE_TTL * 2) {
+                return res.json(cached.data);
+            }
+            let level = 0;
             try {
                 const sinks = await pipewireService.listSinks();
                 const targetSink = sinks.find(sink =>
                     sink.name === deviceId ||
-                    sink.description.includes(deviceId) ||
-                    (deviceId === 'default' && sink.default)
+                    (sink.description || '').includes(deviceId) ||
+                    (deviceId === 'default' && sink.isDefault)
                 );
-
-                if (targetSink && targetSink.volume) {
-                    // Use volume as a proxy for output level (0-1 range)
-                    const volumeLevel = parseFloat(targetSink.volume) || 0;
-                    res.json({
-                        success: true,
-                        level: volumeLevel * 0.1, // Scale down for VU meter display
-                        deviceId: deviceId || 'default',
-                        type: 'output'
-                    });
-                } else {
-                    res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: 'output' });
+                if (targetSink && targetSink.state) {
+                    // state carries e.g. "vol: 0.65"
+                    const volMatch = String(targetSink.state).match(/vol:\s*([\d.]+)/);
+                    if (volMatch) level = Math.min(1, parseFloat(volMatch[1]) || 0);
                 }
             } catch (error) {
                 console.warn('Failed to get output level:', error.message);
-                res.json({ success: true, level: 0, deviceId: deviceId || 'default', type: 'output' });
             }
+            const responseData = { success: true, level, deviceId: deviceId || 'default', type: 'output' };
+            audioLevelCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
+            res.json(responseData);
         }
     } catch (error) {
         console.error('Error getting audio levels:', error.message);

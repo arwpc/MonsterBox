@@ -6,7 +6,7 @@
 import axios from 'axios';
 import { spawnSync } from 'child_process';
 import FormData from 'form-data';
-import elevenLabsConfigService from './elevenLabsConfigService.js';
+import elevenLabsConfigService, { describeApiError } from './elevenLabsConfigService.js';
 
 // Models that actually apply voice_settings.speed on /v1/text-to-speech.
 // eleven_v3 accepts the field and ignores it (verified by measuring output
@@ -407,7 +407,7 @@ class ElevenLabsTTSService {
                 error: result.error
             };
         } catch (error) {
-            console.error('TTS test error:', error);
+            console.error('TTS test error:', describeApiError(error));
             return {
                 success: false,
                 error: error.message

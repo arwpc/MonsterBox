@@ -395,21 +395,48 @@ class PipeWireService {
     }
 
     /**
-     * Set default sink
+     * Resolve a device name to its numeric wpctl id by matching against the
+     * enumerated list. wpctl can only set-default by numeric id, but callers
+     * hold pactl-style names — this bridges the two without needing pactl,
+     * which some nodes simply do not have installed (240 `pactl: not found`
+     * failures in one night's log on such a node).
+     */
+    async _resolveWpctlId(name, list) {
+        const items = await list();
+        const wanted = String(name).toLowerCase();
+        const hit = items.find(item =>
+            /^\d+$/.test(String(item.id)) && (
+                String(item.name).toLowerCase() === wanted ||
+                String(item.name).toLowerCase().includes(wanted) ||
+                wanted.includes(String(item.name).toLowerCase())
+            ));
+        return hit ? hit.id : null;
+    }
+
+    /**
+     * Set default sink. wpctl first (always present with PipeWire); pactl only
+     * as a compatibility fallback where it exists.
      */
     async setDefaultSink(sinkId) {
         try {
             const id = String(sinkId || '').trim().replace(/[^a-zA-Z0-9_.@:-]/g, '');
             const isNumeric = /^\d+$/.test(id);
             if (isNumeric) {
-                // Prefer wpctl for numeric PipeWire IDs
                 await pexec(`wpctl set-default ${id}`);
                 return { success: true, method: 'wpctl', sinkId: id };
             }
             const isAlias = id === '' || id === 'default' || id === 'sysdefault' || id === 'pulse' || id.startsWith('hw:');
-            const target = isAlias ? '@DEFAULT_SINK@' : id;
-            await pexec(`pactl set-default-sink ${target}`);
-            return { success: true, method: 'pactl', sinkId: target };
+            if (isAlias) {
+                // "make the default the default" — nothing to change.
+                return { success: true, method: 'noop', sinkId: '@DEFAULT_SINK@' };
+            }
+            const wpId = await this._resolveWpctlId(id, () => this.listSinks());
+            if (wpId != null) {
+                await pexec(`wpctl set-default ${wpId}`);
+                return { success: true, method: 'wpctl', sinkId: wpId };
+            }
+            await pexec(`pactl set-default-sink ${id}`);
+            return { success: true, method: 'pactl', sinkId: id };
         } catch (error) {
             console.error('Failed to set default sink:', error.message);
             return { success: false, error: error.message };
@@ -417,21 +444,27 @@ class PipeWireService {
     }
 
     /**
-     * Set default source
+     * Set default source. Same wpctl-first strategy as setDefaultSink.
      */
     async setDefaultSource(sourceId) {
         try {
             const id = String(sourceId || '').trim().replace(/[^a-zA-Z0-9_.@:-]/g, '');
             const isNumeric = /^\d+$/.test(id);
             if (isNumeric) {
-                // Prefer wpctl for numeric PipeWire IDs
                 await pexec(`wpctl set-default ${id}`);
                 return { success: true, method: 'wpctl', sourceId: id };
             }
             const isAlias = id === '' || id === 'default' || id === 'sysdefault' || id === 'pulse' || id.startsWith('hw:');
-            const target = isAlias ? '@DEFAULT_SOURCE@' : id;
-            await pexec(`pactl set-default-source ${target}`);
-            return { success: true, method: 'pactl', sourceId: target };
+            if (isAlias) {
+                return { success: true, method: 'noop', sourceId: '@DEFAULT_SOURCE@' };
+            }
+            const wpId = await this._resolveWpctlId(id, () => this.listSources());
+            if (wpId != null) {
+                await pexec(`wpctl set-default ${wpId}`);
+                return { success: true, method: 'wpctl', sourceId: wpId };
+            }
+            await pexec(`pactl set-default-source ${id}`);
+            return { success: true, method: 'pactl', sourceId: id };
         } catch (error) {
             console.error('Failed to set default source:', error.message);
             return { success: false, error: error.message };
@@ -439,9 +472,14 @@ class PipeWireService {
     }
 
     /**
-     * Get current default sink
+     * Get current default sink (node name). wpctl first, pactl fallback.
      */
     async getDefaultSink() {
+        try {
+            const { stdout } = await pexec('wpctl inspect @DEFAULT_AUDIO_SINK@');
+            const match = stdout.match(/node\.name\s*=\s*"([^"]+)"/);
+            if (match) return match[1];
+        } catch (_) { /* fall through to pactl */ }
         try {
             const { stdout } = await pexec('pactl get-default-sink');
             return stdout.trim();
@@ -452,9 +490,14 @@ class PipeWireService {
     }
 
     /**
-     * Get current default source
+     * Get current default source (node name). wpctl first, pactl fallback.
      */
     async getDefaultSource() {
+        try {
+            const { stdout } = await pexec('wpctl inspect @DEFAULT_AUDIO_SOURCE@');
+            const match = stdout.match(/node\.name\s*=\s*"([^"]+)"/);
+            if (match) return match[1];
+        } catch (_) { /* fall through to pactl */ }
         try {
             const { stdout } = await pexec('pactl get-default-source');
             return stdout.trim();

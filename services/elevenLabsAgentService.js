@@ -4,7 +4,7 @@
  */
 
 import axios from 'axios';
-import elevenLabsConfigService from './elevenLabsConfigService.js';
+import elevenLabsConfigService, { describeApiError } from './elevenLabsConfigService.js';
 
 class ElevenLabsAgentService {
     constructor() {
@@ -31,7 +31,7 @@ class ElevenLabsAgentService {
                 agents: response.data.agents || []
             };
         } catch (error) {
-            console.error('Error fetching agents:', error);
+            console.error('Error fetching agents:', describeApiError(error));
             return {
                 success: false,
                 error: error.response?.data?.detail || error.message,
@@ -60,7 +60,7 @@ class ElevenLabsAgentService {
                 agent: response.data
             };
         } catch (error) {
-            console.error('Error fetching agent:', error);
+            console.error('Error fetching agent:', describeApiError(error));
             return {
                 success: false,
                 error: error.response?.data?.detail || error.message
@@ -90,7 +90,7 @@ class ElevenLabsAgentService {
                 agent: response.data
             };
         } catch (error) {
-            console.error('Error creating agent:', error);
+            console.error('Error creating agent:', describeApiError(error));
             return {
                 success: false,
                 error: error.response?.data?.detail || error.message
@@ -120,7 +120,7 @@ class ElevenLabsAgentService {
                 agent: response.data
             };
         } catch (error) {
-            console.error('Error updating agent:', error);
+            console.error('Error updating agent:', describeApiError(error));
             return {
                 success: false,
                 error: error.response?.data?.detail || error.message
@@ -148,7 +148,7 @@ class ElevenLabsAgentService {
                 message: 'Agent deleted successfully'
             };
         } catch (error) {
-            console.error('Error deleting agent:', error);
+            console.error('Error deleting agent:', describeApiError(error));
             return {
                 success: false,
                 error: error.response?.data?.detail || error.message
@@ -262,7 +262,7 @@ Do not overuse tags. Most responses need zero tags — let punctuation do the wo
                 error: result.error || null
             };
         } catch (error) {
-            console.error('Agent test error:', error);
+            console.error('Agent test error:', describeApiError(error));
             return {
                 success: false,
                 error: error.message
@@ -315,7 +315,7 @@ Do not overuse tags. Most responses need zero tags — let punctuation do the wo
             if (!replyText) replyText = 'Hello there!';
             return { success: true, replyText, raw: data };
         } catch (error) {
-            console.error('Agent chat error:', error);
+            console.error('Agent chat error:', describeApiError(error));
             return {
                 success: false,
                 error: error.response?.data?.detail || error.message

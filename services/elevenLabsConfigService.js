@@ -150,5 +150,26 @@ class ElevenLabsConfigService {
     }
 }
 
+/**
+ * The safe subset of an ElevenLabs API error, for logging.
+ *
+ * `console.error('...', error)` on a raw axios error prints the request config —
+ * including the `xi-api-key` header — and the service log is world-readable
+ * (`/var/log/monsterbox.log`, mode 644). Every ElevenLabs call site must log
+ * through this instead of passing the error object itself.
+ *
+ * @param {Error} error - anything thrown by an axios call (or plain Error)
+ * @returns {Object} status / API detail / message — never headers, never config
+ */
+export function describeApiError(error) {
+    if (!error) return { message: 'unknown error' };
+    return {
+        message: error.message,
+        status: error.response?.status,
+        detail: error.response?.data?.detail ?? error.response?.data?.error,
+        code: error.code
+    };
+}
+
 // Export singleton instance
 export default new ElevenLabsConfigService();
