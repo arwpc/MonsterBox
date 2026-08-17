@@ -2,6 +2,82 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [9.2.1] - 2026-08-16 — Mina's servos were never broken, and the controls now do what they say
+
+An evening session on the Mina node, driven by one complaint: "the neck and eye servos
+rarely work, the jaw barely moves, and everything gets slower the more I use it." All of it
+was software. A multi-agent audit (5 finders, adversarial verification) then swept every
+calibration path, VU meter, and superpower for the same defect families and fixed what it
+confirmed.
+
+### Fixed — why Mina's servos looked dead
+
+- **Every UI servo command silently became "go to 50°".** `POST /api/parts/:id/test` read
+  only `{position}`, but the Pose Editor and calibration pages send
+  `{action:'moveToAngle', params:{angleDeg}}` — the angle fell through to the default and
+  the response still said success. Proven live: asked for 150°, servo went to 50°. The
+  route now honors every caller shape, dispatches motor `stop` as a stop (it used to DRIVE
+  the motor forward at 100% for a second), reads an actuator direction sent as the action
+  (Retract used to extend), and refuses a servo test with no angle at all.
+- **The Neck was frozen by its own calibration**: `{minAngle:108, maxAngle:108}`, captured
+  by pressing Set Min and Set Max while the servo (per the bug above) never moved. Every
+  command clamped to 108°. `isDegenerateWindow()` now refuses zero-span windows (angle and
+  normalized shapes, non-finite values) at every bounds writer — set-min/set-max, the raw
+  profile POST, parts.json marker writes, the jaw page's Min/Max quick-adjust — and the
+  store's read path withholds such a window from anything that moves hardware.
+- **The progressive slowdown was leaked VU-meter polling** on the calibration page: every
+  part selection stacked another 150 ms loop, each poll spawning a ~350 ms Python+ALSA
+  process, forever. The audit found and fixed the whole family: the motion-sensor GPIO
+  poll, the audio page's per-mic meters (7 mic parts ≈ 15 spawns/sec, unstoppable from the
+  UI), the System Logs tab (journalctl + 2×tail every 5 s after leaving the tab), and an
+  orphaned OpenCV motion tracker that kept a core busy and the head scan-sweeping after
+  switching parts. The `/api/audio-levels` cache was also inert (entries born older than
+  their own TTL) — it now actually coalesces.
+
+### Fixed — controls that reported success while doing nothing (or the opposite)
+
+- The calibration page's continuous-servo **Stop** posted a delta-0 nudge that
+  short-circuited "Already at target" — the servo kept turning. **EMERGENCY STOP** posted
+  to a route that does not exist and toasted success on the 404s. Both now hit the real
+  stop endpoint and report honestly.
+- `AbsoluteServoAdapter` swallowed hardware refusals, minting phantom positions that
+  Set-Min/Set-Max then persisted as bounds the servo never visited. `jog-raw` reported
+  "Done" for quarantined parts, discarding the safety refusal written specifically for it.
+  Head-animation Test Sweep swept placeholder 0-180 "calibration" on unmeasured servos and
+  reported "Sweep completed" regardless of results — it now refuses without a measured
+  range and reports per-step failures.
+- Pose-Editor lights tested fine and then never fired in playback (editor writes
+  `state:'on'`, controller only knows `turnOn`) — now mapped. Random-pose "safety" scaling
+  pulled angles toward a literal 90°, which for Mina's 22..91 jaw turned a near-closed pose
+  into nearly wide open — now scales toward each part's own calibrated midpoint.
+
+### Fixed — character independence in the hot paths
+
+- Head tracking pins its character at enable time and passes `characterId` on every
+  hardware call and calibration lookup (a mid-session selection change produced 10,409
+  "Part 2 not found" errors in one night while hammering a dead channel — there is now a
+  5-failure/60 s back-off). Scene execution threads `characterId` through all six
+  `controlPart` sites; the jaw service's calibration lookups are character-scoped.
+
+### Fixed — hygiene from the overnight log triage
+
+- ElevenLabs services no longer print the `xi-api-key` header into the world-readable
+  service log on API errors; the WS session cleanup can't crash the process on a malformed
+  `startTime`; goblin reconnect spam (63% of an 8.5 MB nightly log) is throttled;
+  `pactl`-less nodes now get default sink/source via `wpctl`; start-all no longer dials
+  Renfield's deliberately-null address.
+
+### Voice
+
+- Orlok's Gemini vocal-profile research (preserved at
+  `docs/development/Count_Orlok_Vocal_Profile.pdf`) is fully applied: octave-dropped
+  chest-voice description in the persona prompt, stability 0.3 on both the agent and
+  say/scene paths. Ear-checked live: AUDIBLE, canonical voice, 100% recall.
+
+> ⚠️ Mina's Neck/Eye still need **one visual confirmation** that the (now-correct) register
+> sweeps produce physical motion. ⚠️ Sir Dragomir dropped off the network mid-evening —
+> physical check needed; he has not received this release.
+
 ## [9.2.0] - 2026-08-16 — The right voice, a body that moves together, and a show that reaches the yard
 
 *Includes **9.1.0**, which was opened during the same overnight session and superseded before
