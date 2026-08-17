@@ -29,12 +29,12 @@ export class AbsoluteServoAdapter {
   pToUs(p) { return this.angleToUs(p * 180); }
 
   /** Nudge by old-style dir/scale (uses degree-based scales) */
-  async nudge(dir, scale) {
+  async nudge(dir, scale, opts) {
     const delta = NUDGE_SCALES[scale] || NUDGE_SCALES.med;
     const newAngle = dir === 'max'
       ? Math.min(180, this.currentAngle + delta)
       : Math.max(0, this.currentAngle - delta);
-    await this.gotoAngle(newAngle);
+    await this.gotoAngle(newAngle, opts);
   }
 
   async stop() { await this.gotoAngle(this.currentAngle); }
@@ -44,12 +44,15 @@ export class AbsoluteServoAdapter {
     const clamped = Math.max(0, Math.min(180, angleDeg));
     try {
       // Invert is applied system-wide in controlPart() via calibration profile
+      const hwOptions = {};
+      if (opts && opts.characterId != null) hwOptions.characterId = opts.characterId;
+      if (opts && opts.calibrationOverride === true) hwOptions.calibrationOverride = true;
       const result = await hardwareService.controlPart(String(this.partId), 'moveToAngle', {
         angleDeg: clamped,
         // Accept both spellings: the nudge route sends durationMs, older callers
         // sent timeoutMs; reading only one silently discarded the operator's value.
         duration: (opts && (opts.durationMs || opts.timeoutMs)) || 1000
-      }, opts && opts.characterId != null ? { characterId: opts.characterId } : undefined);
+      }, Object.keys(hwOptions).length ? hwOptions : undefined);
 
       // controlPart NEVER throws — refusals and wrapper failures come back as
       // {success:false}. Swallowing that here advanced currentAngle for a servo

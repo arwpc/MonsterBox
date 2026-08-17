@@ -1767,7 +1767,14 @@ export async function controlPart(partId, action, params = {}, options = {}) {
         } catch (_) { /* uncalibrated part — configured safety limits still apply */ }
 
         const safety = await getPartSafety(characterId, partId, calProfile);
-        const limited = applySafetyLimits({ type, action, params: actionParams, profile: calProfile, safety, partId });
+        // options.calibrationOverride: supervised-calibration mode from the
+        // calibration endpoints only — relaxes the angle window and duration
+        // cap so an operator can measure real travel; quarantines, retract
+        // blocks, speed caps and power groups still apply (see safetyLimits).
+        const limited = applySafetyLimits({
+            type, action, params: actionParams, profile: calProfile, safety, partId,
+            calibrationOverride: options.calibrationOverride === true
+        });
         if (limited.blocked) {
             console.warn(`🛑 Safety limit blocked ${action} on part ${partId} (${part.name}): ${limited.blocked}`);
             return {

@@ -55,10 +55,10 @@ export class OpenLoopLinearAdapter {
     return this.calculateDriveTime(deltaP, pwmPct) + this.settleMs;
   }
 
-  async nudge(dir, scale) {
+  async nudge(dir, scale, opts) {
     const delta = NUDGE_SCALES[scale] || NUDGE_SCALES.med;
     const newP = dir === 'max' ? Math.min(1, this.currentP + delta) : Math.max(0, this.currentP - delta);
-    await this.gotoNormalized(newP, { speedPct: 50 });
+    await this.gotoNormalized(newP, Object.assign({ speedPct: 50 }, opts || {}));
   }
 
   async stop() {
@@ -74,7 +74,7 @@ export class OpenLoopLinearAdapter {
    * @param {'retract'|'extend'} direction - Which endstop to seek
    * @param {number} speedPct - Motor speed percentage (default 50)
    */
-  async home(direction = 'retract', speedPct = 50) {
+  async home(direction = 'retract', speedPct = 50, opts) {
     const targetP = direction === 'retract' ? 0 : 1;
     const hwDir = direction === 'retract' ? 'retract' : 'extend';
     // Full-range drive time plus generous overdrive
@@ -83,7 +83,22 @@ export class OpenLoopLinearAdapter {
     const duration = Math.round(fullRangeMs * (1 + ENDPOINT_OVERDRIVE_FACTOR));
     console.log(`🏠 OpenLoopLinearAdapter: homing partId=${this.partId}, dir=${hwDir}, speed=${speedPct}%, duration=${duration}ms`);
     try {
-      await hardwareService.controlPart(String(this.partId), 'jog', { direction: hwDir, speed: speedPct, duration });
+      const hwOptions = {};
+      if (opts && opts.characterId != null) hwOptions.characterId = opts.characterId;
+      if (opts && opts.calibrationOverride === true) hwOptions.calibrationOverride = true;
+      const result = await hardwareService.controlPart(String(this.partId), 'jog',
+        { direction: hwDir, speed: speedPct, duration },
+        Object.keys(hwOptions).length ? hwOptions : undefined);
+      // A refused or failed drive must NOT reset the tracker: "homed" used to
+      // be recorded even when the safety layer blocked the jog or the wrapper
+      // errored — the system then believed a part was at its endstop when it
+      // had not moved at all, which is why homing "did nothing" and every
+      // position after it was fiction.
+      if (result && result.success === false) {
+        const err = new Error(result.error || 'Homing drive was refused');
+        err.blockedBySafetyLimit = !!result.blockedBySafetyLimit;
+        throw err;
+      }
       // Wait for mechanical settling
       await new Promise(r => setTimeout(r, this.settleMs));
       // Reset tracker — physical stop guarantees known position
@@ -120,7 +135,12 @@ export class OpenLoopLinearAdapter {
 
     console.log(`🔧 OpenLoopLinearAdapter: partId=${this.partId}, direction=${direction}, speed=${speedPct}%, driveMs=${driveMs}ms, settleMs=${this.settleMs}ms, deltaP=${deltaP.toFixed(3)}${isEndpoint ? ' (ENDPOINT OVERDRIVE)' : ''}`);
     try {
-      const result = await hardwareService.controlPart(String(this.partId), 'jog', { direction, speed: speedPct, duration: driveMs });
+      const hwOptions = {};
+      if (opts && opts.characterId != null) hwOptions.characterId = opts.characterId;
+      if (opts && opts.calibrationOverride === true) hwOptions.calibrationOverride = true;
+      const result = await hardwareService.controlPart(String(this.partId), 'jog',
+        { direction, speed: speedPct, duration: driveMs },
+        Object.keys(hwOptions).length ? hwOptions : undefined);
       // controlPart RETURNS a refusal rather than throwing, so ignoring the result
       // meant a blocked move still advanced the position estimate: the system then
       // believed a quarantined actuator sitting on its endstop was at mid-travel —

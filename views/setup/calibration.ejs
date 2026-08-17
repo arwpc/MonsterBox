@@ -2840,15 +2840,20 @@
               if (window && window.MB_TEST_MODE) {
                 if (st) st.textContent = 'Done';
                 setTimeout(function() { if (st) st.textContent = ''; }, 2000);
+                // calibrationOverride: the manual angle control on THIS page is
+                // the operator's measuring tool — without the flag, the inner
+                // safety window stopped the servo at the previous ceiling while
+                // the operator was trying to find the real one. Automated
+                // sweeps and preset recalls stay clamped on purpose.
                 fetch('/api/calibration/' + encodeURIComponent(part.id) + '/goto', {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: angle })
+                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: angle, calibrationOverride: true })
                 }).catch(function() { });
                 return;
               }
               var response = await fetch('/api/calibration/' + encodeURIComponent(part.id) + '/goto', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ angle: angle })
+                body: JSON.stringify({ angle: angle, calibrationOverride: true })
               });
               var data = await response.json();
               if (response.ok && data.success) {

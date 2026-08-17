@@ -265,7 +265,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         console.error(`Invalid nudge request for part ${partId}:`, { dir, scale, body: req.body });
         return res.status(400).json({ success: false, error: 'Invalid dir or scale' });
       }
-      await adapter.nudge(dir, scale);
+      await adapter.nudge(dir, scale, { calibrationOverride: true });
 
       if (isAbsoluteServo(profile)) {
         const currentAngle = adapter.currentAngle !== undefined ? adapter.currentAngle : 90;
@@ -290,8 +290,12 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         // supervised tool for discovering limits at the calibration screen, and
         // set-min/set-max record wherever it lands. Clamping here would make an
         // existing window impossible to widen. The runtime path (goto) is clamped.
+        // calibrationOverride carries that intent through controlPart's inner
+        // safety clamp too — without it, the configured hardware-safety window
+        // silently re-clamped the "unclamped" nudge, and the operator was
+        // stopped at the old ceiling while trying to measure past it.
         const newAngle = Math.max(0, Math.min(180, currentAngle + delta));
-        await adapter.gotoAngle(newAngle, { speedPct, durationMs });
+        await adapter.gotoAngle(newAngle, { speedPct, durationMs, calibrationOverride: true });
         positionState.set(partId, { currentAngle: newAngle, currentP: angleToP(newAngle), lastUpdated: new Date().toISOString() });
         res.json({ success: true, message: `Nudged by ${delta}°`, currentAngle: newAngle, currentP: angleToP(newAngle) });
       } else {
@@ -302,7 +306,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         const bounds = (measuredNudge && measuredNudge.minP != null && measuredNudge.maxP != null) ? measuredNudge : null;
         const rawP = currentP + delta;
         const newP = clampP(rawP, bounds);
-        await adapter.gotoNormalized(newP, { speedPct, durationMs });
+        await adapter.gotoNormalized(newP, { speedPct, durationMs, calibrationOverride: true });
         persistPosition(partId, newP);
         res.json({ success: true, message: `Nudged by ${delta}`, currentP: newP });
       }
@@ -357,7 +361,7 @@ router.post('/:partId/jog-raw', express.json(), async (req, res) => {
     const ctx = await resolveCharacter(req);
     const result = await hardwareService.controlPart(String(partId), 'jog',
       { direction, speed, duration },
-      ctx && ctx.id != null ? { characterId: ctx.id } : undefined);
+      { calibrationOverride: true, ...(ctx && ctx.id != null ? { characterId: ctx.id } : {}) });
     if (!result || result.success === false) {
       const blocked = !!(result && result.blockedBySafetyLimit);
       return res.status(blocked ? 403 : 502).json({
@@ -387,7 +391,9 @@ router.post('/:partId/home', express.json(), async (req, res) => {
       return res.status(400).json({ success: false, error: 'Part type does not support homing' });
     }
     actuatorPositionStore.markMoving(partId, dir);
-    await adapter.home(dir, speedPct);
+    // Supervised calibration: homing must reach the physical endstop, so the
+    // duration cap does not apply (quarantines and speed caps still do).
+    await adapter.home(dir, speedPct, { calibrationOverride: true });
     const currentP = adapter.currentP !== undefined ? adapter.currentP : (dir === 'retract' ? 0 : 1);
     // Homing gives us high-confidence position
     actuatorPositionStore.markHomed(partId, currentP);
@@ -462,16 +468,22 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       // Respect the part's calibrated window, not just 0-180 — driving a
       // calibrated servo past its bounds holds it against a mechanical stop —
       // and then the configured safety window on top of it.
+      // Explicit supervised-calibration request from the calibration page:
+      // skip the calibrated-bounds clamp (measuring real travel is the point)
+      // and carry the override through the inner safety layer. checkSafety
+      // above has already refused quarantined parts either way. Runtime
+      // callers never send this flag and stay fully clamped.
+      const calOverride = req.body.calibrationOverride === true;
       const safeAngle = guard.adjusted && guard.adjusted.angleDeg != null ? guard.adjusted.angleDeg : angle;
       // calibratedBounds(), not profile.bounds: the raw record can carry a
       // placeholder span or a degenerate (min==max) window, and clamping with
       // either pins the servo at one angle on the very page whose job is to
       // diagnose why it will not move. The safe accessor withholds both.
-      const targetAngle = clampAngle(safeAngle, calibratedBounds(profile));
+      const targetAngle = calOverride ? Math.max(0, Math.min(180, angle)) : clampAngle(safeAngle, calibratedBounds(profile));
       if (targetAngle !== angle) {
         console.warn(`🛡️  goto clamped part ${partId}: ${angle}° → ${targetAngle}° (calibrated bounds)`);
       }
-      await adapter.gotoAngle(targetAngle, { speedPct });
+      await adapter.gotoAngle(targetAngle, { speedPct, calibrationOverride: calOverride });
       positionState.set(partId, { currentAngle: targetAngle, currentP: angleToP(targetAngle), lastUpdated: new Date().toISOString() });
       res.json({ success: true, message: `Moved to ${targetAngle}°`, targetAngle, targetP: angleToP(targetAngle), requestedAngle: angle, clamped: targetAngle !== angle });
     } else {

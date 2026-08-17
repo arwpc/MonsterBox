@@ -109,11 +109,27 @@ if [ "$DRY_RUN" = "1" ]; then RSYNC_DRY="-n"; fi
 # running the old build and the deploy looked like it had done nothing at all.
 # That is exactly how a fleet ends up silently running mixed versions.
 set +e
+# The excludes below split into two families:
+#  - build artifacts (node_modules, logs, test output), and
+#  - NODE-LOCAL OPERATIONAL STATE. Each node owns its own calibration
+#    (calibration_profiles.json is gitignored precisely because a profile is a
+#    measurement of ONE node's hardware), actuator positions, superpower
+#    toggles, and selected character. Deploying used to overwrite a node's
+#    live calibration with the deploying node's stale copy of it — a deploy
+#    must bring code, never another machine's measurements.
 ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'node_modules' \
     --exclude 'data/character-*/parts.json' \
     --exclude 'data/character-*/poses.json' \
     --exclude 'data/character-*/servo_calibrations.json' \
+    --exclude 'data/character-*/super-powers.json' \
+    --exclude 'data/character-*/lurk-mode-state.json' \
+    --exclude 'data/character-*/ai_agent_state.json' \
+    --exclude 'data/character-*/movement-config.json' \
+    --exclude 'data/calibration_profiles.json' \
+    --exclude 'data/actuator-positions.json' \
+    --exclude 'data/monsterbox.pid' \
+    --exclude 'config/app-config.json' \
     --exclude '.git' \
     --exclude 'logs' \
     --exclude 'tmp' \

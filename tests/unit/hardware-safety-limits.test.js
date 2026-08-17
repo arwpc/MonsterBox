@@ -340,3 +340,87 @@ describe('Hardware safety limits', function () {
     });
   });
 });
+
+describe('Supervised calibration override', function () {
+  it('relaxes the angle window so an operator can measure past the old ceiling', function () {
+    const result = applySafetyLimits({
+      type: 'servo',
+      action: 'moveToAngle',
+      params: { angleDeg: 160 },
+      profile: { bounds: { minAngle: 60, maxAngle: 120 } },
+      safety: { minAngle: 60, maxAngle: 120 },
+      partId: 15,
+      calibrationOverride: true
+    });
+    expect(result.blocked).to.equal(null);
+    // The whole point: 160 reaches the hardware layer un-clamped.
+    expect(result.params.angleDeg).to.equal(160);
+    // ...but the excursion is announced, never silent.
+    expect(result.adjustments.join(' ')).to.contain('override');
+  });
+
+  it('relaxes the duration cap so homing can reach the endstop', function () {
+    const result = applySafetyLimits({
+      type: 'linear_actuator',
+      action: 'jog',
+      params: { direction: 'extend', duration: 20000, speed: 30 },
+      profile: null,
+      safety: { maxDurationMs: 3000 },
+      partId: 1,
+      calibrationOverride: true
+    });
+    expect(result.blocked).to.equal(null);
+    expect(result.params.duration).to.equal(20000);
+  });
+
+  it('NEVER relaxes a quarantine', function () {
+    const result = applySafetyLimits({
+      type: 'linear_actuator',
+      action: 'jog',
+      params: { direction: 'extend', duration: 1000 },
+      profile: null,
+      safety: { blockAllMotion: true, blockReason: 'ambiguous wiring' },
+      partId: 3,
+      calibrationOverride: true
+    });
+    expect(result.blocked).to.be.a('string').and.contain('quarantined');
+  });
+
+  it('NEVER relaxes the retract block on a part at its mechanical minimum', function () {
+    const result = applySafetyLimits({
+      type: 'linear_actuator',
+      action: 'jog',
+      params: { direction: 'retract', duration: 1000 },
+      profile: null,
+      safety: { noRetractBelowMin: true },
+      partId: 3,
+      calibrationOverride: true
+    });
+    expect(result.blocked).to.be.a('string');
+  });
+
+  it('NEVER relaxes the speed cap that protects a fused rail', function () {
+    const result = applySafetyLimits({
+      type: 'servo',
+      action: 'moveToAngle',
+      params: { angleDeg: 100, speed: 100 },
+      profile: null,
+      safety: { maxSpeedPct: 40 },
+      partId: 4,
+      calibrationOverride: true
+    });
+    expect(result.params.speed).to.equal(40);
+  });
+
+  it('changes nothing when the flag is absent (default clamped behaviour)', function () {
+    const result = applySafetyLimits({
+      type: 'servo',
+      action: 'moveToAngle',
+      params: { angleDeg: 160 },
+      profile: { bounds: { minAngle: 60, maxAngle: 120 } },
+      safety: {},
+      partId: 15
+    });
+    expect(result.params.angleDeg).to.equal(120);
+  });
+});
