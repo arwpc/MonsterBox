@@ -110,13 +110,6 @@ try {
 } catch (e) { /* optional */ }
 
 try {
-    const { runStartupHealthCheck } = await import('./services/resource/startupHealthCheck.js');
-    await runStartupHealthCheck();
-} catch (e) {
-    if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Startup health check:', e.message);
-}
-
-try {
     const { MemoryMonitor } = await import('./services/resource/memoryMonitor.js');
     memoryMonitorInstance = new MemoryMonitor();
     memoryMonitorInstance.start();
@@ -140,6 +133,20 @@ if (hostnameCharId !== null && hostnameCharId !== config.selectedCharacter) {
     console.log(`[startup] Hostname "${os.hostname()}" → character ${hostnameCharId} (already correct)`);
 } else {
     console.log(`[startup] Hostname "${os.hostname()}" has no animatronics mapping, keeping character ${config.selectedCharacter}`);
+}
+
+// Startup health check runs AFTER the hostname→character correction above, and
+// must stay after it: the servoChannels audit shells out to servo_cli.py, which
+// resolves the character from app-config.json on disk. When a stale
+// selectedCharacter reached a node (observed: Sir Dragomir carrying 3), the
+// audit ran against the wrong character's parts, warned about another node's
+// power groups, and persisted those false warnings to startup-health.json for
+// the dashboard to display.
+try {
+    const { runStartupHealthCheck } = await import('./services/resource/startupHealthCheck.js');
+    await runStartupHealthCheck();
+} catch (e) {
+    if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Startup health check:', e.message);
 }
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : (config.port || 3000);
