@@ -295,6 +295,40 @@ exist yet.
 
 ## Cross-Cutting Software Bugs
 
+### Opened from the 2026-08-16 evening evidence sweep (v9.3.0 session)
+
+- 🟡 **"Mute Speaker" silences the show but not TTS — decide the intended semantics.**
+  `playBufferOnCharacterSpeaker` (audio library, scene cues) honors the mute flag;
+  `playAIOnCharacterSpeaker` (TTS/say/earcheck) ignores it. Tonight this meant a muted
+  Orlok passed his ear-check while every library/scene play was silently skipped — the
+  "audio is broken" report was a mute toggle left on by a dead conversation session
+  (WS 1006). v9.3.0 makes the muted skips *honest* (response + log line), but the
+  split behaviour is a product decision, deliberately unchanged.
+- 🟡 **The app's reboot endpoint can never work**: `routes/api/systemRoutes.js` runs
+  `sudo reboot`, but `monsterbox.service` sets `NoNewPrivileges=yes` — every attempt fails
+  with "no new privileges". Fleet-wide (same unit file). Reboot via SSH instead; fixing it
+  means a polkit rule or dropping the hardening flag — a deliberate decision, not a patch.
+- 🟡 **`speaker_cli.py` accepts garbage device IDs and reports success** (observed casting
+  to devices `"81"` and `"34"` — wpctl ids passed where ALSA names belong — with
+  `status: success`). Masks silent-audio failures. Needs device validation in the wrapper.
+- 🟡 **`jog-raw` has no per-part serialization**: two overlapping jogs on one part spawn two
+  `actuator_cli.py` processes on the same pins → `'GPIO busy'` / `E_BUS_IO` (observed once,
+  operator double-click during a 7.5 s home). Wants a per-part in-flight lock in the UI or route.
+- 🟡 **avahi/mDNS is degraded on Orlok AND Mina**: the app gets `EACCES` writing
+  `/etc/avahi/services/monsterbox.service` and `avahi-browse` fails under the service, so
+  discovery silently runs on the static `config/animatronics.json` fallback. Also: Sematext
+  st-agent with a dead token floods journals with 400/401s every ~10 s (SD wear).
+- 🔴 **Orlok hardware watch**: kernel `usb2 over-current` ×5 at 20:37 and a Realtek USB WiFi
+  adapter that faults/re-enumerates at boot (`rtw_usb_reg_sec ... status: -71`). If USB power
+  is browning out, audio/webcam flakiness will follow — check the 5 V rail and hub.
+- 🟡 **Sir Dragomir data check**: `data/audio-library/library.json` produced 36×
+  "library.audio is not iterable" + a tmp-rename race on his node, and tonight's power cut
+  NUL-corrupted his monsterbox.log tail. The v9.3.0 deploy overwrites his library.json with
+  a healthy copy; verify audio-library loads after deploy.
+- ⚪ **Cross-node queue enqueue 500s**: `defaultSceneId` in `config/animatronics.json` names
+  scenes some targets don't have (Orlok/PumpkinHead: scene 100 — "Scene not found" on every
+  start-all). Data decision: give each node a defaultSceneId that exists in its scenes.json.
+
 - ~~**Calibration profile part-ID collision.**~~ **FIXED — the long-term fix is done**
   (corrected 2026-08-15; this entry previously claimed it was only mitigated).
   `server/calibration/store.js` keys every profile by `` `${characterId}:${partId}` ``

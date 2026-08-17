@@ -99,6 +99,17 @@ ${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "rm -rf ${REMOTE_PATH}/playw
 echo "Syncing code to ${IP_ADDRESS}..."
 RSYNC_DRY=""
 if [ "$DRY_RUN" = "1" ]; then RSYNC_DRY="-n"; fi
+
+# Stop the service BEFORE the sync (real runs only). A node that keeps running
+# during rsync lazily imports modules out of a half-replaced tree — one node
+# crash-looped with ERR_MODULE_NOT_FOUND on files that were mid-transfer, and
+# systemd's Restart=always then piled EADDRINUSE double-starts on top. A short
+# planned outage beats an unplanned crash loop; the restart at the end of this
+# script brings it back on the complete new tree either way.
+if [ "$DRY_RUN" != "1" ]; then
+    echo "Stopping monsterbox.service on ${IP_ADDRESS} for the sync window..."
+    ${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "sudo systemctl stop monsterbox || true"
+fi
 # rsync's exit status is checked explicitly rather than left to `set -e`.
 #
 # Nodes accumulate a few root-owned paths the deploy user cannot replace —
@@ -130,6 +141,8 @@ ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'data/actuator-positions.json' \
     --exclude 'data/monsterbox.pid' \
     --exclude 'config/app-config.json' \
+    --exclude 'scripts/fleet-audio/results' \
+    --exclude 'scripts/halloween-judges/results' \
     --exclude '.git' \
     --exclude 'logs' \
     --exclude 'tmp' \
@@ -148,7 +161,11 @@ if [ "$RSYNC_RC" -eq 23 ] || [ "$RSYNC_RC" -eq 24 ]; then
     echo -e "${YELLOW}  Continuing to the restart — but if this node keeps behaving like an old build, check what was skipped above.${NC}"
     echo -e "${YELLOW}  To clear the common cause: sudo rm -rf ${REMOTE_PATH}/data/ai-config${NC}"
 elif [ "$RSYNC_RC" -ne 0 ]; then
-    echo "✗ rsync failed with exit ${RSYNC_RC} — refusing to restart the node on a partial deploy."
+    echo "✗ rsync failed with exit ${RSYNC_RC} — not proceeding with a partial deploy."
+    # The service was stopped for the sync window; a failed sync must not leave
+    # the node dark. Bring it back up on whatever tree it has (worst case the
+    # old build — a known state) and bail.
+    ${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "sudo systemctl start monsterbox || true"
     exit "$RSYNC_RC"
 fi
 if [ "$DRY_RUN" = "1" ]; then

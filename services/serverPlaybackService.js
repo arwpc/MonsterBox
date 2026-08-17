@@ -639,7 +639,12 @@ class ServerPlaybackService {
       if (!buffer || !buffer.length) {
         return { success: false, error: 'No audio buffer provided' };
       }
-      if (this._speakerMuted) return { success: true, muted: true };
+      if (this._speakerMuted) {
+        // One line per skipped play (not per chunk) so a silent night is
+        // diagnosable from the service log instead of looking like dead audio.
+        console.log('🔇 Speaker muted — playback skipped (unmute via the Dashboard Mute Speaker toggle or POST /conversation/api/speaker-mute)');
+        return { success: true, muted: true };
+      }
       const characterId = opts.characterId || null;
       const contentType = opts.contentType || 'audio/mpeg';
       const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;

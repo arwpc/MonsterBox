@@ -782,6 +782,27 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
+        /**
+         * jog: legacy calibration records (pre-v9.3 auto-created profiles) can
+         * route a servo through the open-loop adapter, which speaks 'jog'.
+         * Refusing outright produced "Action 'jog' not supported for part
+         * type: servo" ×8 in one night on a continuous head servo — and left
+         * that page with no working Stop. Map it onto the real primitives.
+         */
+        async jog({ pin, channel, direction, speed = 50, duration = 1000, controllerType = 'gpio', address, servoType = 'continuous', invertDirection = false }) {
+            const dir = String(direction || '').toLowerCase();
+            if (dir === 'stop') {
+                return this.stop({ pin, channel, controllerType, address, servoType });
+            }
+            const rotation = (dir === 'cw' || dir === 'extend' || dir === 'forward') ? 'cw'
+                : (dir === 'ccw' || dir === 'retract' || dir === 'reverse') ? 'ccw'
+                    : null;
+            if (!rotation) {
+                return { success: false, partType: 'servo', channel, error: `Unsupported jog direction for a servo: ${direction}` };
+            }
+            return this.rotateContinuous({ pin, channel, direction: rotation, speed, duration, controllerType, address, servoType, invertDirection });
+        },
+
         async stop({ pin, channel, controllerType = 'gpio', address, servoType = 'continuous' }) {
             try {
                 if (controllerType === 'pca9685') {

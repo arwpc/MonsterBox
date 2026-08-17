@@ -401,6 +401,10 @@ router.post('/:partId/home', express.json(), async (req, res) => {
     res.json({ success: true, message: `Homed to ${dir} endstop`, currentP, positionKnown: true, confidence: 'homed' });
   } catch (err) {
     console.error(err);
+    // markMoving ran before the drive; a refused/failed home means the motor
+    // was never (or no longer) energized. Leaving isMoving set makes the next
+    // startup's crash recovery discard a position that never actually changed.
+    try { actuatorPositionStore.update(parseInt(req.params.partId, 10), { isMoving: false }); } catch (_) { /* state cleanup is best-effort */ }
     res.status(500).json({ success: false, error: 'Failed to home', message: String(err) });
   }
 });

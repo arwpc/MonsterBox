@@ -313,6 +313,25 @@ router.post('/api/audio/:id/play', async (req, res) => {
         });
 
         if (playResult.success) {
+            // A muted speaker "succeeds" without touching the hardware
+            // (serverPlaybackService skips playback and returns muted:true).
+            // Claiming "Playing ..." for that silence is exactly how a muted
+            // node reads as broken audio — say what actually happened, and do
+            // not count a play that made no sound.
+            if (playResult.muted) {
+                return res.json({
+                    success: true,
+                    muted: true,
+                    message: `Speaker is muted — \"${audio.title}\" was not played. Unmute via the Dashboard's Mute Speaker toggle or POST /conversation/api/speaker-mute {\"muted\":false}.`,
+                    loop: false,
+                    audio: {
+                        id: audio.id,
+                        title: audio.title,
+                        duration: audio.duration
+                    }
+                });
+            }
+
             // Record the play event
             await audioLibraryService.recordPlay(req.params.id);
 
