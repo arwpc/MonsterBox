@@ -179,8 +179,8 @@ class VideoLibrary {
                 <div class="mb-media-card card position-relative" data-video-id="${video.id}" onclick="videoLibrary.playVideo('${video.id}')">
                     ${this.bulkSelectMode ? `
                         <div class="position-absolute top-0 start-0 p-2 vid-bulk-overlay">
-                            <input type="checkbox" class="video-select-checkbox" 
-                                   data-video-id="${video.id}" onclick="event.stopPropagation(); videoLibrary.toggleVideoSelection('${video.id}')" 
+                            <input type="checkbox" class="video-select-checkbox" title="Select this video for bulk actions"
+                                   data-video-id="${video.id}" onclick="event.stopPropagation(); videoLibrary.toggleVideoSelection('${video.id}')"
                                    ${this.selectedVideoIds.has(video.id) ? 'checked' : ''}>
                         </div>
                     ` : ''}
@@ -197,14 +197,14 @@ class VideoLibrary {
                         <div class="mb-media-overlay"></div>
                         
                         <div class="mb-media-controls">
-                            <button class="mb-btn mb-btn-primary btn-lg rounded-circle">
+                            <button class="mb-btn mb-btn-primary btn-lg rounded-circle" title="Play this video in the preview player">
                                 <i class="bi bi-play-fill"></i>
                             </button>
                         </div>
                         
-                        <div class="mb-media-duration">${this.formatDuration(video.duration || 0)}</div>
-                        
-                        <button class="mb-favorite-btn ${video.favorite ? 'text-warning' : ''}" 
+                        <div class="mb-media-duration mb-mono">${this.formatDuration(video.duration || 0)}</div>
+
+                        <button class="mb-favorite-btn ${video.favorite ? 'text-warning' : ''}" title="Toggle favorite"
                                 onclick="event.stopPropagation(); videoLibrary.toggleFavorite('${video.id}')">
                             <i class="bi bi-heart${video.favorite ? '-fill' : ''}"></i>
                         </button>
@@ -212,7 +212,7 @@ class VideoLibrary {
                     
                     <div class="card-body p-2">
                         <h6 class="card-title mb-1 text-truncate" title="${video.title}">${video.title}</h6>
-                        <small class="text-muted d-block mb-1">
+                        <small class="text-muted d-block mb-1 mb-mono">
                             ${video.format?.toUpperCase() || 'VIDEO'} • ${this.formatFileSize(video.fileSize || 0)}
                         </small>
                         ${video.tags && video.tags.length ? `
@@ -225,7 +225,7 @@ class VideoLibrary {
                         ` : ''}
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">${this.timeAgo(video.uploadedAt)}</small>
-                            <button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="event.stopPropagation(); videoLibrary.quickDeploy('${video.id}')">
+                            <button class="mb-btn mb-btn-sm mb-btn-secondary" title="Deploy this video to Goblin devices" onclick="event.stopPropagation(); videoLibrary.quickDeploy('${video.id}')">
                                 <i class="bi bi-broadcast"></i>
                             </button>
                         </div>
@@ -382,9 +382,9 @@ class VideoLibrary {
             <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
                 <div>
                     <strong>${file.name}</strong>
-                    <small class="text-muted d-block">${this.formatFileSize(file.size)} • ${file.type}</small>
+                    <small class="text-muted d-block mb-mono">${this.formatFileSize(file.size)} • ${file.type}</small>
                 </div>
-                <button class="mb-btn mb-btn-sm mb-btn-danger" onclick="videoLibrary.removeSelectedFile('${file.name}')">
+                <button class="mb-btn mb-btn-sm mb-btn-danger" title="Remove this file from the upload" onclick="videoLibrary.removeSelectedFile('${file.name}')">
                     <i class="bi bi-x"></i>
                 </button>
             </div>
@@ -587,10 +587,10 @@ class VideoLibrary {
         const videoList = document.getElementById('deployVideoList');
         videoList.innerHTML = this.videoFiles.map(video => `
             <label class="mb-check vid-pick-row" for="deployVideo${video.id}">
-                <input type="checkbox" value="${video.id}" id="deployVideo${video.id}">
+                <input type="checkbox" value="${video.id}" id="deployVideo${video.id}" title="Include this video in the deployment">
                 <span>
                     <strong>${video.title}</strong>
-                    <br><small class="mb-text-muted">${video.format?.toUpperCase()} • ${this.formatFileSize(video.fileSize)}</small>
+                    <br><small class="mb-text-muted mb-mono">${video.format?.toUpperCase()} • ${this.formatFileSize(video.fileSize)}</small>
                 </span>
             </label>
         `).join('');
@@ -601,13 +601,13 @@ class VideoLibrary {
         
         goblinList.innerHTML = availableGoblins.map(goblin => `
             <label class="mb-check vid-pick-row" for="deployGoblin${goblin.id}">
-                <input type="checkbox" value="${goblin.id}" id="deployGoblin${goblin.id}"
+                <input type="checkbox" value="${goblin.id}" id="deployGoblin${goblin.id}" title="Deploy to this Goblin"
                        ${goblin.locked ? 'disabled' : ''}>
                 <span>
-                    <strong>${goblin.name}</strong>
+                    <strong class="mb-serif">${goblin.name}</strong>
                     <span class="mb-status-badge ${goblin.status}">${goblin.status}</span>
                     ${goblin.locked ? '<br><small class="mb-text-warning">Locked</small>' : ''}
-                    <br><small class="mb-text-muted">${goblin.endpoint}</small>
+                    <br><small class="mb-text-muted mb-mono">${goblin.endpoint}</small>
                 </span>
             </label>
         `).join('');
@@ -735,19 +735,19 @@ class VideoLibrary {
         tbody.innerHTML = this.videoFiles.map(function(video) {
             var checkboxCell = '';
             if (bulkMode) {
-                checkboxCell = '<input type="checkbox" class="video-select-checkbox" data-video-id="' + video.id + '"' +
+                checkboxCell = '<input type="checkbox" class="video-select-checkbox" title="Select this video for bulk actions" data-video-id="' + video.id + '"' +
                     (selectedIds.has(video.id) ? ' checked' : '') + '>';
             }
 
             return '<tr data-video-id="' + video.id + '">' +
                 '<td>' + checkboxCell + '</td>' +
-                '<td><button class="list-fav-btn mb-favorite-btn" data-video-id="' + video.id + '">' +
+                '<td><button class="list-fav-btn mb-favorite-btn" title="Toggle favorite" data-video-id="' + video.id + '">' +
                     '<i class="bi bi-heart' + (video.favorite ? '-fill' : '') + '"></i>' +
                 '</button></td>' +
                 '<td class="title-cell" title="' + self.escapeAttr(video.title) + '">' + self.escapeHtml(video.title) + '</td>' +
                 '<td><span class="mb-badge mb-badge-info vid-fmt-badge">' + (video.format || 'vid').toUpperCase() + '</span></td>' +
-                '<td>' + self.formatDuration(video.duration || 0) + '</td>' +
-                '<td>' + self.formatFileSize(video.fileSize || 0) + '</td>' +
+                '<td class="mb-mono">' + self.formatDuration(video.duration || 0) + '</td>' +
+                '<td class="mb-mono">' + self.formatFileSize(video.fileSize || 0) + '</td>' +
                 '<td>' +
                     '<div class="btn-group btn-group-sm">' +
                         '<button class="mb-btn mb-btn-sm mb-btn-secondary mb-btn-icon deploy-btn" data-video-id="' + video.id + '" title="Deploy">' +

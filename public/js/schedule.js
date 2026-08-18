@@ -636,7 +636,7 @@
     var host = $('schDays');
     var html = '';
     for (var i = 0; i < DAY_NAMES.length; i++) {
-      html += '<label class="mb-chip"><input type="checkbox" value="' + i + '"> ' + DAY_NAMES[i] + '</label>';
+      html += '<label class="mb-chip"><input type="checkbox" value="' + i + '" title="Fire on ' + DAY_NAMES[i] + '"> ' + DAY_NAMES[i] + '</label>';
     }
     host.innerHTML = html;
   }

@@ -138,9 +138,9 @@
                     </div>
                     <div class="mb-panel-body">
                         <dl class="mb-0">
-                            <div class="gob-kv"><dt>Last Update:</dt><dd id="lastUpdate">Never</dd></div>
-                            <div class="gob-kv"><dt>Avg Response:</dt><dd id="avgResponse">0ms</dd></div>
-                            <div class="gob-kv"><dt>Success Rate:</dt><dd id="successRate">0%</dd></div>
+                            <div class="gob-kv"><dt>Last Update:</dt><dd id="lastUpdate" class="mb-mono">Never</dd></div>
+                            <div class="gob-kv"><dt>Avg Response:</dt><dd id="avgResponse" class="mb-mono">0ms</dd></div>
+                            <div class="gob-kv"><dt>Success Rate:</dt><dd id="successRate" class="mb-mono">0%</dd></div>
                         </dl>
                     </div>
                 </section>
@@ -521,8 +521,8 @@
             <p class="mb-field-hint" id="gobConfirmTargetWrap">Target: <span id="gobConfirmTarget" class="mb-mono"></span></p>
         </div>
         <div class="mb-modal-footer">
-            <button type="button" class="mb-btn mb-btn-secondary" id="gobConfirmCancel">Cancel</button>
-            <button type="button" class="mb-btn mb-btn-danger" id="gobConfirmOk">Confirm</button>
+            <button type="button" class="mb-btn mb-btn-secondary" id="gobConfirmCancel" title="Cancel — do nothing">Cancel</button>
+            <button type="button" class="mb-btn mb-btn-danger" id="gobConfirmOk" title="Confirm and run this action on the named target">Confirm</button>
         </div>
     </div>
 </div>
@@ -538,7 +538,7 @@
             <dl class="mb-0" id="gobHealthBody"></dl>
         </div>
         <div class="mb-modal-footer">
-            <button type="button" class="mb-btn mb-btn-secondary" id="gobHealthClose">Close</button>
+            <button type="button" class="mb-btn mb-btn-secondary" id="gobHealthClose" title="Close the system health readout">Close</button>
         </div>
     </div>
 </div>

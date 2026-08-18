@@ -94,7 +94,7 @@ class GoblinManager {
                         <div class="mb-empty">
                             <i class="bi bi-funnel mb-empty-icon"></i>
                             <h3 class="mb-empty-title">No ${this.statusFilter} Goblins found</h3>
-                            <button class="mb-btn mb-btn-secondary" onclick="document.getElementById('statusFilter').value='all'; goblinManager.statusFilter='all'; goblinManager.renderGoblinGrid();">
+                            <button class="mb-btn mb-btn-secondary" title="Clear the status filter and show every Goblin" onclick="document.getElementById('statusFilter').value='all'; goblinManager.statusFilter='all'; goblinManager.renderGoblinGrid();">
                                 Show All Goblins
                             </button>
                         </div>
@@ -124,7 +124,7 @@ class GoblinManager {
                     <div class="card mb-device-card ${goblin.status}" data-goblin-id="${goblin.id}" ondblclick="goblinManager.openVideoQueue('${goblin.id}')">
                         <div class="card-header d-flex justify-content-between align-items-center py-2">
                             <div>
-                                <h6 class="mb-0 d-flex align-items-center">
+                                <h6 class="mb-0 d-flex align-items-center mb-serif">
                                     <div class="mb-heartbeat ${alive ? 'active' : 'inactive'}" title="${alive ? 'Online — heartbeat within the last minute' : 'No recent heartbeat'}"></div>
                                     ${goblin.name}
                                 </h6>
@@ -140,7 +140,7 @@ class GoblinManager {
                             <div class="mb-2">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <small class="text-muted">Endpoint:</small>
-                                    <small class="font-monospace">${goblin.endpoint}</small>
+                                    <small class="font-monospace mb-mono">${goblin.endpoint}</small>
                                 </div>
                                 
                                 ${goblin.locked ? `
@@ -151,7 +151,7 @@ class GoblinManager {
                                     ${lockTimeRemaining > 0 ? `
                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                             <small class="text-muted">Unlock in:</small>
-                                            <small class="mb-lock-timer">${this.formatTime(lockTimeRemaining)}</small>
+                                            <small class="mb-lock-timer mb-mono">${this.formatTime(lockTimeRemaining)}</small>
                                         </div>
                                     ` : ''}
                                 ` : ''}
@@ -159,7 +159,7 @@ class GoblinManager {
                                 ${heartbeatAge !== null ? `
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <small class="text-muted">Last seen:</small>
-                                        <small class="${heartbeatAge > 300 ? 'text-danger' : 'text-success'}">${this.timeAgo(goblin.lastHeartbeat)}</small>
+                                        <small class="mb-mono ${heartbeatAge > 300 ? 'text-danger' : 'text-success'}">${this.timeAgo(goblin.lastHeartbeat)}</small>
                                     </div>
                                 ` : ''}
                             </div>
@@ -178,7 +178,7 @@ class GoblinManager {
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <small class="text-muted">CPU:</small>
-                                        <small>${goblin.resources.cpu}%</small>
+                                        <small class="mb-mono">${goblin.resources.cpu}%</small>
                                     </div>
                                     <div class="mb-usage-bar">
                                         <div class="gob-usage-${goblin.resources.cpu > 80 ? 'danger' : goblin.resources.cpu > 50 ? 'warning' : 'ok'}" style="width: ${goblin.resources.cpu}%;"></div>
@@ -186,7 +186,7 @@ class GoblinManager {
 
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <small class="text-muted">Memory:</small>
-                                        <small>${goblin.resources.memory}%</small>
+                                        <small class="mb-mono">${goblin.resources.memory}%</small>
                                     </div>
                                     <div class="mb-usage-bar">
                                         <div class="gob-usage-info" style="width: ${goblin.resources.memory}%;"></div>
@@ -665,7 +665,7 @@ class GoblinManager {
                     <table class="table table-sm">
                         <tr><td><strong>Name:</strong></td><td>${goblin.name}</td></tr>
                         <tr><td><strong>Status:</strong></td><td><span class="mb-status-badge ${goblin.status}">${goblin.status}</span></td></tr>
-                        <tr><td><strong>Endpoint:</strong></td><td class="font-monospace">${goblin.endpoint}</td></tr>
+                        <tr><td><strong>Endpoint:</strong></td><td class="font-monospace mb-mono">${goblin.endpoint}</td></tr>
                         <tr><td><strong>Location:</strong></td><td>${goblin.location || 'Not specified'}</td></tr>
                         <tr><td><strong>Registered:</strong></td><td>${this.formatDate(goblin.registeredAt)}</td></tr>
                         <tr><td><strong>Last Heartbeat:</strong></td><td>${goblin.lastHeartbeat ? this.formatDate(goblin.lastHeartbeat) : 'Never'}</td></tr>
@@ -997,7 +997,7 @@ class GoblinManager {
         toast.innerHTML = `
             <div class="d-flex">
                 <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" title="Dismiss this notification" aria-label="Dismiss this notification"></button>
             </div>
         `;
 
@@ -1249,11 +1249,11 @@ class GoblinManager {
         // Update status
         queueStatus.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span><strong>Status:</strong> ${this.currentQueue.running ? '▶️ Running' : '⏸️ Stopped'}</span>
+                <span class="${this.currentQueue.running ? 'mb-live mb-now-pulse' : ''}"><strong>Status:</strong> ${this.currentQueue.running ? '▶️ Running' : '⏸️ Stopped'}</span>
                 <span><strong>Mode:</strong> ${this.currentQueue.mode}</span>
             </div>
             ${this.currentQueue.currentVideo ? `
-                <div class="alert alert-info py-2 mb-2">
+                <div class="alert alert-info py-2 mb-2 mb-live">
                     <strong>Now Playing:</strong> ${this.currentQueue.currentVideo}
                 </div>
             ` : ''}

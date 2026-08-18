@@ -138,7 +138,7 @@
                             <div class="mb-row-between">
                                 <div>
                                     <h3 class="mb-heading-3" id="currentVideoTitle">Video Title</h3>
-                                    <small class="mb-text-muted" id="currentVideoInfo">Format • Duration • Size</small>
+                                    <small class="mb-text-muted mb-mono" id="currentVideoInfo">Format • Duration • Size</small>
                                 </div>
                                 <div id="currentVideoTags"></div>
                             </div>
@@ -258,7 +258,7 @@
                             <i class="bi bi-camera-video vid-empty-icon mb-text-muted"></i>
                             <h3 class="mb-heading-3 mt-3">Drag &amp; Drop Video Files Here</h3>
                             <p class="mb-text-muted">Supports MP4, WebM, AVI, MOV files up to 500MB</p>
-                            <input type="file" id="videoFileInput" multiple accept="video/*" class="vid-hidden">
+                            <input type="file" id="videoFileInput" multiple accept="video/*" class="vid-hidden" title="Choose video files to upload">
                             <button type="button" class="mb-btn mb-btn-secondary"
                                 onclick="document.getElementById('videoFileInput').click()"
                                 data-bs-toggle="tooltip" data-bs-placement="top" title="Browse local files for upload">
@@ -389,8 +389,8 @@
                     <p class="mb-field-hint" id="vidConfirmTargetWrap">Target: <span id="vidConfirmTarget" class="mb-mono"></span></p>
                 </div>
                 <div class="mb-modal-footer">
-                    <button type="button" class="mb-btn mb-btn-secondary" id="vidConfirmCancel">Cancel</button>
-                    <button type="button" class="mb-btn mb-btn-danger" id="vidConfirmOk">Confirm</button>
+                    <button type="button" class="mb-btn mb-btn-secondary" id="vidConfirmCancel" title="Cancel — do nothing">Cancel</button>
+                    <button type="button" class="mb-btn mb-btn-danger" id="vidConfirmOk" title="Confirm and run this action on the named target">Confirm</button>
                 </div>
             </div>
         </div>

@@ -9,9 +9,9 @@
                 <h1 class="mb-page-header-title">
                     <i class="bi bi-music-note-list"></i> Audio Library
                     <span class="mb-text-secondary aud-counts">
-                        <span class="mb-badge mb-badge-primary" id="totalFiles">0 files</span>
-                        <span class="mb-badge" id="totalSize">0 B</span>
-                        <span class="mb-badge mb-badge-info" id="totalCategories">0 categories</span>
+                        <span class="mb-badge mb-badge-primary mb-mono" id="totalFiles">0 files</span>
+                        <span class="mb-badge mb-mono" id="totalSize">0 B</span>
+                        <span class="mb-badge mb-badge-info mb-mono" id="totalCategories">0 categories</span>
                     </span>
                 </h1>
                 <div class="mb-page-header-actions">
@@ -29,7 +29,7 @@
             </header>
 
             <!-- Now Playing bar (hidden by default) -->
-            <div id="nowPlaying" class="mb-alert mb-alert-info aud-now-playing d-none">
+            <div id="nowPlaying" class="mb-alert mb-alert-info aud-now-playing mb-live d-none">
                 <i class="bi bi-volume-up"></i> Now Playing: <strong id="nowPlayingTitle">-</strong>
                 <button class="mb-btn mb-btn-sm mb-btn-danger aud-now-stop" id="nowPlayingStop" title="Stop playback">Stop</button>
             </div>
@@ -99,7 +99,7 @@
                             <i class="bi bi-cloud-upload mb-empty-icon"></i>
                             <h3 class="mb-heading-3 mt-3">Drag &amp; Drop Audio Files Here</h3>
                             <p class="mb-text-muted">Or click to browse files</p>
-                            <input type="file" id="audioFileInput" multiple accept="audio/*" class="aud-hidden">
+                            <input type="file" id="audioFileInput" multiple accept="audio/*" class="aud-hidden" title="Choose audio files to upload">
                             <button type="button" class="mb-btn mb-btn-secondary"
                                 onclick="document.getElementById('audioFileInput').click()"
                                 data-bs-toggle="tooltip" data-bs-placement="top" title="Browse local files to upload">
@@ -197,8 +197,8 @@
                     <p class="mb-field-hint" id="audConfirmTargetWrap">Target: <span id="audConfirmTarget" class="mb-mono"></span></p>
                 </div>
                 <div class="mb-modal-footer">
-                    <button type="button" class="mb-btn mb-btn-secondary" id="audConfirmCancel">Cancel</button>
-                    <button type="button" class="mb-btn mb-btn-danger" id="audConfirmOk">Confirm</button>
+                    <button type="button" class="mb-btn mb-btn-secondary" id="audConfirmCancel" title="Cancel — do nothing">Cancel</button>
+                    <button type="button" class="mb-btn mb-btn-danger" id="audConfirmOk" title="Confirm and run this action on the named target">Confirm</button>
                 </div>
             </div>
         </div>

@@ -121,7 +121,7 @@
   <section class="mb-panel sch-hidden" id="schEditor">
     <div class="mb-panel-header">
       <h2 class="mb-panel-title"><i class="bi bi-pencil-square"></i> <span id="schEditorTitle">New event</span></h2>
-      <button type="button" class="mb-btn mb-btn-sm mb-btn-ghost" id="schCancel">
+      <button type="button" class="mb-btn mb-btn-sm mb-btn-ghost" id="schCancel" title="Close the editor without saving">
         <i class="bi bi-x-lg"></i> Cancel
       </button>
     </div>
@@ -130,12 +130,12 @@
       <div class="sch-form-grid">
         <div class="mb-field">
           <label class="mb-field-label" for="schName">Name</label>
-          <input type="text" class="mb-input" id="schName" placeholder="The Dusk Ceremony" maxlength="70">
+          <input type="text" class="mb-input" id="schName" placeholder="The Dusk Ceremony" maxlength="70" title="Event name — written into the crontab as a comment">
           <span class="mb-field-hint">Shown here and written into the crontab as a comment.</span>
         </div>
         <div class="mb-field">
           <label class="mb-field-label" for="schDescription">Note (optional)</label>
-          <input type="text" class="mb-input" id="schDescription" placeholder="Why this exists / what it does">
+          <input type="text" class="mb-input" id="schDescription" placeholder="Why this exists / what it does" title="Optional note kept as a comment above the crontab entry">
           <span class="mb-field-hint">Kept as a comment above the entry, for whoever reads it over SSH.</span>
         </div>
       </div>
@@ -144,30 +144,30 @@
       <fieldset class="mb-stack-sm">
         <legend class="mb-eyebrow">What it does</legend>
         <div class="mb-row-sm mb-row-wrap">
-          <label class="mb-chip"><input type="radio" name="schActionType" value="moment" checked> Yard-theater moment</label>
-          <label class="mb-chip"><input type="radio" name="schActionType" value="scene"> Play a scene</label>
-          <label class="mb-chip"><input type="radio" name="schActionType" value="raw"> Raw command</label>
+          <label class="mb-chip"><input type="radio" name="schActionType" value="moment" checked title="Run a yard-theater moment"> Yard-theater moment</label>
+          <label class="mb-chip"><input type="radio" name="schActionType" value="scene" title="Play a scene on this node"> Play a scene</label>
+          <label class="mb-chip"><input type="radio" name="schActionType" value="raw" title="Run a raw shell command"> Raw command</label>
         </div>
 
         <div class="mb-field" id="schMomentField">
           <label class="mb-field-label" for="schMoment">Moment</label>
-          <select class="mb-select" id="schMoment"></select>
+          <select class="mb-select" id="schMoment" title="Choose which yard-theater moment fires"></select>
           <span class="mb-field-hint" id="schMomentHint">&nbsp;</span>
           <label class="mb-row-sm">
-            <input type="checkbox" id="schDryRun">
+            <input type="checkbox" id="schDryRun" title="Rehearsal only — makes no sound and no calls">
             <span class="mb-text-sm">Rehearsal only (<span class="sch-cron">--dry-run</span>) — makes no sound and no calls</span>
           </label>
         </div>
 
         <div class="mb-field sch-hidden" id="schSceneField">
           <label class="mb-field-label" for="schScene">Scene <span class="mb-text-secondary" id="schSceneCharacter"></span></label>
-          <select class="mb-select" id="schScene"></select>
+          <select class="mb-select" id="schScene" title="Choose which scene plays"></select>
           <span class="mb-field-hint">Plays through this node's own scene API, for the character selected in the nav bar.</span>
         </div>
 
         <div class="mb-field sch-hidden" id="schRawField">
           <label class="mb-field-label" for="schRawCommand">Command</label>
-          <input type="text" class="mb-input sch-cron" id="schRawCommand"
+          <input type="text" class="mb-input sch-cron" id="schRawCommand" title="Shell command cron runs from the repo root"
             placeholder="node scripts/night-memory/harvest.mjs --hours 12">
           <span class="mb-field-hint">
             Wrapped for you as <span class="sch-cron">cd &lt;repo&gt; &amp;&amp; ( … ) &gt;&gt; log 2&gt;&amp;1</span>.
@@ -182,20 +182,20 @@
       <fieldset class="mb-stack-sm">
         <legend class="mb-eyebrow">When it fires</legend>
         <div class="mb-row-sm mb-row-wrap">
-          <label class="mb-chip"><input type="radio" name="schMode" value="date" checked> On a date</label>
-          <label class="mb-chip"><input type="radio" name="schMode" value="daily"> Every day</label>
-          <label class="mb-chip"><input type="radio" name="schMode" value="weekly"> Days of the week</label>
-          <label class="mb-chip"><input type="radio" name="schMode" value="raw"> Raw cron</label>
+          <label class="mb-chip"><input type="radio" name="schMode" value="date" checked title="Fire on a specific date"> On a date</label>
+          <label class="mb-chip"><input type="radio" name="schMode" value="daily" title="Fire every day at the chosen time"> Every day</label>
+          <label class="mb-chip"><input type="radio" name="schMode" value="weekly" title="Fire on chosen days of the week"> Days of the week</label>
+          <label class="mb-chip"><input type="radio" name="schMode" value="raw" title="Write the cron expression yourself"> Raw cron</label>
         </div>
 
         <div class="sch-form-grid">
           <div class="mb-field" id="schTimeField">
             <label class="mb-field-label" for="schTime">Time (24h, this node's local clock)</label>
-            <input type="time" class="mb-input" id="schTime" value="18:30">
+            <input type="time" class="mb-input" id="schTime" value="18:30" title="Time of day it fires — 24-hour, this node's local clock">
           </div>
           <div class="mb-field" id="schDateField">
             <label class="mb-field-label" for="schDate">Date</label>
-            <input type="date" class="mb-input" id="schDate">
+            <input type="date" class="mb-input" id="schDate" title="Date it fires — recurs on this date every year">
             <span class="mb-field-hint">cron has no year field, so this recurs on the same date every year.</span>
           </div>
           <div class="mb-field sch-hidden" id="schDaysField">
@@ -204,7 +204,7 @@
           </div>
           <div class="mb-field sch-hidden" id="schExpressionField">
             <label class="mb-field-label" for="schExpression">Cron expression</label>
-            <input type="text" class="mb-input sch-cron" id="schExpression" placeholder="30 18 31 10 *">
+            <input type="text" class="mb-input sch-cron" id="schExpression" placeholder="30 18 31 10 *" title="Cron expression: minute hour day-of-month month day-of-week">
             <span class="mb-field-hint">minute hour day-of-month month day-of-week</span>
           </div>
         </div>
@@ -215,19 +215,19 @@
         <div class="mb-eyebrow">This will be written as</div>
         <div class="sch-cron" id="schPreviewLine">—</div>
         <div class="mb-text-sm" id="schPreviewDescription">—</div>
-        <div class="mb-text-base"><strong>Next run:</strong> <span id="schPreviewNext">—</span></div>
+        <div class="mb-text-base"><strong>Next run:</strong> <span id="schPreviewNext" class="mb-mono">—</span></div>
         <div class="mb-text-sm mb-text-warning sch-hidden" id="schPreviewWarning"></div>
       </div>
 
       <div class="mb-row-end mb-row-sm">
         <label class="mb-row-sm">
           <span class="mb-switch">
-            <input type="checkbox" id="schEnabled" checked>
+            <input type="checkbox" id="schEnabled" checked title="Enable or disable this event in the crontab">
             <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
           </span>
           <span class="mb-text-sm">Enabled</span>
         </label>
-        <button type="button" class="mb-btn mb-btn-primary" id="schSave">
+        <button type="button" class="mb-btn mb-btn-primary" id="schSave" title="Write this event into the managed crontab block">
           <i class="bi bi-save"></i> Save to crontab
         </button>
       </div>
@@ -258,8 +258,8 @@
         <div class="mb-alert mb-alert-warning sch-hidden" id="schConfirmWarning"></div>
       </div>
       <div class="mb-modal-footer">
-        <button type="button" class="mb-btn mb-btn-secondary" data-sch-cancel>Cancel</button>
-        <button type="button" class="mb-btn mb-btn-danger" id="schConfirmGo">Confirm</button>
+        <button type="button" class="mb-btn mb-btn-secondary" data-sch-cancel title="Cancel — write nothing">Cancel</button>
+        <button type="button" class="mb-btn mb-btn-danger" id="schConfirmGo" title="Confirm and write this to the crontab">Confirm</button>
       </div>
     </div>
   </div>
