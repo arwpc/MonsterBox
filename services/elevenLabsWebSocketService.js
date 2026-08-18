@@ -44,6 +44,11 @@ const MIC_GATE_HANGOVER_MS = 900;
 // Set MB_MIC_VOICE_GATE=0 to stream the raw microphone regardless.
 const MIC_VOICE_GATE_ENABLED = process.env.MB_MIC_VOICE_GATE !== '0';
 
+// Set MB_WS_DEBUG=1 to dump per-message WebSocket payload previews. Default
+// silent: every conversation message otherwise lands in monsterbox.log and
+// wears the SD card.
+const WS_DEBUG = process.env.MB_WS_DEBUG === '1';
+
 // Ceiling on waiting for a reply on a live session before the HTTP caller is
 // answered with whatever text arrived. Never let a silent agent hang a request.
 const ASK_REPLY_TIMEOUT_MS = 30000;
@@ -2312,7 +2317,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         const message = JSON.parse(data.toString());
 
                         // Log all message types to understand structure
-                        if (message.type !== 'ping' && message.type !== 'audio') {
+                        if (WS_DEBUG && message.type !== 'ping' && message.type !== 'audio') {
                             console.log(`🔍 WebSocket message type: ${message.type}`, JSON.stringify(message).substring(0, 200));
                         }
 

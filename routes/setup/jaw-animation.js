@@ -5,7 +5,6 @@ import * as jawAnimationService from '../../services/jawAnimationSuperPowerServi
 import { getTTSConfigForCharacter } from '../../services/aiConfigStore.js';
 import elevenLabsTTSService from '../../services/elevenLabsTTSService.js';
 import serverPlaybackService from '../../services/serverPlaybackService.js';
-import { loadParts as loadPartsFromController } from '../../controllers/partsController.js';
 
 const router = express.Router();
 
@@ -487,7 +486,10 @@ router.post('/api/jaw-animation/:characterId/adjust-calibration', async (req, re
       return res.status(400).json({ success: false, error: 'marker must be "Min" or "Max"' });
     }
 
-    const parts = await loadPartsFromController();
+    // Scope the part lookup to the route's :characterId — the controller
+    // loader reads the node's selectedCharacter, which may be a different
+    // character (and a different physical servo behind the same part id).
+    const parts = await jawAnimationService.loadPartsSafe(characterId);
     const part = parts.find(p => String(p.id) === String(servoPartId));
     if (!part) {
       return res.status(404).json({ success: false, error: 'Servo part not found' });
@@ -496,7 +498,7 @@ router.post('/api/jaw-animation/:characterId/adjust-calibration', async (req, re
     // Write to calibration_profiles.json (new source of truth) rather than
     // legacy part.markers. Auto-creates an absolute-servo profile if needed.
     const { newValue, minAngle, maxAngle } = await jawAnimationService.adjustPartCalibration(
-      servoPartId, marker, delta
+      servoPartId, marker, delta, characterId
     );
 
     // Also update jaw config to reflect new calibration

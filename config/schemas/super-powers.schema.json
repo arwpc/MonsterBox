@@ -18,16 +18,13 @@
             "properties": {
               "id": { "type": ["string", "number"] },
               "name": { "type": "string" },
-              "minAngle": { "type": "number" },
-              "maxAngle": { "type": "number" }
+              "minAngle": { "type": "number", "description": "Seed/display value only — calibration_profiles.json is canonical. readJawConfig overlays the calibrated window on every read and writeJawConfig never updates this field." },
+              "maxAngle": { "type": "number", "description": "Seed/display value only — calibration_profiles.json is canonical. readJawConfig overlays the calibrated window on every read and writeJawConfig never updates this field." }
             }
           }
         }
       }
     },
-    "headTracking": { "type": "object" },
-    "idleLoop": { "type": "object" },
-    "micromovements": { "type": "object" },
-    "sensitivity": { "type": ["number", "object"] }
+    "headTracking": { "type": "object" }
   }
 }

@@ -53,10 +53,14 @@ function scan() {
     if (allowed.has(rel)) continue;
     const lines = fs.readFileSync(file, 'utf8').split('\n');
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+      // Optional chaining is the same read — normalize `?.` to `.` so
+      // spellings like `req.app?.locals?.config?.selectedCharacter` cannot
+      // evade the banned patterns.
+      const line = lines[i].replace(/\?\./g, '.');
       for (const re of patterns) {
         if (re.test(line)) {
-          violations.push({ file: rel, line: i + 1, snippet: line.trim().slice(0, 140), pattern: re.source });
+          // Report the original spelling, not the normalized one
+          violations.push({ file: rel, line: i + 1, snippet: lines[i].trim().slice(0, 140), pattern: re.source });
           break;
         }
       }

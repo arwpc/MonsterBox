@@ -19,7 +19,8 @@ import * as headAnimationService from '../services/headAnimationSuperPowerServic
 import * as jawAnimationService from '../services/jawAnimationSuperPowerService.js';
 import elevenLabsWebSocketService from '../services/elevenLabsWebSocketService.js';
 import lurkMotionWatcher from '../services/lurkMotionWatcherService.js';
-import { getStatus as getIdleStatus } from '../services/movement/idleLoopService.js';
+import { getStatus as getIdleStatus, start as startIdleLoop, stop as stopIdleLoop } from '../services/movement/idleLoopService.js';
+import { loadPoses as loadCharacterPoses } from '../services/poses/poseRepository.js';
 import serverPlaybackService from '../services/serverPlaybackService.js';
 import { resolveCharacterSync } from '../services/characterContext.js';
 
@@ -43,6 +44,39 @@ function getDataDir(characterId) {
 // Prefer canonical loader
 async function loadParts() {
   try { return await loadPartsFromController(); } catch (_) { return []; }
+}
+
+// Per-character parts read (pattern: jawAnimationSuperPowerService loadPartsSafe).
+// The parameterless controller loader resolves against this node's mutable
+// selectedCharacter, so answering for another character used the wrong hardware.
+async function loadCharacterParts(characterId) {
+  if (characterId == null) return loadParts();
+  try {
+    const partsFile = path.resolve(getDataDir(characterId), 'parts.json');
+    const parts = JSON.parse(await fs.readFile(partsFile, 'utf8'));
+    return Array.isArray(parts) ? parts : [];
+  } catch (_) { return []; }
+}
+
+// Resolve the head-tracking pan servo: saved panServoId first, else a servo whose
+// NAME says it pans. Parts loaded from a character's own parts.json ARE that
+// character's parts (entries carry no characterId field), so there is no ownership
+// filter — and no blind first-servo fallback, which could pick the jaw as the pan
+// axis. No match means no pan servo; callers take their existing error path.
+function findPanServo(parts, savedConfig) {
+  if (savedConfig && savedConfig.panServoId) return savedConfig.panServoId;
+  const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
+  const pan = servos.find(s => /pan|head|swivel/i.test(String(s.name || '')));
+  return pan ? pan.id : null;
+}
+
+// Idle/random-pose capability = the character has at least one authored pose;
+// both features are silent no-ops without one.
+async function hasIdlePoses(characterId) {
+  try {
+    const posesData = await loadCharacterPoses(characterId);
+    return !!(posesData && Array.isArray(posesData.poses) && posesData.poses.length > 0);
+  } catch (_) { return false; }
 }
 
 // GET /conversation (redirect to dashboard — conversation is now the dashboard)
@@ -128,7 +162,26 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
     const characterId = getCurrentCharacterId(req);
     if (!characterId) return res.status(400).json({ success: false, error: 'No selected character' });
     const config = await jawAnimationService.readJawConfig(characterId);
-    config.enabled = !!req.body.enabled;
+    const enabled = !!req.body.enabled;
+    const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
+    if (enabled && !inTest) {
+      // Refuse to latch "on" for a character that cannot move a jaw: the fleet
+      // toggle counts per-node success, so unconditionally persisting the flag
+      // reported a green jaw-on state on nodes with no configured/calibrated
+      // servo. Mirrors the motion-sensor route's { success:false } pattern.
+      const parts = await loadCharacterParts(characterId);
+      const jawServo = config.servoPartId != null
+        ? parts.find(p => String(p.id) === String(config.servoPartId))
+        : null;
+      if (!jawServo) {
+        return res.json({ success: false, error: 'No jaw servo configured for this character' });
+      }
+      const cal = await jawAnimationService.getCalibrationForPart(jawServo, characterId);
+      if (!cal || !cal.calibrated) {
+        return res.json({ success: false, error: 'Jaw servo has no calibrated Min/Max window' });
+      }
+    }
+    config.enabled = enabled;
     await jawAnimationService.writeJawConfig(characterId, config);
     res.json({ success: true, enabled: config.enabled });
   } catch (e) {
@@ -163,7 +216,7 @@ router.post('/api/head-tracking', express.json(), async (req, res) => {
     }
 
     const characterId = getCurrentCharacterId(req);
-    const parts = await loadParts();
+    const parts = await loadCharacterParts(characterId);
     const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
     const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
     if (!cam) {
@@ -176,16 +229,10 @@ router.post('/api/head-tracking', express.json(), async (req, res) => {
       // Load saved head tracking config from super-powers.json
       const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
 
-      // Use saved panServoId if available, otherwise auto-detect
-      let panServoId = savedConfig.panServoId;
+      // Use saved panServoId if available, otherwise auto-detect by name
+      const panServoId = findPanServo(parts, savedConfig);
       if (!panServoId) {
-        const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
-        const byChar = characterId ? servos.filter(s => Number(s.characterId) === Number(characterId)) : servos;
-        const pan = byChar.find(s => /pan|head|swivel/i.test(String(s.name || ''))) || byChar[0];
-        if (!pan) {
-          return res.status(400).json({ success: false, error: 'No servo found for pan axis' });
-        }
-        panServoId = pan.id;
+        return res.status(400).json({ success: false, error: 'No servo found for pan axis' });
       }
 
       // Apply all saved settings (center, range, invert, smoothing, deadzone, detection mode)
@@ -931,7 +978,7 @@ const DEFAULT_LURK_INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 // Helper: find the motion sensor part for a character
 async function findMotionSensor(characterId) {
-  const parts = await loadParts();
+  const parts = await loadCharacterParts(characterId);
   return parts.find(p =>
     String(p.type).toLowerCase() === 'motion_sensor' &&
     p.pin != null &&
@@ -941,8 +988,8 @@ async function findMotionSensor(characterId) {
 
 // Helper: check which lurk features are available for a character
 async function checkLurkCapabilities(characterId) {
-  const parts = await loadParts();
-  const capabilities = { jaw: false, headTracking: false, idle: true, motionSensor: false, ai: true };
+  const parts = await loadCharacterParts(characterId);
+  const capabilities = { jaw: false, headTracking: false, idle: false, motionSensor: false, ai: true };
 
   // Jaw: needs a servo part configured for jaw
   try {
@@ -959,16 +1006,13 @@ async function checkLurkCapabilities(characterId) {
   if (cam) {
     try {
       const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
-      let panServoId = savedConfig.panServoId;
-      if (!panServoId) {
-        const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
-        const byChar = servos.filter(s => Number(s.characterId) === Number(characterId));
-        const pan = byChar.find(s => /pan|head|swivel/i.test(String(s.name || ''))) || byChar[0];
-        if (pan) panServoId = pan.id;
-      }
-      capabilities.headTracking = !!panServoId;
+      capabilities.headTracking = !!findPanServo(parts, savedConfig);
     } catch { /* no head config */ }
   }
+
+  // Idle/random poses: only claimable when the character has poses to strike —
+  // an empty pose library made every trigger a silent no-op while the UI said on.
+  capabilities.idle = await hasIdlePoses(characterId);
 
   // Motion sensor: needs an enabled motion_sensor part with a GPIO pin
   const sensor = parts.find(p =>
@@ -993,7 +1037,7 @@ router.get('/api/lurk-mode/capabilities', async (req, res) => {
 
 // Helper: enable all lurk superpowers (jaw, head tracking, random poses)
 async function enableLurkSuperpowers(characterId) {
-  const results = { jaw: null, headTracking: null, randomPose: null, motionSensor: null };
+  const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null };
 
   // 1. Enable jaw animation
   try {
@@ -1008,18 +1052,12 @@ async function enableLurkSuperpowers(characterId) {
   // 2. Enable head tracking (uses saved config, programmatic API)
   if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
     try {
-      const parts = await loadParts();
+      const parts = await loadCharacterParts(characterId);
       const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
       const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
       if (cam) {
         const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
-        let panServoId = savedConfig.panServoId;
-        if (!panServoId) {
-          const servos = parts.filter(p => String(p.type).toLowerCase() === 'servo');
-          const byChar = servos.filter(s => Number(s.characterId) === Number(characterId));
-          const pan = byChar.find(s => /pan|head|swivel/i.test(String(s.name || ''))) || byChar[0];
-          if (pan) panServoId = pan.id;
-        }
+        const panServoId = findPanServo(parts, savedConfig);
         if (panServoId) {
           const trackingParams = {
             motionThreshold: savedConfig.motionThreshold || 25,
@@ -1059,6 +1097,24 @@ async function enableLurkSuperpowers(characterId) {
     results.randomPose = { enabled: false, error: e.message };
   }
 
+  // 4. Start the ambient idle loop server-side. This was fired by the dashboard
+  // browser after the lurk POST returned, so fleet-initiated lurk had no idle
+  // motion and a closed tab left idle running through lurk sleep.
+  if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
+    try {
+      if (await hasIdlePoses(characterId)) {
+        await startIdleLoop(characterId);
+        results.idle = { enabled: true };
+      } else {
+        results.idle = { enabled: false, error: 'No poses available' };
+      }
+    } catch (e) {
+      results.idle = { enabled: false, error: e.message };
+    }
+  } else {
+    results.idle = { enabled: true, testMode: true };
+  }
+
   return results;
 }
 
@@ -1091,7 +1147,7 @@ export async function disarmLurkCompletely(characterId) {
 // relied on the fleet fan-out reaching this node over its own loopback HTTPS,
 // which is both slower and able to fail exactly when it matters most.
 export async function disableLurkSuperpowers(characterId) {
-  const results = { jaw: null, headTracking: null, randomPose: null, motionSensor: null };
+  const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null };
 
   try {
     const jawConfig = await jawAnimationService.readJawConfig(characterId);
@@ -1102,7 +1158,7 @@ export async function disableLurkSuperpowers(characterId) {
 
   if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
     try {
-      const parts = await loadParts();
+      const parts = await loadCharacterParts(characterId);
       const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
       const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
       if (cam) {
@@ -1120,6 +1176,13 @@ export async function disableLurkSuperpowers(characterId) {
     randomPoseService.disable();
     results.randomPose = { enabled: false };
   } catch (e) { results.randomPose = { error: e.message }; }
+
+  // Idle loop is server-owned by lurk now (started in enableLurkSuperpowers) —
+  // stop it here so lurk sleep/disable quiets the character with no browser open.
+  try {
+    stopIdleLoop();
+    results.idle = { enabled: false };
+  } catch (e) { results.idle = { error: e.message }; }
 
   return results;
 }

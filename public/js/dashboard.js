@@ -310,13 +310,9 @@
           // Sync UI toggles with lurk state
           if (ui.jawToggle) ui.jawToggle.checked = enabled;
           if (ui.headTrackToggle) ui.headTrackToggle.checked = enabled;
+          // Server-side lurk enable/disable owns the idle loop now; only sync the checkbox
           if (ui.idleToggle) {
             ui.idleToggle.checked = enabled;
-            // Trigger idle start/stop
-            try {
-              var idleEndpoint = enabled ? '/api/movement/idle/start' : '/api/movement/idle/stop';
-              fetch(idleEndpoint, { method: 'POST' }).catch(function () {});
-            } catch (_) {}
           }
 
           // Start/stop AI chat
@@ -516,7 +512,6 @@
           if (ui.headTrackToggle) ui.headTrackToggle.checked = true;
           if (ui.idleToggle) {
             ui.idleToggle.checked = true;
-            fetch('/api/movement/idle/start', { method: 'POST' }).catch(function () {});
           }
           startHeadTrackPolling();
           updateLurkUI(true, { jaw: { enabled: true }, headTracking: { enabled: true }, randomPose: { enabled: true }, motionSensor: { enabled: true } });
@@ -533,7 +528,6 @@
           if (ui.headTrackToggle) ui.headTrackToggle.checked = false;
           if (ui.idleToggle) {
             ui.idleToggle.checked = false;
-            fetch('/api/movement/idle/stop', { method: 'POST' }).catch(function () {});
           }
           stopHeadTrackPolling();
           updateLurkUI(true, { motionSensor: { enabled: true } });

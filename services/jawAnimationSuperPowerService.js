@@ -513,14 +513,18 @@ function getDaemonParams(part) {
 /**
  * Send jaw angle via daemon (fast path) or fall back to hardwareService.
  * Fire-and-forget — does not await.
+ * characterId must be passed through: the daemon path already carries the right
+ * channel/address, but the controlPart fallback resolves the part id against the
+ * node's mutable selectedCharacter unless scoped — the degraded-daemon case is
+ * exactly when that would drive another character's servo.
  */
-function sendJawAngleCmd(jawServo, angleDeg) {
+function sendJawAngleCmd(jawServo, angleDeg, characterId) {
   const { channel, address, isPCA9685 } = getDaemonParams(jawServo);
   if (isPCA9685 && channel != null && jawServoDaemon.isRunning()) {
     jawServoDaemon.sendAngle(channel, angleDeg, address);
   } else {
     // Fallback to full hardware service path
-    hardwareService.controlPart(jawServo.id, 'moveToAngle', { angleDeg }).catch(() => {});
+    hardwareService.controlPart(jawServo.id, 'moveToAngle', { angleDeg }, { characterId }).catch(() => {});
   }
 }
 
@@ -824,7 +828,7 @@ async function driveJawFromAmplitude(characterId, amplitude) {
     const targetAngle = calculateJawAngle(smoothedAmplitude, config, guardrails, characterId);
 
     // Move servo — use daemon fast path to avoid PCA9685 re-init that glitches other channels
-    sendJawAngleCmd(jawServo, targetAngle);
+    sendJawAngleCmd(jawServo, targetAngle, characterId);
 
     return {
       success: true,
@@ -859,10 +863,15 @@ async function testJawMovement(characterId) {
       throw new Error('Jaw servo not found');
     }
 
-    // Use calibration markers from the part for accurate test range
-    const { calibrated, minAngle: calMin, maxAngle: calMax } = getCalibrationFromMarkers(jawServo);
-    const minAngle = calMin ?? config.minAngle ?? 0;
-    const maxAngle = calMax ?? config.maxAngle ?? 180;
+    // Same unified calibration source every other jaw mover uses (profile
+    // store first, markers as fallback) — markers-only reads gave a character
+    // calibrated through /setup/calibration a 0..180 test sweep here.
+    const cal = await getCalibrationForPart(jawServo, characterId);
+    if (!cal.calibrated || cal.minAngle == null || cal.maxAngle == null) {
+      return { success: false, message: 'Jaw servo has no usable calibration — refusing to move it blind' };
+    }
+    const minAngle = cal.minAngle;
+    const maxAngle = cal.maxAngle;
     const midAngle = (minAngle + maxAngle) / 2;
 
     // Test sequence: min -> max -> mid -> min
@@ -886,7 +895,7 @@ async function testJawMovement(characterId) {
       } else {
         await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
           angleDeg: step.angle
-        });
+        }, { characterId });
       }
 
       // Wait for movement
@@ -1018,7 +1027,7 @@ async function testServoPosition(characterId, servoPartId, position) {
     // Use hardware service to move servo via controlPart
     const result = await hardwareService.controlPart(servoPart.id, 'moveToAngle', {
       angleDeg: pos
-    });
+    }, { characterId });
 
     console.log(`✅ Servo ${servoPartId} moved to ${pos}°`);
     return {
@@ -1141,7 +1150,7 @@ async function moveJawToAngle(characterId, angleDeg) {
 
     const result = await hardwareService.controlPart(jawServo.id, 'moveToAngle', {
       angleDeg: clamped
-    });
+    }, { characterId });
 
     return { success: true, angleDeg: clamped, servoResult: result };
   } catch (error) {
@@ -1410,7 +1419,7 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
       function scheduleNext() {
         if (driveState.cancelled || frameIndex >= analysis.frames.length) {
           // Done — close jaw
-          sendJawAngleCmd(jawServo, closedAngle);
+          sendJawAngleCmd(jawServo, closedAngle, cid);
           driveState.amplitude = 0;
           driveState.angle = closedAngle;
           const ms = audioMonitoringState.get(cid);
@@ -1429,7 +1438,7 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
         if (ms) { ms.lastAmplitude = frame.amplitude; ms.smoothedAmplitude = frame.amplitude; }
 
         // Send angle to servo
-        sendJawAngleCmd(jawServo, frame.angle);
+        sendJawAngleCmd(jawServo, frame.angle, cid);
 
         frameIndex++;
 
@@ -1607,7 +1616,7 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
       function nextFrame() {
         if (driveState.cancelled || frameIndex >= frames.length) {
           // Done — close jaw (fire-and-forget servo command)
-          sendJawAngleCmd(jawServo, closedAngle);
+          sendJawAngleCmd(jawServo, closedAngle, cid);
           driveState.amplitude = 0;
           driveState.angle = closedAngle;
           const ms = audioMonitoringState.get(cid);
@@ -1642,7 +1651,7 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
         }
 
         // Fire servo command (daemon: <1ms, fallback: hardwareService)
-        sendJawAngleCmd(jawServo, targetAngle);
+        sendJawAngleCmd(jawServo, targetAngle, cid);
 
         frameIndex++;
         driveState.timer = setTimeout(nextFrame, FRAME_DURATION_MS);
@@ -1739,7 +1748,7 @@ function _startPcmJawTimer(cid) {
       // Underrun: speech ended (or the network stalled). Close the jaw to its
       // calibrated minimum and idle — the next chunk restarts the timer.
       const closed = s.guardrails.minAngle ?? s.config.minAngle ?? 0;
-      sendJawAngleCmd(s.jawServo, closed);
+      sendJawAngleCmd(s.jawServo, closed, cid);
       const ms = audioMonitoringState.get(cid);
       if (ms) { ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
       s.timer = null;
@@ -1753,7 +1762,7 @@ function _startPcmJawTimer(cid) {
     try { speechExpression.noteLevel(cid, amplitude); } catch (_) { /* decorative only */ }
     const smoothed = applySmoothingToAmplitude(cid, amplitude, s.config);
     const angle = calculateJawAngle(smoothed, s.config, s.guardrails, cid);
-    sendJawAngleCmd(s.jawServo, angle);
+    sendJawAngleCmd(s.jawServo, angle, cid);
     const ms = audioMonitoringState.get(cid);
     if (ms) { ms.lastAmplitude = amplitude; ms.smoothedAmplitude = smoothed; }
     s.timer = setTimeout(step, PCM_JAW_FRAME_MS);
@@ -1776,7 +1785,7 @@ function stopPcmJawStream(characterId) {
   if (!stream) return { success: false, message: 'no active pcm jaw stream' };
   if (stream.timer) clearTimeout(stream.timer);
   const closed = stream.guardrails.minAngle ?? stream.config.minAngle ?? 0;
-  try { sendJawAngleCmd(stream.jawServo, closed); } catch (_) { /* non-fatal */ }
+  try { sendJawAngleCmd(stream.jawServo, closed, cid); } catch (_) { /* non-fatal */ }
   pcmJawStreams.delete(cid);
   // The loudness reference belongs to the session that built it — carrying it
   // into the next conversation would normalise the first line against a voice
@@ -1807,7 +1816,7 @@ function cancelJawDrive(characterId) {
     // the jaw holding whatever the last frame commanded — typically wide open,
     // drawing holding current — until the next drive happened to start.
     if (state.jawServo && state.closedAngle != null) {
-      try { sendJawAngleCmd(state.jawServo, state.closedAngle); } catch (_) { /* best effort */ }
+      try { sendJawAngleCmd(state.jawServo, state.closedAngle, cid); } catch (_) { /* best effort */ }
     }
     activeJawDrives.delete(cid);
   }
@@ -1903,7 +1912,7 @@ function simulateJawDrive(characterId, durationMs) {
  * absolute-servo profile if none exists. Clamps to [0, 180] and preserves
  * min <= max ordering. Returns { newValue, minAngle, maxAngle }.
  */
-async function adjustPartCalibration(partId, marker, delta) {
+async function adjustPartCalibration(partId, marker, delta, characterId) {
   if (marker !== 'Min' && marker !== 'Max') {
     throw new Error('marker must be "Min" or "Max"');
   }
@@ -1915,8 +1924,11 @@ async function adjustPartCalibration(partId, marker, delta) {
   const store = getCalibrationStore();
   // getRaw: this is a read-modify-write. store.get() hides a placeholder's span
   // from movement consumers, and saving that view back would drop the other
-  // marker (nudging Min would erase Max).
-  let profile = await store.getRaw(partId);
+  // marker (nudging Min would erase Max). characterId scopes both the read and
+  // the write — profiles are keyed characterId:partId and part ids repeat across
+  // characters, so an unscoped nudge persisted bounds into whichever character
+  // the node happened to have selected.
+  let profile = await store.getRaw(partId, characterId);
   if (!profile) {
     profile = {
       partId: parseInt(partId, 10),
@@ -1950,7 +1962,7 @@ async function adjustPartCalibration(partId, marker, delta) {
   }
   profile.bounds = bounds;
   profile.autoGenerated = false;
-  await store.upsert(profile);
+  await store.upsert(profile, characterId);
   return { newValue: newVal, minAngle: bounds.minAngle, maxAngle: bounds.maxAngle };
 }
 
@@ -1959,6 +1971,7 @@ export {
   writeJawConfig,
   getDefaultJawConfig,
   getAvailableServos,
+  loadPartsSafe,
   getCalibrationFromMarkers,
   getCalibrationForPart,
   adjustPartCalibration,
