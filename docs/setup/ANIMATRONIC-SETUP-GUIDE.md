@@ -4,6 +4,17 @@
 
 This guide will help you set up log collection for all your animatronic RPIs. Each animatronic (Orlok, Pumpkinhead, Mina, etc.) will have its own RPI that needs to be configured for remote log collection.
 
+## Provisioning a new node — the standard path (v9.3.0+)
+
+1. **Image the Pi** and set the hostname to the character's hostname from `config/animatronics.json` — hostname drives character identity at boot.
+2. **Register the character first if it's new**: run `/add-character` in Claude Code (updates `data/characters.json` + `config/animatronics.json`).
+3. **Clone the repo and run `sudo bash install.sh`** — it now applies the FULL node baseline automatically: system deps, mjpg-streamer with the portable by-id camera launcher (640x480@15fps q60 default, override in `/etc/default/monsterbox-cam`), journald persistent+64M, logrotate for app logs, `monsterbox.service` with priority + secrets drop-ins, boot readiness check unit, git hooks (pre-push gate + every-10-commits log review), avahi advertisement file ownership, log-file ownership, and the `/etc/monsterbox/env` scaffold.
+4. **Fill in secrets**: `/etc/monsterbox/env` (`MONSTERBOX_SSH_PASSWORD`, `MB_ADMIN_TOKEN`) and `/etc/monsterbox/elevenlabs.key`; restart the service.
+5. **Record the node's ear-verified speaker level** as `sinkVolume` in `config/animatronics.json` (commit it).
+6. **Verify**: `npm run log:review` (clean), `npm run earcheck --nodes <id>` (AUDIBLE + canonical voice), `curl -sk https://localhost:3000/health`.
+
+> **Note:** nodes built before 2026-08-17 predate the automated baseline; `docs/troubleshooting/KNOWN-BUGS.md` and the `node-os-baseline` Claude memory describe hand-application.
+
 ## 🚀 Quick Setup (Automated)
 
 ### Option 1: PowerShell Script (Recommended for Windows)

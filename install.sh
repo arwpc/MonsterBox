@@ -313,8 +313,13 @@ make install
 # Return to repo directory
 cd "$REPO_DIR"
 
-# Create systemd service for MJPG-Streamer
-cat > /etc/systemd/system/mjpg-streamer.service << 'EOF'
+# Create systemd service for MJPG-Streamer.
+# The launcher resolves the camera's stable /dev/v4l/by-id/ path at every start,
+# so USB re-enumeration (over-current, replug) self-heals instead of
+# crash-looping against a hardcoded /dev/video0 — learned the hard way
+# 2026-08-17. Per-node overrides: /etc/default/monsterbox-cam.
+chmod +x "$REPO_DIR/scripts/mjpg-launcher.sh"
+cat > /etc/systemd/system/mjpg-streamer.service << EOF
 [Unit]
 Description=MJPG Streamer (UVC to HTTP)
 After=network.target
@@ -323,8 +328,8 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/tmp
-ExecStart=/usr/local/bin/mjpg_streamer -i "input_uvc.so -d /dev/video0 -r 640x480 -f 24 -q 80" -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www"
-Restart=always
+ExecStart=/bin/bash $REPO_DIR/scripts/mjpg-launcher.sh
+Restart=on-failure
 RestartSec=2
 
 [Install]
@@ -501,8 +506,43 @@ printf '[Service]\nNice=-5\nCPUWeight=90\nIOWeight=90\n' \
 printf '[Service]\n# Secrets live in /etc/monsterbox/env — the app does NOT read .env.\nEnvironmentFile=-/etc/monsterbox/env\n' \
     > /etc/systemd/system/monsterbox.service.d/20-secrets.conf
 chmod 644 /etc/systemd/system/monsterbox.service.d/*.conf
+
+# Log files owned by the service user — a root-owned log killed the boot
+# readiness check at its first `tee` under set -e, every boot, on one node.
+for lf in /var/log/monsterbox.log /var/log/monsterbox.err /var/log/monsterbox-boot.log; do
+    touch "$lf"
+    chown "$ACTUAL_USER:$ACTUAL_USER" "$lf"
+done
+
+# Secrets file scaffold (600). The app does NOT read .env; this file is loaded
+# by the 20-secrets drop-in. Placeholders stay commented until the operator
+# fills them in — without MONSTERBOX_SSH_PASSWORD, fleet SSH ops refuse loudly
+# by design; without MB_ADMIN_TOKEN, remote destructive endpoints are refused.
+if [ ! -f /etc/monsterbox/env ]; then
+    mkdir -p /etc/monsterbox
+    cat > /etc/monsterbox/env << 'ENVEOF'
+# MonsterBox secrets. Read by monsterbox.service via EnvironmentFile.
+# The app does NOT read .env — nothing loads dotenv — so this is the only place
+# these take effect. Restart the service after editing:
+#   sudo systemctl restart monsterbox.service
+#MONSTERBOX_SSH_PASSWORD=change-me
+#MB_ADMIN_TOKEN=change-me
+ENVEOF
+    chmod 600 /etc/monsterbox/env
+    print_warning "/etc/monsterbox/env scaffolded with commented placeholders — fill in the secrets."
+fi
+
+# Boot readiness check — verifies audio/video/app actually came up after boot
+# (probes are HTTPS; the log file above must stay owned by $ACTUAL_USER).
+if [ -f "$REPO_DIR/scripts/monsterbox-boot-check.service" ]; then
+    sed "s|/home/remote/MonsterBox|$REPO_DIR|g; s|User=remote|User=$ACTUAL_USER|" \
+        "$REPO_DIR/scripts/monsterbox-boot-check.service" \
+        > /etc/systemd/system/monsterbox-boot-check.service
+    systemctl enable monsterbox-boot-check.service 2>/dev/null || true
+fi
+
 systemctl daemon-reload 2>/dev/null || true
-print_success "Node OS baseline applied (avahi perms, journald 64M, logrotate, service drop-ins)"
+print_success "Node OS baseline applied (avahi perms, journald 64M, logrotate, drop-ins, log ownership, secrets scaffold, boot-check)"
 
 # Install Playwright browsers for testing (optional, non-fatal)
 sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null && \

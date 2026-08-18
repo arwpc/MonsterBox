@@ -57,6 +57,7 @@ flooding — all discoverable in minutes once someone actually read the logs
 - **After any test-suite run on a live node**: suites have reset volumes, flattened
   voice configs, enqueued scenes on peer nodes, and left part debris. Verify, don't
   assume.
+- **After any deploy or audio-stack change**: `npm run earcheck` (optionally `--nodes <ids>`) — each node's own microphones confirm its speaker was actually heard and the canonical voice was used. `success: true` from the say path proves an API call; the ear-check proves sound in the air. The operator does not need to stand in front of an animatronic.
 
 ## Hard-won context
 

@@ -1,7 +1,7 @@
 {
   "model": "eleven_v3",
-  "stability": 0.3,
-  "similarity_boost": 0.5,
+  "stability": 0.25,
+  "similarity_boost": 0.6,
   "voice_id": "Tj9l48J9AJbry5yCP5eW",
   "speed": 0.75
 }
