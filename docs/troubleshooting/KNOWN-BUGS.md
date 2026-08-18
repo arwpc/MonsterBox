@@ -427,6 +427,29 @@ exist yet.
 
 ### Opened from the 2026-08-18 v10 page sweep + adversarial review
 
+- 🟡 **The PIR watcher can respawn forever without ever falling back.**
+  `services/lurkMotionWatcherService.js` (~240) — the rapid-failure counter
+  resets to 0 on *any* exit that is non-rapid (>10 s uptime) or code 0, so a
+  watcher that reliably dies *after* warm-up (a GPIO error that manifests once
+  running, an OOM kill) never reaches `WATCHER_MAX_RAPID_FAILURES` and never
+  latches into the degraded per-poll fallback. Only the restart *rate* is
+  bounded, never the *count*: ~6600 journal lines/day onto SD plus a ~2 s
+  motion-blind gap every cycle, all night. *Fix direction:* bound restarts over
+  a rolling window, while still forgiving one blip in a watcher that has been
+  healthy for days.
+- 🟡 **A wedged PIR watcher is indistinguishable from a quiet room.**
+  `services/lurkMotionWatcherService.js` (~208) — the Python side prints only on
+  pin transitions, so `lastPollAt` (documented as "last proof the watcher is
+  alive") goes stale for hours on a quiet pin. The degrade machinery triggers
+  only on process *exit*, so a hung-but-alive child means motion-wake is
+  silently dead for the night: a guest walks past the PIR and the character
+  never wakes, while `getStatus()` still reports `active: true`. *Fix
+  direction:* a cheap periodic heartbeat line from `gpio_pin_watcher.py`, with
+  the Node side treating heartbeat-or-state as proof of life and degrading when
+  proof stops arriving. Both of these were scoped in the v10 train and cut when
+  the fixing agent was lost to an API error; the two higher-severity claim
+  defects from the same review are fixed in `6e8a0b05`.
+
 All found by agents reading code they were not the author of. None block v10.0.0;
 each is scoped small enough to fix in a single wave.
 
