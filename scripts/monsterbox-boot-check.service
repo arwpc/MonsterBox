@@ -12,8 +12,8 @@ ExecStart=/bin/bash /home/remote/MonsterBox/scripts/monsterbox-boot-complete.sh
 RemainAfterExit=yes
 
 # Logging
-StandardOutput=append:/var/log/monsterbox-boot.log
-StandardError=append:/var/log/monsterbox-boot.log
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

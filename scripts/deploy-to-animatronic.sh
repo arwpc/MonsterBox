@@ -277,6 +277,18 @@ EOF
 "
 echo ""
 
+# Install/enable the boot readiness check (logs READY FOR HALLOWEEN via journal +
+# /var/log/monsterbox-boot.log). Pre-create the log owned by the service user —
+# a root-owned log file kills the script at its first tee under set -e.
+${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
+    sudo install -m 644 ${REMOTE_PATH}/scripts/monsterbox-boot-check.service /etc/systemd/system/monsterbox-boot-check.service
+    sudo touch /var/log/monsterbox-boot.log
+    sudo chown ${REMOTE_USER}:${REMOTE_USER} /var/log/monsterbox-boot.log
+    sudo systemctl daemon-reload
+    sudo systemctl enable monsterbox-boot-check || true
+"
+echo ""
+
 # Optional: ensure mjpg-streamer is present and running
 ${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "
     if ! systemctl list-unit-files | grep -q '^mjpg-streamer'; then

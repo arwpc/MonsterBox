@@ -5,6 +5,7 @@
  */
 
 import fs from 'fs/promises';
+import os from 'os';
 import path from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -44,7 +45,16 @@ async function isMonsterBoxProcess(pid) {
         const raw = await fs.readFile(`/proc/${pid}/cmdline`, 'utf8');
         const cmdline = raw.replace(/\0/g, ' ');
         return /node/.test(cmdline) && /(server\.js|MonsterBox)/i.test(cmdline);
-    } catch (_) {
+    } catch (err) {
+        // The process vanished between the alive-check and this read — it is not
+        // running, so the lock is stale. Boot-time PID churn hit exactly this race
+        // on 2026-08-18 and the old blanket "assume ours" turned it into a false
+        // "already running" crash at first service start.
+        if (err.code === 'ENOENT' || err.code === 'ESRCH') {
+            return false;
+        }
+        // Genuinely unreadable (permissions, non-Linux): conservatively assume it
+        // IS ours so we never start a second instance against a real server.
         return true;
     }
 }
@@ -59,7 +69,17 @@ async function acquireLock() {
         const content = await fs.readFile(pidFile, 'utf8');
         const existingPid = parseInt(content.trim(), 10);
 
-        if (!isNaN(existingPid) && isProcessRunning(existingPid) && await isMonsterBoxProcess(existingPid)) {
+        // A PID file written before the current boot cannot describe a live
+        // MonsterBox — PIDs restart at boot, so any live match is reuse by an
+        // unrelated process. Skip the liveness probe entirely rather than racing
+        // boot-time PID churn. (Clock skew before NTP sync only makes bootTimeMs
+        // older, which safely falls through to the normal probe below.)
+        const { mtimeMs } = await fs.stat(pidFile);
+        const bootTimeMs = Date.now() - os.uptime() * 1000;
+        if (mtimeMs < bootTimeMs) {
+            console.warn(`Removing pre-boot PID file (PID ${existingPid} predates current boot)`);
+            await fs.unlink(pidFile);
+        } else if (!isNaN(existingPid) && isProcessRunning(existingPid) && await isMonsterBoxProcess(existingPid)) {
             console.error(`MonsterBox already running (PID ${existingPid}). Exiting.`);
             process.exit(1);
         } else {

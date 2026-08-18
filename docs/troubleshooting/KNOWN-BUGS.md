@@ -207,7 +207,12 @@ of the two characters the broken map happened to get right.
   stale file on the same reboot and cleaned it without crashing — only the reuse race
   bites. Cost today: ~12 s of boot delay under `Restart=on-failure`. *Fix direction:*
   give the "already running" check the same is-it-actually-MonsterBox test the cleanup
-  path already has. **Proof fixed:** two consecutive reboots with one clean start each.
+  path already has. **Fix shipped 2026-08-18** in `services/resource/singleInstance.js`,
+  deployed to all three online nodes: a PID file whose mtime predates the current boot
+  is removed without probing (PIDs reset at boot, so any live match is reuse), and a
+  process that vanishes between the alive-check and the `/proc` read now reads as
+  stale instead of "assume ours". **Proof fixed:** two consecutive reboots with one
+  clean start each.
 
 🟡 **The "dead" Neck and Eye were software all along — awaiting one visual confirmation**
 (2026-08-16 evening session, v9.2.1). Three compounding software bugs made the servos look
@@ -261,10 +266,10 @@ The jaw-animation "servo must be calibrated" false block was fixed in v8.1.6.
   0.25/0.6. Mtime forensics: that file is stamped 2026-08-16 18:38 while every other
   character's tts-config on his disk carries the 2026-08-17 20:19–20:20 rsync stamp —
   Orlok's film-profile tuning was committed *after* that deploy and never re-pushed.
-  No process wrote the file, so this is not the voice-clobber class. **Fix:**
-  `git checkout -- data/character-3/ai-config/tts-config.json` on his node, or the
-  next `npm run deploy:all` heals it. Matters only if he ever speaks as character 3,
-  but the fleet should carry canonical data.
+  No process wrote the file, so this is not the voice-clobber class. **Healed
+  2026-08-18:** canonical committed copy pushed to his node; `git status` clean for
+  the file. Kept as a worked example: mtime forensics distinguish a missed deploy
+  window from an active config writer.
 
 **v9.2.0 status:** running 9.2.0. Speaker and **voice** verified by ear on 2026-08-16 — the
 ear-check first caught him speaking in his **retired** voice `SOYHLrjzK2X1ezoPC6cr` (39.3 dB
@@ -328,15 +333,33 @@ exist yet.
 
 ### Opened from the 2026-08-17 post-reboot health pass
 
+- 🟡 **`boot-init.sh` probed plain HTTP against the HTTPS server — the fleet-wide
+  `monsterbox-init` unit has never enabled random poses since the HTTPS switch**
+  (found 2026-08-18 via Dragomir's `curl: (52) Empty reply from server` boot line;
+  same bug class as the boot-check probe fixed 2026-08-17). Its health-wait burned
+  30 s of every boot, its `enable-random-poses` POST always failed, and the `|| true`
+  swallowed it — "boot-init complete" was logged regardless. Only nodes with the
+  boot-check unit got random poses, via the already-fixed
+  `monsterbox-boot-complete.sh`. **Fixed 2026-08-18:** `https://` + `-k`, shipped to
+  all three nodes. ⚠️ *Behavior note:* next boot, Orlok and Sir Dragomir will enable
+  random poses at startup **for the first time ever** — the designed default a bug
+  suppressed. Safety rails (blockAllMotion, calibrated bounds) still apply, but if
+  poses-at-idle are unwanted during calibration work, disable there, not by relying
+  on this bug. **Proof fixed:** post-boot, `enable-random-poses` state is on and
+  boot-init logs no curl error.
 - 🟡 **`monsterbox-boot-check` is only installed on Mina — Orlok and Sir Dragomir
   never report "READY FOR HALLOWEEN"** (found 2026-08-18). On Dragomir systemd says
   the unit could not be found; on both nodes `/var/log/monsterbox-boot.log` is 0 bytes
   (untouched since Aug 16 22:37) while Mina's shows the full readiness run. The unit
   file exists in the repo (`scripts/monsterbox-boot-check.service`) but was never
   installed/enabled on the other nodes — the 2026-08-17 boot-check fixes were only
-  proven where the unit exists. *Fix:* install + enable the unit on Orlok and
-  Dragomir (and fold into `install.sh` per the OS-baseline item above). **Proof
-  fixed:** next reboot leaves a READY line on all three nodes.
+  proven where the unit exists. **Fix shipped 2026-08-18:** unit installed + enabled
+  on Orlok and Dragomir with `/var/log/monsterbox-boot.log` pre-created owned by
+  `remote` (a root-owned log killed the script at its first `tee` under `set -e` —
+  the old Mina bug), `deploy-to-animatronic.sh` now installs the unit on every
+  deploy, and the unit's own Standard{Output,Error} moved to the journal — it was
+  appending to the same file the script already tees to, double-writing every line
+  to SD. **Proof fixed:** next reboot leaves a READY line on all three nodes.
 
 - 🔴 **System tests on a live node send REAL fleet writes through the production
   process — confirmed live, not theoretical.** `test:system` sets `MB_TEST_MODE=1` for
