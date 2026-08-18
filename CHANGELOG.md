@@ -4,6 +4,41 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [9.3.0 post-release] - 2026-08-17 — fleet health pass
 
+### Every character's voice, measured against its persona
+
+Using the acoustic loop proven on Orlok (median F0, sub-150 Hz rumble, drawl rate,
+pause fraction — scored against each persona's targets, with a keep-bias toward the
+hand-picked voices):
+
+- **Orlok** — the "Count Orlok, Nosferatu" professional voice confirmed as the single
+  best match in the entire Voice Library (4-term sweep returns only it); tuned to
+  stability 0.25 / similarity 0.6 (65.6 Hz median — a true octave-dropped chest
+  voice). Ear-verified 39.3 dB / 100% recall.
+- **Mina** — "The Siren's Voicemail" kept (a seduction-built voice for the heart of the
+  story); stability 0.35→0.30 measured warmer with more beckoning pause; speed 0.87
+  on the agent path. Ear-verified 31.8 dB / 80% recall, canonical.
+- **Sir Dragomir** — "Dante" kept for the century-old knight; stability 0.5 / speed 0.9
+  measured lower (113.5 Hz), rumblier, more deliberate. Ear-verified 20.6 dB / 94%.
+- **PumpkinHead** — "Toby - Little Mythical Monster" kept for the screeching graveyard
+  lure; stability 0.25 widens the shriek-to-creak swing (p10 58.8 ↔ medF0 160 across
+  test lines). Not ear-verified — node offline.
+- **Groundbreaker** — "Malyx - Deep Demon" VERIFIED as a genuine persona fit (78 Hz
+  median, deepest and slowest of everything scored — not a wrong-voice-bug bandaid);
+  stability 0.45 / speed 0.9 for the consistent boom. Not ear-verified — node offline.
+- **Renfield** — "Chris - irritable boss" kept; stability 0.30 widens the
+  lucid-vs-shattered register swing his prompt is written for. Not ear-verified —
+  node never networked.
+
+No voice swaps anywhere — every hand-picked identity survived a measured library
+challenge. Settings-only changes, applied to `tts-config.json` per character.
+
+### Canonical speaker volume is applied at service start
+
+`server.js` reads this node's `sinkVolume` from `config/animatronics.json` at every
+start (with retries across the boot race) — reboots and test suites kept resetting
+`wpctl` to wrong levels with the right number recorded nowhere. Verified: volume
+sabotaged to 0.40, service restart healed it to 0.90 with a log line.
+
 ### Log review is now a standing practice
 
 - **`scripts/log-review.mjs`** (`npm run log:review`) — collects fresh error signal

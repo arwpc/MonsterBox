@@ -135,6 +135,36 @@ if (hostnameCharId !== null && hostnameCharId !== config.selectedCharacter) {
     console.log(`[startup] Hostname "${os.hostname()}" has no animatronics mapping, keeping character ${config.selectedCharacter}`);
 }
 
+// Restore this node's canonical speaker level. wpctl volume is node-local
+// state that reboots and test suites keep resetting — one node came back from
+// a reboot too quiet to be intelligible in the yard, and the "right" level
+// lived nowhere but the operator's memory. config/animatronics.json now
+// carries the ear-verified level per node (sinkVolume); apply it at every
+// service start. Retries cover the boot race where this system service starts
+// before the user-session PipeWire is up; a node with no recorded level (not
+// yet ear-verified) is left alone.
+(async function applyCanonicalVolume() {
+    let mine = null;
+    try {
+        const anims = JSON.parse(await fs.readFile(path.join(__dirname, 'config', 'animatronics.json'), 'utf8'));
+        mine = (anims.animatronics || []).find(a => a.hostname === os.hostname());
+    } catch (_) { /* no registry, nothing to apply */ }
+    if (!mine || mine.sinkVolume == null) return;
+    const { execFile } = await import('child_process');
+    const attempt = (triesLeft) => {
+        execFile('wpctl', ['set-volume', '@DEFAULT_AUDIO_SINK@', String(mine.sinkVolume)], (err) => {
+            if (!err) {
+                console.log(`🔊 Sink volume set to canonical ${mine.sinkVolume} (config/animatronics.json)`);
+            } else if (triesLeft > 0) {
+                setTimeout(() => attempt(triesLeft - 1), 10000); // PipeWire may not be up yet at boot
+            } else {
+                console.warn(`Could not apply canonical sink volume ${mine.sinkVolume}: ${err.message}`);
+            }
+        });
+    };
+    attempt(6);
+})();
+
 // Startup health check runs AFTER the hostname→character correction above, and
 // must stay after it: the servoChannels audit shells out to servo_cli.py, which
 // resolves the character from app-config.json on disk. When a stale
