@@ -13,8 +13,9 @@
  *   getStatus()               — current watcher state for the dashboard
  */
 
-import { execFile } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import path from 'path';
+import { createInterface } from 'readline';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -32,7 +33,11 @@ let watcherState = {
   lastMotionAt: null,
   lastPollAt: null,
   sleeping: false,               // true when timed out waiting for motion
-  pollTimer: null,
+  pollTimer: null,               // degraded-mode poll loop (fallback only)
+  watcherProcess: null,          // resident python pin watcher (preferred)
+  restartTimer: null,
+  watcherFailures: 0,            // consecutive rapid non-zero watcher exits
+  degraded: false,               // true once we gave up on the resident watcher
   inactivityTimer: null,
   motionDetectedCount: 0,
   // Callbacks set by the caller (conversation route)
@@ -73,9 +78,13 @@ function start(characterId, opts = {}) {
   watcherState.onSleep = opts.onSleep || null;
   watcherState.onWake = opts.onWake || null;
 
-  // Start polling
-  watcherState.pollTimer = setInterval(pollSensor, watcherState.pollIntervalMs);
-  if (watcherState.pollTimer.unref) watcherState.pollTimer.unref();
+  // Start watching the pin. Preferred path is ONE resident python watcher —
+  // the old per-poll execFile forked a fresh interpreter every second (~86k
+  // launches/day per lurking node). Per-poll reads survive only as the
+  // degraded fallback when the watcher cannot run.
+  watcherState.degraded = false;
+  watcherState.watcherFailures = 0;
+  startMotionWatch();
 
   // Start inactivity timer
   resetInactivityTimer();
@@ -88,6 +97,17 @@ function stop() {
   if (watcherState.pollTimer) {
     clearInterval(watcherState.pollTimer);
     watcherState.pollTimer = null;
+  }
+  if (watcherState.restartTimer) {
+    clearTimeout(watcherState.restartTimer);
+    watcherState.restartTimer = null;
+  }
+  if (watcherState.watcherProcess) {
+    const child = watcherState.watcherProcess;
+    // Null the handle first so the close handler sees an intentional stop and
+    // does not respawn or count it as a failure.
+    watcherState.watcherProcess = null;
+    try { child.kill('SIGTERM'); } catch (_) { /* already gone */ }
   }
   if (watcherState.inactivityTimer) {
     clearTimeout(watcherState.inactivityTimer);
@@ -146,6 +166,102 @@ function isActive() {
 }
 
 // ─── Internal ─────────────────────────────────────────────────────────
+
+// Resident watcher process (same lifecycle pattern as services/jawServoDaemon.js:
+// spawn once, parse stdout lines, restart on exit).
+const WATCHER_SCRIPT = path.resolve(appRoot, 'python_wrappers/gpio_pin_watcher.py');
+const WATCHER_SAMPLE_MS = 100;          // in-process sampling is free, so wake latency drops from ~1s to ~100ms
+const WATCHER_RESTART_DELAY_MS = 2000;  // pause before respawning a crashed watcher
+const WATCHER_MAX_RAPID_FAILURES = 3;   // rapid non-zero exits before degrading to per-poll reads
+const WATCHER_RAPID_EXIT_MS = 10000;    // an exit this soon after spawn counts as a rapid failure
+
+// Mirror jawServoDaemon's guard: CI test runs must not spawn resident python.
+function isTestMode() {
+  return (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') &&
+    (process.env.CI === 'true' || process.env.CI === '1');
+}
+
+function startMotionWatch() {
+  if (isTestMode() || watcherState.degraded) {
+    startPollingFallback();
+    return;
+  }
+
+  let child;
+  try {
+    child = spawn('/usr/bin/python3', [WATCHER_SCRIPT, String(watcherState.sensorPin), String(WATCHER_SAMPLE_MS)], {
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+  } catch (e) {
+    console.warn('[LurkMotionWatcher] watcher spawn failed — degrading to per-poll reads:', e.message);
+    enterDegradedMode();
+    return;
+  }
+
+  watcherState.watcherProcess = child;
+  watcherState.lastPollAt = Date.now();
+  const spawnedAt = Date.now();
+
+  const rl = createInterface({ input: child.stdout });
+  rl.on('line', (line) => {
+    if (!watcherState.active || watcherState.watcherProcess !== child) return;
+    // lastPollAt now means "last proof the watcher is alive" — READY and
+    // STATE 0 lines refresh it too, keeping the dashboard field meaningful.
+    watcherState.lastPollAt = Date.now();
+    const fields = String(line).trim().split(/\s+/);
+    if (fields[0] === 'STATE' && fields[1] === '1') {
+      onMotionDetected();
+    }
+  });
+
+  child.stderr.on('data', (data) => {
+    const msg = data.toString().trim();
+    if (msg) console.warn('[LurkMotionWatcher] watcher stderr:', msg);
+  });
+
+  child.on('error', (err) => {
+    // Spawn-level failure (e.g. python3 missing). The poll fallback keeps the
+    // inactivity/sleep semantics alive even if its reads also fail.
+    console.warn('[LurkMotionWatcher] watcher process error:', err.message);
+    if (watcherState.watcherProcess === child) {
+      watcherState.watcherProcess = null;
+      enterDegradedMode();
+    }
+  });
+
+  child.on('close', (code) => {
+    if (watcherState.watcherProcess !== child) return; // intentionally stopped or superseded
+    watcherState.watcherProcess = null;
+    if (!watcherState.active) return;
+
+    // The watcher exits non-zero on GPIO errors by contract; repeated rapid
+    // failures mean the pin is unreadable this session, so stop respawning.
+    const rapid = Date.now() - spawnedAt < WATCHER_RAPID_EXIT_MS;
+    watcherState.watcherFailures = (code !== 0 && rapid) ? watcherState.watcherFailures + 1 : 0;
+
+    if (code !== 0 && watcherState.watcherFailures >= WATCHER_MAX_RAPID_FAILURES) {
+      console.warn(`[LurkMotionWatcher] watcher failed ${watcherState.watcherFailures}x (exit ${code}) — degrading to per-poll reads`);
+      enterDegradedMode();
+      return;
+    }
+
+    console.warn(`[LurkMotionWatcher] watcher exited (code ${code}) — restarting`);
+    watcherState.restartTimer = setTimeout(startMotionWatch, WATCHER_RESTART_DELAY_MS);
+    if (watcherState.restartTimer.unref) watcherState.restartTimer.unref();
+  });
+}
+
+function enterDegradedMode() {
+  watcherState.degraded = true;
+  if (watcherState.active) startPollingFallback();
+}
+
+// Degraded mode: the original one-execFile-per-interval read loop.
+function startPollingFallback() {
+  if (watcherState.pollTimer) return;
+  watcherState.pollTimer = setInterval(pollSensor, watcherState.pollIntervalMs);
+  if (watcherState.pollTimer.unref) watcherState.pollTimer.unref();
+}
 
 function pollSensor() {
   if (!watcherState.active) return;

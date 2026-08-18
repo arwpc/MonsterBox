@@ -369,12 +369,12 @@
         html += '</select></div>';
       } else if (f.type === 'number') {
         html += '<div class="col-md-6"><label class="mb-field-label" for="' + fieldId + '">' + f.label + '</label>' +
-          '<input id="' + fieldId + '" type="number" class="mb-input defaults-field" data-key="' + f.key + '"' +
+          '<input id="' + fieldId + '" type="number" class="mb-input defaults-field" title="Default value for ' + f.label + '" data-key="' + f.key + '"' +
           ' value="' + val + '" placeholder="' + (f.placeholder || '') + '"' +
           (f.step ? ' step="' + f.step + '"' : '') + '></div>';
       } else {
         html += '<div class="col-md-6"><label class="mb-field-label" for="' + fieldId + '">' + f.label + '</label>' +
-          '<input id="' + fieldId + '" type="text" class="mb-input defaults-field" data-key="' + f.key + '"' +
+          '<input id="' + fieldId + '" type="text" class="mb-input defaults-field" title="Default value for ' + f.label + '" data-key="' + f.key + '"' +
           ' value="' + val + '" placeholder="' + (f.placeholder || '') + '"></div>';
       }
     });

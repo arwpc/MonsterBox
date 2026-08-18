@@ -541,10 +541,10 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <div>
             <div class="h5 mb-0" id="devName">Select a device</div>
-            <small class="text-muted" id="devMeta"></small>
+            <small class="text-muted mb-mono" id="devMeta"></small>
           </div>
           <div class="text-end">
-            <span class="mb-badge" id="modelBadge">Model: —</span>
+            <span class="mb-badge mb-mono" id="modelBadge">Model: —</span>
             <label class="mb-switch ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse the direction of movement for this part">
               <input type="checkbox" id="invertDir">
               <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
@@ -754,8 +754,8 @@
                         <div id="calMotionTrackingStatus" class="mt-2" style="display:none;">
                           <div class="alert alert-info mb-0 py-1 px-2">
                             <small>
-                              <strong>Status:</strong> <span id="calTrackingStatusText">Initializing...</span><br>
-                              <strong>Target:</strong> <span id="calTargetPosition">None detected</span>
+                              <strong>Status:</strong> <span id="calTrackingStatusText" class="mb-mono">Initializing...</span><br>
+                              <strong>Target:</strong> <span id="calTargetPosition" class="mb-mono">None detected</span>
                             </small>
                           </div>
                         </div>
@@ -850,7 +850,7 @@
           <div class="mb-3">
             <label class="form-label small fw-bold">Current Position</label>
             <div class="text-center">
-              <span id="calPositionDisplay" class="mb-badge mb-badge-primary cal-position-badge">—</span>
+              <span id="calPositionDisplay" class="mb-badge mb-badge-primary cal-position-badge mb-mono">—</span>
               <div class="mt-1">
                 <span id="calConfidenceBadge" class="mb-badge" style="display: none;">Unknown</span>
               </div>
@@ -869,10 +869,10 @@
             <label class="form-label small fw-bold">Calibration Bounds</label>
             <div class="row g-2 mb-2">
               <div class="col-6">
-                <small class="text-muted">Min: <span id="calMinDisplay">—</span></small>
+                <small class="text-muted">Min: <span id="calMinDisplay" class="mb-mono">—</span></small>
               </div>
               <div class="col-6 text-end">
-                <small class="text-muted">Max: <span id="calMaxDisplay">—</span></small>
+                <small class="text-muted">Max: <span id="calMaxDisplay" class="mb-mono">—</span></small>
               </div>
             </div>
             <div class="mb-btn-group w-100 mb-2">
@@ -1358,7 +1358,7 @@
       var btn = document.getElementById('calHomeBtn');
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Homing...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm mb-live"></span> <span class="mb-live mb-now-pulse">Homing...</span>';
       }
       try {
         var res = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/home', {
@@ -1480,7 +1480,7 @@
       var btn = document.getElementById('btnTestSweep');
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sweeping...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm mb-live"></span> <span class="mb-live mb-now-pulse">Sweeping...</span>';
       }
 
       var SWEEPS = 3;
@@ -1496,7 +1496,7 @@
         for (var i = 0; i < SWEEPS; i++) {
           // For open-loop parts, home to retract endstop before each cycle
           if (needsHoming) {
-            if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Homing...';
+            if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm mb-live"></span> <span class="mb-live mb-now-pulse">Homing...</span>';
             var homeRes = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/home', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1505,7 +1505,7 @@
             var homeData = await homeRes.json();
             updateCurrentPositionDisplay(homeData.currentP, homeData.currentAngle);
           }
-          if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sweep ' + (i + 1) + '/' + SWEEPS + '...';
+          if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm mb-live"></span> <span class="mb-live mb-now-pulse">Sweep ' + (i + 1) + '/' + SWEEPS + '...</span>';
 
           // Go to min
           var res1 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
@@ -4276,7 +4276,7 @@
                   </div>
                   <div class="mb-3">
                     <label class="form-label">Select PCA9685 Channel</label>
-                    <div id="addPca9685Channels"></div>
+                    <div id="addPca9685Channels" class="mb-mono"></div>
                     <input type="hidden" id="addPca9685Channel" name="pca9685Channel">
                   </div>
                 </div>

@@ -13,11 +13,11 @@ wave reverts alone. The v10.0.0 tag is hostage to the full browser suite.
 | # | Phase | Status | Proof required |
 |---|-------|--------|----------------|
 | 0 | Post-reboot verification, log-review, boot hardening, test sweep, reboot trial, log harvest | ✅ DONE | committed `dd816cbb`, `b30bde09`; 🎃 READY ×3; earcheck 3/3 |
-| 1 | **Superpowers fix-fleet** (5 agents: A jaw / B lurk ✅ / C cross-cutting ✅ / D motion-PIR / E test-rewrite) | 🔄 RUNNING (2/5 landed) | each agent's report + my integration review |
+| 1 | **Superpowers fix-fleet** (A ✅ B ✅ C ✅ committed `8430a691`; D partial-salvaged, needs finisher; E not started) | 🔶 3/5 + salvage | each agent's report + integration review |
 | 2 | **Integration**: review A–E diffs, dead calibration-route redirects, `node --check` all, `validate:schemas`, `audit:resolver`, `test:smoke`, commit wave | ⏸ gated on 1 | gate commands green, wave committed |
 | 3 | **Service restart** (loads fixes + Scare Console route + Obsidian skin) | ⏸ gated on 2 | health 200, zero startup errors in journal |
 | 4 | **Scare Console visual pass**: desktop + phone screenshots, iterate until right | ⏸ gated on 3 | screenshots reviewed by me, defects fixed |
-| 5 | **v10 page sweep** (4 agents, verify-don't-churn): Studio+Poses / Setup family / Orchestration+Libraries / remainder — semantic serif·mono·amber hooks, every button + tooltip verified per page, before/after screenshots | ⏸ gated on 3 (slots gated on 1) | 27-page matrix all green; 2 dead calibration routes retired |
+| 5 | **v10 page sweep**: 4/27 pages landed (orchestration, studio, calibration, models — committed); 23 remain + after-screenshots; 2 dead calibration routes still to retire | 🔶 4/27 | 27-page matrix all green |
 | 6 | **Test pass**: update dashboard/browser specs for new structure, then FULL browser suite + system + unit | ⏸ gated on 5 | suite green minus documented pre-existing flakes (named) |
 | 7 | **Docs regeneration**: README, CHANGELOG, Tactile Obsidian design doc, dashboard docs, KNOWN-BUGS reconciliation, memory files | ⏸ gated on 6 | docs reference no removed page; version reads dynamic |
 | 8 | **v10.0.0**: bump `package.json`, commit, tag, push (gate runs), `deploy:all` to Orlok + Dragomir, post-deploy earcheck | ⏸ gated on 7 | tag on GitHub; fleet-health ×3 at 10.0.0; earcheck 3/3 |

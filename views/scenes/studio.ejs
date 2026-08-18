@@ -39,7 +39,7 @@
 
     <button class="mb-btn mb-btn-panic mb-btn-sm" id="btnEmergencyStop" title="Emergency Stop All"><i class="bi bi-exclamation-triangle"></i> E-STOP</button>
 
-    <span class="ms-auto mb-text-xs mb-text-muted" id="studioStatus" role="status" aria-live="polite"></span>
+    <span class="ms-auto mb-text-xs mb-text-muted mb-mono" id="studioStatus" role="status" aria-live="polite"></span>
   </div>
 </div>
 
@@ -113,8 +113,8 @@
 
       <div id="timelineEditor" class="studio-hidden">
         <div class="studio-scene-bar mb-3">
-          <input type="text" class="mb-input" id="sceneNameInput" placeholder="Scene name..." title="Scene name">
-          <span class="mb-badge" id="stepCountBadge">0 steps</span>
+          <input type="text" class="mb-input mb-serif" id="sceneNameInput" placeholder="Scene name..." title="Scene name">
+          <span class="mb-badge mb-mono" id="stepCountBadge">0 steps</span>
           <button class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-icon" id="btnDuplicateScene" title="Duplicate Scene"><i class="bi bi-files"></i></button>
           <button class="mb-btn mb-btn-danger mb-btn-sm mb-btn-icon" id="btnDeleteCurrentScene" title="Delete Scene"><i class="bi bi-trash"></i></button>
         </div>
@@ -275,8 +275,8 @@
       <p id="studioConfirmBody" class="mb-0"></p>
     </div>
     <div class="mb-modal-footer">
-      <button type="button" class="mb-btn mb-btn-ghost" id="studioConfirmCancel" data-studio-confirm-cancel>Cancel</button>
-      <button type="button" class="mb-btn mb-btn-danger" id="studioConfirmOk">Delete</button>
+      <button type="button" class="mb-btn mb-btn-ghost" id="studioConfirmCancel" data-studio-confirm-cancel title="Cancel without making changes">Cancel</button>
+      <button type="button" class="mb-btn mb-btn-danger" id="studioConfirmOk" title="Confirm this action">Delete</button>
     </div>
   </div>
 </div>
@@ -442,8 +442,8 @@
       var isActive = currentSceneId === s.id;
       html += '<div class="lib-item' + (isActive ? ' active' : '') + '" data-scene-id="' + s.id + '" draggable="true">';
       html += '<i class="bi bi-film me-1"></i> ';
-      html += '<span class="text-truncate">' + escHtml(s.name || 'Scene ' + s.id) + '</span>';
-      html += '<span class="mb-badge">' + stepCount + '</span>';
+      html += '<span class="text-truncate mb-serif">' + escHtml(s.name || 'Scene ' + s.id) + '</span>';
+      html += '<span class="mb-badge mb-mono">' + stepCount + '</span>';
       html += '<span class="lib-actions">';
       html += '<button class="mb-btn mb-btn-primary mb-btn-sm mb-btn-icon scene-play-btn" data-id="' + s.id + '" title="Play"><i class="bi bi-play-fill"></i></button> ';
       html += '<button class="mb-btn mb-btn-danger mb-btn-sm mb-btn-icon scene-delete-btn" data-id="' + s.id + '" title="Delete"><i class="bi bi-trash"></i></button>';
@@ -585,8 +585,8 @@
       groups[cat].forEach(function(p) {
         html += '<div class="lib-item lib-item-pose" draggable="true" data-pose-id="' + p.id + '">';
         html += '<i class="bi bi-person-arms-up me-1 lib-item-icon"></i> ';
-        html += '<span class="text-truncate">' + escHtml(p.name) + '</span>';
-        html += '<span class="mb-badge">' + ((p.parts && p.parts.length) || 0) + '</span>';
+        html += '<span class="text-truncate mb-serif">' + escHtml(p.name) + '</span>';
+        html += '<span class="mb-badge mb-mono">' + ((p.parts && p.parts.length) || 0) + '</span>';
         html += '<span class="lib-actions">';
         html += '<a class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-icon" href="/poses/editor/' + p.id + '" title="Edit"><i class="bi bi-pencil"></i></a> ';
         html += '<button class="mb-btn mb-btn-primary mb-btn-sm mb-btn-icon pose-test-btn" data-id="' + p.id + '" title="Test"><i class="bi bi-play-fill"></i></button> ';
@@ -833,7 +833,7 @@
       // Header
       html += '<div class="step-block-header">';
       html += '<div class="step-type-icon"><i class="bi ' + meta.icon + '"></i></div>';
-      html += '<div class="step-info"><strong>' + meta.label + '</strong> ' + escHtml(getStepSummary(step)) + jawBadge + '</div>';
+      html += '<div class="step-info"><strong>' + meta.label + '</strong> <span class="' + ((t === 'sayThis' || t === 'askAI') ? 'mb-dialogue' : '') + '">' + escHtml(getStepSummary(step)) + '</span>' + jawBadge + '</div>';
       html += '<div class="step-actions">';
       html += '<button class="mb-btn mb-btn-primary mb-btn-sm mb-btn-icon step-play-btn" data-idx="' + idx + '" title="Test"><i class="bi bi-play-fill"></i></button>';
       html += '<button class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-icon step-dup-btn" data-idx="' + idx + '" title="Duplicate"><i class="bi bi-files"></i></button>';
@@ -966,9 +966,9 @@
     html += '</select></div>';
     if (!step.usePreset) {
       html += '<div class="col-6"><label class="mb-field-label">Angle</label>';
-      html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="angle" value="' + (step.angle != null ? step.angle : 90) + '" min="0" max="180"></div>';
+      html += '<input type="number" title="Target angle in degrees" class="mb-input sf-input" data-idx="' + idx + '" data-field="angle" value="' + (step.angle != null ? step.angle : 90) + '" min="0" max="180"></div>';
       html += '<div class="col-6"><label class="mb-field-label">Duration (ms)</label>';
-      html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0"></div>';
+      html += '<input type="number" title="Movement duration in milliseconds" class="mb-input sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0"></div>';
     } else {
       html += '<div class="col-12"><label class="mb-field-label">Preset</label>';
       html += '<select title="Select a saved preset" class="mb-select sf-input" data-idx="' + idx + '" data-field="presetName">';
@@ -1000,9 +1000,9 @@
     html += '<option value="backward"' + (step.direction === 'backward' ? ' selected' : '') + '>Backward</option>';
     html += '</select></div>';
     html += '<div class="col-4"><label class="mb-field-label">Speed %</label>';
-    html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="speed" value="' + (step.speed || 50) + '" min="0" max="100"></div>';
+    html += '<input type="number" title="Motor speed as a percentage" class="mb-input sf-input" data-idx="' + idx + '" data-field="speed" value="' + (step.speed || 50) + '" min="0" max="100"></div>';
     html += '<div class="col-4"><label class="mb-field-label">Duration</label>';
-    html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0"></div>';
+    html += '<input type="number" title="Movement duration in milliseconds" class="mb-input sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0"></div>';
     html += '</div>';
     return html;
   }
@@ -1022,9 +1022,9 @@
     html += '<option value="retract"' + (step.direction === 'retract' ? ' selected' : '') + '>Retract</option>';
     html += '</select></div>';
     html += '<div class="col-4"><label class="mb-field-label">Speed %</label>';
-    html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="speed" value="' + (step.speed || 75) + '" min="0" max="100"></div>';
+    html += '<input type="number" title="Actuator speed as a percentage" class="mb-input sf-input" data-idx="' + idx + '" data-field="speed" value="' + (step.speed || 75) + '" min="0" max="100"></div>';
     html += '<div class="col-4"><label class="mb-field-label">Duration</label>';
-    html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 3000) + '" min="0"></div>';
+    html += '<input type="number" title="Movement duration in milliseconds" class="mb-input sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 3000) + '" min="0"></div>';
     html += '</div>';
     return html;
   }
@@ -1044,7 +1044,7 @@
     html += '<option value="off"' + (step.state === 'off' ? ' selected' : '') + '>Off</option>';
     html += '</select></div>';
     html += '<div class="col-3"><label class="mb-field-label">Bright %</label>';
-    html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="brightness" value="' + (step.brightness || 100) + '" min="0" max="100"></div>';
+    html += '<input type="number" title="Brightness as a percentage" class="mb-input sf-input" data-idx="' + idx + '" data-field="brightness" value="' + (step.brightness || 100) + '" min="0" max="100"></div>';
     html += '</div>';
     return html;
   }
@@ -1059,7 +1059,7 @@
     });
     html += '</select></div>';
     html += '<div class="col-4"><label class="mb-field-label">Volume %</label>';
-    html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100"></div>';
+    html += '<input type="number" title="Playback volume as a percentage" class="mb-input sf-input" data-idx="' + idx + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100"></div>';
     html += '</div>';
     return html;
   }
@@ -1067,7 +1067,7 @@
   function renderSayThisForm(step, idx) {
     var html = '<div class="row g-2">';
     html += '<div class="col-12"><label class="mb-field-label">Text</label>';
-    html += '<textarea class="mb-textarea sf-input" data-idx="' + idx + '" data-field="text" rows="2" placeholder="Text to speak...">' + escHtml(step.text || '') + '</textarea></div>';
+    html += '<textarea title="Text the character will speak aloud" class="mb-textarea mb-dialogue sf-input" data-idx="' + idx + '" data-field="text" rows="2" placeholder="Text to speak...">' + escHtml(step.text || '') + '</textarea></div>';
     html += '</div>';
     return html;
   }
@@ -1075,7 +1075,7 @@
   function renderAskAIForm(step, idx) {
     var html = '<div class="row g-2">';
     html += '<div class="col-12"><label class="mb-field-label">Question</label>';
-    html += '<textarea class="mb-textarea sf-input" data-idx="' + idx + '" data-field="question" rows="2" placeholder="Ask AI a question...">' + escHtml(step.question || step.text || '') + '</textarea></div>';
+    html += '<textarea title="Question the AI will answer in character" class="mb-textarea mb-dialogue sf-input" data-idx="' + idx + '" data-field="question" rows="2" placeholder="Ask AI a question...">' + escHtml(step.question || step.text || '') + '</textarea></div>';
     html += '</div>';
     return html;
   }
@@ -1084,8 +1084,8 @@
     var ms = parseInt(step.duration, 10) || 1000;
     var html = '<div class="row g-2">';
     html += '<div class="col-8"><label class="mb-field-label">Duration (ms)</label>';
-    html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="duration" value="' + ms + '" min="0" step="100"></div>';
-    html += '<div class="col-4 d-flex align-items-end"><span class="mb-text-muted mb-text-sm">' + (ms / 1000).toFixed(1) + 's</span></div>';
+    html += '<input type="number" title="Wait time in milliseconds" class="mb-input sf-input" data-idx="' + idx + '" data-field="duration" value="' + ms + '" min="0" step="100"></div>';
+    html += '<div class="col-4 d-flex align-items-end"><span class="mb-text-muted mb-text-sm mb-mono">' + (ms / 1000).toFixed(1) + 's</span></div>';
     html += '</div>';
     return html;
   }
@@ -1112,7 +1112,7 @@
     });
     html += '</select></div>';
     html += '<div class="col-6"><label class="mb-field-label">Timeout (ms)</label>';
-    html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="timeout" value="' + (step.timeout || 5000) + '" min="0"></div>';
+    html += '<input type="number" title="How long to wait for motion, in milliseconds" class="mb-input sf-input" data-idx="' + idx + '" data-field="timeout" value="' + (step.timeout || 5000) + '" min="0"></div>';
     html += '</div>';
     return html;
   }
@@ -1128,7 +1128,7 @@
     html += '<div class="col-6"><label class="mb-field-label">Video</label>';
     html += '<select title="Select a video to play" class="mb-select sf-input video-sel" data-idx="' + idx + '" data-field="videoId"><option value="">Select goblin first</option></select></div>';
     html += '<div class="col-6"><label class="mb-field-label">Volume %</label>';
-    html += '<input type="number" class="mb-input sf-input" data-idx="' + idx + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100"></div>';
+    html += '<input type="number" title="Playback volume as a percentage" class="mb-input sf-input" data-idx="' + idx + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100"></div>';
     html += '<div class="col-6"><label class="mb-check mt-4" for="gloop' + idx + '"><input title="Loop this media for the duration of the step" type="checkbox" class="sf-input" data-idx="' + idx + '" data-field="loop" id="gloop' + idx + '"' + (step.loop ? ' checked' : '') + '>';
     html += '<span class="mb-text-sm">Loop</span></label></div>';
     html += '</div>';
@@ -1264,8 +1264,8 @@
 
       // Status
       if (status.running) {
-        var msg = '<span class="mb-badge mb-badge-success">Running</span>';
-        if (status.nowPlaying) msg += ' ' + escHtml(status.nowPlaying.name);
+        var msg = '<span class="mb-badge mb-live mb-now-pulse">Running</span>';
+        if (status.nowPlaying) msg += ' <span class="mb-serif">' + escHtml(status.nowPlaying.name) + '</span>';
         setHtml('queueStatus', msg);
       } else {
         setHtml('queueStatus', '');

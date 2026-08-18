@@ -20,7 +20,7 @@
     <!-- Fleet health rollup -->
     <span class="mb-badge" id="fleetPill" title="Nodes currently online / total in the fleet">
       <span class="mb-dot mb-dot-idle" id="fleetDot"></span>
-      <span id="fleetCount">— / —</span>
+      <span id="fleetCount" class="mb-mono">— / —</span>
     </span>
 
     <span class="fcc-sep"></span>
@@ -42,7 +42,7 @@
       <i class="bi bi-volume-up"></i>
       <input type="range" class="mb-range fcc-vol" id="masterVol" min="0" max="100" value="80"
         aria-label="Master fleet volume">
-      <span class="mb-text-sm mb-text-secondary fcc-vol-val" id="masterVolVal">80%</span>
+      <span class="mb-text-sm mb-text-secondary fcc-vol-val mb-mono" id="masterVolVal">80%</span>
     </span>
 
     <span class="fcc-sep"></span>
@@ -62,7 +62,7 @@
   <div class="fcc-row">
     <!-- Say to all -->
     <div class="mb-input-group fcc-say">
-      <input type="text" class="mb-input" id="sayAllText" placeholder="Say to targeted nodes…"
+      <input type="text" class="mb-input mb-serif" id="sayAllText" placeholder="Say to targeted nodes…"
         title="Broadcast this text as speech" aria-label="Text to speak on the targeted nodes">
       <button class="mb-btn mb-btn-sm mb-btn-secondary" id="sayAllBtn" title="Speak on the targeted nodes (all if none selected)">
         <i class="bi bi-megaphone"></i> Say</button>
@@ -119,8 +119,8 @@
         <h2 class="mb-panel-title"><i class="bi bi-broadcast"></i> Discovery</h2>
       </div>
       <div class="mb-panel-body">
-        <div class="mb-text-sm" id="discoveryState">mDNS: <span class="mb-text-secondary">checking…</span></div>
-        <div class="mb-text-sm mb-text-secondary" id="sourceBreakdown"></div>
+        <div class="mb-text-sm mb-mono" id="discoveryState">mDNS: <span class="mb-text-secondary">checking…</span></div>
+        <div class="mb-text-sm mb-text-secondary mb-mono" id="sourceBreakdown"></div>
         <form id="pinForm" class="fcc-pin-grid mt-3" title="Pin a node by IP for networks that block mDNS multicast">
           <input class="mb-input" id="pinId" placeholder="id" title="Node id" aria-label="Node id">
           <input class="mb-input" id="pinIp" placeholder="IP address" title="Node IP" aria-label="Node IP address">
@@ -138,7 +138,7 @@
 <div class="modal fade" id="fccCamModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header py-2"><h2 class="modal-title mb-heading-3" id="fccCamTitle">Webcam</h2>
+      <div class="modal-header py-2"><h2 class="modal-title mb-heading-3 mb-live" id="fccCamTitle">Webcam</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body p-0"><img id="fccCamModalImg" alt="Live webcam"></div>
     </div>
@@ -159,8 +159,8 @@
       <p class="mb-field-hint">Targets: <span id="fccConfirmTargets" class="mb-mono"></span></p>
     </div>
     <div class="mb-modal-footer">
-      <button type="button" class="mb-btn mb-btn-secondary" id="fccConfirmCancel">Cancel</button>
-      <button type="button" class="mb-btn mb-btn-danger" id="fccConfirmOk">Confirm</button>
+      <button type="button" class="mb-btn mb-btn-secondary" id="fccConfirmCancel" title="Cancel — send nothing">Cancel</button>
+      <button type="button" class="mb-btn mb-btn-danger" id="fccConfirmOk" title="Send this command to the listed targets">Confirm</button>
     </div>
   </div>
 </div>
@@ -266,7 +266,7 @@
     head.innerHTML =
       '<span class="mb-dot ' + (node.online ? 'mb-dot-live' : 'mb-dot-idle') + '" data-role="dot" title="' +
         (node.online ? 'Online' : 'Offline') + '"></span>' +
-      '<span class="fcc-card-name" title="' + esc(node.name) + '">' + esc(node.name) + '</span>' +
+      '<span class="fcc-card-name mb-serif" title="' + esc(node.name) + '">' + esc(node.name) + '</span>' +
       '<span class="fcc-chip ' + (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '" data-role="chip" title="Discovery source / trust">' +
         (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '</span>' +
       '<label class="mb-check" title="Target this node for global actions">' +
@@ -288,7 +288,7 @@
     // body
     const body = el('div', 'fcc-card-body');
 
-    const health = el('div', 'fcc-health', '');
+    const health = el('div', 'fcc-health mb-mono', '');
     health.setAttribute('data-role', 'health');
     body.appendChild(health);
 
@@ -301,7 +301,7 @@
     // Say / Ask row
     const sayGrp = el('div', 'mb-input-group');
     sayGrp.innerHTML =
-      '<input type="text" class="mb-input" data-role="text" placeholder="Say or Ask…" title="Text to speak or ask the AI" aria-label="Text to speak or ask">' +
+      '<input type="text" class="mb-input mb-serif" data-role="text" placeholder="Say or Ask…" title="Text to speak or ask the AI" aria-label="Text to speak or ask">' +
       '<button class="mb-btn mb-btn-sm mb-btn-secondary" data-role="say" title="Speak this text (TTS)"><i class="bi bi-megaphone"></i></button>' +
       '<button class="mb-btn mb-btn-sm mb-btn-ai" data-role="ask" title="Ask the AI agent and speak the reply"><i class="bi bi-robot"></i></button>';
     body.appendChild(sayGrp);
@@ -474,7 +474,7 @@
     if (wall.querySelector('.fcc-card')) return; // keep existing cards
     wall.innerHTML = '<div class="col-12"><div class="mb-alert mb-alert-danger mb-row-between">' +
       '<span>Could not load fleet: ' + esc(msg) + '</span>' +
-      '<button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="location.reload()">Retry</button></div></div>';
+      '<button class="mb-btn mb-btn-sm mb-btn-secondary" onclick="location.reload()" title="Reload the page and try again">Retry</button></div></div>';
   }
   function renderFleetPill(health) {
     const online = health.online || 0, total = health.total || 0;
@@ -508,7 +508,7 @@
         const col = el('div', 'col-sm-6 col-lg-3');
         col.innerHTML = '<div class="mb-card mb-row-sm align-items-center">' +
           '<span class="mb-dot ' + (online ? 'mb-dot-live' : 'mb-dot-idle') + '" title="' + (online ? 'Online' : 'Offline') + '"></span>' +
-          '<span class="fcc-card-name" title="' + esc(g.name || id) + '">' + esc(g.name || id) + '</span>' +
+          '<span class="fcc-card-name mb-serif" title="' + esc(g.name || id) + '">' + esc(g.name || id) + '</span>' +
           '<a class="mb-btn mb-btn-sm mb-btn-secondary" href="/goblin-management?goblin=' + encodeURIComponent(id) + '" title="Open in Goblin Management">Manage</a>' +
           '</div>';
         row.appendChild(col);

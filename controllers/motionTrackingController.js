@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
 import { getCalibrationStore } from '../server/calibration/store.js';
+import { claimServo, releaseServo, isAvailable, getOwner, PRIORITY } from '../services/movement/priorityManager.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,6 +20,14 @@ const trackingStatus = new Map(); // webcamId -> status
 const headTrackingConfigs = new Map(); // webcamId -> { enabled, panServoId, tiltServoId, centerDeg, rangeDeg, invertPan, smoothing, deadzone }
 const headTrackingStates = new Map(); // webcamId -> { lastPanDeg, lastCmdAt }
 const headTrackingGuardrails = new Map(); // servoId -> { minAngle, maxAngle } - cached calibration limits
+
+// Head tracking holds its pan servo through priorityManager while enabled, so
+// the idle loop and random poses yield instead of issuing interleaved
+// conflicting angles at the same servo. Owner is per-webcam so one webcam's
+// disable cannot release another webcam's claim.
+function headOwner(webcamId) {
+  return 'head-tracking:' + webcamId;
+}
 
 const MJPG_STREAM_URL = 'http://localhost:8090/?action=stream';
 
@@ -630,6 +639,19 @@ async function maybeDriveHead(webcamId, status) {
   const cfg = headTrackingConfigs.get(webcamId);
   if (!cfg || !cfg.enabled) return;
 
+  // A higher-priority owner (scene, semantic gesture) preempts our claim
+  // silently, and its release deletes the claim entirely — so re-claim whenever
+  // the servo is no longer ours. isAvailable() first keeps the "still held by a
+  // scene" path silent instead of logging a DENIED line up to 20x/second.
+  if (cfg.panServoId != null) {
+    const claimOwner = headOwner(webcamId);
+    const currentOwner = getOwner(cfg.panServoId);
+    if (!currentOwner || currentOwner.owner !== claimOwner) {
+      if (!isAvailable(cfg.panServoId, PRIORITY.HEAD_TRACKING)) return;
+      claimServo(cfg.panServoId, claimOwner, PRIORITY.HEAD_TRACKING);
+    }
+  }
+
   const now = Date.now();
   const state = headTrackingStates.get(webcamId) || { lastPanDeg: 0, lastCmdAt: 0, servoType: null, scanDir: 1, lastTargetAt: 0 };
   const minIntervalMs = 50;
@@ -819,7 +841,17 @@ export const enableHeadTracking = async (req, res) => {
       smoothing: typeof params.smoothing === 'number' ? params.smoothing : 0.3,
       deadzone: typeof params.deadzone === 'number' ? params.deadzone : 5
     };
+    // Re-enabling on a different servo must not leave the old claim dangling.
+    const prior = headTrackingConfigs.get(webcamId);
+    if (prior && prior.panServoId != null && String(prior.panServoId) !== String(cfg.panServoId)) {
+      releaseServo(prior.panServoId, headOwner(webcamId));
+    }
     headTrackingConfigs.set(webcamId, cfg);
+    // Best-effort claim now; maybeDriveHead re-claims once any higher-priority
+    // owner lets go, so a denied claim here must not fail the enable.
+    if (isAvailable(cfg.panServoId, PRIORITY.HEAD_TRACKING)) {
+      claimServo(cfg.panServoId, headOwner(webcamId), PRIORITY.HEAD_TRACKING);
+    }
     return res.json({ success: true, webcamId, headTracking: cfg });
   } catch (e) {
     console.error('Enable head tracking error:', e);
@@ -834,6 +866,9 @@ export const disableHeadTracking = async (req, res) => {
     if (!webcamId) return res.status(400).json({ success: false, error: 'webcamId is required' });
     const cfg = headTrackingConfigs.get(webcamId);
     if (cfg) cfg.enabled = false;
+    if (cfg && cfg.panServoId != null) {
+      releaseServo(cfg.panServoId, headOwner(webcamId));
+    }
     headTrackingConfigs.set(webcamId, cfg || { enabled: false });
     return res.json({ success: true, webcamId, headTracking: headTrackingConfigs.get(webcamId) });
   } catch (e) {
@@ -978,7 +1013,15 @@ export function enableHeadTrackingForWebcam(webcamId, config) {
     smoothing: typeof config.smoothing === 'number' ? config.smoothing : 0.3,
     deadzone: typeof config.deadzone === 'number' ? config.deadzone : 5
   };
+  // Same claim discipline as the req/res enable above.
+  const prior = headTrackingConfigs.get(webcamId);
+  if (prior && prior.panServoId != null && String(prior.panServoId) !== String(cfg.panServoId)) {
+    releaseServo(prior.panServoId, headOwner(webcamId));
+  }
   headTrackingConfigs.set(webcamId, cfg);
+  if (isAvailable(cfg.panServoId, PRIORITY.HEAD_TRACKING)) {
+    claimServo(cfg.panServoId, headOwner(webcamId), PRIORITY.HEAD_TRACKING);
+  }
   return { success: true, webcamId, headTracking: cfg };
 }
 
@@ -989,6 +1032,9 @@ export function disableHeadTrackingForWebcam(webcamId) {
   if (!webcamId) throw new Error('webcamId is required');
   const cfg = headTrackingConfigs.get(webcamId);
   if (cfg) cfg.enabled = false;
+  if (cfg && cfg.panServoId != null) {
+    releaseServo(cfg.panServoId, headOwner(webcamId));
+  }
   headTrackingConfigs.set(webcamId, cfg || { enabled: false });
   return { success: true, webcamId };
 }
