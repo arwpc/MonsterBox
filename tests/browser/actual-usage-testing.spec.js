@@ -430,7 +430,10 @@ test.describe('1. Dashboard — All Panels', () => {
       const items = accordion.locator('.accordion-item');
       const count = await items.count();
       console.log(`  Accordion panels: ${count}`);
-      expect(count).toBeGreaterThanOrEqual(4);
+      // v10 drawer set: Manual Controls, Audio Bridge, Console. The Conversation
+      // panel left the drawer for the AI deck tab, so the old floor of 4 now
+      // describes a layout that no longer exists.
+      expect(count).toBeGreaterThanOrEqual(3);
     } else {
       // Fallback: old sortable layout
       const sortableCol = page.locator('.sortable-column[data-column-id="dashboard"]');

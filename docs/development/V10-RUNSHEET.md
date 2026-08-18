@@ -13,7 +13,7 @@ wave reverts alone. The v10.0.0 tag is hostage to the full browser suite.
 | # | Phase | Status | Proof required |
 |---|-------|--------|----------------|
 | 0 | Post-reboot verification, log-review, boot hardening, test sweep, reboot trial, log harvest | ✅ DONE | committed `dd816cbb`, `b30bde09`; 🎃 READY ×3; earcheck 3/3 |
-| 1 | **Superpowers fix-fleet** (A ✅ B ✅ C ✅ committed `8430a691`; D salvaged + under adversarial review; E rewritten, being finished/run) | 🔶 in flight (session 3) | each agent's report + integration review |
+| 1 | **Superpowers fix-fleet** (A ✅ B ✅ C ✅ `8430a691`; D salvaged, adversarially reviewed → 2 real claim defects fixed `6e8a0b05`; E rewritten + run) | ✅ DONE | adversarial verdict + 44 hardware tests passing, nothing moved |
 | 2 | **Integration**: A–E landed, dead calibration routes redirect, schemas/resolver/independence/smoke green | ✅ DONE | `a071eac1`, `6e8a0b05`; smoke 459 passing; audits clean |
 | 3 | **Service restart** (loads fixes + Scare Console route + Obsidian skin) | ✅ DONE | health 200 at 9.3.0, zero startup errors |
 | 4 | **Scare Console visual pass** + operator-requested AI deck tab | ✅ DONE | `8b964197`, `21d1c3c5`; 3 defects found and fixed; 0 console errors both viewports |

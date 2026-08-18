@@ -427,6 +427,17 @@ exist yet.
 
 ### Opened from the 2026-08-18 v10 page sweep + adversarial review
 
+- 🟡 **The OpenCV enable checkbox on `/setup/head-animation` will not stay
+  checked** (needs triage). The full browser suite's *8.2 Tracking controls*
+  fails with Playwright's `setChecked: Clicking the checkbox did not change its
+  state` on `#ocvEnabled` — the element is visible, enabled and stable, the click
+  lands, and the state reverts. Either a handler is rejecting the enable (no
+  configured tracking servo / camera on this node) and silently resetting the
+  box, or the toggle is genuinely stuck. Not investigated: it surfaced during the
+  v10 release run and is not a v10 regression (nothing in this train touched that
+  handler). *Triage direction:* watch the network tab while clicking — if an API
+  refuses, the page must SAY so instead of quietly snapping the control back.
+
 - 🟡 **The browser suite cannot run on a node whose service is up — and it needs
   `BASE_URL` set by hand.** Two separate traps, both hit on 2026-08-18 while
   trying to satisfy the v10 release gate:

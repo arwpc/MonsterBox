@@ -10,11 +10,23 @@ import fs from 'fs';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3200';
 const WEBCAM_PART_ID = '9';
+
+// The old guard read MB_TEST_MODE from the RUNNER's env, but playwright.config
+// only sets it on the spawned server's command line — so it never fired and
+// these Orlok-only parts failed on every other node. Probe the node instead.
+async function skipUnlessPart(page, partId, modelId) {
+  const res = await page.evaluate(async (id) => {
+    try { const r = await fetch('/api/parts/' + id); return await r.json(); }
+    catch (e) { return null; }
+  }, partId);
+  const present = !!(res && res.success && res.part && res.part.modelId === modelId);
+  test.skip(!present, `part ${partId} on this node is not ${modelId} — Orlok-only hardware`);
+}
+
 const MJPG_SNAPSHOT_URL = 'http://127.0.0.1:8090/?action=snapshot';
 
 // These tests require Orlok (char_id=3) with Arducam webcam and mjpg-streamer
 // Skip in CI where MB_TEST_MODE defaults to char_id=1 and no camera hardware
-test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3) and mjpg-streamer');
 
 /**
  * Fetch a binary buffer from a URL via Node http
@@ -63,6 +75,7 @@ test.describe('Webcam Capture — Arducam B0205', () => {
 
   test('should have webcam part 9 with arducam-b0205 model', async () => {
     await page.goto(BASE_URL + '/setup/calibration', { waitUntil: 'domcontentloaded' });
+    await skipUnlessPart(page, WEBCAM_PART_ID, 'arducam-b0205');
     const res = await page.evaluate(async (partId) => {
       var r = await fetch('/api/parts/' + partId);
       return r.json();

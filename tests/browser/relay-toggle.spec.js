@@ -11,7 +11,17 @@ const RELAY_PART_ID = '8';
 
 // These tests require Orlok (char_id=3) with specific hardware parts
 // Skip in CI where MB_TEST_MODE defaults to char_id=1
-test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3)');
+// The old guard read MB_TEST_MODE from the RUNNER's env, but playwright.config
+// only sets it on the spawned server's command line — so it never fired and
+// these Orlok-only parts failed on every other node. Probe the node instead.
+async function skipUnlessPart(page, partId, modelId) {
+  const res = await page.evaluate(async (id) => {
+    try { const r = await fetch('/api/parts/' + id); return await r.json(); }
+    catch (e) { return null; }
+  }, partId);
+  const present = !!(res && res.success && res.part && res.part.modelId === modelId);
+  test.skip(!present, `part ${partId} on this node is not ${modelId} — Orlok-only hardware`);
+}
 
 test.describe('Relay Toggle — ACEIRMC 3V 1-Channel', () => {
   let page;
@@ -40,6 +50,7 @@ test.describe('Relay Toggle — ACEIRMC 3V 1-Channel', () => {
 
   test('should have Hand of Azura part with relay model on GPIO 16', async () => {
     await page.goto(BASE_URL + '/setup/calibration', { waitUntil: 'domcontentloaded' });
+    await skipUnlessPart(page, RELAY_PART_ID, 'relay_aceirmc_3v_1ch');
     const res = await page.evaluate(async (partId) => {
       var r = await fetch('/api/parts/' + partId);
       return r.json();
@@ -53,6 +64,7 @@ test.describe('Relay Toggle — ACEIRMC 3V 1-Channel', () => {
 
   test('should turn relay on via API', async () => {
     await page.goto(BASE_URL + '/setup/calibration', { waitUntil: 'domcontentloaded' });
+    await skipUnlessPart(page, RELAY_PART_ID, 'relay_aceirmc_3v_1ch');
     const res = await page.evaluate(async (partId) => {
       var r = await fetch('/api/parts/' + partId + '/test', {
         method: 'POST',
@@ -67,6 +79,7 @@ test.describe('Relay Toggle — ACEIRMC 3V 1-Channel', () => {
 
   test('should turn relay off via API', async () => {
     await page.goto(BASE_URL + '/setup/calibration', { waitUntil: 'domcontentloaded' });
+    await skipUnlessPart(page, RELAY_PART_ID, 'relay_aceirmc_3v_1ch');
     const res = await page.evaluate(async (partId) => {
       var r = await fetch('/api/parts/' + partId + '/test', {
         method: 'POST',
@@ -81,6 +94,7 @@ test.describe('Relay Toggle — ACEIRMC 3V 1-Channel', () => {
 
   test('should toggle relay on and off from calibration page', async () => {
     await page.goto(BASE_URL + '/setup/calibration', { waitUntil: 'domcontentloaded' });
+    await skipUnlessPart(page, RELAY_PART_ID, 'relay_aceirmc_3v_1ch');
     await page.waitForSelector('#deviceList', { state: 'attached', timeout: 10000 });
     await page.waitForTimeout(2000);
 
