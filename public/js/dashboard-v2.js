@@ -38,6 +38,44 @@
 
   /* ── Deck data ─────────────────────────────────────────────────────── */
 
+  // ── Machine vitals ────────────────────────────────────────────────────
+  // The strip shipped as static placeholders; these fill them from endpoints
+  // that already exist. A value that cannot be read stays an em dash rather
+  // than showing a zero — an honest gap beats a confident wrong number.
+  function setTele(id, text) {
+    var el = $(id);
+    if (el) el.textContent = text;
+  }
+
+  function paintWs() {
+    var state = (typeof window.mbChatWsState === 'function') ? window.mbChatWsState() : 'closed';
+    var el = $('scTeleWs');
+    if (!el) return;
+    el.textContent = state === 'open' ? 'WS ●' : (state === 'connecting' ? 'WS ◐' : 'WS ○');
+    // Amber is reserved for happening-now, and a live agent socket qualifies.
+    el.classList.toggle('sc-tele-live', state === 'open');
+  }
+
+  function loadTelemetry() {
+    getJSON('/health', function (err, d) {
+      if (!err && d && d.version) setTele('scTeleVer', 'v' + d.version);
+    });
+    getJSON('/api/resource/status', function (err, d) {
+      if (err || !d || !d.success || !d.status) return;
+      var s = d.status;
+      if (s.memory && typeof s.memory.rssMB === 'number') setTele('scTeleRss', 'RSS ' + Math.round(s.memory.rssMB) + 'MB');
+      if (s.uptimeFormatted) setTele('scTeleUp', 'UP ' + s.uptimeFormatted);
+    });
+    getJSON('/api/movement/telemetry', function (err, d) {
+      if (err || !d || !d.success || !d.telemetry || !d.telemetry.latency) return;
+      var lat = d.telemetry.latency;
+      // count 0 means nothing has moved yet this period — say so rather than
+      // reporting a 0 ms servo latency the hardware never achieved.
+      setTele('scTeleServo', lat.count ? 'SERVO ' + Math.round(lat.avg) + 'ms' : 'SERVO idle');
+    });
+    paintWs();
+  }
+
   function loadDeck() {
     getJSON('/scenes/api/', function (err, d) {
       deckData.scenes = (!err && d && d.success && d.scenes) ? d.scenes : [];
@@ -283,6 +321,12 @@
     loadDeck();
     // Scenes/poses can change in the studio while this page is open.
     setInterval(loadDeck, 60000);
+
+    loadTelemetry();
+    // Slow on purpose: this strip is ambient reassurance, not an instrument.
+    // Every poll is SD-card-free but still three requests on a shared Pi.
+    setInterval(loadTelemetry, 15000);
+    setInterval(paintWs, 2000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

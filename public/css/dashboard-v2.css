@@ -26,7 +26,10 @@
 .sc-panic { flex-shrink: 0; }
 
 /* ── Main grid: stage | deck ─────────────────────────────────────────── */
-.sc-main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; align-items: start; }
+/* The stage is a monitor, not the show: capping it keeps the video honest on a
+   wide screen and hands the reclaimed width to the one-tap deck, which is the
+   surface an operator actually drives. Phone layout overrides this to 1fr. */
+.sc-main { display: grid; grid-template-columns: minmax(0, 620px) minmax(340px, 1fr); gap: 12px; align-items: start; }
 
 /* ── Stage ───────────────────────────────────────────────────────────── */
 .sc-stage { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -76,9 +79,12 @@
   padding: 8px 10px;
   background: linear-gradient(to top, rgba(7, 8, 10, 0.85), rgba(7, 8, 10, 0));
 }
-.sc-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 3px 10px 3px 6px; border-radius: 999px; background: rgba(16, 18, 23, 0.7); border: 1px solid var(--mb-border-subtle); cursor: pointer; backdrop-filter: blur(3px); }
-.sc-chip .mb-switch-track { transform: scale(0.8); }
-.sc-chip-label { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--mb-fg-secondary); }
+/* Compact enough that all six superpowers hold ONE row across the capped stage.
+   A second row would eat a quarter of the video; min-height keeps the tap
+   target honest even though the chip is narrow. */
+.sc-chip { display: inline-flex; align-items: center; gap: 3px; min-height: 34px; padding: 2px 7px 2px 3px; border-radius: 999px; background: rgba(16, 18, 23, 0.7); border: 1px solid var(--mb-border-subtle); cursor: pointer; backdrop-filter: blur(3px); }
+.sc-chip .mb-switch-track { transform: scale(0.62); }
+.sc-chip-label { display: inline-flex; align-items: center; gap: 3px; font-size: 0.66rem; color: var(--mb-fg-secondary); }
 .sc-chip:has(input:checked) { border-color: var(--mb-primary); }
 .sc-chip:has(input:checked) .sc-chip-label { color: var(--mb-primary); }
 .sc-chip-danger:has(input:checked) { border-color: var(--mb-danger); }
@@ -189,6 +195,20 @@
 .sc-footlinks { text-align: right; padding: 2px 4px; }
 .sc-compat { display: none !important; }
 
+/* Desktop names the superpowers in words and drops the redundant icon; the
+   phone rule below does the reverse. Either way one glance, one row. */
+@media (min-width: 992px) {
+  .sc-chip-label i { display: none; }
+}
+
+/* Short windows: the say bar is the monster's voice and should never need
+   hunting, but at 800px tall it landed under the fixed control bar at first
+   paint. This only bites when the window is genuinely short — the width cap
+   above already does the work on a normal screen. */
+@media (min-width: 992px) {
+  .sc-stage-frame { max-height: calc(100vh - 430px); }
+}
+
 /* ── Phone: stage sticky, deck scrolls under, thumbs own the bottom ──── */
 @media (max-width: 991.98px) {
   .sc-app { padding-bottom: 110px; }
@@ -219,6 +239,11 @@
   .sc-stage-powers { padding: 6px 8px; }
   .sc-chip-label em { display: none; }  /* icons only on the glass; tooltips name them */
   .sc-chip-label { font-size: 0.85rem; }
+  /* Six icon chips still wrap on a phone, and a second row hid half the video.
+     Swipe the strip instead — the same move the quick-lines row makes. */
+  .sc-stage-powers { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .sc-stage-powers::-webkit-scrollbar { display: none; }
+  .sc-chip { flex: 0 0 auto; }
 }
 
 /* very small phones: trim the chrome further */

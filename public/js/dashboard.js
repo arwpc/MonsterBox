@@ -99,6 +99,15 @@
     // Chat panel state
     let chatWs = null;
     let chatConnected = false;
+
+    // The Scare Console's telemetry strip needs live socket state, but this file
+    // owns the socket and both dashboards load this script. Publishing a reader
+    // beats exporting the socket or duplicating the connection logic.
+    window.mbChatWsState = function () {
+      if (!chatWs) return 'closed';
+      return chatConnected ? 'open' : 'connecting';
+    };
+
     let chatAgentId = null;
     let chatVUTimer = null;
     let _lastAgentText = '';
