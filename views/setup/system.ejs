@@ -105,17 +105,17 @@
               <dt class="col-sm-5">MonsterBox Version</dt>
               <dd class="col-sm-7"><span class="mb-badge mb-badge-primary" id="infoVersion"><%= typeof appVersion !== 'undefined' ? appVersion : 'loading...' %></span></dd>
               <dt class="col-sm-5">Hostname</dt>
-              <dd class="col-sm-7" id="infoHostname">Loading...</dd>
+              <dd class="col-sm-7 mb-mono" id="infoHostname">Loading...</dd>
               <dt class="col-sm-5">Node.js</dt>
-              <dd class="col-sm-7" id="infoNode">Loading...</dd>
+              <dd class="col-sm-7 mb-mono" id="infoNode">Loading...</dd>
               <dt class="col-sm-5">Platform</dt>
-              <dd class="col-sm-7" id="infoPlatform">Loading...</dd>
+              <dd class="col-sm-7 mb-mono" id="infoPlatform">Loading...</dd>
               <dt class="col-sm-5">System Uptime</dt>
-              <dd class="col-sm-7" id="infoUptime">Loading...</dd>
+              <dd class="col-sm-7 mb-mono" id="infoUptime">Loading...</dd>
               <dt class="col-sm-5">CPU Model</dt>
-              <dd class="col-sm-7" id="infoCpuModel">Loading...</dd>
+              <dd class="col-sm-7 mb-mono" id="infoCpuModel">Loading...</dd>
               <dt class="col-sm-5">CPU Cores</dt>
-              <dd class="col-sm-7" id="infoCpuCount">Loading...</dd>
+              <dd class="col-sm-7 mb-mono" id="infoCpuCount">Loading...</dd>
             </dl>
           </div>
         </div>
@@ -126,7 +126,7 @@
         <div class="mb-panel">
           <div class="mb-panel-header">
             <h5 class="mb-panel-title"><i class="bi bi-speedometer"></i> Live Performance</h5>
-            <small class="mb-text-muted mb-text-sm" id="gaugeTimestamp">--</small>
+            <small class="mb-text-muted mb-text-sm mb-mono" id="gaugeTimestamp">--</small>
           </div>
           <div class="mb-panel-body">
             <div class="row text-center g-3">
@@ -203,9 +203,9 @@
           <canvas id="perfChart" class="sys-chart" height="280"></canvas>
         </div>
         <div class="row text-center" id="perfSummary">
-          <div class="col-4"><strong>Avg CPU:</strong> <span id="perfAvgCpu">--</span>%</div>
-          <div class="col-4"><strong>Avg Memory:</strong> <span id="perfAvgMem">--</span>%</div>
-          <div class="col-4"><strong>Avg Temp:</strong> <span id="perfAvgTemp">--</span>&deg;C</div>
+          <div class="col-4"><strong>Avg CPU:</strong> <span class="mb-mono" id="perfAvgCpu">--</span>%</div>
+          <div class="col-4"><strong>Avg Memory:</strong> <span class="mb-mono" id="perfAvgMem">--</span>%</div>
+          <div class="col-4"><strong>Avg Temp:</strong> <span class="mb-mono" id="perfAvgTemp">--</span>&deg;C</div>
         </div>
       </div>
     </div>
@@ -295,7 +295,7 @@
           <div class="accordion-body">
             <dl class="row mb-0">
               <dt class="col-sm-4">GPU Memory</dt>
-              <dd class="col-sm-8" id="gpuMemory">Loading...</dd>
+              <dd class="col-sm-8 mb-mono" id="gpuMemory">Loading...</dd>
             </dl>
             <small class="mb-text-muted">GPU memory allocation is set in /boot/config.txt and requires a reboot to change.</small>
           </div>
@@ -309,9 +309,9 @@
           <div class="accordion-body">
             <dl class="row mb-0">
               <dt class="col-sm-4">Swap Total</dt>
-              <dd class="col-sm-8" id="swapTotal">Loading...</dd>
+              <dd class="col-sm-8 mb-mono" id="swapTotal">Loading...</dd>
               <dt class="col-sm-4">Swap Used</dt>
-              <dd class="col-sm-8" id="swapUsed">Loading...</dd>
+              <dd class="col-sm-8 mb-mono" id="swapUsed">Loading...</dd>
             </dl>
           </div>
         </div>
@@ -441,17 +441,17 @@
           <div class="mb-panel-body">
             <dl class="row mb-0">
               <dt class="col-sm-5">PID</dt>
-              <dd class="col-sm-7" id="resPid">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resPid">—</dd>
               <dt class="col-sm-5">Uptime</dt>
-              <dd class="col-sm-7" id="resUptime">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resUptime">—</dd>
               <dt class="col-sm-5">Process Priority</dt>
-              <dd class="col-sm-7" id="resPriority">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resPriority">—</dd>
               <dt class="col-sm-5">Environment</dt>
-              <dd class="col-sm-7"><span class="mb-badge mb-badge-info" id="resEnv">—</span></dd>
+              <dd class="col-sm-7"><span class="mb-badge mb-badge-info mb-mono" id="resEnv">—</span></dd>
               <dt class="col-sm-5">Node.js</dt>
-              <dd class="col-sm-7" id="resNodeVer">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resNodeVer">—</dd>
               <dt class="col-sm-5">Platform</dt>
-              <dd class="col-sm-7" id="resPlatform">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resPlatform">—</dd>
             </dl>
           </div>
         </div>
@@ -469,11 +469,11 @@
             </div>
             <dl class="row mb-0 mt-3">
               <dt class="col-sm-5">Heap Used</dt>
-              <dd class="col-sm-7" id="resHeapUsed">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resHeapUsed">—</dd>
               <dt class="col-sm-5">System Free</dt>
-              <dd class="col-sm-7" id="resSysFree">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resSysFree">—</dd>
               <dt class="col-sm-5">System Total</dt>
-              <dd class="col-sm-7" id="resSysTotal">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resSysTotal">—</dd>
               <dt class="col-sm-5">Status</dt>
               <dd class="col-sm-7"><span class="mb-badge" id="resMemLevel">—</span></dd>
             </dl>
@@ -486,13 +486,13 @@
           <div class="mb-panel-body">
             <dl class="row mb-0">
               <dt class="col-sm-5">1-min avg</dt>
-              <dd class="col-sm-7" id="resCpu1">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resCpu1">—</dd>
               <dt class="col-sm-5">5-min avg</dt>
-              <dd class="col-sm-7" id="resCpu5">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resCpu5">—</dd>
               <dt class="col-sm-5">15-min avg</dt>
-              <dd class="col-sm-7" id="resCpu15">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resCpu15">—</dd>
               <dt class="col-sm-5">CPU Cores</dt>
-              <dd class="col-sm-7" id="resCpuCores">—</dd>
+              <dd class="col-sm-7 mb-mono" id="resCpuCores">—</dd>
             </dl>
           </div>
         </div>
@@ -526,13 +526,13 @@
           <div class="mb-panel-body">
             <dl class="row mb-0">
               <dt class="col-sm-6">Servo Latency (avg)</dt>
-              <dd class="col-sm-6" id="mvtLatencyAvg">—</dd>
+              <dd class="col-sm-6 mb-mono" id="mvtLatencyAvg">—</dd>
               <dt class="col-sm-6">Servo Latency (p95)</dt>
-              <dd class="col-sm-6" id="mvtLatencyP95">—</dd>
+              <dd class="col-sm-6 mb-mono" id="mvtLatencyP95">—</dd>
               <dt class="col-sm-6">Cycle Time (avg)</dt>
-              <dd class="col-sm-6" id="mvtCycleAvg">—</dd>
+              <dd class="col-sm-6 mb-mono" id="mvtCycleAvg">—</dd>
               <dt class="col-sm-6">Commands/sec (avg)</dt>
-              <dd class="col-sm-6" id="mvtCmdRate">—</dd>
+              <dd class="col-sm-6 mb-mono" id="mvtCmdRate">—</dd>
             </dl>
           </div>
         </div>
@@ -561,9 +561,9 @@
               <dt class="col-sm-5">Status</dt>
               <dd class="col-sm-7"><span class="mb-badge" id="mvtIdleStatus">—</span></dd>
               <dt class="col-sm-5">Current Pose</dt>
-              <dd class="col-sm-7" id="mvtIdlePose">—</dd>
+              <dd class="col-sm-7 mb-mono" id="mvtIdlePose">—</dd>
               <dt class="col-sm-5">Character</dt>
-              <dd class="col-sm-7" id="mvtIdleChar">—</dd>
+              <dd class="col-sm-7 mb-mono" id="mvtIdleChar">—</dd>
             </dl>
           </div>
         </div>
@@ -1465,7 +1465,7 @@
       var isActive = (t.name === currentTheme);
       html += '<div class="col-6 col-md-4 col-lg-3">' +
         '<div class="mb-card mb-card-interactive theme-card sys-theme-card' + (isActive ? ' sys-theme-card-active' : '') +
-        '" data-theme="' + t.name + '" role="button" tabindex="0" aria-pressed="' + (isActive ? 'true' : 'false') + '">' +
+        '" data-theme="' + t.name + '" role="button" tabindex="0" title="Preview the ' + t.label + ' theme" aria-pressed="' + (isActive ? 'true' : 'false') + '">' +
         '<div class="sys-swatches">' +
         '<span class="sys-swatch sys-swatch-' + t.name + '-1"></span>' +
         '<span class="sys-swatch sys-swatch-' + t.name + '-2"></span>' +
@@ -1807,7 +1807,8 @@
       var statusBadge = el('mvtIdleStatus');
       if (statusBadge) {
         statusBadge.textContent = s.running ? 'Running' : 'Stopped';
-        statusBadge.className = 'mb-badge' + (s.running ? ' mb-badge-success' : '');
+        // Amber = happening now: a running idle loop is motion in flight.
+        statusBadge.className = 'mb-badge' + (s.running ? ' mb-live mb-now-pulse' : '');
       }
       if (el('mvtIdlePose')) el('mvtIdlePose').textContent = s.currentPoseId || '—';
       if (el('mvtIdleChar')) el('mvtIdleChar').textContent = s.characterId || '—';

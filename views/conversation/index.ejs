@@ -90,7 +90,7 @@
           <img id="webcamImg" src="" alt="Webcam Stream">
           <span id="clickTrackCountdown" class="mb-badge mb-badge-info mb-webcam-overlay d-none"></span>
         </div>
-        <div id="webcamStatus" class="mb-webcam-status">Finding webcam…</div>
+        <div id="webcamStatus" class="mb-webcam-status mb-mono">Finding webcam…</div>
       </div>
     </div>
 
@@ -99,7 +99,7 @@
       <div class="mb-panel-header">
         <h2 class="mb-panel-title">
           <i class="bi bi-chat-dots"></i>
-          <span id="chatCharacterName">Loading…</span>
+          <span id="chatCharacterName" class="mb-serif">Loading…</span>
         </h2>
         <div class="mb-row-sm mb-row-center">
           <select id="chatSpeakerSelect" class="mb-select mb-chat-speaker-select"
@@ -122,7 +122,7 @@
           <div class="mb-meter mb-flex-1">
             <div id="chatVUMeter" class="mb-meter-fill"></div>
           </div>
-          <span id="chatVULabel" class="mb-badge">0%</span>
+          <span id="chatVULabel" class="mb-badge mb-mono">0%</span>
         </div>
         <div class="mb-chat-controls">
           <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI speech through your browser speaker">
@@ -339,13 +339,13 @@
                     <div class="mb-meter mb-bridge-meter flex-grow-1">
                       <div id="bridge-listenin-vu" class="mb-meter-fill"></div>
                     </div>
-                    <span id="bridge-listenin-vu-label" class="mb-badge mb-bridge-status mb-bridge-status-min">0%</span>
+                    <span id="bridge-listenin-vu-label" class="mb-badge mb-mono mb-bridge-status mb-bridge-status-min">0%</span>
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <button id="btn-bridge-listenin" class="mb-btn mb-btn-info mb-btn-sm mb-bridge-btn" type="button" title="Start listening to character audio">
                       <i class="bi bi-headphones"></i> <span id="bridge-listenin-text">Start</span>
                     </button>
-                    <span id="bridge-listenin-status" class="mb-badge mb-bridge-status">Off</span>
+                    <span id="bridge-listenin-status" class="mb-badge mb-mono mb-bridge-status">Off</span>
                   </div>
                 </div>
               </div>
@@ -366,13 +366,13 @@
                     <div class="mb-meter mb-bridge-meter flex-grow-1">
                       <div id="bridge-talkthrough-vu" class="mb-meter-fill"></div>
                     </div>
-                    <span id="bridge-talkthrough-vu-label" class="mb-badge mb-bridge-status mb-bridge-status-min">0%</span>
+                    <span id="bridge-talkthrough-vu-label" class="mb-badge mb-mono mb-bridge-status mb-bridge-status-min">0%</span>
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <button id="btn-bridge-talkthrough" class="mb-btn mb-btn-warning mb-btn-sm mb-bridge-btn" type="button" title="Start talking through character speaker">
                       <i class="bi bi-mic-fill"></i> <span id="bridge-talkthrough-text">Start</span>
                     </button>
-                    <span id="bridge-talkthrough-status" class="mb-badge mb-bridge-status">Off</span>
+                    <span id="bridge-talkthrough-status" class="mb-badge mb-mono mb-bridge-status">Off</span>
                   </div>
                   <div id="bridge-talkthrough-https-warn" class="mb-alert mb-alert-warning small mt-1 mb-0 py-1 d-none mb-bridge-warn">
                     <i class="bi bi-shield-lock"></i> Requires HTTPS or localhost.

@@ -1052,7 +1052,7 @@
         sender === 'AI' ? 'text-success' : 'text-warning';
       msgDiv.innerHTML = '<small class="text-muted">[' + time + ']</small> ' +
         '<strong class="' + senderClass + '">' + sender + ':</strong> ' +
-        '<span>' + escapeHtml(text) + '</span>';
+        '<span' + (sender === 'AI' ? ' class="mb-dialogue"' : '') + '>' + escapeHtml(text) + '</span>';
 
       chatLog.appendChild(msgDiv);
       chatLog.scrollTop = chatLog.scrollHeight;
@@ -1631,8 +1631,8 @@
         <div class="scene-row d-flex align-items-center mb-1 p-1 rounded border-bottom" data-scene-id="${scene.id}" style="cursor:grab;">
           <i class="bi bi-grip-vertical text-muted me-2 scene-drag-handle" style="opacity:0.4;"></i>
           <div class="flex-grow-1 text-truncate">
-            <strong class="small">${scene.name || 'Scene ' + scene.id}</strong>
-            <span class="badge bg-secondary ms-1" style="font-size:0.6rem;">${(scene.steps && scene.steps.length) || 0}</span>
+            <strong class="small mb-serif">${scene.name || 'Scene ' + scene.id}</strong>
+            <span class="badge bg-secondary mb-mono ms-1" style="font-size:0.6rem;">${(scene.steps && scene.steps.length) || 0}</span>
           </div>
           <div class="mb-scene-row-actions">
             <button class="mb-btn mb-btn-primary mb-btn-icon scene-play-btn" data-id="${scene.id}" title="Play this scene" aria-label="Play ${scene.name || 'scene ' + scene.id}"><i class="bi bi-play-fill"></i></button>
@@ -1760,7 +1760,8 @@
         if (stopBtn) stopBtn.classList.remove('mb-hidden');
         if (statusBadge) {
           statusBadge.textContent = 'Looping';
-          statusBadge.className = 'mb-badge mb-badge-success ms-2';
+          // Amber = happening now: a running scene loop is motion in flight.
+          statusBadge.className = 'mb-badge mb-live mb-now-pulse ms-2';
         }
       } else {
         if (loopBtn) loopBtn.classList.remove('mb-hidden');
@@ -1808,9 +1809,9 @@
         var categoryBadge = category ? '<span class="badge bg-info ms-1" style="font-size:0.6rem;">' + category + '</span>' : '';
         return '<div class="pose-row d-flex align-items-center mb-1 p-1 rounded border-bottom">' +
           '<div class="flex-grow-1 text-truncate">' +
-            '<strong class="small">' + name + '</strong>' +
+            '<strong class="small mb-serif">' + name + '</strong>' +
             categoryBadge +
-            '<span class="badge bg-secondary ms-1" style="font-size:0.6rem;">' + partsCount + ' parts</span>' +
+            '<span class="badge bg-secondary mb-mono ms-1" style="font-size:0.6rem;">' + partsCount + ' parts</span>' +
           '</div>' +
           '<div class="d-flex gap-1 ms-2 flex-shrink-0">' +
             '<button class="btn btn-sm btn-outline-success p-0 px-1 pose-play-btn" data-id="' + pose.id + '" title="Play"><i class="bi bi-play-fill"></i></button>' +

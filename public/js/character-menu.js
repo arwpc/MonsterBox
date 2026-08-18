@@ -65,7 +65,8 @@
     for (var i = 0; i < chars.length; i++) {
       var c = chars[i];
       var badge = (selectedId === c.id) ? ' <span class="badge bg-success ms-2">Current</span>' : '';
-      itemsHtml += '<li><button class="dropdown-item d-flex align-items-center" data-char-id="' + c.id + '">' +
+      var charTitle = esc(c.name || ('Character ' + c.id)).replace(/"/g, '&quot;');
+      itemsHtml += '<li><button class="dropdown-item d-flex align-items-center" data-char-id="' + c.id + '" title="Make ' + charTitle + ' the active character on this node">' +
         createAvatar(c, 32) +
         '<span>' + esc(c.name || ('Character ' + c.id)) + badge + '</span></button></li>';
     }

@@ -212,8 +212,10 @@
 }
 
 .live-dot.active {
-  background: var(--mb-danger);
-  box-shadow: var(--mb-glow-blood);
+  /* Amber = happening now (house vocabulary): this dot means "TTS is playing
+     and the jaw is in flight", not danger. Blood stays reserved for danger. */
+  background: var(--mb-accent-amber);
+  box-shadow: 0 0 8px rgba(255, 179, 71, 0.6);
   animation: mb-pulse 0.8s ease-in-out infinite;
 }
 

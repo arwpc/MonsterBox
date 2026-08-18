@@ -577,7 +577,7 @@
         el.webcamPlaceholder.innerHTML = '<div class="text-center mb-text-warning">' +
           '<i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i>' +
           '<p class="mb-0 mt-1">Webcam stream unavailable. Check mjpg-streamer.</p>' +
-          '<button class="btn btn-outline-warning btn-sm mt-2" onclick="document.getElementById(\'webcamSelect\').dispatchEvent(new Event(\'change\'))">Retry</button>' +
+          '<button class="btn btn-outline-warning btn-sm mt-2" title="Reconnect to the webcam stream" onclick="document.getElementById(\'webcamSelect\').dispatchEvent(new Event(\'change\'))">Retry</button>' +
           '</div>';
       }
     };

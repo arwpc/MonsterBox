@@ -150,7 +150,7 @@
 
     var html = '<div class="part-card' + (blocked ? ' part-card-blocked' : '') + '" id="part-card-' + part.id + '">';
     html += '<div class="part-header">';
-    html += '<div class="form-check"><input type="checkbox" class="form-check-input part-include" id="inc-' + part.id + '" data-part-id="' + part.id + '"' +
+    html += '<div class="form-check"><input type="checkbox" class="form-check-input part-include" id="inc-' + part.id + '" data-part-id="' + part.id + '" title="Include this part in the pose"' +
             (blocked ? ' disabled' : '') + '></div>';
     html += '<span class="part-type-badge text-white" style="background:' + color + ';">' + typeLabel + '</span>';
     html += '<strong class="small">' + escapeHtml(part.name || 'Part ' + part.id) + '</strong>';
@@ -229,43 +229,43 @@
         if (val < min || val > max) val = Math.round((min + max) / 2);
       }
       html += '<div class="d-flex align-items-center gap-2">';
-      html += '<small class="text-muted">' + min + '&deg;</small>';
-      html += '<input type="range" class="form-range flex-grow-1 part-servo-angle" data-part-id="' + part.id + '" min="' + min + '" max="' + max + '" value="' + val + '">';
-      html += '<small class="text-muted">' + max + '&deg;</small>';
-      html += '<span class="angle-display badge bg-dark part-angle-val" data-part-id="' + part.id + '">' + val + '&deg;</span>';
+      html += '<small class="text-muted mb-mono">' + min + '&deg;</small>';
+      html += '<input type="range" class="form-range flex-grow-1 part-servo-angle" data-part-id="' + part.id + '" min="' + min + '" max="' + max + '" value="' + val + '" title="Set the target angle for this servo">';
+      html += '<small class="text-muted mb-mono">' + max + '&deg;</small>';
+      html += '<span class="angle-display badge bg-dark mb-mono part-angle-val" data-part-id="' + part.id + '">' + val + '&deg;</span>';
       html += '</div>';
     } else if (part.type === 'motor') {
       html += '<div class="d-flex align-items-center gap-2 flex-wrap">';
-      html += '<select class="form-select form-select-sm part-motor-dir" data-part-id="' + part.id + '" style="width:auto;">';
+      html += '<select class="form-select form-select-sm part-motor-dir" data-part-id="' + part.id + '" style="width:auto;" title="Choose the motor direction">';
       html += '<option value="forward">Forward</option><option value="backward">Backward</option>';
       html += '</select>';
       html += '<label class="small text-muted">Speed:</label>';
-      html += '<input type="range" class="form-range part-motor-speed" data-part-id="' + part.id + '" min="0" max="100" value="75" style="width:100px;">';
-      html += '<span class="badge bg-dark part-speed-val" data-part-id="' + part.id + '">75%</span>';
+      html += '<input type="range" class="form-range part-motor-speed" data-part-id="' + part.id + '" min="0" max="100" value="75" style="width:100px;" title="Set the motor speed as a percentage">';
+      html += '<span class="badge bg-dark mb-mono part-speed-val" data-part-id="' + part.id + '">75%</span>';
       html += '<label class="small text-muted">Duration:</label>';
-      html += '<input type="number" class="form-control form-control-sm part-motor-dur" data-part-id="' + part.id + '" value="1000" min="100" max="10000" style="width:80px;">';
+      html += '<input type="number" class="form-control form-control-sm part-motor-dur" data-part-id="' + part.id + '" value="1000" min="100" max="10000" style="width:80px;" title="Run duration in milliseconds">';
       html += '<small class="text-muted">ms</small>';
       html += '</div>';
     } else if (part.type === 'linear_actuator') {
       html += '<div class="d-flex align-items-center gap-2 flex-wrap">';
-      html += '<select class="form-select form-select-sm part-actuator-dir" data-part-id="' + part.id + '" style="width:auto;">';
+      html += '<select class="form-select form-select-sm part-actuator-dir" data-part-id="' + part.id + '" style="width:auto;" title="Choose extend or retract">';
       html += '<option value="extend">Extend</option><option value="retract">Retract</option>';
       html += '</select>';
       html += '<label class="small text-muted">Speed:</label>';
-      html += '<input type="range" class="form-range part-actuator-speed" data-part-id="' + part.id + '" min="0" max="100" value="75" style="width:100px;">';
-      html += '<span class="badge bg-dark part-act-speed-val" data-part-id="' + part.id + '">75%</span>';
+      html += '<input type="range" class="form-range part-actuator-speed" data-part-id="' + part.id + '" min="0" max="100" value="75" style="width:100px;" title="Set the actuator speed as a percentage">';
+      html += '<span class="badge bg-dark mb-mono part-act-speed-val" data-part-id="' + part.id + '">75%</span>';
       html += '<label class="small text-muted">Duration:</label>';
-      html += '<input type="number" class="form-control form-control-sm part-actuator-dur" data-part-id="' + part.id + '" value="1000" min="100" max="10000" style="width:80px;">';
+      html += '<input type="number" class="form-control form-control-sm part-actuator-dur" data-part-id="' + part.id + '" value="1000" min="100" max="10000" style="width:80px;" title="Run duration in milliseconds">';
       html += '<small class="text-muted">ms</small>';
       html += '</div>';
     } else if (part.type === 'light' || part.type === 'led') {
       html += '<div class="d-flex align-items-center gap-2">';
-      html += '<select class="form-select form-select-sm part-light-state" data-part-id="' + part.id + '" style="width:auto;">';
+      html += '<select class="form-select form-select-sm part-light-state" data-part-id="' + part.id + '" style="width:auto;" title="Turn the light on or off">';
       html += '<option value="on">On</option><option value="off">Off</option>';
       html += '</select>';
       html += '<label class="small text-muted">Brightness:</label>';
-      html += '<input type="range" class="form-range part-light-brightness" data-part-id="' + part.id + '" min="0" max="100" value="100" style="width:120px;">';
-      html += '<span class="badge bg-dark part-bright-val" data-part-id="' + part.id + '">100%</span>';
+      html += '<input type="range" class="form-range part-light-brightness" data-part-id="' + part.id + '" min="0" max="100" value="100" style="width:120px;" title="Set the brightness as a percentage">';
+      html += '<span class="badge bg-dark mb-mono part-bright-val" data-part-id="' + part.id + '">100%</span>';
       html += '</div>';
     }
     return html;
@@ -683,8 +683,8 @@
         html += '<span class="badge bg-warning text-dark me-1" style="font-size:0.6rem;" title="' + escapeHtml(statusTitle) + '"><i class="bi bi-exclamation-triangle"></i></span>';
       }
       html += '<span class="badge bg-secondary me-1" style="font-size:0.6rem;">' + escapeHtml(p.category || '') + '</span>';
-      html += '<span class="small flex-grow-1 text-truncate">' + escapeHtml(p.name || 'Pose ' + p.id) + '</span>';
-      html += '<span class="badge bg-dark me-1" style="font-size:0.6rem;">' + ((p.parts && p.parts.length) || 0) + '</span>';
+      html += '<span class="small flex-grow-1 text-truncate mb-serif">' + escapeHtml(p.name || 'Pose ' + p.id) + '</span>';
+      html += '<span class="badge bg-dark mb-mono me-1" style="font-size:0.6rem;">' + ((p.parts && p.parts.length) || 0) + '</span>';
       html += '<button class="btn btn-sm btn-outline-danger p-0 px-1 pose-delete-btn" data-pose-id="' + p.id + '" title="Delete pose"><i class="bi bi-trash"></i></button>';
       html += '</div>';
     });

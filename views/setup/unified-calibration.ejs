@@ -530,10 +530,19 @@
   `).join('');
     }
 
+    // Amber = happening now: light the system status while motion is in flight.
+    function markMoving(active) {
+      const statusEl = document.getElementById('statusSystem');
+      if (!statusEl) return;
+      statusEl.classList.toggle('mb-live', !!active);
+      statusEl.classList.toggle('mb-now-pulse', !!active);
+    }
+
     async function nudge(dir) {
       if (isMoving) return;
       isMoving = true;
       document.getElementById('statusSystem').textContent = 'Moving...';
+      markMoving(true);
 
       try {
         const response = await fetch(`/api/calibration/${currentPartId}/nudge`, {
@@ -554,6 +563,7 @@
       } finally {
         isMoving = false;
         document.getElementById('statusSystem').textContent = 'Ready';
+        markMoving(false);
       }
     }
 
@@ -573,6 +583,7 @@
       } finally {
         isMoving = false;
         document.getElementById('statusSystem').textContent = 'Ready';
+        markMoving(false);
       }
     }
 
@@ -661,6 +672,7 @@
       if (isMoving) return;
       isMoving = true;
       document.getElementById('statusSystem').textContent = 'Moving...';
+      markMoving(true);
 
       try {
         const response = await fetch(`/api/calibration/${currentPartId}/goto`, {
@@ -681,6 +693,7 @@
       } finally {
         isMoving = false;
         document.getElementById('statusSystem').textContent = 'Ready';
+        markMoving(false);
       }
     }
 

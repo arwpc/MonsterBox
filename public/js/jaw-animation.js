@@ -538,7 +538,8 @@
   function setStatus(text) {
     if (!el.ttsStatus) return;
     var cls = 'mb-badge';
-    if (text === 'Playing')                cls = 'mb-badge mb-badge-success';
+    // Amber = happening now: playback in flight is the amber lamp, not "armed" green.
+    if (text === 'Playing')                cls = 'mb-badge mb-live mb-now-pulse';
     else if (text === 'Generating TTS...') cls = 'mb-badge mb-badge-info';
     else if (text === 'Done')              cls = 'mb-badge mb-badge-primary';
     else if (text === 'Error')             cls = 'mb-badge mb-badge-danger';

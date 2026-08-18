@@ -21,25 +21,25 @@
         <div id="system-status" class="row">
           <div class="col-md-3">
             <div class="text-center">
-              <div id="pipewire-status" class="mb-badge mb-2">Checking...</div>
+              <div id="pipewire-status" class="mb-badge mb-2 mb-mono">Checking...</div>
               <div class="mb-text-sm mb-text-muted">PipeWire</div>
             </div>
           </div>
           <div class="col-md-3">
             <div class="text-center">
-              <div id="wireplumber-status" class="mb-badge mb-2">Checking...</div>
+              <div id="wireplumber-status" class="mb-badge mb-2 mb-mono">Checking...</div>
               <div class="mb-text-sm mb-text-muted">WirePlumber</div>
             </div>
           </div>
           <div class="col-md-3">
             <div class="text-center">
-              <div id="sinks-count" class="mb-badge mb-2">0</div>
+              <div id="sinks-count" class="mb-badge mb-2 mb-mono">0</div>
               <div class="mb-text-sm mb-text-muted">Audio Outputs</div>
             </div>
           </div>
           <div class="col-md-3">
             <div class="text-center">
-              <div id="sources-count" class="mb-badge mb-2">0</div>
+              <div id="sources-count" class="mb-badge mb-2 mb-mono">0</div>
               <div class="mb-text-sm mb-text-muted">Audio Inputs</div>
             </div>
           </div>
@@ -68,7 +68,7 @@
 
         <div class="mb-field">
           <span class="mb-field-label">Current Source Details</span>
-          <div id="current-source-info" class="aud-device-info">
+          <div id="current-source-info" class="aud-device-info mb-mono">
             <div class="mb-text-muted">Loading...</div>
           </div>
         </div>
@@ -115,7 +115,7 @@
 
         <div class="mb-field">
           <span class="mb-field-label">Current Sink Details</span>
-          <div id="current-sink-info" class="aud-device-info">
+          <div id="current-sink-info" class="aud-device-info mb-mono">
             <div class="mb-text-muted">Loading...</div>
           </div>
         </div>
@@ -205,7 +205,7 @@
                   <button id="btn-listenin-toggle" class="mb-btn mb-btn-secondary mb-btn-sm" type="button" title="Start or stop listening">
                     <i class="bi bi-headphones"></i> <span id="listenin-toggle-text">Start Listening</span>
                   </button>
-                  <span id="listenin-status" class="mb-badge">Off</span>
+                  <span id="listenin-status" class="mb-badge mb-mono">Off</span>
                 </div>
               </div>
             </div>
@@ -234,7 +234,7 @@
                   <button id="btn-talkthrough-toggle" class="mb-btn mb-btn-secondary mb-btn-sm" type="button" title="Start or stop talking through">
                     <i class="bi bi-mic-fill"></i> <span id="talkthrough-toggle-text">Start Talking</span>
                   </button>
-                  <span id="talkthrough-status" class="mb-badge">Off</span>
+                  <span id="talkthrough-status" class="mb-badge mb-mono">Off</span>
                 </div>
                 <div id="talkthrough-https-warning" class="mb-alert mb-alert-warning mb-text-sm mt-2 d-none">
                   <i class="bi bi-shield-lock"></i> Browser microphone requires HTTPS or localhost.
@@ -340,8 +340,8 @@
       if (window && window.MB_TEST_MODE) {
         var pw = document.getElementById('pipewire-status');
         var wp = document.getElementById('wireplumber-status');
-        if (pw) { pw.textContent = 'Available'; pw.className = 'mb-badge mb-badge-success mb-2'; }
-        if (wp) { wp.textContent = 'Available'; wp.className = 'mb-badge mb-badge-success mb-2'; }
+        if (pw) { pw.textContent = 'Available'; pw.className = 'mb-badge mb-badge-success mb-2 mb-mono'; }
+        if (wp) { wp.textContent = 'Available'; wp.className = 'mb-badge mb-badge-success mb-2 mb-mono'; }
         var sc = document.getElementById('sinks-count'); if (sc && sc.textContent === '0') sc.textContent = '1';
         var sr = document.getElementById('sources-count'); if (sr && sr.textContent === '0') sr.textContent = '1';
       }
@@ -513,7 +513,7 @@
       html += '  <div class="d-flex justify-content-between align-items-center">';
       html += '    <div>';
       html += '      <strong>' + part.name + '</strong><br>';
-      html += '      <small class="mb-text-muted">Device: ' + devId + ' | Part ID: ' + part.id + '</small>';
+      html += '      <small class="mb-text-muted mb-mono">Device: ' + devId + ' | Part ID: ' + part.id + '</small>';
       html += '    </div>';
       html += '    <div class="aud-mic-meter">';
       html += '      <div class="vu-meter-container">';
@@ -652,12 +652,12 @@
     // PipeWire status
     const pipewireEl = document.getElementById('pipewire-status');
     pipewireEl.textContent = status.wpctl ? 'Available' : 'Not Available';
-    pipewireEl.className = 'mb-badge mb-2 ' + (status.wpctl ? 'mb-badge-success' : 'mb-badge-danger');
+    pipewireEl.className = 'mb-badge mb-2 mb-mono ' + (status.wpctl ? 'mb-badge-success' : 'mb-badge-danger');
 
     // WirePlumber status (requires wpctl to be working)
     const wireplumberEl = document.getElementById('wireplumber-status');
     wireplumberEl.textContent = status.wpctl ? 'Available' : 'Not Available';
-    wireplumberEl.className = 'mb-badge mb-2 ' + (status.wpctl ? 'mb-badge-success' : 'mb-badge-danger');
+    wireplumberEl.className = 'mb-badge mb-2 mb-mono ' + (status.wpctl ? 'mb-badge-success' : 'mb-badge-danger');
 
     // Counts
     document.getElementById('sinks-count').textContent = currentConfig.availableSinks.length;
@@ -740,7 +740,7 @@
           '<div>' +
           '<strong>' + (sink.description || sink.name) + '</strong>' +
           (isDefault ? ' <span class="mb-badge mb-badge-primary">Default</span>' : '') +
-          '<br><small class="mb-text-muted">ID: ' + sink.id + '</small>' +
+          '<br><small class="mb-text-muted mb-mono">ID: ' + sink.id + '</small>' +
           '</div>' +
           '<button title="Test this audio output device" class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-icon" onclick="testSpecificSink(\'' + sink.id + '\')">' +
           '<i class="bi bi-play-circle"></i>' +
@@ -766,7 +766,7 @@
           '<div>' +
           '<strong>' + (source.description || source.name) + '</strong>' +
           (isDefault ? ' <span class="mb-badge mb-badge-primary">Default</span>' : '') +
-          '<br><small class="mb-text-muted">ID: ' + source.id + '</small>' +
+          '<br><small class="mb-text-muted mb-mono">ID: ' + source.id + '</small>' +
           '</div>' +
           '<button title="Test this audio input device" class="mb-btn mb-btn-secondary mb-btn-sm mb-btn-icon" onclick="testSpecificSource(\'' + source.id + '\')">' +
           '<i class="bi bi-mic"></i>' +
@@ -1180,7 +1180,7 @@
           html += '<div class="stream-item">';
           html += '<div>';
           html += '<strong>' + stream.name + '</strong>';
-          html += '<br><small class="mb-text-muted">ID: ' + stream.id + ' | State: ' + stream.state + '</small>';
+          html += '<br><small class="mb-text-muted mb-mono">ID: ' + stream.id + ' | State: ' + stream.state + '</small>';
           html += '</div>';
           html += '<div class="stream-controls">';
           html += '<button title="Move this audio stream to the selected output" class="mb-btn mb-btn-secondary mb-btn-sm" onclick="moveStreamToSink(' + stream.id + ')">Move</button>';
@@ -1331,7 +1331,7 @@
     const toggleText = document.getElementById('listenin-toggle-text');
     const btn = document.getElementById('btn-listenin-toggle');
 
-    if (statusBadge) { statusBadge.textContent = 'Connecting...'; statusBadge.className = 'mb-badge mb-badge-warning'; }
+    if (statusBadge) { statusBadge.textContent = 'Connecting...'; statusBadge.className = 'mb-badge mb-badge-warning mb-mono'; }
     if (toggleText) toggleText.textContent = 'Connecting...';
     if (btn) btn.disabled = true;
 
@@ -1348,7 +1348,8 @@
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'started') {
-          if (statusBadge) { statusBadge.textContent = 'Listening'; statusBadge.className = 'mb-badge mb-badge-success'; }
+          // Amber = happening now: audio is streaming to the browser live.
+          if (statusBadge) { statusBadge.textContent = 'Listening'; statusBadge.className = 'mb-badge mb-mono mb-live mb-now-pulse'; }
           if (toggleText) toggleText.textContent = 'Stop Listening';
           if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-danger mb-btn-sm'; }
         } else if (msg.type === 'audio') {
@@ -1453,7 +1454,7 @@
     const btn = document.getElementById('btn-listenin-toggle');
     const vuBar = document.getElementById('listenin-vu-bar');
     const vuLabel = document.getElementById('listenin-vu-label');
-    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'mb-badge'; }
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'mb-badge mb-mono'; }
     if (toggleText) toggleText.textContent = 'Start Listening';
     if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-secondary mb-btn-sm'; }
     if (vuBar) vuBar.style.width = '0%';
@@ -1483,7 +1484,7 @@
       return;
     }
 
-    if (statusBadge) { statusBadge.textContent = 'Requesting mic...'; statusBadge.className = 'mb-badge mb-badge-warning'; }
+    if (statusBadge) { statusBadge.textContent = 'Requesting mic...'; statusBadge.className = 'mb-badge mb-badge-warning mb-mono'; }
     if (toggleText) toggleText.textContent = 'Requesting...';
     if (btn) btn.disabled = true;
 
@@ -1549,13 +1550,14 @@
       talkThroughProcessor.connect(talkThroughAudioCtx.destination);
       talkThroughActive = true;
 
-      if (statusBadge) { statusBadge.textContent = 'Active'; statusBadge.className = 'mb-badge mb-badge-success'; }
+      // Amber = happening now: the browser mic is live on the character's speaker.
+      if (statusBadge) { statusBadge.textContent = 'Active'; statusBadge.className = 'mb-badge mb-mono mb-live mb-now-pulse'; }
       if (toggleText) toggleText.textContent = 'Stop Talking';
       if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-danger mb-btn-sm'; }
     } catch (err) {
       console.error('Talk Through start error:', err);
       showNotification('Microphone error: ' + (err.message || err), 'error');
-      if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'mb-badge mb-badge-danger'; }
+      if (statusBadge) { statusBadge.textContent = 'Error'; statusBadge.className = 'mb-badge mb-badge-danger mb-mono'; }
       if (toggleText) toggleText.textContent = 'Start Talking';
       if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-secondary mb-btn-sm'; }
     }
@@ -1589,7 +1591,7 @@
     const btn = document.getElementById('btn-talkthrough-toggle');
     const vuBar = document.getElementById('talkthrough-vu-bar');
     const vuLabel = document.getElementById('talkthrough-vu-label');
-    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'mb-badge'; }
+    if (statusBadge) { statusBadge.textContent = 'Off'; statusBadge.className = 'mb-badge mb-mono'; }
     if (toggleText) toggleText.textContent = 'Start Talking';
     if (btn) { btn.disabled = false; btn.className = 'mb-btn mb-btn-secondary mb-btn-sm'; }
     if (vuBar) vuBar.style.width = '0%';

@@ -142,8 +142,8 @@
               var isSel = (selected === c.id);
               html += '<tr>' +
                 '<td>' + createAvatar(c, 40) + '</td>' +
-                '<td>' + c.id + '</td>' +
-                '<td>' + esc(c.name || '') + '</td>' +
+                '<td class="mb-mono">' + c.id + '</td>' +
+                '<td class="mb-serif">' + esc(c.name || '') + '</td>' +
                 '<td>' + getAgentBadge(c) + '</td>' +
                 '<td>' + (isSel ? '<span class="badge bg-success">Current</span>' : '') + '</td>' +
                 '<td class="text-end">' +
