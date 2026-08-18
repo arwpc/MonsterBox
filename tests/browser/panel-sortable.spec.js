@@ -1,6 +1,13 @@
 /**
- * Dashboard Accordion Tests
- * Validates accordion-based panel expand/collapse on the Dashboard
+ * Dashboard Drawer / Deck Tests
+ * Validates the Scare Console (v10) surface at `/`:
+ *   - the always-visible one-tap deck (scenes / poses / sounds tabs)
+ *   - the drawer accordion (#dashboardAccordion) expand/collapse behavior
+ *
+ * v10 note: scenes and poses are no longer accordion drawers — they are deck
+ * tabs on the stage. The surviving drawers are Conversation, Manual Controls,
+ * Audio Bridge and Live Console. The classic accordion lives on at
+ * /dashboard/classic.
  * (Replaces old panel-sortable drag-and-drop tests)
  */
 
@@ -40,8 +47,8 @@ test.describe('Dashboard Accordion', () => {
         tracker.clear();
         await page.waitForLoadState('networkidle');
 
-        // Check that accordion buttons exist for key panels
-        const expectedTargets = ['#collapseScenes', '#collapsePoses', '#collapseManual', '#collapseConsole'];
+        // Check that accordion buttons exist for key drawers (v10 drawer set)
+        const expectedTargets = ['#collapseManual', '#collapseAudioBridge', '#collapseConsole'];
         for (const target of expectedTargets) {
             const btn = page.locator(`[data-bs-target="${target}"]`);
             const count = await btn.count();
@@ -55,24 +62,25 @@ test.describe('Dashboard Accordion', () => {
         tracker.clear();
         await page.waitForLoadState('networkidle');
 
-        // Click the Scenes accordion button to expand
-        const scenesButton = page.locator('[data-bs-target="#collapseScenes"]');
-        await expect(scenesButton).toBeVisible();
+        // Manual Controls stands in for the Conversation drawer, which left the
+        // accordion for the AI deck tab in v10.
+        const chatButton = page.locator('[data-bs-target="#collapseManual"]');
+        await expect(chatButton).toBeVisible();
 
-        const collapseBody = page.locator('#collapseScenes');
+        const collapseBody = page.locator('#collapseManual');
 
         // Initially collapsed
         await expect(collapseBody).not.toHaveClass(/show/);
 
         // Click to expand
-        await scenesButton.click();
+        await chatButton.click();
         await page.waitForTimeout(500);
 
         // Should now be expanded
         await expect(collapseBody).toHaveClass(/show/);
 
         // Click to collapse
-        await scenesButton.click();
+        await chatButton.click();
         await page.waitForTimeout(500);
 
         // Should be collapsed again
@@ -85,12 +93,12 @@ test.describe('Dashboard Accordion', () => {
         tracker.clear();
         await page.waitForLoadState('networkidle');
 
-        // Expand the Scenes panel
-        await page.locator('[data-bs-target="#collapseScenes"]').click();
+        // Expand the Manual Controls drawer
+        await page.locator('[data-bs-target="#collapseManual"]').click();
         await page.waitForTimeout(500);
 
-        // Scenes container should be visible inside
-        await expect(page.locator('#scenesContainer')).toBeVisible();
+        // The body map should be visible inside
+        await expect(page.locator('#mcBodyMap')).toBeVisible();
 
         await tracker.logErrors();
     });
@@ -99,16 +107,63 @@ test.describe('Dashboard Accordion', () => {
         tracker.clear();
         await page.waitForLoadState('networkidle');
 
-        // Open Scenes
-        await page.locator('[data-bs-target="#collapseScenes"]').click();
+        // Open Manual Controls
+        await page.locator('[data-bs-target="#collapseManual"]').click();
         await page.waitForTimeout(500);
-        await expect(page.locator('#collapseScenes')).toHaveClass(/show/);
+        await expect(page.locator('#collapseManual')).toHaveClass(/show/);
 
-        // Open Poses — should close Scenes (data-bs-parent accordion behavior)
-        await page.locator('[data-bs-target="#collapsePoses"]').click();
+        // Open Audio Bridge — should close Manual Controls (data-bs-parent behavior)
+        await page.locator('[data-bs-target="#collapseAudioBridge"]').click();
+        await page.waitForTimeout(700);
+        await expect(page.locator('#collapseAudioBridge')).toHaveClass(/show/);
+        await expect(page.locator('#collapseManual')).not.toHaveClass(/show/);
+
+        await tracker.logErrors();
+    });
+
+    // v10: scenes and poses left the accordion for the always-visible deck.
+    // This is the coverage that used to live in the "Scenes panel" accordion
+    // tests — the operator must still be able to reach scenes and poses from
+    // the dashboard without opening anything.
+    test('should show the one-tap deck without expanding a drawer', async () => {
+        tracker.clear();
+        await page.waitForLoadState('networkidle');
+
+        const grid = page.locator('#scDeckGrid');
+        await expect(grid).toBeVisible();
+
+        for (const deck of ['scenes', 'poses', 'sounds']) {
+            await expect(page.locator(`.sc-tab[data-deck="${deck}"]`)).toBeVisible();
+        }
+
+        await tracker.logErrors();
+    });
+
+    test('should switch the deck between scenes and poses', async () => {
+        tracker.clear();
+        await page.waitForLoadState('networkidle');
+
+        const grid = page.locator('#scDeckGrid');
+        const scenesTab = page.locator('.sc-tab[data-deck="scenes"]');
+        const posesTab = page.locator('.sc-tab[data-deck="poses"]');
+
+        // Scenes is the default deck
+        await expect(scenesTab).toHaveClass(/active/);
+        await expect(grid).toBeVisible();
+
+        await posesTab.click();
         await page.waitForTimeout(500);
-        await expect(page.locator('#collapsePoses')).toHaveClass(/show/);
-        await expect(page.locator('#collapseScenes')).not.toHaveClass(/show/);
+        await expect(posesTab).toHaveClass(/active/);
+        await expect(scenesTab).not.toHaveClass(/active/);
+
+        // Grid re-renders for the new deck: either pose tiles or an honest empty state
+        const poseTiles = await grid.locator('.sc-tile-poses').count();
+        const empty = await grid.locator('.sc-deck-empty').count();
+        expect(poseTiles + empty).toBeGreaterThan(0);
+
+        await scenesTab.click();
+        await page.waitForTimeout(500);
+        await expect(scenesTab).toHaveClass(/active/);
 
         await tracker.logErrors();
     });

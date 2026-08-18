@@ -427,6 +427,25 @@ exist yet.
 
 ### Opened from the 2026-08-18 v10 page sweep + adversarial review
 
+- 🟡 **The browser suite cannot run on a node whose service is up — and it needs
+  `BASE_URL` set by hand.** Two separate traps, both hit on 2026-08-18 while
+  trying to satisfy the v10 release gate:
+  1. `acquireLock()` (`services/resource/singleInstance.js:67`) is
+     unconditional, so Playwright's own `MB_TEST_MODE=1 TEST_PORT=3200 npm start`
+     web server exits with *"MonsterBox already running (PID …)"* whenever
+     `monsterbox.service` holds the PID file. The suite that the release is
+     gated on therefore requires stopping the character first. This is not a
+     regression — the lock has never had a test-mode exemption — but nothing
+     documents it, and the failure reads like a test bug rather than a lock.
+  2. Most specs default to `BASE_URL ?? 'http://localhost:3000'` while the
+     spawned server listens on **3200**, so a bare `npx playwright test` fails
+     every navigation. `BASE_URL=http://localhost:3200` is mandatory; the npm
+     scripts should set it rather than relying on each spec's default.
+  *Fix direction:* let the lock stand down when `MB_TEST_MODE=1` and the port is
+  not the production one, and bake `BASE_URL` into the `test:browser` scripts.
+  Until then: `sudo systemctl stop monsterbox.service`, run with `BASE_URL`
+  set, and restart the service afterward.
+
 - 🟡 **The PIR watcher can respawn forever without ever falling back.**
   `services/lurkMotionWatcherService.js` (~240) — the rapid-failure counter
   resets to 0 on *any* exit that is non-rapid (>10 s uptime) or code 0, so a

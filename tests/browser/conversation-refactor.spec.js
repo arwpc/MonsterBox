@@ -1,6 +1,7 @@
 /**
  * Comprehensive tests for refactored Conversation Control page (now the Dashboard)
- * Tests accordion-based layout and features inline (no modals)
+ * Tests the v10 Scare Console: stage + one-tap deck + say bar, with the long
+ * tail (conversation log, manual controls, audio bridge, console) in a drawer.
  * Note: /conversation redirects to / — conversation IS the dashboard
  */
 
@@ -8,6 +9,29 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const TEST_TIMEOUT = 60000;
+
+/**
+ * The conversation controls live in a drawer that starts collapsed. Expand it
+ * before asserting on them — asserting on a collapsed control passes nothing,
+ * and asserting it is "not visible" would let a real regression through.
+ */
+async function openAiTab(page) {
+  // The conversation moved out of the drawer and into the AI deck tab beside
+  // the stage; its elements are the same, only their home changed.
+  await page.locator('.sc-tab-ai').click();
+  await expect(page.locator('#chatLog')).toBeVisible();
+  await page.waitForTimeout(300);
+}
+
+async function openDrawer(page, target) {
+  const body = page.locator(target);
+  const cls = (await body.getAttribute('class')) || '';
+  if (!/\bshow\b/.test(cls)) {
+    await page.locator(`[data-bs-target="${target}"]`).click();
+  }
+  await expect(body).toHaveClass(/show/);
+  await page.waitForTimeout(400); // let the collapse transition finish
+}
 
 test.describe('Conversation Control - Accordion Layout', () => {
   test.beforeEach(async ({ page }) => {
@@ -35,6 +59,9 @@ test.describe('Conversation Control - Accordion Layout', () => {
   });
 
   test('should have Chat panel', async ({ page }) => {
+    // v10: the chat log and audio routing live in the Conversation drawer
+    await openAiTab(page);
+
     // Chat log area
     await expect(page.locator('#chatLog')).toBeVisible();
 
@@ -90,22 +117,42 @@ test.describe('Conversation Control - Accordion Layout', () => {
     await expect(headTrackToggle).toHaveAttribute('type', 'checkbox');
   });
 
-  test('should have Scenes panel in accordion', async ({ page }) => {
-    // Expand the Scenes accordion panel
-    await page.locator('[data-bs-target="#collapseScenes"]').click();
-    await page.waitForTimeout(500);
+  // v10: scenes/poses moved out of the accordion and onto the always-visible
+  // one-tap deck. Same intent as the old accordion tests — the operator can
+  // reach scenes and poses from the dashboard — proved through the new path.
+  test('should reach Scenes from the one-tap deck', async ({ page }) => {
+    const scenesTab = page.locator('.sc-tab[data-deck="scenes"]');
+    await expect(scenesTab).toBeVisible();
+    await expect(scenesTab).toHaveClass(/active/); // scenes is the default deck
 
-    // Check for scenes container
-    await expect(page.locator('#scenesContainer')).toBeVisible();
+    const grid = page.locator('#scDeckGrid');
+    await expect(grid).toBeVisible();
+
+    // Either scene tiles rendered, or the honest empty state — never a spinner
+    // left behind (that would mean the deck never loaded).
+    await expect
+      .poll(async () => (await grid.locator('.sc-tile-scenes').count())
+        + (await grid.locator('.sc-deck-empty').count()), { timeout: 10000 })
+      .toBeGreaterThan(0);
   });
 
-  test('should have Poses panel in accordion', async ({ page }) => {
-    // Expand the Poses accordion panel
-    await page.locator('[data-bs-target="#collapsePoses"]').click();
+  test('should reach Poses from the one-tap deck', async ({ page }) => {
+    const posesTab = page.locator('.sc-tab[data-deck="poses"]');
+    await expect(posesTab).toBeVisible();
+    await posesTab.click();
     await page.waitForTimeout(500);
+    await expect(posesTab).toHaveClass(/active/);
 
-    // Check for poses container
-    await expect(page.locator('#posesContainer')).toBeVisible();
+    const grid = page.locator('#scDeckGrid');
+    await expect(grid).toBeVisible();
+
+    await expect
+      .poll(async () => (await grid.locator('.sc-tile-poses').count())
+        + (await grid.locator('.sc-deck-empty').count()), { timeout: 10000 })
+      .toBeGreaterThan(0);
+
+    // The Pose Editor shortcut swaps in when the poses deck is active
+    await expect(page.locator('#scPoseEditorLink')).toBeVisible();
   });
 
   test('should have Webcam panel', async ({ page }) => {
@@ -218,6 +265,7 @@ test.describe('Conversation Control - Chat Panel', () => {
   });
 
   test('should have Chat panel inline (no modal)', async ({ page }) => {
+    await openAiTab(page);
     const chatLog = page.locator('#chatLog');
 
     // Chat log should be visible inline
@@ -272,10 +320,15 @@ test.describe('Conversation Control - Responsive Layout', () => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
 
-    // Accordion layout is inherently responsive
+    // Drawer accordion is inherently responsive
     await expect(page.locator('#dashboardAccordion')).toBeVisible();
 
-    // Core elements should still be accessible
+    // Core operator surface stays reachable at phone width
+    await expect(page.locator('#chatInput')).toBeVisible();
+    await expect(page.locator('#scDeckGrid')).toBeVisible();
+
+    // And the conversation log is still reachable via the drawer
+    await openAiTab(page);
     await expect(page.locator('#chatLog')).toBeVisible();
   });
 

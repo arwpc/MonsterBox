@@ -118,13 +118,21 @@ test.describe('AI Conversation Page', () => {
         // Grant microphone permission in test context
         await page.context().grantPermissions(['microphone']);
 
+        // v10: the browser mic toggle lives in the AI deck tab. Open it first —
+        // an isVisible() guard alone would silently skip this test forever and
+        // hide any regression in the browser-mic path.
+        const aiTab = page.locator('.sc-tab-ai');
+        if (await aiTab.count() > 0) {
+            await aiTab.click();
+            await expect(page.locator('#chatLog')).toBeVisible();
+            await page.waitForTimeout(400);
+        }
+
         // Find browser mic toggle in Chat panel
         const micToggle = page.locator('#chatBrowserMic');
-
-        if (await micToggle.isVisible()) {
-            await micToggle.click();
-            await page.waitForTimeout(2000);
-        }
+        await expect(micToggle).toBeVisible();
+        await micToggle.click();
+        await page.waitForTimeout(2000);
 
         // Page should handle mic access without critical JS errors
         await tracker.logErrors();

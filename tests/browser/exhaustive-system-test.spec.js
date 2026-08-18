@@ -110,6 +110,42 @@ async function countElements(page, selector) {
   return await page.locator(selector).count();
 }
 
+// Helper: expand a Scare Console drawer (v10 drawers start collapsed, so the
+// controls inside them are not actionable until the drawer is open)
+async function openAiTab(page) {
+  // The conversation moved out of the drawer and into the AI deck tab beside
+  // the stage; its elements are the same, only their home changed.
+  await page.locator('.sc-tab-ai').click();
+  await expect(page.locator('#chatLog')).toBeVisible();
+  await page.waitForTimeout(300);
+}
+
+async function openDrawer(page, target) {
+  const body = page.locator(target);
+  if (await body.count() === 0) return false;
+  const cls = (await body.getAttribute('class')) || '';
+  if (!/\bshow\b/.test(cls)) {
+    await page.locator(`[data-bs-target="${target}"]`).click().catch(() => {});
+  }
+  await page.waitForTimeout(600);
+  return /\bshow\b/.test((await body.getAttribute('class')) || '');
+}
+
+// Helper: switch the one-tap deck to a tab and wait for it to render
+async function selectDeck(page, deck) {
+  const tab = page.locator(`.sc-tab[data-deck="${deck}"]`);
+  if (await tab.count() === 0) return null;
+  await tab.click();
+  await page.waitForTimeout(500);
+  const grid = page.locator('#scDeckGrid');
+  // Tiles or an honest empty state — a lingering spinner means the deck never loaded
+  await expect
+    .poll(async () => (await grid.locator('.sc-tile').count())
+      + (await grid.locator('.sc-deck-empty').count()), { timeout: 10000 })
+    .toBeGreaterThan(0);
+  return grid;
+}
+
 // Helper: enumerate & log interactive elements on page
 async function auditInteractiveElements(page, label) {
   const counts = await page.evaluate(() => {
@@ -144,9 +180,14 @@ test.describe('Phase 1: Dashboard', () => {
     const title = await page.title();
     expect(title).toContain('MonsterBox');
 
-    // Check all panels by data-panel-id (includes accordion items in new layout)
-    const expectedPanels = ['webcam', 'console', 'scenes', 'poses', 'manual-controls',
-                            'monster-features', 'chat', 'audio-bridge', 'say'];
+    // Check all panels by data-panel-id.
+    // v10 Scare Console panel set: the stage (webcam), the superpower chips
+    // (monster-features), the one-tap deck (scenes — poses/sounds are tabs of
+    // the same panel, not panels of their own), and the four drawers. The old
+    // 'poses' and 'say' panels no longer exist: poses is a deck tab and Say is
+    // the stage say bar (#chatInput / #chatSendBtn), both covered below.
+    const expectedPanels = ['webcam', 'console', 'scenes', 'manual-controls',
+                            'monster-features', 'chat', 'audio-bridge'];
     const foundPanels = [];
     const missingPanels = [];
 
@@ -165,8 +206,11 @@ test.describe('Phase 1: Dashboard', () => {
       testReport.bugs.push({ page: '/', description: `Missing panels: ${missingPanels.join(', ')}` });
     }
 
-    // At least 7 panels must be present
-    expect(foundPanels.length).toBeGreaterThanOrEqual(7);
+    // Every expected panel must be present — no margin, so a panel that
+    // silently disappears from the dashboard fails here instead of sliding
+    // under a ">= 7" floor.
+    expect(missingPanels, `Dashboard panels missing: ${missingPanels.join(', ')}`).toEqual([]);
+    expect(foundPanels.length).toBe(expectedPanels.length);
 
     await auditInteractiveElements(page, 'dashboard');
     testReport.pages['dashboard'] = { ...testReport.pages['dashboard'], status: 'loaded', panels: foundPanels, missing: missingPanels };
@@ -232,6 +276,9 @@ test.describe('Phase 1: Dashboard', () => {
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
 
+    // v10: chat log + audio routing live in the collapsed Conversation drawer
+    await openAiTab(page);
+
     // Chat input
     await safeFill(page, '#chatInput', 'Exhaustive test message', 'Chat input');
 
@@ -249,20 +296,24 @@ test.describe('Phase 1: Dashboard', () => {
     await safeToggle(page, '#chatBrowserMic', 'Chat browser mic');
   });
 
-  test('1.5 — Scenes panel controls', async ({ page }) => {
+  test('1.5 — Scenes deck controls', async ({ page }) => {
     const errors = trackPage(page, 'dashboard-scenes');
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
 
-    // Expand scenes accordion panel (new dashboard layout)
-    const scenesAccBtn = page.locator('[data-bs-target="#collapseScenes"]');
-    if (await scenesAccBtn.count() > 0) {
-      await scenesAccBtn.click();
-      await page.waitForTimeout(500);
-    }
+    // v10: scenes are one-tap tiles on the always-visible deck
+    const grid = await selectDeck(page, 'scenes');
+    expect(grid, 'scenes deck tab present').not.toBeNull();
+    await expect(grid).toBeVisible();
 
-    const sceneItems = await countElements(page, '#scenesContainer .scene-item, #scenesContainer [data-scene-id]');
-    console.log(`  Scenes panel: ${sceneItems} scene items`);
+    const sceneItems = await countElements(page, '#scDeckGrid .sc-tile-scenes');
+    console.log(`  Scenes deck: ${sceneItems} scene tiles`);
+
+    // Deck filter
+    await safeFill(page, '#scDeckFilter', 'zzz-no-such-scene', 'Deck filter');
+    await page.waitForTimeout(300);
+    console.log(`  Scenes deck after filter: ${await countElements(page, '#scDeckGrid .sc-tile-scenes')} tiles`);
+    await safeFill(page, '#scDeckFilter', '', 'Deck filter clear');
 
     // Loop All button
     const hasLoopAll = await safeClick(page, '#btnLoopAll', 'Loop All');
@@ -304,25 +355,28 @@ test.describe('Phase 1: Dashboard', () => {
     console.log(`  Manual Controls: ${hardwareItems} hardware items`);
   });
 
-  test('1.7 — Say panel controls', async ({ page }) => {
+  test('1.7 — Say bar controls', async ({ page }) => {
     const errors = trackPage(page, 'dashboard-say');
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
 
-    // Speaker dropdown
-    const speakerSelect = page.locator('[data-panel-id="say"] select, #saySpeaker');
-    if (await speakerSelect.count() > 0) {
-      console.log('  [OK] Say panel speaker dropdown found');
-    }
+    // v10: the old Say panel is the stage say bar — mode toggle, text input,
+    // send, and the quick scare lines. It is always visible, no drawer needed.
+    await expect(page.locator('#chatModeToggle')).toBeVisible();
+    await expect(page.locator('#chatInput')).toBeVisible();
+    await expect(page.locator('#chatSendBtn')).toBeVisible();
 
-    // Text input
-    await safeFill(page, '[data-panel-id="say"] input[type="text"], #sayText', 'Test speech', 'Say text input');
+    // Text input (don't send — that would speak through the character)
+    await safeFill(page, '#chatInput', 'Test speech', 'Say bar text input');
 
-    // Speak button (don't actually click to avoid audio)
-    const speakBtn = page.locator('[data-panel-id="say"] button:has-text("Speak"), #btnSpeak');
-    if (await speakBtn.count() > 0) {
-      console.log('  [OK] Speak button found');
-    }
+    // Quick scare lines render at least the built-in defaults
+    const quickLines = await countElements(page, '#scQuickLines .sc-qline');
+    console.log(`  Say bar: ${quickLines} quick scare lines`);
+    expect(quickLines).toBeGreaterThan(0);
+
+    // Speaker dropdown moved into the Conversation drawer
+    await openAiTab(page);
+    await expect(page.locator('#chatSpeakerSelect')).toBeVisible();
   });
 
   test('1.8 — Audio Bridge panel', async ({ page }) => {
@@ -406,22 +460,19 @@ test.describe('Phase 1: Dashboard', () => {
     }
   });
 
-  test('1.11 — Poses panel', async ({ page }) => {
+  test('1.11 — Poses deck', async ({ page }) => {
     const errors = trackPage(page, 'dashboard-poses');
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
 
-    const posesPanel = page.locator('[data-panel-id="poses"]');
-    if (await posesPanel.count() > 0) {
-      const poseItems = await posesPanel.locator('.pose-item, [data-pose-id], .list-group-item').count();
-      console.log(`  Poses panel: ${poseItems} pose items`);
-    }
+    // v10: poses are a tab of the one-tap deck, not a panel of their own
+    const grid = await selectDeck(page, 'poses');
+    expect(grid, 'poses deck tab present').not.toBeNull();
+    console.log(`  Poses deck: ${await countElements(page, '#scDeckGrid .sc-tile-poses')} pose tiles`);
 
-    // New pose link
-    const newPoseLink = page.locator('a[href="/poses/editor"]');
-    if (await newPoseLink.count() > 0) {
-      console.log('  [OK] New Pose link found');
-    }
+    // Pose Editor link swaps in for the Studio link while the poses deck is up
+    await expect(page.locator('#scPoseEditorLink')).toBeVisible();
+    expect(await page.locator('#scPoseEditorLink').getAttribute('href')).toBe('/poses/editor');
   });
 
   test('1.12 — Navigation dropdowns', async ({ page }) => {

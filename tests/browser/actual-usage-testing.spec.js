@@ -94,6 +94,44 @@ async function safeSelect(page, selector, description = '') {
   return true;
 }
 
+// Helper: expand a Scare Console drawer (v10 drawers start collapsed, so their
+// controls fail Playwright actionability until the drawer is open)
+async function openAiTab(page) {
+  // The conversation moved out of the drawer and into the AI deck tab beside
+  // the stage; its elements are the same, only their home changed.
+  await page.locator('.sc-tab-ai').click();
+  await expect(page.locator('#chatLog')).toBeVisible();
+  await page.waitForTimeout(300);
+}
+
+async function openDrawer(page, target) {
+  const body = page.locator(target);
+  if (await body.count() === 0) return false;
+  const cls = (await body.getAttribute('class')) || '';
+  if (!/\bshow\b/.test(cls)) {
+    await page.locator(`[data-bs-target="${target}"]`).click();
+  }
+  await expect(body).toHaveClass(/show/);
+  await page.waitForTimeout(400);
+  return true;
+}
+
+// Helper: switch the one-tap deck to a given tab and wait for it to render
+async function selectDeck(page, deck) {
+  const tab = page.locator(`.sc-tab[data-deck="${deck}"]`);
+  await expect(tab).toBeVisible();
+  await tab.click();
+  await expect(tab).toHaveClass(/active/);
+  const grid = page.locator('#scDeckGrid');
+  await expect(grid).toBeVisible();
+  // Tiles or an honest empty state — a lingering spinner means the deck never loaded
+  await expect
+    .poll(async () => (await grid.locator('.sc-tile').count())
+      + (await grid.locator('.sc-deck-empty').count()), { timeout: 10000 })
+    .toBeGreaterThan(0);
+  return grid;
+}
+
 // Helper: take screenshot with descriptive name (viewport only — fullPage can timeout on large pages)
 async function snap(page, name) {
   await page.screenshot({ path: `tests/test-results/actual-usage-${name}.png`, fullPage: false, timeout: 15000 }).catch(() => {
@@ -155,14 +193,9 @@ test.describe('1. Dashboard — All Panels', () => {
     await snap(page, '1.3-console-panel');
   });
 
-  test('1.4 Scenes panel', async ({ page }) => {
-    // Expand scenes accordion panel first (new dashboard layout)
-    const scenesBtn = page.locator('[data-bs-target="#collapseScenes"]');
-    if (await scenesBtn.count() > 0) await scenesBtn.click();
-    await page.waitForTimeout(500);
-
-    // Scenes container should exist
-    await expect(page.locator('#scenesContainer')).toBeVisible();
+  test('1.4 Scenes deck', async ({ page }) => {
+    // v10: scenes are one-tap tiles on the deck, not an accordion panel
+    const grid = await selectDeck(page, 'scenes');
 
     // Loop all button
     await safeClick(page, '#btnLoopAll', 'Loop all scenes');
@@ -178,33 +211,32 @@ test.describe('1. Dashboard — All Panels', () => {
       console.log('  Queue status badge visible');
     }
 
-    // Check for individual scene play/delete buttons
-    const sceneItems = page.locator('#scenesContainer .scene-item, #scenesContainer [data-scene-id]');
-    const sceneCount = await sceneItems.count();
-    console.log(`  Found ${sceneCount} scenes in panel`);
+    // Individual scene tiles — one tap fires the scene
+    const sceneCount = await grid.locator('.sc-tile-scenes').count();
+    console.log(`  Found ${sceneCount} scenes on the deck`);
     if (sceneCount > 0) {
-      // Click play on first scene
-      const playBtn = sceneItems.first().locator('button, .btn').first();
-      await safeClick(page, playBtn, 'Play first scene');
+      // Play the first scene (the server runs it dryRun under MB_TEST_MODE)
+      await safeClick(page, '#scDeckGrid .sc-tile-scenes', 'Play first scene tile');
     }
 
-    await snap(page, '1.4-scenes-panel');
+    // Deck filter narrows the tiles
+    await safeFill(page, '#scDeckFilter', 'zzz-no-such-scene', 'Deck filter');
+
+    await snap(page, '1.4-scenes-deck');
   });
 
-  test('1.5 Poses panel', async ({ page }) => {
-    // Expand poses accordion panel first (new dashboard layout)
-    const posesBtn = page.locator('[data-bs-target="#collapsePoses"]');
-    if (await posesBtn.count() > 0) await posesBtn.click();
-    await page.waitForTimeout(500);
+  test('1.5 Poses deck', async ({ page }) => {
+    // v10: poses are one-tap tiles on the deck, not an accordion panel
+    const grid = await selectDeck(page, 'poses');
 
-    await expect(page.locator('#posesContainer')).toBeVisible();
+    // Individual pose tiles (not fired — a pose executes real servo motion)
+    const poseCount = await grid.locator('.sc-tile-poses').count();
+    console.log(`  Found ${poseCount} poses on the deck`);
 
-    // Check for individual pose execute buttons
-    const poseItems = page.locator('#posesContainer [data-pose-id], #posesContainer .pose-item');
-    const poseCount = await poseItems.count();
-    console.log(`  Found ${poseCount} poses in panel`);
+    // Pose Editor shortcut swaps in for the Studio link on the poses deck
+    await expect(page.locator('#scPoseEditorLink')).toBeVisible();
 
-    await snap(page, '1.5-poses-panel');
+    await snap(page, '1.5-poses-deck');
   });
 
   test('1.6 Manual Controls panel', async ({ page }) => {
@@ -307,6 +339,9 @@ test.describe('1. Dashboard — All Panels', () => {
   });
 
   test('1.8 Chat panel (unified input)', async ({ page }) => {
+    // v10: the chat log and audio routing controls live in the Conversation drawer
+    await openAiTab(page);
+
     // Chat log
     await expect(page.locator('#chatLog')).toBeVisible();
 

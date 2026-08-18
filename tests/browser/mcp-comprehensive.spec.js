@@ -329,13 +329,14 @@ test.describe('Phase 2: Animation Studio', () => {
 // Phase 1: Dashboard
 // ============================================================
 test.describe('Phase 1: Dashboard', () => {
-  test('dashboard loads with all 8 panels', async ({ page }) => {
+  test('dashboard loads with all Scare Console panels', async ({ page }) => {
     trackErrors(page, 'dashboard');
     await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
     await expect(page.locator('body')).toBeVisible();
 
-    // Check all 8 panels by data-panel-id
-    const panels = ['webcam', 'console', 'scenes', 'poses', 'manual-controls',
+    // v10 panel set. 'poses' is no longer a panel of its own — it is a tab of
+    // the one-tap deck (data-panel-id="scenes"), covered by the deck test below.
+    const panels = ['webcam', 'console', 'scenes', 'manual-controls',
                      'monster-features', 'chat', 'audio-bridge'];
     for (const panelId of panels) {
       const panel = page.locator(`[data-panel-id="${panelId}"]`);
@@ -432,15 +433,27 @@ test.describe('Phase 1: Dashboard', () => {
     }
   });
 
-  test('scenes panel has content', async ({ page }) => {
+  test('scenes deck has content', async ({ page }) => {
     trackErrors(page, 'dashboard-scenes');
     await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
 
-    const scenesContainer = page.locator('#scenesContainer');
-    if (await scenesContainer.count() > 0) {
-      const items = await scenesContainer.locator('.scene-item, .list-group-item, [data-scene-id]').count();
-      console.log(`  Scenes panel: ${items} scene items`);
-    }
+    // v10: scenes render as one-tap tiles on the deck. (#scenesContainer still
+    // exists but only as a hidden compat target for dashboard.js — counting it
+    // would report items no operator can see.)
+    const grid = page.locator('#scDeckGrid');
+    await expect(grid).toBeVisible();
+    await expect
+      .poll(async () => (await grid.locator('.sc-tile').count())
+        + (await grid.locator('.sc-deck-empty').count()), { timeout: 10000 })
+      .toBeGreaterThan(0);
+    console.log(`  Scenes deck: ${await grid.locator('.sc-tile-scenes').count()} scene tiles`);
+
+    // Poses moved to a deck tab — prove the operator can still reach them
+    const posesTab = page.locator('.sc-tab[data-deck="poses"]');
+    await expect(posesTab).toBeVisible();
+    await posesTab.click();
+    await expect(posesTab).toHaveClass(/active/);
+    console.log(`  Poses deck: ${await grid.locator('.sc-tile-poses').count()} pose tiles`);
 
     // Test loop all button
     const btnLoopAll = page.locator('#btnLoopAll');
