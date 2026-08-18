@@ -189,6 +189,7 @@
           <button class="sc-tab sc-tab-scenes active" data-deck="scenes" role="tab" title="One-tap scenes"><i class="bi bi-film"></i> Scenes</button>
           <button class="sc-tab sc-tab-poses" data-deck="poses" role="tab" title="One-tap poses"><i class="bi bi-person-arms-up"></i> Poses</button>
           <button class="sc-tab sc-tab-sounds" data-deck="sounds" role="tab" title="One-tap sounds"><i class="bi bi-music-note-beamed"></i> Sounds</button>
+          <button class="sc-tab sc-tab-ai" data-deck="ai" role="tab" title="The whole AI conversation — read it and join in"><i class="bi bi-chat-dots"></i> AI</button>
         </div>
         <span id="scenesQueueStatus" class="mb-badge mb-hidden"></span>
       </div>
@@ -202,44 +203,47 @@
       <div id="scDeckGrid" class="sc-deck-grid" role="tabpanel">
         <div class="mb-empty"><span class="mb-spinner"></span><p class="mb-empty-body">Loading deck…</p></div>
       </div>
+
+      <!-- AI deck: the whole conversation, in the tab strip beside the stage
+           rather than folded away in a drawer. These are the SAME elements the
+           chat has always used, moved here — dashboard.js binds them by id and
+           needs no knowledge of where they live. -->
+      <div id="scDeckAi" class="sc-deck-ai mb-hidden" role="tabpanel" data-panel-id="chat">
+        <div class="sc-ai-head">
+          <span class="sc-ai-who mb-serif">Conversation — <span id="chatCharacterName">Loading…</span></span>
+          <small id="chatAudioStatus" class="mb-text-info mb-text-xs"></small>
+        </div>
+        <div class="sc-ai-routing">
+          <select id="chatSpeakerSelect" class="mb-select mb-select-sm mb-chat-speaker-select"
+                  data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select output speaker device">
+            <option value="">Auto</option>
+          </select>
+          <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI speech through your browser speaker">
+            <input type="checkbox" id="chatBrowserSpeaker" title="Play AI speech through browser speaker">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="mb-text-sm"><i class="bi bi-broadcast"></i> Browser Spk</span>
+          </label>
+          <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Send your browser microphone to the AI agent">
+            <input type="checkbox" id="chatBrowserMic" title="Use browser microphone for AI">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="mb-text-sm"><i class="bi bi-mic"></i> Browser Mic</span>
+          </label>
+        </div>
+        <div id="chatLog" class="mb-chat-log sc-ai-log">
+          <div class="mb-text-muted mb-text-sm mb-text-center">Chat will appear here…</div>
+        </div>
+        <button type="button" class="sc-ai-join" id="scAiJoinBtn" title="Jump to the say bar and type into the conversation">
+          <i class="bi bi-pencil"></i> Say something as the monster
+        </button>
+      </div>
     </section>
   </div>
 
   <!-- ══════════ DRAWER — the long tail, one tap away ══════════ -->
   <div class="accordion sc-drawer" id="dashboardAccordion">
 
-    <!-- Conversation portal (chat log + audio routing) -->
-    <div class="accordion-item" data-panel-id="chat">
-      <h2 class="accordion-header">
-        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseChat" title="Expand or collapse the Conversation panel">
-          <i class="bi bi-chat-dots me-2"></i> Conversation — <span id="chatCharacterName" class="ms-1">Loading…</span>
-        </button>
-      </h2>
-      <div id="collapseChat" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
-        <div class="accordion-body py-2">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <select id="chatSpeakerSelect" class="mb-select mb-chat-speaker-select"
-                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select output speaker device">
-              <option value="">Auto</option>
-            </select>
-            <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI speech through your browser speaker">
-              <input type="checkbox" id="chatBrowserSpeaker" title="Play AI speech through browser speaker">
-              <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
-              <span class="mb-text-sm"><i class="bi bi-broadcast"></i> Browser Spk</span>
-            </label>
-            <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Send your browser microphone to the AI agent">
-              <input type="checkbox" id="chatBrowserMic" title="Use browser microphone for AI">
-              <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
-              <span class="mb-text-sm"><i class="bi bi-mic"></i> Browser Mic</span>
-            </label>
-            <small id="chatAudioStatus" class="mb-text-info mb-text-xs"></small>
-          </div>
-          <div id="chatLog" class="mb-chat-log">
-            <div class="mb-text-muted mb-text-sm mb-text-center">Chat will appear here…</div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- The Conversation portal moved out of this drawer and into the AI deck
+         tab beside the stage; its elements are unchanged, just relocated. -->
 
     <!-- Manual Controls (body map) -->
     <div class="accordion-item" data-panel-id="manual-controls">

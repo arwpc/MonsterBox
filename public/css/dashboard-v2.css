@@ -190,6 +190,22 @@
 
 @keyframes sc-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
+/* ── AI deck: the conversation, in the tab strip ─────────────────────── */
+.sc-deck-ai { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.sc-ai-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.sc-ai-who { font-size: 0.9rem; color: var(--mb-fg-primary); }
+.sc-ai-routing { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sc-ai-routing .mb-select { max-width: 190px; }
+/* The log is the point of the tab, so it takes the height the tiles had. */
+.sc-ai-log { flex: 1 1 auto; min-height: 260px; max-height: 46vh; overflow-y: auto; }
+.sc-ai-join {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 10px; border-radius: var(--mb-radius-md, 8px);
+  border: 1px dashed var(--mb-border-default); background: transparent;
+  color: var(--mb-fg-secondary); font-size: 0.8rem; cursor: pointer;
+}
+.sc-ai-join:hover { color: var(--mb-primary); border-color: var(--mb-primary); }
+
 /* ── Drawer + footer ─────────────────────────────────────────────────── */
 .sc-drawer { margin-top: 2px; }
 .sc-footlinks { text-align: right; padding: 2px 4px; }

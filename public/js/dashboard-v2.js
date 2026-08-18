@@ -99,9 +99,28 @@
     return item.scene_name || item.name || item.title || item.filename || ('#' + item.id);
   }
 
+  // The AI deck is a conversation, not a tile grid: it swaps in place of the
+  // grid and hides the tile tools, which have nothing to filter or loop.
+  function showDeckPane() {
+    var ai = activeDeck === 'ai';
+    var grid = $('scDeckGrid');
+    var pane = $('scDeckAi');
+    var tools = document.querySelector('.sc-deck-tools');
+    if (grid) grid.classList.toggle('mb-hidden', ai);
+    if (pane) pane.classList.toggle('mb-hidden', !ai);
+    if (tools) tools.classList.toggle('mb-hidden', ai);
+    // Opening the tab should land on the newest line, not wherever the log
+    // happened to be scrolled while it was hidden.
+    if (ai) {
+      var log = $('chatLog');
+      if (log) log.scrollTop = log.scrollHeight;
+    }
+  }
+
   function renderDeck() {
     var grid = $('scDeckGrid');
     if (!grid) return;
+    if (activeDeck === 'ai') return;  // the AI pane owns its own content
     var filter = ($('scDeckFilter') && $('scDeckFilter').value || '').toLowerCase();
     var items = deckData[activeDeck] || [];
     if (filter) {
@@ -259,6 +278,7 @@
         var pe = $('scPoseEditorLink'); var st = $('scStudioLink');
         if (pe) pe.classList.toggle('d-none', activeDeck !== 'poses');
         if (st) st.classList.toggle('d-none', activeDeck === 'poses');
+        showDeckPane();
         renderDeck();
       });
     }
@@ -321,6 +341,19 @@
     loadDeck();
     // Scenes/poses can change in the studio while this page is open.
     setInterval(loadDeck, 60000);
+
+    // The say bar is the composer for the AI tab too — it sits beside the deck
+    // and is always visible, so joining in means focusing it rather than
+    // maintaining a second input bound to the same socket.
+    var join = $('scAiJoinBtn');
+    if (join) {
+      join.addEventListener('click', function () {
+        var input = $('chatInput');
+        if (!input) return;
+        input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        input.focus();
+      });
+    }
 
     loadTelemetry();
     // Slow on purpose: this strip is ambient reassurance, not an instrument.
