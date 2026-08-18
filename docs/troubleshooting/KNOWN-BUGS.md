@@ -425,6 +425,47 @@ exist yet.
   chip as-is. If a servo is physically on ch15 it has been energized for days. Clears on
   the next hardware power-down; eyeball the channel while the case is open.
 
+### Opened from the 2026-08-18 v10 page sweep + adversarial review
+
+All found by agents reading code they were not the author of. None block v10.0.0;
+each is scoped small enough to fix in a single wave.
+
+- 🟡 **`runProbe()` on the unified calibration page is a simulation stub, but Save
+  persists whatever the operator typed.** `views/setup/unified-calibration.ejs` —
+  the Learn Movement panel's Run buttons only show an alert (its own comment says
+  "in production, this would actually move the part"), yet **Save Learned Motion**
+  writes the manually-entered deltas as if they were measured. On a hardware page
+  that is a misleading contract: the operator believes they measured travel they
+  never measured, and a bad open-loop span drives real actuator timing.
+  *Fix direction:* either wire Run to a real timed run through the supervised
+  calibration-override endpoints, or relabel the panel as a manual stopwatch
+  procedure so Run reads as a timer, not a mover.
+- 🟡 **Scene and pose names render unescaped into `innerHTML` on the classic
+  dashboard.** `public/js/dashboard.js` `renderScenesList` (~1631) and
+  `renderPosesList` (~1805) interpolate `scene.name` / `pose.name` /
+  `pose.category` directly. A name containing markup breaks the row or injects
+  HTML. The same file's `appendChatMessage` and all of `poses-editor.js` escape
+  correctly, so the helper already exists — this is an oversight, not a gap.
+- 🟡 **`esc()` does not escape quotes, in three places that interpolate into
+  attributes.** `public/js/character-menu.js`, `views/setup/characters.ejs`, and
+  `views/setup/character-images.ejs` each escape `& < >` but not `"` or `'`, then
+  interpolate into `alt="…"` and `onclick="__imgs.setActive('…')"`. A character
+  named with a double quote breaks out of the attribute; a filename with a single
+  quote produces a dead button. One regex per file closes all three.
+- ⚪ **Character-images actions fail silently.** `views/setup/character-images.ejs`
+  — the upload / set-active / delete fetch chains have no `.catch` and no failure
+  feedback, so a failed upload looks identical to a successful one. Its
+  **Save & Return** button also performs no save (the active image persists on the
+  check button; the handler only navigates) — the label overstates what happens.
+- ⚪ **`/first-run` shows a tofu box where PumpkinHead's avatar should be.** The
+  no-image fallback is a raw skull emoji and the RPi has no emoji font installed,
+  so it renders broken on any client without one. A Bootstrap icon fixes it.
+- ⚪ **`/setup/audio` never reaches `networkidle`** — 5 s Active Streams polling
+  plus the VU meters keep the network busy, so any browser spec waiting on
+  `networkidle` there is slow or flaky (related to the already-tracked VU-meter
+  flake). Waiting on `load` is the reliable choice. Consider also gating the 5 s
+  refresh on the panel's collapsed state to cut SD-era polling.
+
 ### Opened from the 2026-08-16 evening evidence sweep (v9.3.0 session)
 
 - 🟡 **"Mute Speaker" silences the show but not TTS — decide the intended semantics.**
