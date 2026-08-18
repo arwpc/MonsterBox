@@ -29,7 +29,7 @@
       "port": 3000,
       "characterId": 3,
       "agentId": "agent_0801k3f1dw7xe2g8r4jkbxk0gt2n",
-      "defaultSceneId": 100,
+      "defaultSceneId": 109,
       "sinkVolume": 1.3
     },
     {
@@ -40,7 +40,7 @@
       "port": 3000,
       "characterId": 4,
       "agentId": "agent_7901k3f1dza1ee68w1257zh3s9x6",
-      "defaultSceneId": 9,
+      "defaultSceneId": null,
       "sinkVolume": 0.55
     },
     {
@@ -62,7 +62,7 @@
       "characterId": 6,
       "agentId": "agent_1501m04ks76jf5svnxb70zyvz6s1",
       "defaultSceneId": 1,
-      "_ip": "DELIBERATELY NULL — his Pi has never been on the network, so any address here would be a guess. mDNS overlays the real IP the moment he boots (nodeDiscoveryService.overlay keeps config as the fallback and replaces ip when a node advertises _monsterbox._tcp). Until then null makes isValidHost() false, which excludes him from control fan-out and makes httpNode throw immediately instead of dialling a stranger. Measured: null fails in ~126ms (ENOTFOUND), a made-up LAN IP takes 3.1s (EHOSTUNREACH) and could hit somebody else's device, and renfield.local hangs the full 5s timeout waiting on a multicast reply. If mDNS is blocked on the night, pin him with POST /api/orchestration/nodes/manual instead of editing this file."
+      "_ip": "DELIBERATELY NULL \u2014 his Pi has never been on the network, so any address here would be a guess. mDNS overlays the real IP the moment he boots (nodeDiscoveryService.overlay keeps config as the fallback and replaces ip when a node advertises _monsterbox._tcp). Until then null makes isValidHost() false, which excludes him from control fan-out and makes httpNode throw immediately instead of dialling a stranger. Measured: null fails in ~126ms (ENOTFOUND), a made-up LAN IP takes 3.1s (EHOSTUNREACH) and could hit somebody else's device, and renfield.local hangs the full 5s timeout waiting on a multicast reply. If mDNS is blocked on the night, pin him with POST /api/orchestration/nodes/manual instead of editing this file."
     }
   ],
   "goblins": [

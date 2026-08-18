@@ -29,6 +29,10 @@ var __isBootswatch = __bootswatchThemes.indexOf(__themeVal) !== -1;
     <!-- MonsterBox Design System (Phase 2 foundation) -->
     <link href="/css/tokens.css" rel="stylesheet">
     <link href="/css/components.css" rel="stylesheet">
+    <!-- Tactile Obsidian (v10): the house skin. After components.css so it
+         re-dresses the shared components; before page CSS so pages can
+         still override. Rollback = remove this line. -->
+    <link href="/css/mb-obsidian.css" rel="stylesheet">
     <!-- Responsive layer: must load AFTER components.css so its max-width
          overrides win. Makes every shared component usable on a phone. -->
     <link href="/css/mb-responsive.css" rel="stylesheet">

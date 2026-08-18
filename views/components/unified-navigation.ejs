@@ -53,20 +53,10 @@ var __currentPageName = __pageNames[page] || '';
                 </li>
 
                 <%
-                // Show Mode was a complete, purpose-built show-night dashboard that
-                // no menu linked to — reachable only by typing /live. Meanwhile the
-                // configuration pages, which nobody touches during a show, were one
-                // click away. That is backwards for the one night this thing matters,
-                // so it gets a top-level entry rather than burial in a dropdown.
+                // Show Mode (/live) was absorbed into the dashboard in v9.5 —
+                // the Scare Console IS the show-night surface now, so a second
+                // simplified page would just split muscle memory.
                 %>
-                <li class="nav-item">
-                    <a class="nav-link <%= page === 'live' ? 'active' : '' %>" href="/live"
-                        data-bs-toggle="tooltip" data-bs-placement="bottom"
-                        title="Show Mode — big controls for running the animatronic in front of an audience">
-                        <i class="bi bi-lightning-charge-fill"></i> Show Mode
-                    </a>
-                </li>
-
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle <%= page?.startsWith('setup') || page?.startsWith('ai-settings') || page === 'audio-library' || page === 'video-library' || page === 'goblin-management' ? 'active' : '' %>"
                         href="#" role="button" data-bs-toggle="dropdown"

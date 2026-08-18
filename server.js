@@ -606,19 +606,27 @@ app.get('/', (req, res) => {
         return res.redirect('/first-run');
     }
 
-    res.renderWithLayout('conversation/index', {
+    res.renderWithLayout('conversation/showtime', {
         title: 'MonsterBox Dashboard',
         page: 'dashboard'
     });
 });
 
-// Live Mode page (lightweight dashboard for poses/actions during shows)
-app.get('/live', (req, res) => {
-    res.renderWithLayout('live/index', {
-        title: 'Live Dashboard - MonsterBox',
-        page: 'live',
-        includeNavigation: true
+// The pre-v9.5 dashboard layout, kept while the Scare Console beds in.
+app.get('/dashboard/classic', (req, res) => {
+    if (!res.locals.config || !res.locals.config.selectedCharacter) {
+        return res.redirect('/first-run');
+    }
+    res.renderWithLayout('conversation/index', {
+        title: 'MonsterBox Dashboard (classic)',
+        page: 'dashboard'
     });
+});
+
+// Show Mode (/live) is absorbed into the dashboard (v9.5): whole-tile tap
+// targets, busy states, and honest per-part failures now live on the deck.
+app.get('/live', (req, res) => {
+    res.redirect('/');
 });
 
 // Setup routes

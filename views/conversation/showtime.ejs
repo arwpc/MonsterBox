@@ -1,0 +1,389 @@
+<script>
+  try { if (navigator.webdriver) window.MB_TEST_MODE = true; } catch (e) { }
+</script>
+
+<link rel="stylesheet" href="/css/body-map.css">
+<link rel="stylesheet" href="/css/lurk-mode.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/dashboard-v2.css">
+
+<%
+// ════════════════════════════════════════════════════════════════════════
+// SCARE CONSOLE (dashboard v2, 2026-08) — the live control surface for ONE
+// selected animatronic. Orchestration remains the fleet-in-concert page.
+//
+// Design contract: every element ID from the classic dashboard is preserved
+// so /public/js/dashboard.js (lurk FSM, chat/ConvAI, audio bridge, webcam,
+// click-to-track) binds unchanged — the page reshapes AROUND the engine.
+// New v2 behaviors (deck tiles, tabs, proxies, quick lines) live in
+// /public/js/dashboard-v2.js and only touch sc-* elements.
+//
+// Layout: STAGE (video + overlays + say bar) | DECK (one-tap tiles).
+// Long-tail panels (chat log, body map, bridge, console) live in the drawer.
+// The classic page is preserved at /dashboard/classic.
+// ════════════════════════════════════════════════════════════════════════
+%>
+
+<div class="sc-app">
+
+  <!-- ══════════ COMMAND BAR — identity · lurk master · transport · PANIC ══════════ -->
+  <div id="lurkBar" class="sc-commandbar" role="toolbar" aria-label="Operator command bar">
+    <div class="sc-cb-character">
+      <a href="/setup/characters" class="mb-opbar-avatar" id="opbarAvatar"
+         data-bs-toggle="tooltip" data-bs-placement="bottom" title="Manage characters">
+        <i class="bi bi-person-bounding-box"></i>
+      </a>
+      <span class="sc-cb-name" id="charName">—</span>
+    </div>
+
+    <label class="mb-switch sc-cb-lurk" data-bs-toggle="tooltip" data-bs-placement="bottom"
+           title="Bring the character to life — enables AI, jaw, head, idle, motion sensor together.">
+      <input type="checkbox" id="lurkToggle" class="lurk-toggle-input" title="Enable all character superpowers at once">
+      <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+      <span class="mb-opbar-lurk-label"><i class="bi bi-lightning-charge-fill"></i> Lurk</span>
+    </label>
+
+    <div id="lurkStatusIndicators" class="sc-cb-badges">
+      <span class="mb-badge mb-badge-ai lurk-badge" id="lurkBadgeAI"
+            data-bs-toggle="tooltip" data-bs-placement="bottom" title="AI Conversation"><i class="bi bi-chat-dots"></i> AI</span>
+      <span class="mb-badge mb-badge-primary lurk-badge" id="lurkBadgeJaw"
+            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Jaw Animation"><i class="bi bi-soundwave"></i> Jaw</span>
+      <span class="mb-badge mb-badge-info lurk-badge" id="lurkBadgeHead"
+            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Head Tracking"><i class="bi bi-eye"></i> Head</span>
+      <span class="mb-badge mb-badge-warning lurk-badge" id="lurkBadgeIdle"
+            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Idle Movement"><i class="bi bi-person-walking"></i> Idle</span>
+      <span class="mb-badge mb-badge-danger lurk-badge" id="lurkBadgeMotion"
+            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Motion Sensor"><i class="bi bi-radar"></i> Motion</span>
+    </div>
+    <span id="lurkStatus" class="mb-text-muted mb-mono mb-text-sm sc-cb-status" aria-live="polite">Off</span>
+
+    <span class="sc-cb-spacer"></span>
+
+    <button id="opbarLoopAll" class="mb-btn mb-btn-secondary mb-btn-sm" type="button"
+            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Loop through every scene">
+      <i class="bi bi-arrow-repeat"></i> <span>Loop</span>
+    </button>
+    <button id="opbarStopLoop" class="mb-btn mb-btn-secondary mb-btn-sm mb-hidden" type="button"
+            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Stop the scene loop">
+      <i class="bi bi-stop-fill"></i> <span>Stop Loop</span>
+    </button>
+    <button id="mbPanicBtn" class="mb-btn mb-btn-panic sc-panic" type="button"
+            data-bs-toggle="tooltip" data-bs-placement="bottom"
+            title="Stop everything — scenes, audio, Lurk, idle, head, jaw, AI. Shortcut: Esc Esc">
+      <i class="bi bi-exclamation-octagon-fill"></i>
+      <span class="mb-opbar-panic-label">Stop Everything</span>
+    </button>
+  </div>
+
+  <!-- ══════════ MAIN — STAGE + DECK ══════════ -->
+  <div class="sc-main">
+
+    <!-- ── STAGE: the monster's eyes, ears, and voice ── -->
+    <section class="sc-stage" data-panel-id="webcam" aria-label="Live stage">
+      <div class="sc-stage-frame mb-webcam-frame">
+        <img id="webcamImg" src="" alt="Webcam Stream">
+        <span id="clickTrackCountdown" class="mb-badge mb-badge-info mb-webcam-overlay d-none"></span>
+
+        <!-- top-left: what the monster is doing -->
+        <div class="sc-stage-tl">
+          <span id="headTrackStatusBadge" class="mb-badge mb-badge-info d-none">Off</span>
+          <span id="webcamStatus" class="sc-stage-camstatus">Finding webcam…</span>
+          <small class="mb-text-muted mb-mono mb-text-xs d-none" id="webcamHint"></small>
+        </div>
+
+        <!-- top-right: the monster's ears — one-tap listen-in + live meter -->
+        <div class="sc-stage-tr">
+          <button id="scListenBtn" class="sc-earbtn" type="button"
+                  data-bs-toggle="tooltip" data-bs-placement="left"
+                  title="Hear what the monster hears — stream its microphone to this browser">
+            <i class="bi bi-headphones"></i><span id="scListenLabel">Listen</span>
+          </button>
+          <div class="sc-stage-vu" title="Character audio level">
+            <div class="mb-meter sc-stage-vu-meter"><div id="chatVUMeter" class="mb-meter-fill"></div></div>
+            <span id="chatVULabel" class="sc-stage-vu-label">0%</span>
+          </div>
+        </div>
+
+        <!-- bottom overlay: superpower chips — the real switches, restyled -->
+        <div class="sc-stage-powers" data-panel-id="monster-features" aria-label="Character superpowers">
+          <label class="mb-switch sc-chip" data-bs-toggle="tooltip" data-bs-placement="top" title="Sync jaw servo movement with audio playback">
+            <input type="checkbox" id="jawToggle" title="Toggle jaw animation">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="sc-chip-label"><i class="bi bi-soundwave"></i><em>Jaw</em></span>
+          </label>
+          <label class="mb-switch sc-chip" data-bs-toggle="tooltip" data-bs-placement="top" title="Track visitors via webcam and move head servo to follow — or click the video to look there">
+            <input type="checkbox" id="headTrackToggle" title="Toggle head tracking">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="sc-chip-label"><i class="bi bi-eye"></i><em>Head</em></span>
+          </label>
+          <label class="mb-switch sc-chip" data-bs-toggle="tooltip" data-bs-placement="top" title="Listen to speech and repeat through character speaker">
+            <input type="checkbox" id="parrotToggle" title="Toggle parrot mode">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="sc-chip-label"><i class="bi bi-megaphone"></i><em>Parrot</em></span>
+          </label>
+          <label class="mb-switch sc-chip" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable idle movement loop with character personality">
+            <input type="checkbox" id="idleToggle" title="Toggle idle movement">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="sc-chip-label"><i class="bi bi-person-walking"></i><em>Idle</em></span>
+          </label>
+          <label class="mb-switch sc-chip" data-bs-toggle="tooltip" data-bs-placement="top" title="Monitor PIR motion sensor — detects nearby visitors and keeps animatronic awake">
+            <input type="checkbox" id="motionSensorToggle" title="Toggle motion sensor">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="sc-chip-label"><i class="bi bi-radar"></i><em>Motion</em></span>
+          </label>
+          <label class="mb-switch sc-chip sc-chip-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Mute all audio output from character speaker">
+            <input type="checkbox" id="speakerMuteToggle" title="Mute character speaker">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="sc-chip-label"><i class="bi bi-volume-mute"></i><em>Mute</em></span>
+          </label>
+          <button id="stopAllAudioBtn" class="mb-btn mb-btn-secondary mb-btn-sm sc-chip-btn"
+                  data-bs-toggle="tooltip" data-bs-placement="top" title="Stop all audio playback and loops">
+            <i class="bi bi-stop-circle"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- machine vitals — technical mono, straight from the node -->
+      <div id="scTelemetry" class="sc-telemetry" aria-label="Node telemetry">
+        <span class="sc-tele-item" id="scTeleVer">v—</span>
+        <span class="sc-tele-item" id="scTeleRss">RSS —</span>
+        <span class="sc-tele-item" id="scTeleServo">SERVO —</span>
+        <span class="sc-tele-item" id="scTeleUp">UP —</span>
+        <span class="sc-tele-item" id="scTeleWs" title="Conversational AI websocket">WS ○</span>
+      </div>
+
+      <!-- ── SAY BAR: the monster's voice, one line from your thumbs ── -->
+      <div class="sc-saybar">
+        <button class="mb-btn mb-btn-secondary mb-btn-sm mb-chat-mode-toggle" type="button" id="chatModeToggle"
+                data-bs-toggle="tooltip" data-bs-placement="top"
+                title="Switch between asking the AI and making the character say exact text">
+          <i class="bi bi-chat-dots"></i> Ask AI
+        </button>
+        <input type="text" class="mb-input sc-sayinput" id="chatInput" placeholder="Speak as the monster…" autocomplete="off"
+               title="Type your message to the character">
+        <button class="mb-btn mb-btn-primary" type="button" id="chatSendBtn" aria-label="Send" title="Send message to the AI">
+          <i class="bi bi-send"></i>
+        </button>
+        <button id="scPttBtn" class="sc-pttbtn" type="button"
+                data-bs-toggle="tooltip" data-bs-placement="top"
+                title="Talk through the monster — your live voice out of its speaker">
+          <i class="bi bi-mic-fill"></i>
+        </button>
+        <label class="mb-switch sc-ai-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Connect to ElevenLabs conversational AI agent — the monster converses on its own">
+          <input type="checkbox" id="chatAiOnToggle" title="Connect to conversational AI agent">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span class="mb-text-sm">AI</span>
+        </label>
+      </div>
+      <div id="scDialogue" class="sc-dialogue" aria-live="polite" title="The monster's current line"></div>
+      <div class="sc-sayfoot">
+        <div id="scQuickLines" class="sc-quicklines" aria-label="Quick scare lines"></div>
+        <div id="sayStatus" class="mb-text-xs mb-text-muted"></div>
+      </div>
+    </section>
+
+    <!-- ── DECK: one-tap strikes — scenes, poses, sounds ── -->
+    <section class="sc-deck" data-panel-id="scenes" aria-label="One-tap deck">
+      <div class="sc-deck-head">
+        <div class="sc-deck-tabs" role="tablist">
+          <button class="sc-tab sc-tab-scenes active" data-deck="scenes" role="tab" title="One-tap scenes"><i class="bi bi-film"></i> Scenes</button>
+          <button class="sc-tab sc-tab-poses" data-deck="poses" role="tab" title="One-tap poses"><i class="bi bi-person-arms-up"></i> Poses</button>
+          <button class="sc-tab sc-tab-sounds" data-deck="sounds" role="tab" title="One-tap sounds"><i class="bi bi-music-note-beamed"></i> Sounds</button>
+        </div>
+        <span id="scenesQueueStatus" class="mb-badge mb-hidden"></span>
+      </div>
+      <div class="sc-deck-tools">
+        <input type="search" id="scDeckFilter" class="mb-input mb-input-sm sc-deck-filter" placeholder="Filter…" title="Filter tiles by name">
+        <button id="btnLoopAll" class="mb-btn mb-btn-sm mb-btn-outline-success" title="Loop all scenes"><i class="bi bi-arrow-repeat"></i></button>
+        <button id="btnStopLoop" class="mb-btn mb-btn-sm mb-btn-outline-danger mb-hidden" title="Stop loop"><i class="bi bi-stop-fill"></i></button>
+        <a href="/scenes" class="mb-btn mb-btn-sm mb-btn-secondary" id="scStudioLink" title="Animation Studio"><i class="bi bi-gear"></i></a>
+        <a href="/poses/editor" class="mb-btn mb-btn-sm mb-btn-secondary d-none" id="scPoseEditorLink" title="Pose Editor"><i class="bi bi-pencil"></i></a>
+      </div>
+      <div id="scDeckGrid" class="sc-deck-grid" role="tabpanel">
+        <div class="mb-empty"><span class="mb-spinner"></span><p class="mb-empty-body">Loading deck…</p></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ══════════ DRAWER — the long tail, one tap away ══════════ -->
+  <div class="accordion sc-drawer" id="dashboardAccordion">
+
+    <!-- Conversation portal (chat log + audio routing) -->
+    <div class="accordion-item" data-panel-id="chat">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseChat" title="Expand or collapse the Conversation panel">
+          <i class="bi bi-chat-dots me-2"></i> Conversation — <span id="chatCharacterName" class="ms-1">Loading…</span>
+        </button>
+      </h2>
+      <div id="collapseChat" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+        <div class="accordion-body py-2">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <select id="chatSpeakerSelect" class="mb-select mb-chat-speaker-select"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Select output speaker device">
+              <option value="">Auto</option>
+            </select>
+            <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Play AI speech through your browser speaker">
+              <input type="checkbox" id="chatBrowserSpeaker" title="Play AI speech through browser speaker">
+              <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+              <span class="mb-text-sm"><i class="bi bi-broadcast"></i> Browser Spk</span>
+            </label>
+            <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Send your browser microphone to the AI agent">
+              <input type="checkbox" id="chatBrowserMic" title="Use browser microphone for AI">
+              <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+              <span class="mb-text-sm"><i class="bi bi-mic"></i> Browser Mic</span>
+            </label>
+            <small id="chatAudioStatus" class="mb-text-info mb-text-xs"></small>
+          </div>
+          <div id="chatLog" class="mb-chat-log">
+            <div class="mb-text-muted mb-text-sm mb-text-center">Chat will appear here…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual Controls (body map) -->
+    <div class="accordion-item" data-panel-id="manual-controls">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseManual" title="Expand or collapse Manual Controls">
+          <i class="bi bi-joystick me-2"></i> Manual Controls
+          <span class="badge bg-secondary small ms-2" id="mcItemCount">0 items</span>
+        </button>
+      </h2>
+      <div id="collapseManual" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+        <div class="accordion-body py-2" id="manual-controls-card">
+          <div id="mcBodyMapWrap">
+            <div id="mcBodyMapCol">
+              <svg id="mcBodyMap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 340"></svg>
+              <div id="mcPeripherals"></div>
+            </div>
+            <div id="mcControlCol">
+              <div id="mcControlPanel"></div>
+              <div id="mcQuickActions"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Browser Audio Bridge (advanced routing; the stage Listen/PTT buttons proxy here) -->
+    <div class="accordion-item" data-panel-id="audio-bridge">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAudioBridge" title="Expand or collapse Browser Audio Bridge">
+          <i class="bi bi-headset me-2"></i> Audio Bridge <span class="mb-text-muted mb-text-xs ms-2">listen-in &amp; talk-through routing</span>
+        </button>
+      </h2>
+      <div id="collapseAudioBridge" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+        <div class="accordion-body py-2">
+          <div class="row">
+            <div class="col-md-6 mb-2 mb-md-0">
+              <div class="card bg-dark border-info">
+                <div class="card-header bg-dark text-info border-info py-1">
+                  <small class="fw-bold"><i class="bi bi-headphones"></i> Listen In</small>
+                </div>
+                <div class="card-body py-2">
+                  <div class="mb-1">
+                    <select id="bridge-listenin-source" class="mb-select mb-select-sm mb-bridge-control" title="Select audio input source">
+                      <option value="default">System Default Input</option>
+                    </select>
+                  </div>
+                  <div class="mb-1">
+                    <div class="d-flex align-items-center gap-1">
+                      <small class="mb-text-muted mb-bridge-label">Vol</small>
+                      <input type="range" id="bridge-listenin-volume" class="mb-range mb-bridge-volume" min="0" max="100" value="75" step="5" title="Adjust listen-in volume">
+                    </div>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <div class="mb-meter mb-bridge-meter flex-grow-1">
+                      <div id="bridge-listenin-vu" class="mb-meter-fill"></div>
+                    </div>
+                    <span id="bridge-listenin-vu-label" class="mb-badge mb-bridge-status mb-bridge-status-min">0%</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <button id="btn-bridge-listenin" class="mb-btn mb-btn-info mb-btn-sm mb-bridge-btn" type="button" title="Start listening to character audio">
+                      <i class="bi bi-headphones"></i> <span id="bridge-listenin-text">Start</span>
+                    </button>
+                    <span id="bridge-listenin-status" class="mb-badge mb-bridge-status">Off</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card bg-dark border-warning">
+                <div class="card-header bg-dark text-warning border-warning py-1">
+                  <small class="fw-bold"><i class="bi bi-mic-fill"></i> Talk Through</small>
+                </div>
+                <div class="card-body py-2">
+                  <div class="mb-1">
+                    <select id="bridge-talkthrough-sink" class="mb-select mb-select-sm mb-bridge-control" title="Select audio output device">
+                      <option value="default">System Default Output</option>
+                    </select>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <div class="mb-meter mb-bridge-meter flex-grow-1">
+                      <div id="bridge-talkthrough-vu" class="mb-meter-fill"></div>
+                    </div>
+                    <span id="bridge-talkthrough-vu-label" class="mb-badge mb-bridge-status mb-bridge-status-min">0%</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <button id="btn-bridge-talkthrough" class="mb-btn mb-btn-warning mb-btn-sm mb-bridge-btn" type="button" title="Start talking through character speaker">
+                      <i class="bi bi-mic-fill"></i> <span id="bridge-talkthrough-text">Start</span>
+                    </button>
+                    <span id="bridge-talkthrough-status" class="mb-badge mb-bridge-status">Off</span>
+                  </div>
+                  <div id="bridge-talkthrough-https-warn" class="mb-alert mb-alert-warning small mt-1 mb-0 py-1 d-none mb-bridge-warn">
+                    <i class="bi bi-shield-lock"></i> Requires HTTPS or localhost.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Console -->
+    <div class="accordion-item" data-panel-id="console">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsole" title="Expand or collapse the Live Console">
+          <i class="bi bi-terminal me-2"></i> Live Console
+        </button>
+      </h2>
+      <div id="collapseConsole" class="accordion-collapse collapse" data-bs-parent="#dashboardAccordion">
+        <div class="accordion-body py-2">
+          <div class="d-flex gap-1 align-items-center mb-2">
+            <select id="consoleLines" class="mb-select mb-select-sm mb-select-auto mb-console-lines" title="Number of console lines to show">
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+              <option value="200">200</option>
+              <option value="500">500</option>
+            </select>
+            <label class="mb-switch ms-1">
+              <input type="checkbox" id="consoleLive" checked title="Toggle live console updates">
+              <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+              <span class="mb-text-sm">Live</span>
+            </label>
+            <button class="mb-btn mb-btn-sm mb-btn-secondary" id="btnConsoleRefresh" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+          <pre id="consoleOutput" class="mb-console-output">Loading console...</pre>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /drawer -->
+
+  <div class="sc-footlinks">
+    <a href="/dashboard/classic" class="mb-text-muted mb-text-xs" title="The previous dashboard layout">Classic dashboard</a>
+  </div>
+
+  <!-- Hidden compatibility targets: dashboard.js renders its scene/pose lists
+       here; the v2 deck renders its own tiles from the same APIs. -->
+  <div class="sc-compat" aria-hidden="true">
+    <div id="scenesContainer"></div>
+    <div id="posesContainer"></div>
+  </div>
+
+</div><!-- /sc-app -->
+
+<script src="/js/manual-controls.js"></script>
+<script src="/js/dashboard.js" defer></script>
+<script src="/js/dashboard-v2.js" defer></script>

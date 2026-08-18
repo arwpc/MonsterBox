@@ -1,0 +1,105 @@
+/* ════════════════════════════════════════════════════════════════════════
+   TACTILE OBSIDIAN — the MonsterBox v9.5 house skin.
+   Loaded by master.ejs after components.css and before page stylesheets, so
+   every page inherits it and any page-specific rule can still override.
+
+   The three commitments:
+   1. EDITORIAL SERIF (--mb-font-serif) for the monster's voice — dialogue,
+      scripts, spoken lines, character prose. Apply via .mb-serif or the
+      per-page semantic hooks below.
+   2. TECHNICAL MONO (--mb-font-mono) for machine truth — telemetry, stats,
+      connection status, console output, ids, addresses.
+   3. AMBER = HAPPENING NOW — motion in flight, live connections, running
+      loops. Poison green remains "armed/enabled"; blood remains danger.
+      Never repurpose either for decoration.
+
+   Tactility: obsidian surfaces are machined, not flat — a 1px bone catch-
+   light on top edges, gradient depth, and a pressed inset on :active.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Ground: deepen the page behind everything ─────────────────────────── */
+body {
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(57, 255, 106, 0.03), transparent 55%),
+    linear-gradient(180deg, #0a0c0f 0%, var(--mb-bg-0) 30%);
+}
+
+/* ── Machined surfaces: panels, cards, accordions, modals ──────────────── */
+.mb-panel,
+.card,
+.accordion-item,
+.modal-content {
+  background: linear-gradient(180deg, #14171d 0%, #101217 100%);
+  box-shadow: inset 0 1px 0 rgba(232, 244, 234, 0.05), 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+.mb-panel-header,
+.card-header,
+.accordion-button {
+  box-shadow: inset 0 1px 0 rgba(232, 244, 234, 0.04);
+}
+
+/* ── Tactile controls: buttons press, inputs sit in wells ──────────────── */
+.mb-btn {
+  box-shadow: inset 0 1px 0 rgba(232, 244, 234, 0.07), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.mb-btn:active {
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+  transform: translateY(1px);
+}
+.mb-btn-panic:active { transform: scale(0.97); }
+.mb-input,
+.mb-select,
+textarea.mb-input,
+.form-control,
+.form-select {
+  background-color: #0b0d11;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+.mb-input:focus,
+.mb-select:focus {
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(57, 255, 106, 0.25);
+}
+.mb-range::-webkit-slider-thumb { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
+
+/* ── Semantic fonts ────────────────────────────────────────────────────── */
+.mb-serif { font-family: var(--mb-font-serif); }
+.mb-dialogue {
+  font-family: var(--mb-font-serif); font-style: italic;
+  color: var(--mb-accent-bone); letter-spacing: 0.01em;
+}
+/* machine truth is mono, everywhere it already claims to be technical */
+.mb-mono, .mb-console-output, code, kbd, samp,
+.mb-badge[id*="Status"], [class*="telemetry"], [class*="-vu-label"] {
+  font-family: var(--mb-font-mono);
+}
+
+/* ── Amber = happening now (shared vocabulary for every page) ──────────── */
+.mb-live,
+.mb-now,
+[data-live="1"],
+[data-playing] {
+  color: var(--mb-accent-amber) !important;
+  border-color: var(--mb-accent-amber) !important;
+}
+.mb-live-glow,
+[data-playing] {
+  box-shadow: 0 0 14px rgba(255, 179, 71, 0.3);
+}
+@keyframes mb-now-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+.mb-now-pulse { animation: mb-now-pulse 1.6s ease-in-out infinite; }
+.mb-dot-live {
+  background: var(--mb-accent-amber);
+  box-shadow: 0 0 8px rgba(255, 179, 71, 0.6);
+  animation: mb-now-pulse 1.6s ease-in-out infinite;
+}
+
+/* ── Recessive chrome: let content carry the light ─────────────────────── */
+.mb-page-header-title { text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); }
+hr, .mb-divider { border-color: var(--mb-border-subtle); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0b0d11; }
+::-webkit-scrollbar-thumb {
+  background: #242833; border-radius: 5px;
+  border: 2px solid #0b0d11;
+}
+::-webkit-scrollbar-thumb:hover { background: #2d3340; }

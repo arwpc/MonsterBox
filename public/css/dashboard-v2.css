@@ -1,0 +1,292 @@
+/* ════════════════════════════════════════════════════════════════════════
+   SCARE CONSOLE — dashboard v2 (2026-08)
+   Layout + stage overlays + one-tap deck. Consumes tokens.css exclusively.
+   Design rules: 44px+ touch targets, whole-tile tap zones (dark / one-handed /
+   arm's-length — inherited from Show Mode), busy-state on every hardware tap,
+   PANIC always reachable. Category color is reinforcement only — identity is
+   carried by tab context + per-tile icon (CVD-safe by construction).
+   ════════════════════════════════════════════════════════════════════════ */
+
+.sc-app { display: flex; flex-direction: column; gap: 10px; padding: 0 10px 90px; }
+
+/* ── Command bar ─────────────────────────────────────────────────────── */
+.sc-commandbar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 12px; margin: 0 -10px;
+  background: color-mix(in srgb, var(--mb-bg-1) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--mb-border-subtle);
+}
+.sc-cb-character { display: flex; align-items: center; gap: 8px; }
+.sc-cb-name { font-family: var(--mb-font-display, inherit); font-size: 1.05rem; color: var(--mb-fg-primary); letter-spacing: 0.04em; }
+.sc-cb-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+.sc-cb-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 28ch; }
+.sc-cb-spacer { flex: 1 1 0; }
+.sc-panic { flex-shrink: 0; }
+
+/* ── Main grid: stage | deck ─────────────────────────────────────────── */
+.sc-main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; align-items: start; }
+
+/* ── Stage ───────────────────────────────────────────────────────────── */
+.sc-stage { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.sc-stage-frame {
+  position: relative; width: 100%; aspect-ratio: 16 / 10; overflow: hidden;
+  border-radius: var(--mb-radius-lg, 12px);
+  border: 1px solid var(--mb-border-default);
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(57, 255, 106, 0.06), 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.sc-stage-frame img#webcamImg {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  cursor: crosshair; /* click-to-look */
+}
+.sc-stage-tl {
+  position: absolute; top: 8px; left: 8px; display: flex; align-items: center; gap: 6px; z-index: 3;
+}
+.sc-stage-camstatus {
+  font-size: 0.7rem; color: var(--mb-fg-secondary);
+  background: rgba(7, 8, 10, 0.6); border-radius: 999px; padding: 2px 10px;
+  backdrop-filter: blur(4px);
+}
+.sc-stage-tr {
+  position: absolute; top: 8px; right: 8px; display: flex; align-items: center; gap: 8px; z-index: 3;
+}
+.sc-earbtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 4px 14px; border-radius: 999px;
+  border: 1px solid var(--mb-border-default);
+  background: rgba(7, 8, 10, 0.65); color: var(--mb-fg-primary);
+  font-size: 0.8rem; cursor: pointer; backdrop-filter: blur(4px);
+  transition: border-color 120ms, color 120ms, box-shadow 120ms;
+}
+.sc-earbtn:hover { border-color: var(--mb-accent-cyan); color: var(--mb-accent-cyan); }
+.sc-earbtn.sc-on {
+  color: var(--mb-accent-cyan); border-color: var(--mb-accent-cyan);
+  box-shadow: 0 0 12px rgba(66, 226, 245, 0.35);
+}
+.sc-stage-vu { display: flex; align-items: center; gap: 5px; background: rgba(7, 8, 10, 0.6); border-radius: 999px; padding: 4px 10px; backdrop-filter: blur(4px); }
+.sc-stage-vu-meter { width: 64px; }
+.sc-stage-vu-label { font-size: 0.65rem; color: var(--mb-fg-muted); min-width: 3ch; text-align: right; }
+
+/* superpower chips: real .mb-switch elements, compacted onto the glass */
+.sc-stage-powers {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  padding: 8px 10px;
+  background: linear-gradient(to top, rgba(7, 8, 10, 0.85), rgba(7, 8, 10, 0));
+}
+.sc-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 3px 10px 3px 6px; border-radius: 999px; background: rgba(16, 18, 23, 0.7); border: 1px solid var(--mb-border-subtle); cursor: pointer; backdrop-filter: blur(3px); }
+.sc-chip .mb-switch-track { transform: scale(0.8); }
+.sc-chip-label { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--mb-fg-secondary); }
+.sc-chip:has(input:checked) { border-color: var(--mb-primary); }
+.sc-chip:has(input:checked) .sc-chip-label { color: var(--mb-primary); }
+.sc-chip-danger:has(input:checked) { border-color: var(--mb-danger); }
+.sc-chip-danger:has(input:checked) .sc-chip-label { color: var(--mb-danger); }
+.sc-chip-btn { border-radius: 999px; min-height: 34px; }
+
+/* ── Say bar ─────────────────────────────────────────────────────────── */
+.sc-saybar { display: flex; align-items: stretch; gap: 6px; }
+.sc-sayinput { flex: 1 1 auto; min-width: 0; min-height: 44px; font-size: 1rem; }
+.sc-saybar .mb-btn { min-height: 44px; }
+.sc-pttbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 48px; min-height: 44px; border-radius: var(--mb-radius-md, 8px);
+  border: 1px solid var(--mb-accent-amber-dim);
+  background: transparent; color: var(--mb-accent-amber); font-size: 1.1rem; cursor: pointer;
+  transition: background 120ms, box-shadow 120ms;
+}
+.sc-pttbtn:hover { background: rgba(255, 179, 71, 0.12); }
+.sc-pttbtn.sc-on {
+  background: var(--mb-accent-amber); color: var(--mb-fg-on-accent);
+  box-shadow: 0 0 16px rgba(255, 179, 71, 0.45);
+  animation: sc-pulse 1.4s ease-in-out infinite;
+}
+.sc-ai-switch { align-self: center; padding: 0 4px; }
+.sc-sayfoot { display: flex; align-items: center; gap: 10px; min-height: 26px; flex-wrap: wrap; }
+.sc-quicklines { display: flex; gap: 6px; flex-wrap: wrap; }
+.sc-qline {
+  border: 1px solid var(--mb-border-subtle); border-radius: 999px;
+  background: var(--mb-bg-2); color: var(--mb-fg-secondary);
+  font-size: 0.75rem; padding: 4px 12px; min-height: 30px; cursor: pointer;
+  transition: border-color 120ms, color 120ms;
+}
+.sc-qline:hover { border-color: var(--mb-accent-violet); color: var(--mb-fg-primary); }
+.sc-qline[data-busy] { opacity: 0.5; pointer-events: none; }
+
+/* ── Deck ────────────────────────────────────────────────────────────── */
+.sc-deck {
+  display: flex; flex-direction: column; gap: 8px; min-width: 0;
+  background: var(--mb-bg-1); border: 1px solid var(--mb-border-subtle);
+  border-radius: var(--mb-radius-lg, 12px); padding: 10px;
+  max-height: calc(100vh - 120px); position: sticky; top: 58px;
+}
+.sc-deck-head { display: flex; align-items: center; gap: 8px; }
+.sc-deck-tabs { display: flex; gap: 4px; flex: 1; }
+.sc-tab {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px; border-radius: var(--mb-radius-md, 8px);
+  border: 1px solid transparent; background: transparent;
+  color: var(--mb-fg-muted); font-size: 0.85rem; cursor: pointer;
+  transition: color 120ms, background 120ms, border-color 120ms;
+}
+.sc-tab:hover { color: var(--mb-fg-primary); background: var(--mb-bg-hover); }
+.sc-tab.active { background: var(--mb-bg-2); color: var(--mb-fg-primary); border-color: var(--mb-border-default); }
+.sc-tab-scenes.active { box-shadow: inset 0 -2px 0 var(--mb-accent-poison); }
+.sc-tab-poses.active  { box-shadow: inset 0 -2px 0 var(--mb-accent-amber); }
+.sc-tab-sounds.active { box-shadow: inset 0 -2px 0 var(--mb-accent-cyan); }
+.sc-deck-tools { display: flex; gap: 6px; align-items: center; }
+.sc-deck-filter { flex: 1; min-width: 0; min-height: 36px; }
+.sc-deck-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px; overflow-y: auto; padding-right: 2px; scrollbar-width: thin;
+}
+
+/* Tiles: the whole tile is the tap target (Show Mode heritage) */
+.sc-tile {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between;
+  min-height: 84px; padding: 10px; text-align: left;
+  border-radius: var(--mb-radius-md, 8px);
+  border: 1px solid var(--mb-border-subtle);
+  background: var(--mb-bg-2); color: var(--mb-fg-primary);
+  cursor: pointer; overflow: hidden;
+  transition: transform 90ms, border-color 120ms, box-shadow 120ms;
+}
+.sc-tile:hover { border-color: var(--mb-border-strong); transform: translateY(-1px); }
+.sc-tile:active { transform: scale(0.97); }
+.sc-tile i { font-size: 1rem; opacity: 0.85; }
+.sc-tile-name {
+  font-size: 0.78rem; line-height: 1.15; color: var(--mb-fg-primary);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  word-break: break-word;
+}
+.sc-tile-scenes { border-left: 3px solid var(--mb-accent-poison-dim); }
+.sc-tile-scenes i { color: var(--mb-accent-poison); }
+.sc-tile-poses { border-left: 3px solid var(--mb-accent-amber-dim); }
+.sc-tile-poses i { color: var(--mb-accent-amber); }
+.sc-tile-sounds { border-left: 3px solid var(--mb-accent-cyan-dim); }
+.sc-tile-sounds i { color: var(--mb-accent-cyan); }
+
+/* busy: a hardware tap in flight cannot be double-fired */
+.sc-tile[data-busy] { pointer-events: none; }
+.sc-tile[data-busy]::after {
+  content: ""; position: absolute; inset: 0;
+  background: rgba(7, 8, 10, 0.45);
+  border: 2px solid var(--mb-accent-bone);
+  border-radius: inherit;
+  animation: sc-pulse 0.9s ease-in-out infinite;
+}
+/* playing: glow in the category hue */
+.sc-tile[data-playing] { border-color: var(--mb-accent-poison); box-shadow: 0 0 14px rgba(57, 255, 106, 0.25); }
+.sc-tile[data-playing] .sc-tile-name { color: var(--mb-accent-poison); }
+
+.sc-deck-empty { grid-column: 1 / -1; color: var(--mb-fg-muted); font-size: 0.8rem; text-align: center; padding: 24px 8px; }
+
+@keyframes sc-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+/* ── Drawer + footer ─────────────────────────────────────────────────── */
+.sc-drawer { margin-top: 2px; }
+.sc-footlinks { text-align: right; padding: 2px 4px; }
+.sc-compat { display: none !important; }
+
+/* ── Phone: stage sticky, deck scrolls under, thumbs own the bottom ──── */
+@media (max-width: 991.98px) {
+  .sc-app { padding-bottom: 110px; }
+  .sc-main { grid-template-columns: 1fr; gap: 8px; }
+  .sc-stage { position: sticky; top: 46px; z-index: 30; background: var(--mb-bg-0); padding-bottom: 4px; }
+  .sc-stage-frame { aspect-ratio: 16 / 9; border-radius: 10px; }
+  .sc-deck { max-height: none; position: static; }
+  .sc-deck-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); max-height: none; overflow: visible; }
+
+  .sc-commandbar { gap: 6px; padding: 6px 10px; }
+  .sc-cb-status { display: none; }             /* lurk badges carry the state */
+  .sc-commandbar .mb-opbar-panic-label { display: none; }  /* octagon icon only… */
+
+  /* …because PANIC floats in the right thumb zone */
+  .sc-panic {
+    position: fixed; right: 12px; bottom: 12px; z-index: 60;
+    min-width: 56px; min-height: 56px; border-radius: 50%;
+    box-shadow: 0 4px 20px rgba(200, 35, 44, 0.5);
+  }
+  /* PTT floats in the left thumb zone */
+  .sc-pttbtn {
+    position: fixed; left: 12px; bottom: 12px; z-index: 60;
+    min-width: 56px; min-height: 56px; border-radius: 50%;
+    background: var(--mb-bg-2); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  .sc-quicklines { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .sc-qline { flex-shrink: 0; }
+  .sc-stage-powers { padding: 6px 8px; }
+  .sc-chip-label em { display: none; }  /* icons only on the glass; tooltips name them */
+  .sc-chip-label { font-size: 0.85rem; }
+}
+
+/* very small phones: trim the chrome further */
+@media (max-width: 400px) {
+  .sc-cb-badges { display: none; }
+  .sc-stage-vu { display: none; }
+}
+
+.sc-chip-label em { font-style: normal; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   TACTILE OBSIDIAN layer (2026-08) — editorial serif for the monster's
+   dialogue, technical mono for machine vitals, amber strictly for what is
+   HAPPENING NOW (motion in flight, live connections). Poison stays "armed".
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* dialogue is editorial — the script the monster is performing */
+.sc-dialogue {
+  font-family: var(--mb-font-serif); font-style: italic;
+  font-size: 1.02rem; line-height: 1.35; color: var(--mb-accent-bone);
+  min-height: 1.4em; padding: 0 2px; letter-spacing: 0.01em;
+}
+.sc-dialogue::before { content: "“"; color: var(--mb-fg-muted); }
+.sc-dialogue::after  { content: "”"; color: var(--mb-fg-muted); }
+.sc-dialogue:empty::before, .sc-dialogue:empty::after { content: ""; }
+.sc-sayinput { font-family: var(--mb-font-serif); font-style: italic; }
+.sc-sayinput::placeholder { font-style: italic; color: var(--mb-fg-muted); }
+.sc-qline { font-family: var(--mb-font-serif); font-style: italic; }
+.sc-app .mb-chat-log { font-family: var(--mb-font-serif); font-size: 0.95rem; }
+
+/* machine vitals are technical mono */
+.sc-telemetry {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  font-family: var(--mb-font-mono); font-size: 0.95rem; letter-spacing: 0.03em;
+  color: var(--mb-fg-muted); padding: 2px 6px;
+  border-bottom: 1px solid var(--mb-border-subtle);
+}
+.sc-tele-item { white-space: nowrap; }
+.sc-tele-hot { color: var(--mb-accent-amber); text-shadow: 0 0 8px rgba(255, 179, 71, 0.35); }
+.sc-tele-live { color: var(--mb-accent-amber); }
+
+/* obsidian tactility — pressed-glass tiles, machined bezel on the stage */
+.sc-stage-frame {
+  border: 1px solid rgba(232, 244, 234, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 244, 234, 0.06),
+    inset 0 0 24px rgba(0, 0, 0, 0.55),
+    0 14px 44px rgba(0, 0, 0, 0.6);
+}
+.sc-tile {
+  background: linear-gradient(180deg, #1d212a 0%, #14171d 100%);
+  box-shadow: inset 0 1px 0 rgba(232, 244, 234, 0.05), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.sc-tile:active { box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6); }
+.sc-deck { background: linear-gradient(180deg, #101217 0%, #0b0d11 100%); }
+
+/* amber = happening NOW: motion in flight, live connections, running loops */
+.sc-tile[data-busy]::after { border-color: var(--mb-accent-amber); }
+.sc-tile[data-playing] {
+  border-color: var(--mb-accent-amber);
+  box-shadow: inset 0 1px 0 rgba(232, 244, 234, 0.05), 0 0 16px rgba(255, 179, 71, 0.3);
+}
+.sc-tile[data-playing] .sc-tile-name { color: var(--mb-accent-amber); }
+.sc-earbtn.sc-on {
+  color: var(--mb-accent-amber); border-color: var(--mb-accent-amber);
+  box-shadow: 0 0 12px rgba(255, 179, 71, 0.4);
+}
+#btnStopLoop:not(.mb-hidden), #opbarStopLoop:not(.mb-hidden) {
+  border-color: var(--mb-accent-amber); color: var(--mb-accent-amber);
+  animation: sc-pulse 1.6s ease-in-out infinite;
+}

@@ -220,6 +220,7 @@
   --mb-font-mono: 'VT323', 'Courier New', ui-monospace, monospace;
   --mb-font-retro: 'Press Start 2P', 'VT323', monospace;
   --mb-font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mb-font-serif: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif; /* editorial voice — dialogue, scripts */
 
   /* Type scale (rem) */
   --mb-text-xs:   0.75rem;   /* 12px */
