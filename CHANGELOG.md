@@ -2,6 +2,103 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [10.0.0] - 2026-08-18 — The Scare Console, and one skin over the whole platform
+
+A major release because the page you open every day is a different, better thing.
+The work spans three sessions; two of them died mid-flight to API errors and were
+resurrected from the working tree, which is why the history reads in salvage waves.
+
+### The dashboard becomes a console you can actually run a show from
+
+`/` now serves the **Scare Console** (`views/conversation/showtime.ejs`): a stage
+with the live camera, overlay superpower chips, Listen and VU; a **one-tap deck**
+beside it; a **say bar** for the monster's voice; and a drawer for the long tail.
+The old accordion dashboard — where finding a control meant hunting through
+collapsed panels — survives at `/dashboard/classic` as the fallback. `/live` was
+absorbed and redirects to `/`. Every legacy element id was deliberately preserved,
+so `public/js/dashboard.js` binds to the new page without a single change.
+
+- **The AI conversation is now the fourth deck tab**, beside Scenes, Poses and
+  Sounds. Reading what the character said, and saying something back, used to be
+  folded into a collapsed drawer at the bottom of the page — the one surface where
+  the character talks back was the hardest thing on the console to find. The chat
+  log, speaker routing and browser-mic toggles were *moved*, not copied; the say
+  bar stays the composer, because one input bound to one socket cannot drift.
+- **The stage is capped so the say bar clears the fixed control bar.** On a
+  1280×800 laptop the monster's voice sat *behind* the chrome at first paint. The
+  reclaimed width goes to the deck, which is the surface an operator drives.
+- **The telemetry strip was decoration and is now instrumentation.** Five spans
+  under the stage — version, RSS, servo latency, uptime, agent socket — had no
+  code populating them and would have shown em dashes forever. They now read from
+  endpoints that already existed. An unread value stays an em dash and an unmoved
+  servo says `idle`, because a confident wrong number is worse than an honest gap.
+- **All six superpower toggles hold one row** instead of covering a quarter of the
+  camera view: desktop names them in words, the phone keeps icons and swipes.
+
+### Tactile Obsidian — one house skin, all 27 pages
+
+Serif is the monster's voice (dialogue, spoken lines, character prose). Mono is
+machine truth (telemetry, ids, pins, channels, addresses). **Amber means
+happening-now and nothing else**; poison green means armed; blood means danger.
+Wired through a single `<link>` in `master.ejs`, which is also the rollback story.
+
+The sweep corrected two places where the vocabulary contradicted itself: the jaw
+page's live dot used **blood red** while TTS was merely playing, and the audio
+page's Listen In / Talk Through badges read **poison green "armed"** while audio
+was genuinely streaming. Danger is not liveness; armed is not happening-now.
+`/setup/style-guide` now teaches the three commitments with live examples, so the
+next contributor doesn't have to reverse-engineer them. 24 tooltips were added,
+all on JS-generated controls the earlier tooltip waves could not see.
+
+### Motion arbitration: two ways a servo could be stolen or stranded
+
+- **A pose could free another pose's servo mid-transition.** Every random-pose
+  execution claimed under one shared owner string, so when two overlapped — a
+  manual trigger racing a TTS-driven pose, or poses closer together than their own
+  transition time — the first to finish released the *second's* live claim. The
+  servo fell back to the idle loop, which commanded a conflicting angle: exactly
+  the snap-back jerk the arbitration was written to prevent. Each execution now
+  mints its own owner, so a stale release is refused.
+- **Stopping the camera froze the pan servo.** Head tracking claimed the pan servo
+  at enable but released it only on the disable paths. Stopping motion tracking
+  killed the tracker while leaving the claim held with no frames arriving to drive
+  or release it — the servo was locked out of all idle and ambient motion, logging
+  `DENIED` every cycle, until head tracking was toggled off or the service
+  restarted.
+
+### Correctness
+
+- **Two calibration pages served live 500s.** `/setup/calibration/linear_actuator/:id`
+  and `/setup/calibration/standard_servo/:id` rendered EJS views that do not exist
+  on disk. Both now redirect to the unified calibration page, carrying `partId` and
+  any incoming `characterId`.
+- **Tuned voice configs stopped growing phantom fields.** The AI-settings save
+  force-injected `style` and `use_speaker_boost` even under `eleven_v3`, where the
+  UI disables both — so any save merged default-valued keys into a hand-tuned file.
+  Playback was *proven* innocent: a live generate left `tts-config.json`
+  byte-identical, mtime unmoved.
+- **Both hardware calibration suites were rewritten** against the real unified
+  `/api/calibration` contract they had drifted from. Every motion endpoint is
+  exercised only through its refusal path: a bare `npm run test:hardware` moves
+  nothing (46 passing, 3 pending).
+- **Browser specs follow the console.** Specs were clicking drawer targets that no
+  longer exist and asserting visibility on containers v10 moved into the hidden
+  compat div — tests that could no longer fail. Coverage now points at the real
+  operator surface.
+
+### Known gaps recorded rather than papered over
+
+The Learn Movement panel on the unified calibration page simulates its Run button
+while Save persists the typed values as if measured; two dashboard list renders
+interpolate names into `innerHTML` unescaped; `esc()` misses quotes in three
+attribute interpolations; the PIR watcher can respawn without ever falling back,
+and a wedged watcher is indistinguishable from a quiet room. All are in
+`docs/troubleshooting/KNOWN-BUGS.md` with fix directions.
+
+Also written down for the first time: **the browser suite cannot run while the
+service is up** (the PID lock has no test-mode exemption) and **most specs need
+`BASE_URL` pointed at port 3200**, or every navigation fails.
+
 ## [9.3.0 post-release] - 2026-08-17 — fleet health pass
 
 ### Every character's voice, measured against its persona

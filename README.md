@@ -15,6 +15,39 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
+## What's New — v10.0.0 (August 2026) — The Scare Console, and one skin over the whole platform
+
+The dashboard at `/` is now the **Scare Console**: a stage with the live camera,
+overlay superpower chips and Listen/VU; a **one-tap deck** beside it with four tabs
+(Scenes · Poses · Sounds · **AI**); a **say bar** for the monster's voice; and a
+drawer for the long tail. The classic accordion dashboard survives at
+`/dashboard/classic`; `/live` was absorbed and redirects to `/`.
+
+- **The AI conversation is a deck tab, not a drawer.** The full chat log, speaker
+  routing and browser-mic toggles sit beside the stage; the say bar is the composer.
+- **Tactile Obsidian** dresses all 27 pages: serif is the monster's voice, mono is
+  machine truth, **amber means happening-now and nothing else**, poison green means
+  armed, blood means danger. Taught in-app at `/setup/style-guide`; see
+  [docs/development/TACTILE-OBSIDIAN.md](docs/development/TACTILE-OBSIDIAN.md).
+- **The telemetry strip is real** — version, RSS, servo latency, uptime and agent
+  socket read from live endpoints. An unread value stays an em dash; an unmoved
+  servo says `idle` rather than claiming 0 ms.
+- **Two motion-arbitration defects fixed**: overlapping poses could free each
+  other's servo claims mid-transition, and stopping motion tracking stranded the
+  head-tracking pan claim so the servo was locked out of idle motion until restart.
+- **Two calibration pages that served live 500s** now redirect to unified
+  calibration; **tuned voice configs stopped growing phantom fields** on save; both
+  hardware calibration suites were rewritten against the real API and move nothing.
+
+Full detail in `CHANGELOG.md`. Open gaps — including a calibration Run button that
+simulates while Save persists — are tracked in
+[docs/troubleshooting/KNOWN-BUGS.md](docs/troubleshooting/KNOWN-BUGS.md).
+
+> **Running the browser suite:** stop the service first (the PID lock has no
+> test-mode exemption) and set `BASE_URL`:
+> `sudo systemctl stop monsterbox.service && BASE_URL=http://localhost:3200 npx playwright test`,
+> then restart the service.
+
 ## What's New — v9.3.0 (August 2026) — Mina's servos were never broken, and calibration finally lets you calibrate
 
 An evening session on the Mina node plus a fleet-wide audit. Highlights (full detail in
@@ -202,6 +235,7 @@ full prioritized list: [docs/development/V9-PERSONA-REVIEWS.md](docs/development
   semantic tokens in `:root` and, loading last, silently overrode all three themes app-wide.
 - **`/live` (Show Mode) is reachable**, and the character speaks with its whole jaw:
   perceptual amplitude mapping took jaw travel from **21.8% to 100%** of its calibrated range.
+  *(v10: `/live` was absorbed into the Scare Console at `/` and now redirects there.)*
 
 > ⚠️ **Orlok is NOT fully hardware-verified.** Part 4 (Elbow) is **confirmed physically dead**
 > by the operator and is software-quarantined; part 2 (Left Arm) does not move; part 3 (Bow)

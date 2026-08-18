@@ -14,12 +14,12 @@ wave reverts alone. The v10.0.0 tag is hostage to the full browser suite.
 |---|-------|--------|----------------|
 | 0 | Post-reboot verification, log-review, boot hardening, test sweep, reboot trial, log harvest | ✅ DONE | committed `dd816cbb`, `b30bde09`; 🎃 READY ×3; earcheck 3/3 |
 | 1 | **Superpowers fix-fleet** (A ✅ B ✅ C ✅ committed `8430a691`; D salvaged + under adversarial review; E rewritten, being finished/run) | 🔶 in flight (session 3) | each agent's report + integration review |
-| 2 | **Integration**: review A–E diffs, dead calibration-route redirects, `node --check` all, `validate:schemas`, `audit:resolver`, `test:smoke`, commit wave | ⏸ gated on 1 | gate commands green, wave committed |
-| 3 | **Service restart** (loads fixes + Scare Console route + Obsidian skin) | ⏸ gated on 2 | health 200, zero startup errors in journal |
-| 4 | **Scare Console visual pass**: desktop + phone screenshots, iterate until right | ⏸ gated on 3 | screenshots reviewed by me, defects fixed |
-| 5 | **v10 page sweep**: 7/27 committed (orchestration, studio, calibration, models, ai-settings ×3); 4 uncommitted under review (audio-library, goblin-management, schedule, video-library); 16 in flight (session 3); after-screenshots pending restart | 🔶 7 done / 4 review / 16 in flight | 27-page matrix all green |
-| 6 | **Test pass**: update dashboard/browser specs for new structure, then FULL browser suite + system + unit | ⏸ gated on 5 | suite green minus documented pre-existing flakes (named) |
-| 7 | **Docs regeneration**: README, CHANGELOG, Tactile Obsidian design doc, dashboard docs, KNOWN-BUGS reconciliation, memory files | ⏸ gated on 6 | docs reference no removed page; version reads dynamic |
+| 2 | **Integration**: A–E landed, dead calibration routes redirect, schemas/resolver/independence/smoke green | ✅ DONE | `a071eac1`, `6e8a0b05`; smoke 459 passing; audits clean |
+| 3 | **Service restart** (loads fixes + Scare Console route + Obsidian skin) | ✅ DONE | health 200 at 9.3.0, zero startup errors |
+| 4 | **Scare Console visual pass** + operator-requested AI deck tab | ✅ DONE | `8b964197`, `21d1c3c5`; 3 defects found and fixed; 0 console errors both viewports |
+| 5 | **v10 page sweep** — all 27 pages | ✅ DONE | `de9d4492`, `b3c3fdc2`, `acf60863`; 2 amber-vocabulary violations fixed; style guide teaches the system |
+| 6 | **Test pass**: specs re-pointed at the console; FULL browser suite (service stopped — the PID lock has no test-mode exemption, and BASE_URL must name port 3200) | 🔶 running | `c6d56776`; panel-sortable 9/9, conversation ×2 27/27 |
+| 7 | **Docs regeneration**: README, CHANGELOG, TACTILE-OBSIDIAN.md, KNOWN-BUGS reconciliation | ✅ DONE | no doc names a removed page; version stays dynamic |
 | 8 | **v10.0.0**: bump `package.json`, commit, tag, push (gate runs), `deploy:all` to Orlok + Dragomir, post-deploy earcheck | ⏸ gated on 7 | tag on GitHub; fleet-health ×3 at 10.0.0; earcheck 3/3 |
 
 ## Page-sweep matrix (phase 5) — 27 pages
