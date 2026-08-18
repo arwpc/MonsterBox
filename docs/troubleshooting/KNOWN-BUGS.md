@@ -185,7 +185,9 @@ verification block at the top). No new physical work was done on parts 2/3/4/5.
   the elbow component of any pose to do nothing until the rail is fixed.
 
 ### Mina — char 2 · `192.168.8.140`
-🟢 **Running 9.2.0** (deployed 2026-08-16). Speaker and voice verified by ear: **AUDIBLE**,
+🟢 **Running 9.3.0** (verified post-reboot 2026-08-18: zero failed units, boot-check READY,
+canonical sink volume 0.90 auto-applied with its log line, `wpctl` reads 0.90 unmuted,
+camera serving JPEG on :8090). Speaker and voice verified by ear 2026-08-16: **AUDIBLE**,
 12.4 dB rise, 80% word recall, **canonical voice confirmed** against the committed agent
 snapshot; 6.5 dB / 100% recall in the Dusk Ceremony. Her voice was never wrong — Mina was one
 of the two characters the broken map happened to get right.
@@ -193,7 +195,19 @@ of the two characters the broken map happened to get right.
 - 🟡 **Her speaker was too quiet to be intelligible at the default sink volume.** At **0.65**
   she scored `GARBLED` (10.2 dB rise, 47% recall); **raised to 0.90** she is `AUDIBLE`. Check
   this after any audio-stack change or reboot — `wpctl` volume is node-local and is not
-  deployed. See the fleet speaker-balance item under Cross-Cutting.
+  deployed. See the fleet speaker-balance item under Cross-Cutting. *2026-08-18: the
+  v9.3.0 canonical auto-apply did its job on reboot — 0.90 applied and logged.*
+- 🟡 **One crash on the first service start after the 2026-08-18 reboot — stale-PID
+  race, auto-recovered.** First start (23:09:47) exited 1 with `MonsterBox already
+  running (PID 933). Exiting.`; the systemd restart 4 s later judged the very same PID
+  "not a running MonsterBox process", removed the stale file and started clean. Two
+  liveness checks disagreed about PID 933 four seconds apart — a pre-reboot PID file
+  plus boot-time PID reuse, and the "already running" path trusts a bare alive-check
+  where the cleanup path verifies process identity. Orlok and Dragomir hit the same
+  stale file on the same reboot and cleaned it without crashing — only the reuse race
+  bites. Cost today: ~12 s of boot delay under `Restart=on-failure`. *Fix direction:*
+  give the "already running" check the same is-it-actually-MonsterBox test the cleanup
+  path already has. **Proof fixed:** two consecutive reboots with one clean start each.
 
 🟡 **The "dead" Neck and Eye were software all along — awaiting one visual confirmation**
 (2026-08-16 evening session, v9.2.1). Three compounding software bugs made the servos look
@@ -241,6 +255,16 @@ The jaw-animation "servo must be calibrated" false block was fixed in v8.1.6.
   window** — TTS would drive the servo into its mechanical stops on every utterance (the
   exact over-drive v9.0.0 fixed on Orlok). Calibrate the jaw, then re-enable
   `jawAnimation.enabled` in `data/character-4/super-powers.json`.
+- 🟢 **Stale Orlok voice tuning on this node — a missed deploy window, NOT a config
+  writer** (log-review 2026-08-18). His copy of
+  `data/character-3/ai-config/tts-config.json` reads 0.3/0.5 against the committed
+  0.25/0.6. Mtime forensics: that file is stamped 2026-08-16 18:38 while every other
+  character's tts-config on his disk carries the 2026-08-17 20:19–20:20 rsync stamp —
+  Orlok's film-profile tuning was committed *after* that deploy and never re-pushed.
+  No process wrote the file, so this is not the voice-clobber class. **Fix:**
+  `git checkout -- data/character-3/ai-config/tts-config.json` on his node, or the
+  next `npm run deploy:all` heals it. Matters only if he ever speaks as character 3,
+  but the fleet should carry canonical data.
 
 **v9.2.0 status:** running 9.2.0. Speaker and **voice** verified by ear on 2026-08-16 — the
 ear-check first caught him speaking in his **retired** voice `SOYHLrjzK2X1ezoPC6cr` (39.3 dB
@@ -304,6 +328,16 @@ exist yet.
 
 ### Opened from the 2026-08-17 post-reboot health pass
 
+- 🟡 **`monsterbox-boot-check` is only installed on Mina — Orlok and Sir Dragomir
+  never report "READY FOR HALLOWEEN"** (found 2026-08-18). On Dragomir systemd says
+  the unit could not be found; on both nodes `/var/log/monsterbox-boot.log` is 0 bytes
+  (untouched since Aug 16 22:37) while Mina's shows the full readiness run. The unit
+  file exists in the repo (`scripts/monsterbox-boot-check.service`) but was never
+  installed/enabled on the other nodes — the 2026-08-17 boot-check fixes were only
+  proven where the unit exists. *Fix:* install + enable the unit on Orlok and
+  Dragomir (and fold into `install.sh` per the OS-baseline item above). **Proof
+  fixed:** next reboot leaves a READY line on all three nodes.
+
 - 🔴 **System tests on a live node send REAL fleet writes through the production
   process — confirmed live, not theoretical.** `test:system` sets `MB_TEST_MODE=1` for
   *mocha*, but the target is the production server's `:3100` listener, whose
@@ -339,7 +373,9 @@ exist yet.
   Mina 0.9, Orlok 1.3, Sir Dragomir 0.55)** — `wpctl` volume is node-local and was
   reset by both reboots and test suites with the canonical value recorded nowhere.
   `scripts/log-review.mjs` flags drift. The three offline nodes deliberately carry no
-  value until they are ear-verified.
+  value until they are ear-verified. *2026-08-18: the auto-apply is verified live on
+  all three online nodes* — each logged "Sink volume set to canonical <v>" at boot and
+  `wpctl` reads the canonical value (Mina 0.90, Orlok 1.30, Dragomir 0.55), unmuted.
 
 - ~~**The startup servoChannels audit ran against the wrong character.**~~ — **fixed
   `645ac407`.** `runStartupHealthCheck()` ran BEFORE the hostname→character correction in
@@ -356,7 +392,11 @@ exist yet.
   mtime, destroying the evidence — so the writer is unidentified. Nothing in that window
   should write character state on his node. **Tripwire:** any `(was N), config updated`
   line in a startup log means it happened again; find the writer before it flips a node
-  mid-show.
+  mid-show. *2026-08-18 full-fleet reboot: clean* — Dragomir booted with
+  `selectedCharacter: 4`, no new "(was N), config updated" line, and his startup audit
+  reported `servoChannels: ok` on his own channels (the pre-fix wrong-character
+  warnings survive only in stale pre-boot err-log content). Writer still unidentified;
+  tripwire stays armed.
 - ⚪ **Orlok ch15 still holds ~1025 µs with no part mapped** — survives service restarts
   because the PCA9685 is never power-cycled and v9.2.0's non-destructive init adopts the
   chip as-is. If a servo is physically on ch15 it has been energized for days. Clears on
@@ -405,6 +445,9 @@ exist yet.
   (`rtw_usb_reg_sec ... status: -71`). *Mitigation shipped:* mjpg-streamer now binds the
   stable `/dev/v4l/by-id/` path (survives re-enumeration) at reduced 15 fps / q60 —
   operator confirmed phone-monitoring resolution is sufficient; less USB bandwidth and CPU.
+  *2026-08-18 post-reboot:* one boot-time `usb 1-1.4: USB disconnect, device number 5`
+  at 23:10:03 (enumeration churn; **no over-current lines this boot** as of the first
+  log-review pass).
 - ~~**Sir Dragomir data check**: `library.json` "not iterable" flood + power-cut
   NUL-corrupted log.~~ — **verified fixed 2026-08-17**: two clean boots since the v9.3.0
   deploy with zero library errors; log files NUL-free on all three nodes. His journal is
