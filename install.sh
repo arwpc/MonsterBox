@@ -455,11 +455,54 @@ cd "$REPO_DIR"
 sudo -u "$ACTUAL_USER" npm ci
 print_success "Node.js dependencies installed (production + dev)"
 
-# Install the pre-push gate hook
+# Install the git hooks (pre-push gate + every-10-commits log review)
 if [ -f "$REPO_DIR/scripts/install-git-hooks.sh" ]; then
     sudo -u "$ACTUAL_USER" bash "$REPO_DIR/scripts/install-git-hooks.sh" || \
         print_warning "git-hooks install step failed — run scripts/install-git-hooks.sh manually."
 fi
+
+# ============================================================
+# 19b. Node OS baseline — applies to EVERY animatronic, current or future.
+# These settled the 2026-08-17 fleet health pass; without them a node boots
+# with an unwritable avahi file, uncapped journals, unrotated app logs and a
+# service that runs without its secrets or priority. All idempotent.
+# ============================================================
+print_status "Step 19b: Applying node OS baseline..."
+
+# avahi service file writable by the app (it rewrites its own advertisement)
+mkdir -p /etc/avahi/services
+touch /etc/avahi/services/monsterbox.service
+chown "$ACTUAL_USER:$ACTUAL_USER" /etc/avahi/services/monsterbox.service
+
+# journald: persistent, capped (SD wear vs post-mortem after a power cut)
+mkdir -p /var/log/journal /etc/systemd/journald.conf.d
+printf '[Journal]\nStorage=persistent\nSystemMaxUse=64M\nSystemMaxFileSize=16M\n' \
+    > /etc/systemd/journald.conf.d/monsterbox.conf
+systemctl restart systemd-journald 2>/dev/null || true
+
+# app-log rotation (they grow unbounded otherwise; 8.5MB in one night observed)
+cat > /etc/logrotate.d/monsterbox <<'LOGROTATE'
+/var/log/monsterbox.log /var/log/monsterbox.err {
+    size 10M
+    rotate 5
+    compress
+    missingok
+    notifempty
+    copytruncate
+}
+LOGROTATE
+
+# monsterbox.service drop-ins: priority + secrets (EnvironmentFile with the
+# leading dash is optional, so a node without /etc/monsterbox/env still boots)
+mkdir -p /etc/systemd/system/monsterbox.service.d
+chmod 755 /etc/systemd/system/monsterbox.service.d
+printf '[Service]\nNice=-5\nCPUWeight=90\nIOWeight=90\n' \
+    > /etc/systemd/system/monsterbox.service.d/10-priority.conf
+printf '[Service]\n# Secrets live in /etc/monsterbox/env — the app does NOT read .env.\nEnvironmentFile=-/etc/monsterbox/env\n' \
+    > /etc/systemd/system/monsterbox.service.d/20-secrets.conf
+chmod 644 /etc/systemd/system/monsterbox.service.d/*.conf
+systemctl daemon-reload 2>/dev/null || true
+print_success "Node OS baseline applied (avahi perms, journald 64M, logrotate, service drop-ins)"
 
 # Install Playwright browsers for testing (optional, non-fatal)
 sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null && \

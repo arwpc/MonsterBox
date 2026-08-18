@@ -107,3 +107,4 @@ mb-shot.mjs
 public/__preview_*.html
 .tmp*/
 .scratch/
+data/log-review-state.json

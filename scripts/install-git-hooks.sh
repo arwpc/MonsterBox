@@ -13,7 +13,7 @@ if [ ! -d "$DEST_DIR" ]; then
   exit 1
 fi
 
-for hook in pre-push; do
+for hook in pre-push post-commit; do
   src="$SRC_DIR/$hook"
   dest="$DEST_DIR/$hook"
   if [ ! -f "$src" ]; then continue; fi

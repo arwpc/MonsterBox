@@ -1,0 +1,12 @@
+#!/bin/bash
+# MonsterBox post-commit hook — every 10th commit, run the quick log review.
+#
+# The collector is local-only and fast (~2s); it prints findings and points at
+# the /log-review skill for triage. Install (also done by install.sh):
+#   cp scripts/git-hooks/post-commit .git/hooks/post-commit && chmod +x .git/hooks/post-commit
+COUNT=$(git rev-list --count HEAD 2>/dev/null || echo 0)
+if [ $((COUNT % 10)) -eq 0 ]; then
+    echo ""
+    echo "── every-10-commits log review (commit #$COUNT) ──"
+    node scripts/log-review.mjs --quick || true
+fi

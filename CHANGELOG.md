@@ -2,6 +2,49 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [9.3.0 post-release] - 2026-08-17 — fleet health pass
+
+### Log review is now a standing practice
+
+- **`scripts/log-review.mjs`** (`npm run log:review`) — collects fresh error signal
+  from a node: failed units, kernel power/USB events, new app-log errors since last
+  review, startup-health warnings, voice-config drift vs committed canonical, sink
+  volume vs canonical, mute state, journal flooding, git drift. `--fleet` walks
+  **every** animatronic in `config/animatronics.json` (whoever is live that day —
+  no hostname is special-cased), reports OFFLINE nodes honestly, flags mixed
+  versions, and deep-sweeps reachable nodes over SSH when credentials are present.
+- **`/log-review` skill** — the AI-side triage: reconcile findings against
+  `docs/troubleshooting/KNOWN-BUGS.md` (known / tracker-wrong / new / noise-to-kill)
+  and commit the tracker update. Part of session startup.
+- **Every 10 commits**: `scripts/git-hooks/post-commit` runs the quick collector
+  automatically. `install-git-hooks.sh` now installs both hooks (this node was
+  missing even the pre-push gate).
+- **Canonical sink volumes live in `config/animatronics.json`** (`sinkVolume`) —
+  they were operator lore that evaporated on every reboot/test run.
+- **`install.sh` now applies the full node OS baseline** (avahi file ownership,
+  journald persistent+64M, logrotate, service priority/secrets drop-ins) so any
+  reimaged or newly-built animatronic gets 2026-08-17's fixes automatically.
+- **Found by the first collector runs:** Mina's boot readiness check probed
+  `http://` against the HTTPS server (it had NEVER passed — fixed); three orphaned
+  `mcp-*` user units crash-looping ~8k journal lines per boot on Mina and Orlok
+  (disabled); the test suite's fleet-write leak through the production `:3100`
+  listener confirmed live (tracked 🔴 in KNOWN-BUGS).
+
+
+- **The startup servoChannels audit ran before the hostname→character correction**
+  (`645ac407`), so a node that booted with a stale `selectedCharacter` audited another
+  character's channel map and persisted false warnings to `startup-health.json`. Observed
+  live: Sir Dragomir booted carrying `selectedCharacter: 3`, warned about Orlok's fused
+  rail, and flagged his own jaw servo as an unmapped channel. The check now runs after the
+  correction. (How the stale value reached his disk is a separate open item — see
+  KNOWN-BUGS, "post-reboot health pass".)
+- **OS-level cleanup on all three live nodes** (not in git; recorded in KNOWN-BUGS): avahi
+  service-file ownership (ends the every-boot EACCES), Sematext agents disabled on Orlok
+  (143k journal lines/boot), journald persistent + capped 64M fleet-wide, logrotate for the
+  app logs, Mina's missing priority/secrets drop-ins, Mina's boot-check unblocked, stray
+  `goblin.service` disabled. Orlok's webcam moved to a stable `/dev/v4l/by-id/` path at
+  15 fps after an over-current burst re-enumerated it mid-day.
+
 ## [9.3.0] - 2026-08-16 — Mina's servos were never broken, and calibration finally lets you calibrate
 
 *Started as 9.2.1 (the first seven commits carry that label); released as 9.3.0 — the

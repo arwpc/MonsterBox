@@ -55,7 +55,7 @@ wait_for_http() {
     log "Waiting for $name at $url..."
     
     while [ $elapsed -lt $MAX_WAIT ]; do
-        if curl -sf "$url" >/dev/null 2>&1; then
+        if curl -skf "$url" >/dev/null 2>&1; then
             log "✓ $name is responding"
             return 0
         fi
@@ -129,10 +129,10 @@ ensure_video_service() {
 ensure_monsterbox_app() {
     log "Ensuring MonsterBox application is running..."
     
-    wait_for_http "http://localhost:3000/health" "MonsterBox"
+    wait_for_http "https://localhost:3000/health" "MonsterBox"
     
     # Additional verification - check that dashboard page loads
-    if curl -sf "http://localhost:3000/" >/dev/null 2>&1; then
+    if curl -skf "https://localhost:3000/" >/dev/null 2>&1; then
         log "✓ MonsterBox dashboard is accessible"
     else
         error "MonsterBox dashboard not accessible"
@@ -148,7 +148,7 @@ enable_conversation_mode() {
     sleep 5
     
     # Enable random poses with safe defaults
-    if curl -sf -X POST "http://localhost:3000/api/orchestration/enable-random-poses" \
+    if curl -skf -X POST "https://localhost:3000/api/orchestration/enable-random-poses" \
         -H "Content-Type: application/json" \
         --data '{"cooldownMs":3000,"minAmplitude":0.2,"maxAmplitude":0.5}' >/dev/null 2>&1; then
         log "✓ Random poses enabled"

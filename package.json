@@ -80,7 +80,8 @@
     "test:pact:character": "node scripts/pact-runner.mjs",
     "gate": "node scripts/gate.mjs",
     "audit:design-system": "node scripts/audit-design-system.mjs",
-    "test:browser:solo": "bash scripts/test-browser-solo.sh"
+    "test:browser:solo": "bash scripts/test-browser-solo.sh",
+    "log:review": "node scripts/log-review.mjs"
   },
   "keywords": [
     "animatronic",

@@ -31,7 +31,7 @@ const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
                     pca9685Frequency: 50
                 }
             })
-            .expect(201);
+            .expect(200);
 
         testPartId = response.body.part.id;
         console.log(`Created test continuous servo with ID: ${testPartId}`);

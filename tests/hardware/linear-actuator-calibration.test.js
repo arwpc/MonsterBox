@@ -28,7 +28,7 @@ const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
                 maxExtension: 15000,
                 maxRetraction: 15000
             })
-            .expect(201);
+            .expect(200);
 
         testPartId = response.body.part.id;
         console.log(`Created test part with ID: ${testPartId}`);

@@ -226,14 +226,21 @@ diagnostic below still applies.
   configures the jaw animation window as 17/153; the calibrated 22..91 correctly wins at
   drive time.
 
-### Sir Dragomir — char 4 · `192.168.8.130` — ⚠️ **OFF THE NETWORK as of 2026-08-16 ~18:30**
-The overnight log triage found him unreachable from both Mina and Orlok (ping + HTTPS),
-hours after he was AUDIBLE in the 15:33 earcheck. New incident — needs a physical check
-(power? WiFi?). Until he's back he also cannot receive the v9.2.1 fixes.
-🟢 **Fully operational** as of 2026-04-18. Jaw (ch0), Magic Box (ch8), Head (ch4 continuous)
-all user-confirmed. The jaw-animation "servo must be calibrated" false block was fixed in
-v8.1.6 (reads bounds from `calibration_profiles.json`, not just `parts.json` markers). No
-open hardware issues — kept here for completeness; verify after any redeploy.
+### Sir Dragomir — char 4 · `192.168.8.130`
+🟢 **Back on the network and serving v9.3.0** (verified 2026-08-17; the 2026-08-16 ~18:30
+outage resolved with the fleet power-down/reboot — cause never determined, watch for
+recurrence). His `library.json "not iterable"` flood is gone after the v9.3.0 deploy.
+🟢 **Fully operational** as of 2026-04-18, user-confirmed. ⚠️ **The channel map previously
+recorded here (and in the README) was WRONG.** `parts.json` — the source of truth, which
+the calibration router itself re-syncs channels from — says: **Head ch0 (continuous),
+Jaw ch1, Magic Box ch3.** The old "jaw ch0, magic box ch8, head ch4" claim matched nothing
+on his chip; register audit 2026-08-17 confirms ch0/ch1/ch3 are his live channels.
+The jaw-animation "servo must be calibrated" false block was fixed in v8.1.6.
+- 🟡 **Jaw animation deliberately switched OFF 2026-08-17 pending calibration.** His jaw
+  (part 2, ch1) has **no calibration profile, no parts.json markers, and a 0–180 superpower
+  window** — TTS would drive the servo into its mechanical stops on every utterance (the
+  exact over-drive v9.0.0 fixed on Orlok). Calibrate the jaw, then re-enable
+  `jawAnimation.enabled` in `data/character-4/super-powers.json`.
 
 **v9.2.0 status:** running 9.2.0. Speaker and **voice** verified by ear on 2026-08-16 — the
 ear-check first caught him speaking in his **retired** voice `SOYHLrjzK2X1ezoPC6cr` (39.3 dB
@@ -295,6 +302,66 @@ exist yet.
 
 ## Cross-Cutting Software Bugs
 
+### Opened from the 2026-08-17 post-reboot health pass
+
+- 🔴 **System tests on a live node send REAL fleet writes through the production
+  process — confirmed live, not theoretical.** `test:system` sets `MB_TEST_MODE=1` for
+  *mocha*, but the target is the production server's `:3100` listener, whose
+  `orchestrationService.httpNode` guard keys on the **server's** env — unset in
+  production. During the 2026-08-17 full-fleet test pass, Mina's scene suite fired
+  `queue/clear` and `queue/enqueue` at Orlok and Sir Dragomir; playback was prevented
+  only by the `defaultSceneId` data mismatch ("Scene not found") — luck, not a guard.
+  *Fix direction:* requests arriving on the test listener should be tagged and refused
+  by `httpNode` for writes, closing the egress regardless of which process serves them.
+  Until then: full suites on a live node are an operator decision, and peers should be
+  checked afterward (queues, superpowers, volumes).
+- 🟡 **`tests/hardware/{continuous-servo,linear-actuator}-calibration` are rotted
+  against a retired API** — they exercise six `/api/continuous_servo/:id/*` routes of
+  which only `reset` still exists (the per-type calibration API became the unified
+  `/api/calibration/:partId/*`). 2026-08-17 repaired their part-creation/cleanup (they
+  now create and remove test parts correctly — five debris parts were left in Mina's
+  live `parts.json` by earlier broken runs and have been removed) but the inner
+  assertions need a rewrite against the unified API. Manual-only suites; not in the
+  gate.
+- ~~**Every test-suite run flattened the selected character's voice tuning to
+  0.5/0.5.**~~ — **fixed 2026-08-17.** `tests/system/ai-audio.test.js` POSTed page
+  defaults to the live `/api/elevenlabs/tts/config` and never restored; stability /
+  similarity died while `voice_id` survived, so it read as "the voice is off" rather
+  than "a file got clobbered". The test now snapshots and restores; verified on all
+  three nodes (config intact after the save test). `scripts/log-review.mjs` flags this
+  class as tts-config drift vs the committed canonical.
+- ~~**`monsterbox-boot-check` could never pass**~~ — **fixed 2026-08-17**, twice over:
+  a root-owned log file killed it at its first `tee` under `set -e`, and beneath that
+  its readiness probes hit `http://localhost:3000` — plain HTTP against an HTTPS
+  server — so the check had never actually passed since the HTTPS switch. Probes now
+  use `https://` with `-k`.
+- ⚪ **Canonical sink volumes now live in `config/animatronics.json` (`sinkVolume`:
+  Mina 0.9, Orlok 1.3, Sir Dragomir 0.55)** — `wpctl` volume is node-local and was
+  reset by both reboots and test suites with the canonical value recorded nowhere.
+  `scripts/log-review.mjs` flags drift. The three offline nodes deliberately carry no
+  value until they are ear-verified.
+
+- ~~**The startup servoChannels audit ran against the wrong character.**~~ — **fixed
+  `645ac407`.** `runStartupHealthCheck()` ran BEFORE the hostname→character correction in
+  `server.js`, and its channel audit resolves the character from `app-config.json` on
+  disk — so a node carrying a stale `selectedCharacter` audited **another character's**
+  channel map. Observed live on Sir Dragomir: booted with `selectedCharacter: 3`, warned
+  about *Orlok's* `arm-fused-rail` power group and flagged his own jaw (ch1) as "driven
+  but no part of character 3 is mapped to it", and persisted the false warnings to
+  `startup-health.json` for the dashboard. The check now runs after the correction;
+  Dragomir boots `servoChannels: ok` with his own channels `[0,1,3]` mapped.
+- 🟡 **Something wrote `selectedCharacter: 3` into Sir Dragomir's `app-config.json`
+  between his 2026-08-16 22:38 boot ("already correct") and the 2026-08-17 17:53 restart
+  ("was 3, config updated").** The hostname guard healed it — and overwrote the file
+  mtime, destroying the evidence — so the writer is unidentified. Nothing in that window
+  should write character state on his node. **Tripwire:** any `(was N), config updated`
+  line in a startup log means it happened again; find the writer before it flips a node
+  mid-show.
+- ⚪ **Orlok ch15 still holds ~1025 µs with no part mapped** — survives service restarts
+  because the PCA9685 is never power-cycled and v9.2.0's non-destructive init adopts the
+  chip as-is. If a servo is physically on ch15 it has been energized for days. Clears on
+  the next hardware power-down; eyeball the channel while the case is open.
+
 ### Opened from the 2026-08-16 evening evidence sweep (v9.3.0 session)
 
 - 🟡 **"Mute Speaker" silences the show but not TTS — decide the intended semantics.**
@@ -314,17 +381,34 @@ exist yet.
 - 🟡 **`jog-raw` has no per-part serialization**: two overlapping jogs on one part spawn two
   `actuator_cli.py` processes on the same pins → `'GPIO busy'` / `E_BUS_IO` (observed once,
   operator double-click during a 7.5 s home). Wants a per-part in-flight lock in the UI or route.
-- 🟡 **avahi/mDNS is degraded on Orlok AND Mina**: the app gets `EACCES` writing
-  `/etc/avahi/services/monsterbox.service` and `avahi-browse` fails under the service, so
-  discovery silently runs on the static `config/animatronics.json` fallback. Also: Sematext
-  st-agent with a dead token floods journals with 400/401s every ~10 s (SD wear).
-- 🔴 **Orlok hardware watch**: kernel `usb2 over-current` ×5 at 20:37 and a Realtek USB WiFi
-  adapter that faults/re-enumerates at boot (`rtw_usb_reg_sec ... status: -71`). If USB power
-  is browning out, audio/webcam flakiness will follow — check the 5 V rail and hub.
-- 🟡 **Sir Dragomir data check**: `data/audio-library/library.json` produced 36×
-  "library.audio is not iterable" + a tmp-rename race on his node, and tonight's power cut
-  NUL-corrupted his monsterbox.log tail. The v9.3.0 deploy overwrites his library.json with
-  a healthy copy; verify audio-library loads after deploy.
+- ~~**avahi/mDNS is degraded on Orlok AND Mina** (`EACCES` writing the avahi service file);
+  Sematext st-agent with a dead token floods journals (SD wear).~~ — **fixed 2026-08-17 at
+  the OS level** (not in git; see the OS-baseline note below): the avahi file is now owned
+  by `remote` on all three nodes and the app successfully rewrites it at startup (verified
+  by mtime). The Sematext agents (**143,360 journal lines in one boot**) are disabled on
+  Orlok. Also standardized: journald persistent + capped 64M fleet-wide (Dragomir was
+  volatile — his power-cut post-mortem had evaporated), logrotate for
+  `/var/log/monsterbox.{log,err}`, `Nice=-5` + `EnvironmentFile` drop-ins on Mina (she had
+  neither — her app had no SSH secret), `goblin.service` disabled on Mina (crash-looped
+  every boot), and Mina's `monsterbox-boot-check` unblocked (root-owned log file killed it
+  at its first `tee` under `set -e`, every boot). ⚠️ **None of this is tracked in git** — a
+  reimaged node loses it all; the full list lives in the Claude memory file
+  `node-os-baseline.md` and should someday land in `install.sh`.
+- 🔴 **Orlok hardware watch — ESCALATED 2026-08-17**: a **14-event `over-current` burst in
+  six seconds (16:58:26–32)** knocked every device off the USB hub — WiFi, audio adapter,
+  and the webcam, which re-enumerated `/dev/video0`→`/dev/video1` and came back **wedged**
+  (UVC `Protocol error` on stream start; needs a physical replug or
+  `echo 1-1.1 | sudo tee /sys/bus/usb/drivers/usb/unbind` then `bind`). The Pi's own supply
+  is clean (`throttled=0x0`, zero under-voltage) — the fault is the **hub/downstream 5 V**,
+  not the wall supply, and it is load- or time-triggered (49 min idle after reboot were
+  clean before the burst). The Realtek WiFi adapter also faults/re-enumerates at every boot
+  (`rtw_usb_reg_sec ... status: -71`). *Mitigation shipped:* mjpg-streamer now binds the
+  stable `/dev/v4l/by-id/` path (survives re-enumeration) at reduced 15 fps / q60 —
+  operator confirmed phone-monitoring resolution is sufficient; less USB bandwidth and CPU.
+- ~~**Sir Dragomir data check**: `library.json` "not iterable" flood + power-cut
+  NUL-corrupted log.~~ — **verified fixed 2026-08-17**: two clean boots since the v9.3.0
+  deploy with zero library errors; log files NUL-free on all three nodes. His journal is
+  now persistent (capped), so a future power cut leaves a post-mortem.
 - ⚪ **Cross-node queue enqueue 500s**: `defaultSceneId` in `config/animatronics.json` names
   scenes some targets don't have (Orlok/PumpkinHead: scene 100 — "Scene not found" on every
   start-all). Data decision: give each node a defaultSceneId that exists in its scenes.json.
@@ -638,20 +722,14 @@ Plus one that was not flake at all:
   part and correct it in the Animation Studio.
 - 🟡 **Character 1 part 1 description is test debris** — see the PumpkinHead section above.
   Left unfixed on purpose (node offline, hardware unverified).
-- 🔴 **Groundbreaker character-ID mismatch — and it is now producing a phantom character.**
-  `data/characters.json` lists Groundbreaker as **id 5**, but `config/animatronics.json` maps
-  host `groundbreaker` to **characterId 7**. These must be reconciled before Groundbreaker comes
-  online, or orchestration will target the wrong character context.
-  - **New, observed 2026-08-16:** an empty **`data/character-7/`** has been auto-scaffolded on
-    the Orlok node (`parts.json` `[]`, empty calibration files, an `ai-config/` dir), timestamps
-    from this session. Something resolved character **7** and created its data directory — the
-    mismatch is no longer only latent. It is untracked and not gitignored, so it will show up in
-    `git status` and can be committed by accident.
-  - *Do not simply delete it and move on:* fix the id first (this is show data adjacent, and
-    Renfield's entry is the worked example of `id` and `characterId` agreeing on purpose), then
-    remove the stray directory.
-  - Related: the wrong-voice bug hit Groundbreaker precisely because he is **registered under
-    characterId 7 against a voice map keyed 5**.
+- ~~**Groundbreaker character-ID mismatch (5 vs 7) — producing a phantom character-7.**~~ —
+  **resolved as of 2026-08-17.** `config/animatronics.json` now maps host `groundbreaker` to
+  **characterId 5**, matching `data/characters.json`; the registry is a clean 1–6. The stray
+  character 7 ("Temp") was deleted from the registry and its `data/character-7/` directory
+  removed (the app's `deleteCharacter` logged the permanent deletion on Mina 2026-08-17
+  16:40; no node carries the directory any more). *Historical context:* the mismatch is why
+  the wrong-voice bug hit Groundbreaker (registered under 7 against a voice map keyed 5).
+  His hardware remains offline and unverified.
 
 ---
 

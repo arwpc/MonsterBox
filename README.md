@@ -794,9 +794,10 @@ Static IPs below are a **fallback**; nodes discover each other's live addresses 
 | Groundbreaker | 5 | 192.168.8.200 | 🔴 Offline all session — **unverified** | unknown |
 | Renfield | 6 | *(none — `ip: null` by design)* | 🔴 Never networked — **unverified** | n/a |
 
-Sir Dragomir carries 3 PCA9685 servos (head continuous, jaw, magic box), webcam, mic, speaker.
-Groundbreaker's `characterId` in `config/animatronics.json` is **7**, which does not match
-`data/characters.json` id **5** — reconcile before he comes online
+Sir Dragomir carries 3 PCA9685 servos — head ch0 (continuous), jaw ch1, magic box ch3 —
+plus webcam, mic, speaker. (`parts.json` is the source of truth for channels; older docs
+claiming jaw ch0 / magic box ch8 / head ch4 were wrong.) Groundbreaker's former
+`characterId` mismatch (7 vs 5) was reconciled 2026-08-17 — the registry is a clean 1–6
 ([KNOWN-BUGS](docs/troubleshooting/KNOWN-BUGS.md)).
 
 **Goblins (Video Display):**

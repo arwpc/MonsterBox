@@ -190,7 +190,19 @@ describe('AI Audio System Tests', function() {
         });
 
         it('POST /api/elevenlabs/tts/config should save config', async () => {
+            // This endpoint writes the LIVE per-character voice config. Posting
+            // page-default 0.5/0.5 without restoring silently flattened the
+            // selected character's hand-tuned stability/similarity on every
+            // system-suite run (observed on Orlok: vocal-profile 0.3/0.8 →
+            // 0.5/0.5) — voice_id survived the v9.2.0 merge fix, so the voice
+            // kept its identity but lost its character. Snapshot, then restore.
+            let original = null;
             try {
+                const before = await fetch(`${BASE_URL}/api/elevenlabs/tts/config`);
+                if (before.status === 200) {
+                    const beforeData = await before.json();
+                    if (beforeData.success && beforeData.config) original = beforeData.config;
+                }
                 const testConfig = {
                     model: 'eleven_v3',
                     stability: 0.5,
@@ -206,6 +218,16 @@ describe('AI Audio System Tests', function() {
                 expect(data).to.have.property('success');
             } catch (e) {
                 console.warn('Server not running, skipping route test:', e.message);
+            } finally {
+                if (original) {
+                    try {
+                        await fetch(`${BASE_URL}/api/elevenlabs/tts/config`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(original)
+                        });
+                    } catch (_) { /* restore is best-effort */ }
+                }
             }
         });
 

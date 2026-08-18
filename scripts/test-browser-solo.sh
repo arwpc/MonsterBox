@@ -51,4 +51,8 @@ if [ "$WAS_ACTIVE" = "1" ]; then
 fi
 
 echo "==> Running browser suite"
-npx playwright test "$@"
+# Mirror the env `npm run test:browser` sets. Without BASE_URL, every spec that
+# builds absolute URLs (actual-usage, ai-settings, jaw-animation, …) falls back
+# to http://localhost:3000 — the very service this script just STOPPED — and
+# fails with ERR_EMPTY_RESPONSE (observed: 345 failures on one node, all this).
+MB_TEST_MODE=1 TEST_PORT=3200 BASE_URL=http://localhost:3200 npx playwright test "$@"
