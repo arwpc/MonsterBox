@@ -12,9 +12,10 @@ const router = express.Router();
 /**
  * Get current random pose configuration
  */
-router.get('/settings', (req, res) => {
+router.get('/settings', async (req, res) => {
     try {
-        const config = randomPoseService.getConfig();
+        const ctx = await resolveCharacter(req);
+        const config = randomPoseService.getConfig(ctx && ctx.id);
         res.json({
             success: true,
             enabled: !!config.enabled,
@@ -33,9 +34,10 @@ router.get('/settings', (req, res) => {
     }
 });
 
-router.get('/config', (req, res) => {
+router.get('/config', async (req, res) => {
     try {
-        const config = randomPoseService.getConfig();
+        const ctx = await resolveCharacter(req);
+        const config = randomPoseService.getConfig(ctx && ctx.id);
         res.json({
             success: true,
             config
@@ -53,9 +55,17 @@ router.get('/config', (req, res) => {
 /**
  * Update random pose configuration
  */
-router.post('/config', express.json(), (req, res) => {
+router.post('/config', express.json(), async (req, res) => {
     try {
-        const result = randomPoseService.updateConfig(req.body);
+        const { characterId } = req.body || {};
+
+        // Explicit body characterId wins; otherwise the canonical resolver, so a
+        // settings write lands on the character the operator is looking at rather
+        // than whichever one this node last enabled poses for.
+        const ctx = characterId ? null : await resolveCharacter(req);
+        const resolvedCharacterId = characterId || (ctx && ctx.id);
+
+        const result = randomPoseService.updateConfig(req.body, resolvedCharacterId);
         res.json(result);
     } catch (error) {
         console.error('Error updating random pose config:', error);
@@ -102,9 +112,16 @@ router.post('/enable', express.json(), async (req, res) => {
 /**
  * Disable random poses
  */
-router.post('/disable', (req, res) => {
+router.post('/disable', express.json(), (req, res) => {
     try {
-        const result = randomPoseService.disable();
+        // Deliberately NOT resolveCharacter(): the fleet emergency stop and the
+        // orchestration disable fan-out both POST here with no body, and a
+        // resolver fallback would silently narrow a panic stop to the currently
+        // selected character while leaving any other character's poses armed.
+        // An explicit characterId scopes the disable; absent one, off means off
+        // node-wide.
+        const { characterId } = req.body || {};
+        const result = randomPoseService.disable(characterId);
         res.json(result);
     } catch (error) {
         console.error('Error disabling random poses:', error);

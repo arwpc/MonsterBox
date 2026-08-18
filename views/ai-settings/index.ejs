@@ -29,7 +29,7 @@
                 <div class="col-md-6">
                     <div class="ai-field">
                         <span class="mb-field-label">API Key Status</span>
-                        <div id="apiKeyStatus" class="mb-row-sm align-items-center">
+                        <div id="apiKeyStatus" class="mb-row-sm align-items-center mb-mono">
                             <span class="mb-spinner"></span>
                             <span>Checking configuration...</span>
                         </div>
@@ -38,7 +38,7 @@
                 <div class="col-md-6">
                     <div class="ai-field">
                         <span class="mb-field-label">Connection Status</span>
-                        <div id="connectionStatus" class="mb-row-sm align-items-center">
+                        <div id="connectionStatus" class="mb-row-sm align-items-center mb-mono">
                             <span class="mb-spinner"></span>
                             <span>Testing connection...</span>
                         </div>
@@ -111,7 +111,7 @@
                 </div>
                 <div class="mb-panel-body p-0">
                     <!-- Chat Log -->
-                    <div id="chatLog" class="ai-log p-3">
+                    <div id="chatLog" class="ai-log p-3 mb-serif">
                         <div class="mb-text-muted text-center">Chat will appear here...</div>
                     </div>
                     <!-- VU Meter -->
@@ -122,7 +122,7 @@
                                 <div id="chatVUMeter" class="mb-meter-fill" role="progressbar"
                                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
-                            <span id="chatVULabel" class="mb-badge ai-meter-label">0%</span>
+                            <span id="chatVULabel" class="mb-badge ai-meter-label mb-mono">0%</span>
                         </div>
                     </div>
                     <!-- Audio Controls -->
@@ -142,7 +142,7 @@
                             <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
                             <span class="mb-text-sm"><i class="bi bi-mic"></i> Browser Mic</span>
                         </label>
-                        <small id="chatAudioStatus" class="mb-text-info"></small>
+                        <small id="chatAudioStatus" class="mb-text-info mb-mono"></small>
                     </div>
                     <!-- Chat Input -->
                     <div class="ai-strip">
@@ -170,7 +170,7 @@
                     <div class="row g-3">
                         <div class="col-6">
                             <div class="ai-stat">
-                                <div class="ai-stat-value mb-text-success" id="chatActiveStatus">
+                                <div class="ai-stat-value mb-mono mb-text-success" id="chatActiveStatus">
                                     <i class="bi bi-circle"></i>
                                 </div>
                                 <small class="ai-stat-label">Chat Active</small>
@@ -178,19 +178,19 @@
                         </div>
                         <div class="col-6">
                             <div class="ai-stat">
-                                <div class="ai-stat-value mb-text-success" id="voiceCount">-</div>
+                                <div class="ai-stat-value mb-mono mb-text-success" id="voiceCount">-</div>
                                 <small class="ai-stat-label">Available Voices</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="ai-stat">
-                                <div class="ai-stat-value mb-text-warning" id="characterCount">-</div>
+                                <div class="ai-stat-value mb-mono mb-text-warning" id="characterCount">-</div>
                                 <small class="ai-stat-label">Characters</small>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="ai-stat">
-                                <div class="ai-stat-value mb-text-info" id="assignmentCount">-</div>
+                                <div class="ai-stat-value mb-mono mb-text-info" id="assignmentCount">-</div>
                                 <small class="ai-stat-label">Assignments</small>
                             </div>
                         </div>

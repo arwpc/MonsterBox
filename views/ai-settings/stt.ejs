@@ -80,13 +80,13 @@
                                         <div class="mb-meter">
                                             <div id="stt-listenin-vu" class="mb-meter-fill"></div>
                                         </div>
-                                        <span id="stt-listenin-vu-label" class="mb-badge ai-meter-label">0%</span>
+                                        <span id="stt-listenin-vu-label" class="mb-badge ai-meter-label mb-mono">0%</span>
                                     </div>
                                     <div class="mb-row-sm align-items-center">
                                         <button id="btn-stt-listenin" class="mb-btn mb-btn-secondary mb-btn-sm" type="button" title="Start listening through browser speaker">
                                             <i class="bi bi-headphones"></i> <span id="stt-listenin-text">Start Listening</span>
                                         </button>
-                                        <span id="stt-listenin-status" class="mb-badge">Off</span>
+                                        <span id="stt-listenin-status" class="mb-badge mb-mono">Off</span>
                                     </div>
                                 </div>
                             </div>
@@ -109,13 +109,13 @@
                                         <div class="mb-meter">
                                             <div id="stt-talkthrough-vu" class="mb-meter-fill"></div>
                                         </div>
-                                        <span id="stt-talkthrough-vu-label" class="mb-badge ai-meter-label">0%</span>
+                                        <span id="stt-talkthrough-vu-label" class="mb-badge ai-meter-label mb-mono">0%</span>
                                     </div>
                                     <div class="mb-row-sm align-items-center">
                                         <button id="btn-stt-talkthrough" class="mb-btn mb-btn-secondary mb-btn-sm" type="button" title="Talk through the character speaker">
                                             <i class="bi bi-mic-fill"></i> <span id="stt-talkthrough-text">Start Talking</span>
                                         </button>
-                                        <span id="stt-talkthrough-status" class="mb-badge">Off</span>
+                                        <span id="stt-talkthrough-status" class="mb-badge mb-mono">Off</span>
                                     </div>
                                     <div id="stt-talkthrough-https-warn" class="mb-alert mb-alert-warning mb-text-sm mt-2 d-none">
                                         <i class="bi bi-shield-lock"></i> Browser microphone requires HTTPS or localhost.
@@ -221,7 +221,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="ai-field">
-                                    <label for="inputGain" class="mb-field-label">Input Gain <span id="inputGainLabel" class="mb-badge">100%</span></label>
+                                    <label for="inputGain" class="mb-field-label">Input Gain <span id="inputGainLabel" class="mb-badge mb-mono">100%</span></label>
                                     <input type="range" class="mb-range" id="inputGain" min="0" max="200" step="1" title="Adjust microphone input gain"
                                         value="100">
                                     <small class="mb-field-hint">Adjusted via PipeWire/PulseAudio (applies immediately)</small>
@@ -247,7 +247,7 @@
                                 <div class="ai-field">
                                     <label for="vadThreshold" class="mb-field-label">
                                         VAD Threshold:
-                                        <span id="vadThresholdValue">0.40</span>
+                                        <span id="vadThresholdValue" class="mb-mono">0.40</span>
                                         <span id="vadThresholdLabel" class="mb-text-muted ai-hidden">40%</span>
                                     </label>
                                     <input type="range" class="mb-range" id="vadThreshold" name="vadThreshold" title="Voice activity detection threshold"
@@ -259,7 +259,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="vadSilenceDuration" class="mb-field-label">
-                                        Silence Duration: <span id="vadSilenceDurationValue">500</span>ms
+                                        Silence Duration: <span id="vadSilenceDurationValue" class="mb-mono">500</span>ms
                                     </label>
                                     <input type="range" class="mb-range" id="vadSilenceDuration" title="Silence duration before ending speech"
                                         name="vadSilenceDuration" min="100" max="2000" step="100" value="500">
@@ -276,7 +276,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="captureChunkDuration" class="mb-field-label">
-                                        Capture Chunk Duration: <span id="captureChunkDurationValue">0.5</span>s
+                                        Capture Chunk Duration: <span id="captureChunkDurationValue" class="mb-mono">0.5</span>s
                                     </label>
                                     <input type="range" class="mb-range" id="captureChunkDuration" title="Duration of each audio capture chunk"
                                         name="captureChunkDuration" min="0.25" max="1.0" step="0.25" value="0.5">
@@ -286,7 +286,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="sttThrottleInterval" class="mb-field-label">
-                                        STT Throttle Interval: <span id="sttThrottleIntervalValue">2500</span>ms
+                                        STT Throttle Interval: <span id="sttThrottleIntervalValue" class="mb-mono">2500</span>ms
                                     </label>
                                     <input type="range" class="mb-range" id="sttThrottleInterval" title="How often audio is sent to STT"
                                         name="sttThrottleInterval" min="1000" max="5000" step="500" value="2500">
@@ -299,7 +299,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="minBufferDuration" class="mb-field-label">
-                                        Minimum Buffer Duration: <span id="minBufferDurationValue">2.5</span>s
+                                        Minimum Buffer Duration: <span id="minBufferDurationValue" class="mb-mono">2.5</span>s
                                     </label>
                                     <input type="range" class="mb-range" id="minBufferDuration" title="Minimum audio duration before transcription"
                                         name="minBufferDuration" min="1.0" max="5.0" step="0.5" value="2.5">
@@ -310,7 +310,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="maxBufferDuration" class="mb-field-label">
-                                        Maximum Buffer Duration: <span id="maxBufferDurationValue">6.0</span>s
+                                        Maximum Buffer Duration: <span id="maxBufferDurationValue" class="mb-mono">6.0</span>s
                                     </label>
                                     <input type="range" class="mb-range" id="maxBufferDuration" title="Maximum audio buffer size"
                                         name="maxBufferDuration" min="3.0" max="10.0" step="1.0" value="6.0">
@@ -323,7 +323,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="microphoneInputGain" class="mb-field-label">
-                                        Microphone Input Gain: <span id="microphoneInputGainValue">70</span>%
+                                        Microphone Input Gain: <span id="microphoneInputGainValue" class="mb-mono">70</span>%
                                     </label>
                                     <input type="range" class="mb-range" id="microphoneInputGain" title="System microphone input volume"
                                         name="microphoneInputGain" min="25" max="100" step="5" value="70">
@@ -352,7 +352,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="highpassFreq" class="mb-field-label">
-                                        Highpass Filter: <span id="highpassFreqValue">180</span>Hz
+                                        Highpass Filter: <span id="highpassFreqValue" class="mb-mono">180</span>Hz
                                     </label>
                                     <input type="range" class="mb-range" id="highpassFreq" name="highpassFreq" title="Highpass filter cutoff frequency"
                                         min="50" max="500" step="50" value="180">
@@ -365,7 +365,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="lowpassFreq" class="mb-field-label">
-                                        Lowpass Filter: <span id="lowpassFreqValue">4200</span>Hz
+                                        Lowpass Filter: <span id="lowpassFreqValue" class="mb-mono">4200</span>Hz
                                     </label>
                                     <input type="range" class="mb-range" id="lowpassFreq" name="lowpassFreq" title="Lowpass filter cutoff frequency"
                                         min="2000" max="8000" step="200" value="4200">
@@ -375,7 +375,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="denoiseLevel" class="mb-field-label">
-                                        Denoise Level: <span id="denoiseLevelValue">-22</span>dB
+                                        Denoise Level: <span id="denoiseLevelValue" class="mb-mono">-22</span>dB
                                     </label>
                                     <input type="range" class="mb-range" id="denoiseLevel" name="denoiseLevel" title="Noise reduction strength"
                                         min="-50" max="-10" step="5" value="-22">
@@ -419,7 +419,7 @@
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="minLetterRatio" class="mb-field-label">
-                                        Min Letter Ratio: <span id="minLetterRatioValue">55</span>%
+                                        Min Letter Ratio: <span id="minLetterRatioValue" class="mb-mono">55</span>%
                                     </label>
                                     <input type="range" class="mb-range" id="minLetterRatio" name="minLetterRatio" title="Minimum percentage of letters in text"
                                         min="30" max="90" step="5" value="55">
@@ -469,9 +469,9 @@
                                 <div id="micVUMeter" class="mb-meter-fill" role="progressbar"
                                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
-                            <span id="micVULabel" class="mb-badge ai-meter-label">0%</span>
+                            <span id="micVULabel" class="mb-badge ai-meter-label mb-mono">0%</span>
                         </div>
-                        <div id="liveTranscript" class="ai-transcript"></div>
+                        <div id="liveTranscript" class="ai-transcript mb-serif"></div>
                     </div>
                 </div>
             </div>

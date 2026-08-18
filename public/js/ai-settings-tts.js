@@ -158,7 +158,7 @@ TTSManager.prototype.updateVoiceLibraryDisplay = function () {
             '<span class="badge ' + categoryBadge + ' mb-2">' + voice.category + '</span>' +
             '<p class="card-text small text-muted mb-0">' + (voice.description || 'No description') + '</p>' +
             '</div>' +
-            '<button type="button" class="btn btn-sm btn-outline-primary" onclick="ttsManager.previewVoice(\'' + voice.voice_id + '\')">' +
+            '<button type="button" class="btn btn-sm btn-outline-primary" title="Preview this voice in your browser" onclick="ttsManager.previewVoice(\'' + voice.voice_id + '\')">' +
             '<i class="bi bi-play"></i>' +
             '</button>' +
             '</div>' +
