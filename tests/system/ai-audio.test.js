@@ -193,7 +193,7 @@ describe('AI Audio System Tests', function() {
             // This endpoint writes the LIVE per-character voice config. Posting
             // page-default 0.5/0.5 without restoring silently flattened the
             // selected character's hand-tuned stability/similarity on every
-            // system-suite run (observed on Orlok: vocal-profile 0.3/0.8 →
+            // system-suite run (observed live: a vocal-profile 0.3/0.8 →
             // 0.5/0.5) — voice_id survived the v9.2.0 merge fix, so the voice
             // kept its identity but lost its character. Snapshot, then restore.
             let original = null;

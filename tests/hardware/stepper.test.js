@@ -8,7 +8,7 @@ describe('Stepper Hardware Service', function () {
 
   before(async function () {
     // GPIO 23/24 below are RAW pins, not a part lookup. On a character whose
-    // real hardware already claims one of them (Orlok: GPIO 23 is the right
+    // real hardware already claims one of them (one node: GPIO 23 is the right
     // arm's MDD10A direction pin) this suite collides with live wiring and
     // fails with 'GPIO busy'. Only run where the character actually defines a
     // stepper part — same rule the other hardware suites follow.

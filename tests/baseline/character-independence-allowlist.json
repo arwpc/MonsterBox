@@ -124,41 +124,6 @@
     },
     {
       "pattern": "orlok-reference",
-      "file": "tests/hardware/test-hardware-fix.js",
-      "line": 35,
-      "snippet": "async function testOrlokParts() {",
-      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/hardware/test-hardware-fix.js",
-      "line": 36,
-      "snippet": "console.log('\\n🧛 TESTING ORLOK PARTS...\\n');",
-      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/hardware/test-hardware-fix.js",
-      "line": 97,
-      "snippet": "} else if (hostname.includes('orlok')) {",
-      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/hardware/test-hardware-fix.js",
-      "line": 98,
-      "snippet": "await testOrlokParts();",
-      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/hardware/test-hardware-fix.js",
-      "line": 100,
-      "snippet": "console.log('Unknown host. Please run this on mina or orlok.');",
-      "reason": "Hostname-based hardware test dispatch — parameterize in a follow-up pass."
-    },
-    {
-      "pattern": "orlok-reference",
       "file": "tests/hardware/test-hardware-timing.js",
       "line": 65,
       "snippet": "console.log('🎯 Testing 8000ms movements at 100% position on Mina and Orlok');",
@@ -195,7 +160,7 @@
     {
       "pattern": "orlok-reference",
       "file": "tests/system/head-animation.test.js",
-      "line": 328,
+      "line": 333,
       "snippet": "// All servos for Orlok should have config info",
       "reason": "Head-animation test with character-specific expectation."
     },
