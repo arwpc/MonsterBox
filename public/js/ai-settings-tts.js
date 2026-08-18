@@ -399,10 +399,20 @@ TTSManager.prototype.saveConfiguration = function () {
     // Normalize types
     config.stability = parseFloat(config.stability || '0.5');
     config.similarity_boost = parseFloat(config.similarity_boost || '0.5');
-    config.style = parseFloat(config.style || '0');
-    config.use_speaker_boost = !!document.getElementById('speakerBoost').checked;
     // voice_id comes from the form's name="voice_id" select — do NOT overwrite
     config.model = config.model || 'eleven_v3';
+    // Eleven v3 ignores style and speaker boost, and updateV3Visibility disables
+    // both controls for it — yet forcing them into the payload anyway is how
+    // tuned tts-config files quietly grew default-valued fields they never had
+    // on disk (the server merge persists every key sent). Only send what the
+    // operator can actually operate; the merge leaves absent keys untouched.
+    if (config.model === 'eleven_v3') {
+        delete config.style;
+        delete config.use_speaker_boost;
+    } else {
+        config.style = parseFloat(config.style || '0');
+        config.use_speaker_boost = !!document.getElementById('speakerBoost').checked;
+    }
 
     fetch('/api/elevenlabs/tts/config', {
         method: 'POST',

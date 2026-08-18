@@ -28,12 +28,12 @@ describe('MonsterBox Basic Tests', () => {
             expect(response.headers.location).to.equal('/scenes');
         });
 
-        it('should serve the live dashboard', async () => {
+        it('should redirect the absorbed live dashboard to the Scare Console', async () => {
             const response = await request(BASE_URL)
                 .get('/live')
-                .expect(200);
+                .expect(302);
 
-            expect(response.text).to.include('Live Dashboard');
+            expect(response.headers.location).to.equal('/');
         });
     });
 

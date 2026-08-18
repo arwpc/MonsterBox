@@ -1013,56 +1013,15 @@ router.post('/api/parts/:id/markers/:oldName/rename', express.json(), async (req
     }
 });
 
-// Linear actuator calibration page
-router.get('/linear_actuator/:id', async (req, res) => {
-    try {
-        const partId = req.params.id;
-        const ctx = await resolveCharacter(req);
-        const characterId = ctx ? ctx.id : null;
-        const parts = await loadCharacterParts(characterId);
-        const part = parts.find(p => String(p.id) === String(partId));
-
-        if (!part) {
-            return res.status(404).renderWithLayout('error', {
-                title: 'Part Not Found',
-                page: 'error',
-                error: 'Linear actuator not found',
-                message: `No linear actuator found with ID: ${partId}`
-            });
-        }
-
-        if (part.type !== 'linear_actuator') {
-            return res.status(400).renderWithLayout('error', {
-                title: 'Invalid Part Type',
-                page: 'error',
-    
-                testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
-                error: 'Invalid part type',
-                message: `Part ${partId} is not a linear actuator`
-            });
-        }
-
-        const calibrationStatus = await linearActuatorCalibration.getCalibrationStatus(partId, characterId);
-
-        res.renderWithLayout('setup/calibration-linear-actuator', {
-            title: `Calibrate ${part.name} - MonsterBox`,
-            page: 'setup-calibration-linear-actuator',
-
-            testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
-            part: part,
-            calibrationStatus: calibrationStatus
-        });
-    } catch (error) {
-        console.error('Error rendering linear actuator calibration page:', error);
-        res.status(500).renderWithLayout('error', {
-            title: 'Error',
-            page: 'error',
-
-            testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
-            error: 'Failed to load calibration page',
-            message: error.message
-        });
-    }
+// Legacy linear actuator calibration page — its dedicated view was retired in
+// favor of the unified calibration page, so redirect there (same pattern as the
+// /scenes legacy redirects). partId/characterId ride along so the target loads
+// the right character's parts and deep links keep their context.
+router.get('/linear_actuator/:id', (req, res) => {
+    const { characterId } = req.query;
+    let target = '/setup/calibration/unified?partId=' + encodeURIComponent(req.params.id);
+    if (characterId) target += '&characterId=' + encodeURIComponent(characterId);
+    res.redirect(target);
 });
 
 // API Routes for Linear Actuator Calibration
@@ -1298,59 +1257,15 @@ router.post('/api/linear_actuator/:id/reset', express.json(), async (req, res) =
 // ===== CONTINUOUS SERVO CALIBRATION ROUTES =====
 // ===== STANDARD (POSITIONAL) SERVO CALIBRATION ROUTES =====
 
-// Standard Servo Calibration Page
-router.get('/standard_servo/:id', async (req, res) => {
-    try {
-        const partId = req.params.id;
-        const ctx = await resolveCharacter(req);
-        const characterId = ctx ? ctx.id : null;
-        const parts = await loadCharacterParts(characterId);
-        const part = parts.find(p => String(p.id) === String(partId));
-
-        if (!part) {
-            return res.status(404).renderWithLayout('error', {
-                title: 'Part Not Found', page: 'error',
-                error: 'Part not found', message: `No part found with ID: ${partId}`
-            });
-        }
-
-        // Verify this is a standard positional servo (not continuous)
-        if (part.type !== 'servo' || String(part.config?.servoType || 'standard').toLowerCase() === 'continuous') {
-            return res.status(400).renderWithLayout('error', {
-                title: 'Invalid Part Type', page: 'error',
-                error: 'Invalid part type', message: 'This calibration page is only for standard positional servos'
-            });
-        }
-
-        const calibrationStatus = await standardServoCalibration.getCalibrationStatus(partId, characterId);
-        const suggestedPositions = standardServoCalibration.getSuggestedPositions(part.name);
-
-        // Provide list of other standard servos for Copy Calibration dropdown
-        const otherStandardServos = parts
-            .filter(p => String(p.id) !== String(partId) && p.type === 'servo' && String(p.config?.servoType || 'standard').toLowerCase() !== 'continuous')
-            .map(p => ({ id: p.id, name: p.name }));
-
-        res.renderWithLayout('setup/calibration-standard-servo', {
-            title: `Calibrate ${part.name} - MonsterBox`,
-            page: 'setup-calibration-standard-servo',
-
-            testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
-            part,
-            calibrationStatus,
-            suggestedPositions,
-            otherStandardServos
-        });
-    } catch (error) {
-        console.error('Error rendering standard servo calibration page:', error);
-        res.status(500).renderWithLayout('error', {
-            title: 'Error',
-            page: 'error',
-
-            testMode: (process.env.MB_TEST_MODE === '1' || String(process.env.MB_TEST_MODE).toLowerCase() === 'true'),
-            error: 'Failed to render page',
-            message: error.message
-        });
-    }
+// Legacy standard servo calibration page — its dedicated view was retired in
+// favor of the unified calibration page, so redirect there (same pattern as the
+// /scenes legacy redirects). partId/characterId ride along so the target loads
+// the right character's parts and deep links keep their context.
+router.get('/standard_servo/:id', (req, res) => {
+    const { characterId } = req.query;
+    let target = '/setup/calibration/unified?partId=' + encodeURIComponent(req.params.id);
+    if (characterId) target += '&characterId=' + encodeURIComponent(characterId);
+    res.redirect(target);
 });
 
 // API: Move to absolute angle

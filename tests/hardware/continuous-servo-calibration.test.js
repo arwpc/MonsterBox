@@ -1,295 +1,414 @@
 /**
- * Continuous Servo Calibration Tests
- * Tests for the continuous servo calibration functionality
+ * Servo calibration — unified API contract + calibration-store semantics.
+ *
+ * Rewritten against the API that actually exists. The previous suite drove a
+ * per-servo-type endpoint family (POST /setup/calibration/api/continuous_servo/:id/
+ * save-pulse | save-position | jog, GET .../status) that was removed with the legacy
+ * calibration services, created a REAL part in the node's live parts.json, and
+ * asserted 200 on a calibration page that is being retired. Every one of those
+ * assertions was against something that no longer exists.
+ *
+ * The surviving surface is the unified calibration API — server/calibration/router.js
+ * mounted at /api/calibration, backed by server/calibration/store.js — which is what
+ * views/setup/calibration.ejs actually calls.
+ *
+ * SAFETY. This file runs unattended on a live animatronic, so it commands no motion
+ * at all:
+ *   - the calibration store singleton is bound to a throwaway file BEFORE the router
+ *     imports it, so nothing here can rewrite the node's real calibration;
+ *   - every request either fails validation before an adapter is driven, or only
+ *     reads/writes calibration JSON;
+ *   - because the store is redirected, a driver reached from here would be running
+ *     WITHOUT the part's real profile — which is precisely why this suite must never
+ *     command a move. Measuring real travel stays an operator-supervised job on the
+ *     calibration page.
+ * A bare `npm run test:hardware` therefore cannot move a part.
+ *
+ * Character independence: the character comes from resolveCharacter(), and the two
+ * scoping tests take their ids from data/characters.json.
  */
 
 import { expect } from 'chai';
+import express from 'express';
 import request from 'supertest';
+import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
+import {
+    JsonCalibrationStore,
+    getCalibrationStore,
+    calibratedBounds,
+    isDegenerateWindow,
+    isPlaceholderProfile
+} from '../../server/calibration/store.js';
+import { loadParts } from '../../controllers/partsController.js';
+import { resolveCharacter } from '../../services/characterContext.js';
 
-const BASE_URL = 'http://127.0.0.1:3100';
+// No character defines part ids this high, so nothing behind these ids can be
+// energized. Profiles are keyed by id alone, so a synthetic id still exercises the
+// whole profile read/write contract — with no hardware attached to it.
+const SYNTHETIC_ABSOLUTE_SERVO = 990101;
+const SYNTHETIC_CONTINUOUS_SERVO = 990102;
+const SYNTHETIC_UNKNOWN_PART = 990199;
 
-const isHardwareAvailable = process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1';
+const ABSOLUTE_PROFILE = {
+    capability: { kind: 'absolute-servo', usMin: 500, usMax: 2500 },
+    bounds: { minAngle: 60, maxAngle: 120 },
+    presets: [],
+    motion: {}
+};
 
-(isHardwareAvailable ? describe : describe.skip)('Continuous Servo Calibration', function() {
-    this.timeout(10000);
+const CONTINUOUS_PROFILE = {
+    capability: { kind: 'continuous-servo', channel: 15, address: 64 },
+    bounds: null,
+    presets: [],
+    motion: { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.3 }], settleMs: 100 }
+};
 
-    let testPartId;
+describe('Servo calibration — unified API contract', function () {
+    this.timeout(15000);
 
-    before(async function() {
-        // Create a test continuous servo part
-        const response = await request(BASE_URL)
-            .post('/setup/calibration/api/parts')
-            .send({
-                name: 'Test Continuous Servo',
-                type: 'servo',
-                description: 'Test servo for calibration',
-                config: {
-                    servoType: 'continuous',
-                    controllerType: 'pca9685',
-                    channel: 15,
-                    address: 64,
-                    pca9685Frequency: 50
-                }
-            })
-            .expect(200);
+    let app;
+    let routerStore;
+    let characterId;
+    let tmpCalPath;
 
-        testPartId = response.body.part.id;
-        console.log(`Created test continuous servo with ID: ${testPartId}`);
+    before(async function () {
+        tmpCalPath = path.join(os.tmpdir(), `mb-hw-servo-cal-${process.pid}-${Date.now()}.json`);
+
+        // Bind the process-wide store singleton to the throwaway file first, then
+        // import the router — it grabs the singleton at module load. If another suite
+        // in this process already bound it, we inherit that instance; the cleanup
+        // below therefore works off routerStore.filePath rather than assuming ours.
+        routerStore = getCalibrationStore(tmpCalPath);
+        const { default: calibrationRouter } = await import('../../server/calibration/router.js');
+
+        app = express();
+        app.use('/api/calibration', calibrationRouter);
+
+        const character = await resolveCharacter(null);
+        characterId = character ? character.id : null;
     });
 
-    after(async function() {
-        // This suite creates a REAL part in the running node's parts.json. Cleanup
-        // used to assert a 200, so any failure threw out of the hook and left a
-        // phantom servo behind in live show data — indistinguishable from a real
-        // part, and pointing at a PCA9685 channel. Always attempt the delete, never
-        // let it throw, and say so loudly if it did not work.
-        if (!testPartId) return;
-        try {
-            const res = await request(BASE_URL).delete(`/setup/calibration/api/parts/${testPartId}`);
-            if (res.status !== 200) {
-                console.error(`⚠️  Test part ${testPartId} was NOT removed (HTTP ${res.status}). ` +
-                              'Delete it by hand — it is a fake part in live character data.');
-            }
-        } catch (err) {
-            console.error(`⚠️  Test part ${testPartId} cleanup failed: ${err.message}. ` +
-                          'Delete it by hand — it is a fake part in live character data.');
+    after(async function () {
+        // Remove the synthetic profiles explicitly: if the singleton redirect above
+        // lost a race and we are on the node's real calibration file, this is what
+        // keeps the animatronic's data clean.
+        for (const partId of [SYNTHETIC_ABSOLUTE_SERVO, SYNTHETIC_CONTINUOUS_SERVO]) {
+            try { await routerStore.delete(partId, characterId); } catch (_) { /* best effort */ }
+        }
+        // Only ever unlink a file we know is a scratch file.
+        if (routerStore && routerStore.filePath && routerStore.filePath.startsWith(os.tmpdir())) {
+            await fs.unlink(routerStore.filePath).catch(() => {});
         }
     });
 
-    it('should render calibration page for continuous servo', async function() {
-        const response = await request(BASE_URL)
-            .get(`/setup/calibration/continuous_servo/${testPartId}`)
-            .expect(200);
+    describe('profile read/write', function () {
+        it('refuses to auto-create a profile for an id that is not a part', async function () {
+            const res = await request(app).get(`/api/calibration/${SYNTHETIC_UNKNOWN_PART}/profile`);
+            expect(res.status).to.equal(404);
+            expect(res.body).to.have.property('success', false);
+        });
 
-        expect(response.text).to.include('Calibrate Continuous Servo');
-        expect(response.text).to.include('Test Continuous Servo');
-        expect(response.text).to.include('Phase 1: Pulse Calibration');
-        expect(response.text).to.include('Phase 2: Position Calibration');
-        expect(response.text).to.include('Jog Controls');
+        it('stores an absolute-servo profile and reads it back', async function () {
+            const saved = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/profile`)
+                .send(ABSOLUTE_PROFILE);
+
+            expect(saved.status).to.equal(200);
+            expect(saved.body).to.have.property('success', true);
+            expect(saved.body.profile).to.have.property('partId', SYNTHETIC_ABSOLUTE_SERVO);
+
+            const read = await request(app).get(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/profile`);
+            expect(read.status).to.equal(200);
+            expect(read.body).to.have.property('success', true);
+            expect(read.body.profile.capability).to.have.property('kind', 'absolute-servo');
+            expect(read.body.profile.bounds).to.deep.include({ minAngle: 60, maxAngle: 120 });
+        });
+
+        it('stores a continuous-servo profile with its channel and address', async function () {
+            const saved = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_CONTINUOUS_SERVO}/profile`)
+                .send(CONTINUOUS_PROFILE);
+
+            expect(saved.status).to.equal(200);
+
+            const read = await request(app).get(`/api/calibration/${SYNTHETIC_CONTINUOUS_SERVO}/profile`);
+            expect(read.status).to.equal(200);
+            expect(read.body.profile.capability).to.deep.include({
+                kind: 'continuous-servo',
+                channel: 15,
+                address: 64
+            });
+        });
+
+        it('keys the stored profile by character, not by bare part id', async function () {
+            const res = await request(app).get('/api/calibration/profiles');
+            expect(res.status).to.equal(200);
+            expect(res.body).to.have.property(`${characterId}:${SYNTHETIC_ABSOLUTE_SERVO}`);
+            expect(res.body).to.not.have.property(String(SYNTHETIC_ABSOLUTE_SERVO));
+        });
+
+        it('rejects a profile whose capability kind no adapter understands', async function () {
+            const res = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/profile`)
+                .send({ capability: { kind: 'telekinesis' }, bounds: { minAngle: 0, maxAngle: 90 } });
+
+            expect(res.status).to.equal(400);
+            expect(res.body).to.have.property('success', false);
+            expect(res.body.error).to.match(/capability\.kind/i);
+        });
+
+        it('rejects bounds that are not finite numbers', async function () {
+            const res = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/profile`)
+                .send({ capability: { kind: 'absolute-servo' }, bounds: { minAngle: 'sixty', maxAngle: 120 } });
+
+            expect(res.status).to.equal(400);
+            expect(res.body.error).to.match(/finite number/i);
+        });
+
+        it('rejects a zero-span angle window (the frozen-servo case)', async function () {
+            // min === max clamps every later command to one angle, so the part can
+            // never move again and looks exactly like the dead servo the operator was
+            // diagnosing. The writer must refuse it, not persist it.
+            const res = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/profile`)
+                .send({ capability: { kind: 'absolute-servo' }, bounds: { minAngle: 108, maxAngle: 108 } });
+
+            expect(res.status).to.equal(409);
+            expect(res.body).to.have.property('success', false);
+
+            // The refusal must leave the previously stored window intact.
+            const read = await request(app).get(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/profile`);
+            expect(read.body.profile.bounds).to.deep.include({ minAngle: 60, maxAngle: 120 });
+        });
+
+        it('clears a profile on request', async function () {
+            const del = await request(app).delete(`/api/calibration/${SYNTHETIC_CONTINUOUS_SERVO}/profile`);
+            expect(del.status).to.equal(200);
+            expect(del.body).to.have.property('success', true);
+
+            const read = await request(app).get(`/api/calibration/${SYNTHETIC_CONTINUOUS_SERVO}/profile`);
+            expect(read.status).to.equal(404);
+        });
     });
 
-    it('should get calibration status (initially empty)', async function() {
-        const response = await request(BASE_URL)
-            .get(`/setup/calibration/api/continuous_servo/${testPartId}/status`)
-            .expect(200);
+    describe('validation — refusals that never reach a driver', function () {
+        it('rejects an out-of-range goto angle', async function () {
+            const res = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/goto`)
+                .send({ angle: 200 });
 
-        expect(response.body).to.have.property('success', true);
-        expect(response.body).to.have.property('status');
-        expect(response.body.status).to.have.property('pulseCalibrated').that.is.a('boolean');
-        expect(response.body.status).to.have.property('positionsCalibrated').that.is.a('boolean');
+            expect(res.status).to.equal(400);
+            expect(res.body.error).to.match(/angle/i);
+        });
+
+        it('rejects a non-numeric goto angle', async function () {
+            const res = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/goto`)
+                .send({ angle: '90' });
+
+            expect(res.status).to.equal(400);
+        });
+
+        it('rejects a nudge with neither (dir, scale) nor delta', async function () {
+            const res = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/nudge`)
+                .send({});
+
+            expect(res.status).to.equal(400);
+            expect(res.body.error).to.match(/dir, scale|delta/i);
+        });
+
+        it('rejects a nudge with an unknown direction or scale', async function () {
+            const res = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/nudge`)
+                .send({ dir: 'sideways', scale: 'fine' });
+
+            expect(res.status).to.equal(400);
+        });
+
+        it('refuses homing on a part type that cannot home', async function () {
+            const res = await request(app)
+                .post(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/home`)
+                .send({ direction: 'retract' });
+
+            expect(res.status).to.equal(400);
+            expect(res.body.error).to.match(/homing/i);
+        });
+
+        it('rejects a nonsensical global speed cap', async function () {
+            const res = await request(app)
+                .post('/api/calibration/global-speed-cap')
+                .send({ speedPct: 150 });
+
+            expect(res.status).to.equal(400);
+        });
+
+        it('reports the current global speed cap', async function () {
+            const res = await request(app).get('/api/calibration/global-speed-cap');
+            expect(res.status).to.equal(200);
+            expect(res.body).to.have.property('success', true);
+            expect(res.body.speedPct).to.be.a('number');
+        });
+
+        it('refuses clear-all without an explicit part list', async function () {
+            const res = await request(app).post('/api/calibration/clear-all').send({});
+            expect(res.status).to.equal(400);
+        });
     });
 
-    it('should save stop pulse calibration', async function() {
-        const response = await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/save-pulse`)
-            .send({
-                pulseType: 'stop',
-                pulseUs: 1460
-            })
-            .expect(200);
-
-        expect(response.body).to.have.property('success', true);
-        expect(response.body).to.have.property('message').that.includes('STOP pulse saved');
-        expect(response.body.calibrationData).to.have.property('stop_pulse_us', 1460);
-        expect(response.body.calibrationData).to.have.property('servo_type', 'continuous');
+    describe('position reporting', function () {
+        it('reports an unknown position for an absolute servo it has never driven', async function () {
+            const res = await request(app).get(`/api/calibration/${SYNTHETIC_ABSOLUTE_SERVO}/position`);
+            expect(res.status).to.equal(200);
+            expect(res.body).to.have.property('success', true);
+            expect(res.body).to.have.property('kind', 'absolute-servo');
+            expect(res.body.currentAngle).to.equal(null);
+        });
     });
 
-    it('should save CW pulse calibration', async function() {
-        const response = await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/save-pulse`)
-            .send({
-                pulseType: 'cw',
-                pulseUs: 1200
-            })
-            .expect(200);
+    describe('auto-created profiles are placeholders, not measurements', function () {
+        let servoPartId;
 
-        expect(response.body).to.have.property('success', true);
-        expect(response.body).to.have.property('message').that.includes('CW pulse saved');
-        expect(response.body.calibrationData).to.have.property('cw_pulse_us', 1200);
+        before(async function () {
+            const parts = await loadParts();
+            const servo = parts.find(p => p.type === 'servo');
+            if (!servo) this.skip(); // character has no servo — nothing to assert
+            servoPartId = servo.id;
+        });
+
+        it('marks an auto-created servo profile autoGenerated and withholds its span from movers', async function () {
+            const res = await request(app).get(`/api/calibration/${servoPartId}/profile`);
+            expect(res.status).to.equal(200);
+
+            // The endpoint answers from getRaw() because it is the writer's view — the
+            // operator has to see the span they are about to replace.
+            const raw = res.body.profile;
+            if (raw.autoGenerated) {
+                expect(raw.bounds, 'placeholder span is visible to the writer').to.not.equal(null);
+
+                // ...but the read path used by anything that MOVES the part must not
+                // hand a guess back as a measurement.
+                const forUse = await routerStore.get(servoPartId, characterId);
+                expect(forUse.bounds, 'placeholder withheld from movers').to.equal(null);
+                expect(forUse.placeholderBounds).to.not.equal(null);
+                expect(calibratedBounds(forUse), 'no calibrated window exists yet').to.equal(null);
+            } else {
+                // Already calibrated by an operator: then it must be a real window.
+                expect(calibratedBounds(raw), 'a calibrated profile reports its window').to.not.equal(null);
+            }
+        });
+    });
+});
+
+describe('Servo calibration — store read/write semantics', function () {
+    this.timeout(10000);
+
+    let store;
+    let tmpFile;
+    let counter = 0;
+
+    beforeEach(function () {
+        tmpFile = path.join(os.tmpdir(), `mb-hw-servo-store-${process.pid}-${Date.now()}-${counter++}.json`);
+        store = new JsonCalibrationStore(tmpFile);
     });
 
-    it('should save CCW pulse calibration', async function() {
-        const response = await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/save-pulse`)
-            .send({
-                pulseType: 'ccw',
-                pulseUs: 1800
-            })
-            .expect(200);
-
-        expect(response.body).to.have.property('success', true);
-        expect(response.body).to.have.property('message').that.includes('CCW pulse saved');
-        expect(response.body.calibrationData).to.have.property('ccw_pulse_us', 1800);
+    afterEach(async function () {
+        await fs.unlink(tmpFile).catch(() => {});
     });
 
-    it('should show pulse calibrated status', async function() {
-        const response = await request(BASE_URL)
-            .get(`/setup/calibration/api/continuous_servo/${testPartId}/status`)
-            .expect(200);
+    it('withholds an autoGenerated span from readers but keeps it for writers', async function () {
+        await store.upsert({
+            partId: 42,
+            capability: { kind: 'absolute-servo' },
+            bounds: { minAngle: 0, maxAngle: 180 },
+            autoGenerated: true
+        }, 1);
 
-        expect(response.body.status).to.have.property('exists', true);
-        expect(response.body.status).to.have.property('pulseCalibrated', true);
-        expect(response.body.status).to.have.property('stopPulseCalibrated', true);
-        expect(response.body.status).to.have.property('cwPulseCalibrated', true);
-        expect(response.body.status).to.have.property('ccwPulseCalibrated', true);
+        const forUse = await store.get(42, 1);
+        expect(isPlaceholderProfile(forUse)).to.equal(true);
+        expect(forUse.bounds).to.equal(null);
+        expect(forUse.placeholderBounds).to.deep.include({ minAngle: 0, maxAngle: 180 });
+        expect(calibratedBounds(forUse)).to.equal(null);
+
+        const forWrite = await store.getRaw(42, 1);
+        expect(forWrite.bounds, 'writers must not lose the span on read-modify-write')
+            .to.deep.include({ minAngle: 0, maxAngle: 180 });
     });
 
-    it('should save named position', async function() {
-        const response = await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/save-position`)
-            .send({
-                positionName: 'forward',
-                description: '0° - Facing directly forward'
-            })
-            .expect(200);
+    it('returns a measured window unchanged', async function () {
+        await store.upsert({
+            partId: 42,
+            capability: { kind: 'absolute-servo' },
+            bounds: { minAngle: 63, maxAngle: 131 },
+            autoGenerated: false
+        }, 1);
 
-        expect(response.body).to.have.property('success', true);
-        expect(response.body).to.have.property('message').that.includes('Position "forward" saved');
-        expect(response.body.calibrationData.positions.forward).to.have.property('calibrated', true);
-        expect(response.body.calibrationData.positions.forward).to.have.property('description', '0° - Facing directly forward');
+        const forUse = await store.get(42, 1);
+        expect(forUse.bounds).to.deep.include({ minAngle: 63, maxAngle: 131 });
+        expect(calibratedBounds(forUse)).to.deep.include({ minAngle: 63, maxAngle: 131 });
     });
 
-    it('should save multiple positions', async function() {
-        // Save left position
-        await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/save-position`)
-            .send({
-                positionName: 'left_90',
-                description: '90° - Facing left'
-            })
-            .expect(200);
+    it('withholds a zero-span window and names it degenerate', async function () {
+        expect(isDegenerateWindow({ minAngle: 108, maxAngle: 108 })).to.equal(true);
 
-        // Save right position
-        await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/save-position`)
-            .send({
-                positionName: 'right_90',
-                description: '90° - Facing right'
-            })
-            .expect(200);
+        await store.upsert({
+            partId: 42,
+            capability: { kind: 'absolute-servo' },
+            bounds: { minAngle: 108, maxAngle: 108 },
+            autoGenerated: false
+        }, 1);
 
-        // Check status
-        const statusResponse = await request(BASE_URL)
-            .get(`/setup/calibration/api/continuous_servo/${testPartId}/status`)
-            .expect(200);
+        const forUse = await store.get(42, 1);
+        expect(forUse.bounds, 'a pinned window is not a measurement').to.equal(null);
+        expect(forUse.degenerateBounds, 'surfaced so the page can tell the operator to redo the run')
+            .to.deep.include({ minAngle: 108, maxAngle: 108 });
+        expect(calibratedBounds(forUse)).to.equal(null);
+    });
+});
 
-        expect(statusResponse.body.status).to.have.property('positionsCalibrated', true);
-        expect(statusResponse.body.status.calibratedPositions).to.include('forward');
-        expect(statusResponse.body.status.calibratedPositions).to.include('left_90');
-        expect(statusResponse.body.status.calibratedPositions).to.include('right_90');
+describe('Servo calibration — character scoping', function () {
+    this.timeout(10000);
+
+    let store;
+    let tmpFile;
+    let charA;
+    let charB;
+    const sharedPartId = 5; // ids are only unique WITHIN a character
+
+    before(async function () {
+        const registry = JSON.parse(await fs.readFile(path.resolve('data/characters.json'), 'utf8'));
+        if (!Array.isArray(registry) || registry.length < 2) this.skip();
+        charA = registry[0].id;
+        charB = registry[1].id;
     });
 
-    it('should jog servo CW', async function() {
-        const response = await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/jog`)
-            .send({
-                direction: 'cw',
-                speed: 50,
-                duration: 500
-            })
-            .expect(200);
-
-        expect(response.body).to.have.property('success', true);
-        expect(response.body).to.have.property('message').that.includes('rotating cw');
+    beforeEach(function () {
+        tmpFile = path.join(os.tmpdir(), `mb-hw-servo-scope-${process.pid}-${Date.now()}.json`);
+        store = new JsonCalibrationStore(tmpFile);
     });
 
-    it('should jog servo CCW', async function() {
-        const response = await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/jog`)
-            .send({
-                direction: 'ccw',
-                speed: 75,
-                duration: 1000
-            })
-            .expect(200);
-
-        expect(response.body).to.have.property('success', true);
-        expect(response.body).to.have.property('message').that.includes('rotating ccw');
+    afterEach(async function () {
+        await fs.unlink(tmpFile).catch(() => {});
     });
 
-    it('should stop servo', async function() {
-        const response = await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/jog`)
-            .send({
-                direction: 'stop',
-                speed: 0,
-                duration: 100
-            })
-            .expect(200);
+    it('keeps two characters that share a part id isolated', async function () {
+        await store.upsert({ partId: sharedPartId, bounds: { minAngle: 10, maxAngle: 40 } }, charA);
+        await store.upsert({ partId: sharedPartId, bounds: { minAngle: 100, maxAngle: 140 } }, charB);
 
-        expect(response.body).to.have.property('success', true);
-        expect(response.body).to.have.property('message').that.includes('stopped');
+        expect((await store.get(sharedPartId, charA)).bounds.maxAngle).to.equal(40);
+        expect((await store.get(sharedPartId, charB)).bounds.maxAngle).to.equal(140);
     });
 
-    it('should reset calibration', async function() {
-        const response = await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/reset`)
-            .send({})
-            .expect(200);
+    it('deletes only the targeted character calibration', async function () {
+        await store.upsert({ partId: sharedPartId, bounds: { minAngle: 10, maxAngle: 40 } }, charA);
+        await store.upsert({ partId: sharedPartId, bounds: { minAngle: 100, maxAngle: 140 } }, charB);
 
-        expect(response.body).to.have.property('success', true);
-        expect(response.body).to.have.property('message').that.includes('reset successfully');
+        expect(await store.delete(sharedPartId, charA)).to.equal(true);
 
-        // Verify calibration is reset
-        const statusResponse = await request(BASE_URL)
-            .get(`/setup/calibration/api/continuous_servo/${testPartId}/status`)
-            .expect(200);
-
-        expect(statusResponse.body.status).to.have.property('exists', false);
-        expect(statusResponse.body.status).to.have.property('pulseCalibrated', false);
-        expect(statusResponse.body.status).to.have.property('positionsCalibrated', false);
-    });
-
-    it('should reject invalid pulse types', async function() {
-        await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/save-pulse`)
-            .send({
-                pulseType: 'invalid',
-                pulseUs: 1500
-            })
-            .expect(400);
-    });
-
-    it('should reject invalid pulse widths', async function() {
-        await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/save-pulse`)
-            .send({
-                pulseType: 'stop',
-                pulseUs: 3000  // Too high
-            })
-            .expect(400);
-
-        await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/save-pulse`)
-            .send({
-                pulseType: 'stop',
-                pulseUs: 300   // Too low
-            })
-            .expect(400);
-    });
-
-    it('should reject invalid jog directions', async function() {
-        await request(BASE_URL)
-            .post(`/setup/calibration/api/continuous_servo/${testPartId}/jog`)
-            .send({
-                direction: 'invalid',
-                speed: 50,
-                duration: 500
-            })
-            .expect(400);
-    });
-
-    it('should reject calibration for non-existent part', async function() {
-        await request(BASE_URL)
-            .get('/setup/calibration/continuous_servo/99999')
-            .expect(404);
-    });
-
-    it('should reject calibration for non-continuous servo', async function() {
-        // This would need a standard servo part to test against
-        // For now, we'll test with an invalid part type
-        await request(BASE_URL)
-            .get('/setup/calibration/continuous_servo/1') // Assuming part 1 is not a continuous servo
-            .expect(400);
+        expect(await store.get(sharedPartId, charA)).to.equal(null);
+        expect((await store.get(sharedPartId, charB)).bounds.maxAngle).to.equal(140);
     });
 });
