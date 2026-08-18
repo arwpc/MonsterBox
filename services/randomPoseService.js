@@ -14,11 +14,25 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Owner tag for priorityManager claims — random poses are conversation-scoped
-// choreography, so they claim at GESTURE_STATE: above head tracking and idle
-// (a deliberate pose should win over ambient motion) but below named gestures
-// and scenes.
-const POSE_OWNER = 'random-pose';
+// Owner tag prefix for priorityManager claims — random poses are
+// conversation-scoped choreography, so they claim at GESTURE_STATE: above head
+// tracking and idle (a deliberate pose should win over ambient motion) but
+// below named gestures and scenes.
+//
+// Every execution mints its OWN owner string, '<prefix>:<characterId>:<n>'.
+// claimServo grants equal-priority preemption (85 >= 85), so a second
+// overlapping execution legitimately takes the servo from the first; when the
+// first then ran its finally-release under a SHARED owner string, it matched
+// the second execution's live claim and deleted it mid-pose, handing the servo
+// straight back to the idle loop for a conflicting angle. A per-invocation
+// identity makes releaseServo's owner check reject that stale release.
+// The prefix stays first so the /api/movement/claims dashboard still reads as
+// "random-pose…" (same shape as head tracking's 'head-tracking:<webcamId>').
+const POSE_OWNER_PREFIX = 'random-pose';
+
+// Monotonic per-process counter — only needs to be unique among the executions
+// alive at the same instant.
+let poseInvocationSeq = 0;
 
 class RandomPoseService {
     constructor() {
@@ -170,6 +184,7 @@ class RandomPoseService {
      */
     async executePoseWithSafety(characterId, poseId, amplitude = 0.5) {
         const claimedServoIds = [];
+        const poseOwner = `${POSE_OWNER_PREFIX}:${characterId}:${++poseInvocationSeq}`;
         try {
             // Load the pose
             const pose = await poseRepository.getPose(characterId, poseId);
@@ -194,7 +209,7 @@ class RandomPoseService {
                 }
             }
             for (const partId of servoPartIds) {
-                const claim = claimServo(partId, POSE_OWNER, PRIORITY.GESTURE_STATE);
+                const claim = claimServo(partId, poseOwner, PRIORITY.GESTURE_STATE);
                 if (!claim.granted) {
                     return { success: false, reason: 'servo claim denied' };
                 }
@@ -220,10 +235,12 @@ class RandomPoseService {
             console.error(`❌ Safe pose execution failed:`, error);
             return { success: false, error: error.message };
         } finally {
-            // Release exactly what we claimed (not releaseAll) so overlapping
-            // executions for other characters cannot free each other's claims.
+            // Release only claims THIS execution still holds. releaseServo is
+            // owner-checked, so if a later pose (or a scene/gesture) preempted
+            // us the release is a logged no-op and the new owner keeps the
+            // servo — never a hand-back to the idle loop mid-transition.
             for (const partId of claimedServoIds) {
-                releaseServo(partId, POSE_OWNER);
+                releaseServo(partId, poseOwner);
             }
         }
     }

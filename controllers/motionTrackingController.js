@@ -333,6 +333,23 @@ async function stopMotionTrackingInternal(webcamId) {
 
   trackingStatus.delete(webcamId);
   trackingConfigs.delete(webcamId);
+
+  // The pan claim is only meaningful while frames are arriving: maybeDriveHead
+  // is driven by tracker stdout, so with the tracker dead nothing can drive the
+  // servo OR release the claim. Left held, the pan servo was frozen out of all
+  // idle/ambient motion (plus a DENIED log line every idle cycle) until head
+  // tracking was explicitly disabled or the server restarted.
+  //
+  // cfg.enabled deliberately stays TRUE: it means "head tracking is armed", and
+  // the operator only stopped the camera. maybeDriveHead re-claims on the first
+  // frame after tracking restarts, so re-enable behaves correctly without the
+  // UI toggle silently flipping itself off under the operator.
+  // releaseServo is owner-checked, so this can only ever free this webcam's own
+  // claim, and a later disableHeadTracking release is a harmless no-op.
+  const headCfg = headTrackingConfigs.get(webcamId);
+  if (headCfg && headCfg.panServoId != null) {
+    releaseServo(headCfg.panServoId, headOwner(webcamId));
+  }
 }
 
 /**
