@@ -82,11 +82,17 @@ function pToAngle(p) { return Math.round(Math.max(0, Math.min(1, p)) * 180 * 10)
  * held 119.6 - on the one page whose job is to measure real travel. Report the
  * driven angle, and name the commanded one when the two differ.
  */
-function describeServoMove(verb, commandedAngle, drivenAngle) {
+function describeServoMove(verb, commandedAngle, drivenAngle, profile) {
   if (!Number.isFinite(drivenAngle) || Math.abs(drivenAngle - commandedAngle) < 0.05) {
     return `${verb} ${commandedAngle}°`;
   }
-  return `${verb} ${drivenAngle}° (commanded ${commandedAngle}° — inverted servo)`;
+  // Say WHY the two differ rather than assuming. Inversion is one cause; a safety
+  // clamp is another, and blaming the wrong one sends the operator to check the
+  // wrong thing. invert lives on the calibration profile's capability, never on
+  // the part record - part.config.invert is undefined for every part.
+  const inverted = !!(profile && profile.capability && profile.capability.invert);
+  const cause = inverted ? 'inverted servo' : 'clamped by safety limits';
+  return `${verb} ${drivenAngle}° (commanded ${commandedAngle}° — ${cause})`;
 }
 
 /** Persist position for open-loop parts to disk */
@@ -362,7 +368,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         const currentAngle = adapter.currentAngle;
         const drivenAngle = Number.isFinite(adapter.lastDrivenAngle) ? adapter.lastDrivenAngle : currentAngle;
         positionState.set(partId, { currentAngle, currentP: angleToP(currentAngle), lastUpdated: new Date().toISOString() });
-        res.json({ success: true, message: `Nudged ${dir} at ${scale} — ${describeServoMove('now at', currentAngle, drivenAngle)}`, currentAngle, drivenAngle, currentP: angleToP(currentAngle) });
+        res.json({ success: true, message: `Nudged ${dir} at ${scale} — ${describeServoMove('now at', currentAngle, drivenAngle, profile)}`, currentAngle, drivenAngle, currentP: angleToP(currentAngle) });
       } else {
         const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
         persistPosition(partId, currentP);
@@ -396,7 +402,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         const newAngle = Math.max(0, Math.min(180, currentAngle + delta));
         const drivenAngle = await adapter.gotoAngle(newAngle, { speedPct, durationMs, calibrationOverride: true });
         positionState.set(partId, { currentAngle: newAngle, currentP: angleToP(newAngle), lastUpdated: new Date().toISOString() });
-        res.json({ success: true, message: `Nudged by ${delta}° — ${describeServoMove('now at', newAngle, drivenAngle)}`, currentAngle: newAngle, drivenAngle, currentP: angleToP(newAngle) });
+        res.json({ success: true, message: `Nudged by ${delta}° — ${describeServoMove('now at', newAngle, drivenAngle, profile)}`, currentAngle: newAngle, drivenAngle, currentP: angleToP(newAngle) });
       } else {
         const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
         // FIX: Apply calibration bounds to nudge (was missing before).
@@ -593,7 +599,7 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       }
       const drivenAngle = await adapter.gotoAngle(targetAngle, { speedPct, calibrationOverride: calOverride });
       positionState.set(partId, { currentAngle: targetAngle, currentP: angleToP(targetAngle), lastUpdated: new Date().toISOString() });
-      res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle), targetAngle, drivenAngle, targetP: angleToP(targetAngle), requestedAngle: angle, clamped: targetAngle !== angle });
+      res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle, profile), targetAngle, drivenAngle, targetP: angleToP(targetAngle), requestedAngle: angle, clamped: targetAngle !== angle });
     } else {
       const { p, speedPct } = req.body;
       if (typeof p !== 'number' || p < 0 || p > 1) {
@@ -616,7 +622,7 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       if (isAbsoluteServo(profile)) {
         const targetAngle = pToAngle(clampedP);
         positionState.set(partId, { currentAngle: targetAngle, currentP: clampedP, lastUpdated: new Date().toISOString() });
-        res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle), targetP: clampedP, targetAngle, drivenAngle });
+        res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle, profile), targetP: clampedP, targetAngle, drivenAngle });
       } else {
         persistPosition(partId, clampedP);
         res.json({ success: true, message: `Moved to ${clampedP}`, targetP: clampedP });

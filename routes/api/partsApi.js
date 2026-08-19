@@ -182,14 +182,21 @@ function testResponse(res, result, part, okMessage, extra = {}) {
  * the calibration profile's capability, never on the part record), so echoing the
  * request back told the operator "moved to 60°" while the PCA9685 register held
  * 119.6°. Report the driven angle, and name the commanded one when they differ.
- * Wording is kept identical to describeServoMove() in server/calibration/router.js
- * so the two endpoints cannot describe the same move differently.
+ * The calibration sibling in server/calibration/router.js names the cause, because
+ * it has the profile loaded and can tell inversion from a safety clamp. This one
+ * has only the part record, so it states the two numbers and leaves the cause to
+ * the safety adjustments testResponse already reports.
  */
 function describeServoMove(verb, commandedAngle, drivenAngle) {
     if (!Number.isFinite(drivenAngle) || Math.abs(drivenAngle - commandedAngle) < 0.05) {
         return `${verb} ${commandedAngle}°`;
     }
-    return `${verb} ${drivenAngle}° (commanded ${commandedAngle}° — inverted servo)`;
+    // Deliberately does NOT name a cause. The two usual reasons an inverted-vs-
+    // commanded gap appears are servo inversion and a safety clamp, and this route
+    // cannot tell them apart: invert lives on the calibration profile's capability,
+    // which is not loaded here. testResponse already appends the safety adjustments
+    // when there are any, so guessing here could only contradict it.
+    return `${verb} ${drivenAngle}° (commanded ${commandedAngle}°)`;
 }
 
 router.post('/:id/test', express.json(), async (req, res) => {
