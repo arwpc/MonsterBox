@@ -4,12 +4,12 @@
   "format": "wav",
   "sampleRate": 16000,
   "channels": 1,
-  "microphonePartId": null,
-  "microphoneDeviceId": "pulse",
+  "microphonePartId": "8",
+  "microphoneDeviceId": "default",
   "vadEnabled": true,
-  "vadThreshold": 0.35,
-  "vadSilenceDuration": 500,
-  "audioFilterEnabled": true,
+  "vadThreshold": 0.015,
+  "vadSilenceDuration": 1200,
+  "audioFilterEnabled": false,
   "highpassFreq": 180,
   "lowpassFreq": 4200,
   "denoiseLevel": -22,
@@ -17,5 +17,8 @@
   "validateEnglish": true,
   "minLetterRatio": 55,
   "requireVowels": true,
-  "deviceId": "pulse"
+  "deviceId": "pulse",
+  "utteranceAggregation": true,
+  "_preset": "webcam-mic-farfield",
+  "_presetName": "Webcam Mic (Far-Field, measured 2026-08-18)"
 }

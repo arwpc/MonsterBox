@@ -47,9 +47,26 @@ def _setup_pipewire_source(device_id):
 
 def _get_default_input_device(pa):
     """
-    Get the default input device index from PyAudio.
-    Returns device index or None if not found.
+    Get the input device index to capture from.
+
+    Prefer PortAudio's "pipewire"/"pulse" devices over the bare ALSA "default".
+    ALSA's "default" PCM can point straight at a hardware card, which bypasses
+    PipeWire entirely: the node's default source and PULSE_SOURCE are then both
+    ignored, and capture silently returns digital silence if that card has
+    nothing connected. Measured on Mina: "default" -> RMS 0.0001 (dead dongle)
+    while "pulse" -> 0.0066 (the actual room) with the same routing requested.
+    Going through pipewire/pulse is also what makes PULSE_SOURCE work at all.
     """
+    for wanted in ('pipewire', 'pulse'):
+        try:
+            for i in range(pa.get_device_count()):
+                info = pa.get_device_info_by_index(i)
+                if int(info.get('maxInputChannels') or 0) < 1:
+                    continue
+                if str(info.get('name', '')).strip().lower() == wanted:
+                    return i
+        except Exception:
+            pass
     try:
         default_info = pa.get_default_input_device_info()
         return default_info['index']

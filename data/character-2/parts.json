@@ -22,7 +22,7 @@
     "name": "Neck",
     "type": "servo",
     "pin": null,
-    "description": "Head/neck servo for turning — pan servo for head tracking",
+    "description": "Head/neck servo for turning \u2014 pan servo for head tracking",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
@@ -58,7 +58,7 @@
     "name": "Servo Channel Laser",
     "type": "light",
     "pin": null,
-    "description": "Eye laser powered via PCA9685 channel 0 — toggle on/off",
+    "description": "Eye laser powered via PCA9685 channel 0 \u2014 toggle on/off",
     "config": {
       "controllerType": "pca9685",
       "address": 64,
@@ -127,7 +127,7 @@
         "trackingDeadzone": 8
       },
       "headTracking": {
-        "panServoId": "2",
+        "panServoId": "",
         "rangeDeg": 90,
         "smoothing": 0.35
       }
@@ -135,7 +135,7 @@
     "created": "2025-10-12T06:00:06.000Z",
     "enabled": true,
     "modelId": "default-uvc-1",
-    "updated": "2026-02-20T15:36:48.093Z"
+    "updated": "2026-08-18T23:49:46.333Z"
   },
   {
     "id": "8",
@@ -144,7 +144,8 @@
     "pin": null,
     "description": "Webcam built-in mic",
     "config": {
-      "deviceId": "default"
+      "deviceId": "default",
+      "sourceName": "alsa_input.usb-SONix_Technology_Co.__Ltd._Streaming_Camera_SN0001-02.mono-fallback"
     },
     "created": "2025-10-12T06:00:07.000Z",
     "enabled": true,
