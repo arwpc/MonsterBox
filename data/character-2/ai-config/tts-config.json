@@ -3,5 +3,8 @@
   "stability": 0.3,
   "similarity_boost": 0.8,
   "voice_id": "hkk1bPcdsxSQCLzLFMT2",
-  "speed": 0.87
+  "speed": 0.87,
+  "conversationalMode": false,
+  "style": 0,
+  "use_speaker_boost": true
 }
