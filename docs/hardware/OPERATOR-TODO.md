@@ -135,3 +135,13 @@ PCA9685 channels, and v8.1.5 moved the Eye ch12→ch11. Both were software-only 
 physically confirmed. If the neck and eye were never actually rewired to the PCA9685, that alone explains
 the result. GPIO pins were deliberately not swept — blindly driving GPIO outputs risks whatever else is on
 them.
+
+### Sir Dragomir has no scenes, so he silently sits out every fleet show
+
+`data/character-4/scenes.json` is an empty array and his `defaultSceneId` is `null`. When you start a
+fleet queue loop, `services/orchestrationService.js:602-607` returns
+`success:false, "No defaultSceneId configured"` for him — but the aggregate fleet call still reads as
+a success, so the only visible symptom is that Dragomir stands there while the other two perform.
+
+Nothing is broken in software. **He needs at least one scene authored**, and then a `defaultSceneId`
+set so the fleet loop has something to enqueue.

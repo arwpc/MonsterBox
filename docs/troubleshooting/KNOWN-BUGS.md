@@ -1740,3 +1740,74 @@ worth an on-hardware confirmation are cross-referenced to the live sections abov
 | 57 | low | race | `services/poses/poseRepository.js:105` | Concurrent pose add/update/delete → dup IDs / lost updates | ✅ |
 | 58 | low | rpi-stability | `services/resource/singleInstance.js:41` | Stale-PID removal doesn't verify PID owner → false 'running' | ✅ |
 | 59 | high | correctness | `python_wrappers/servo_cli.py:90` | Null byte broke **all** PCA9685 servo moves since v7.9.6 | ✅ (confirm a real servo move per node) |
+
+---
+
+## Chain consistency defects — opened 2026-08-19, CONFIRMED and UNFIXED
+
+Found by a six-hop review of part → model → calibration → hardware → API → UX, each verified by an
+adversarial second pass. The contract these violate is
+`docs/development/PART-MODEL-CALIBRATION-UX-CHAIN.md`. **All still open.**
+
+### Two corrections that have already misled multiple investigations
+
+- **`invert` is NOT a part-record field.** `grep -rn "invert" data/character-*/parts.json` returns
+  nothing. It lives in `data/calibration_profiles.json` under `capability.invert` (Mina's Neck = key
+  `2:2`). Anything reading `part.config.invert` or `part.invert` gets `undefined` for every part on
+  every character.
+- **`minPulse` / `maxPulse` / `neutralPulse` are dead data**, still presented as editable live tuning
+  in `views/setup/models.ejs` and `views/setup/calibration.ejs`. Zero hits in the wrappers; pulse
+  mapping is hardcoded (standard 500–2400 µs, continuous 1000/1500/2000). Editing them changes
+  nothing and the UI reports success. **Removal is agreed but not yet done.**
+
+### Open — `characterId` resolved at one hop and dropped at the next
+
+Part ids are unique only *within* a character, so an unscoped lookup addresses a different
+animatronic's hardware. `npm run audit:resolver` catches direct `selectedCharacter` reads; it cannot
+catch a handler that resolves correctly and then drops the value.
+
+- **Linear-actuator jog bypasses `controlPart()`**, so the entire safety layer — including
+  `blockAllMotion` on a quarantined part, which CLAUDE.md says never relaxes — never runs.
+- **Setup calibration page** reads a part scoped by `characterId` but writes it back to the node's
+  `selectedCharacter`.
+- **`POST /setup/calibration/api/standard_servo/:id/move`** picks the part from one character and the
+  hardware + safety envelope from another.
+- **Calibration `goto`** judges safety for the resolved character, then clamps bounds and executes
+  against `selectedCharacter`.
+- **The calibration adapter cache is keyed by bare `partId`** (`server/calibration/router.js:15`,
+  read at :785, written at :822, deleted at six sites). On a process serving more than one character
+  the adapter built for one character's part 1 is returned for another's. Fixing it means threading
+  `characterId` through `getOrCreateAdapter()` and all eight cache sites — deliberately deferred
+  rather than done untested.
+- **Nothing tells the Python wrapper which character it is running for**, so `servo_cli.py`'s
+  independent guard re-resolves `selectedCharacter` and can load a different character's safety entry
+  than Node just enforced.
+- **Model defaults resolve without `characterId`** (`services/hardwareService/index.js:105`), so the
+  per-character override directory is chosen by `selectedCharacter`.
+- **Webcam control routes** resolve part ids against `selectedCharacter`.
+
+### Open — reported state vs actual state
+
+- **`bounds.minAngle`/`maxAngle` is written as a travel window but read as the invert reflection
+  axis**, so recording a bound on an inverted servo shifts its whole coordinate system.
+- **The configured safety angle window is enforced on the PRE-invert angle**, so the value that
+  actually reaches an inverted servo can sit outside the window.
+
+### Open — UX honesty
+
+- **`#headTrackToggle` is never disabled** even when
+  `GET /conversation/api/lurk-mode/capabilities` reports `headTracking: false` (as it does on Mina).
+  Clicking it 400s and the dashboard silently reverts the checkbox. The honest UI disables it; this
+  was left undone because seven call sites across four browser specs click that toggle and disabling
+  it would break them. Fix the specs and the UI together.
+- **A stale `deviceId` (e.g. `"pulse"`) remains in some `stt-config.json` files.** It is inert in
+  `elevenLabsWebSocketService` (`getSTTConfig()` returns an explicit literal that never carries
+  `deviceId`), but the raw file is read directly elsewhere — audit those paths before trusting the
+  operator's mic selection.
+
+### Open — fleet
+
+- **Sir Dragomir has ZERO scenes and `defaultSceneId: null`**, so he silently drops out of every
+  fleet queue loop. `services/orchestrationService.js:602-607` does return
+  `success:false, 'No defaultSceneId configured'` for him, but the aggregate fleet call still reads
+  as fine. He needs at least one scene authored.
