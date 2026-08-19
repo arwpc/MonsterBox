@@ -17,6 +17,29 @@ def run_cmd(args):
     except subprocess.CalledProcessError as e:
         return e.returncode, e.output
 
+def device_index(raw):
+    """Accept every spelling of a camera that parts.json actually contains.
+
+    config.deviceId is authored by hand and by the setup form, so it arrives as
+    an index (0), a numeric string ("0"), a device name ("video0"), or a full
+    path ("/dev/video0"). A bare int() on the name raised ValueError and the
+    caller only saw "Process exited with code 1" — Mina logged that 25 times
+    against a camera that was working fine.
+    """
+    if isinstance(raw, int):
+        return raw
+    text = str(raw).strip()
+    if text.startswith('/dev/'):
+        text = text[len('/dev/'):]
+    if text.startswith('video'):
+        text = text[len('video'):]
+    try:
+        return int(text)
+    except (TypeError, ValueError):
+        fail(f"cannot read a camera index from deviceId {raw!r} "
+             f"(expected 0, \"0\", \"video0\" or \"/dev/video0\")", deviceId=raw)
+
+
 def parse_args(argv):
     if len(argv) < 2:
         fail("usage: webcam_cli.py <capture|list_ctrls|set_ctrls> ...")
@@ -24,15 +47,15 @@ def parse_args(argv):
     if cmd == 'capture':
         if len(argv) < 5:
             fail("usage: webcam_cli.py capture <deviceId> <width> <height>")
-        return (cmd, int(argv[2]), int(argv[3]), int(argv[4]))
+        return (cmd, device_index(argv[2]), int(argv[3]), int(argv[4]))
     if cmd == 'list_ctrls':
         if len(argv) < 3:
             fail("usage: webcam_cli.py list_ctrls <deviceId>")
-        return (cmd, int(argv[2]))
+        return (cmd, device_index(argv[2]))
     if cmd == 'set_ctrls':
         if len(argv) < 4:
             fail("usage: webcam_cli.py set_ctrls <deviceId> <name=value[,name=value,...]>")
-        return (cmd, int(argv[2]), argv[3])
+        return (cmd, device_index(argv[2]), argv[3])
     fail(f"unknown command: {cmd}")
 
 if __name__ == '__main__':
