@@ -69,3 +69,42 @@ will score her deaf. Record from the camera-mic card explicitly. This will bite 
 `GET /scenes/api/` on 192.168.8.130 returns `{"scenes":[]}` and his `config/animatronics.json` entry has
 no `defaultSceneId`, so `startAllQueueLoops()` skips him and he silently drops out of every fleet queue
 loop. The fleet call still reports overall success, so nothing surfaces it.
+
+---
+
+## 5. Software follow-ups these findings created
+
+### Store a USB signature with the Model (operator's idea — worth building)
+
+USB parts (webcam, microphone, speaker) DO expose a stable signature: `idVendor:idProduct`, and often a
+serial, visible via `lsusb -v` / `/sys/bus/usb/devices/*`. Saving that alongside the part's `modelId`
+would let MonsterBox detect a device that moved ports or was swapped, instead of silently opening the
+wrong `/dev/video*` or capture card. This directly addresses the two dead Unitek capture inputs and the
+`deviceIndex` / `deviceId` settings a sweep found to be silent no-ops.
+
+**Important scope limit:** this works for USB only. **It cannot work for servos.** A PCA9685 is a one-way
+I2C→PWM output driver with no feedback path, and a servo is a dumb 3-wire device (V+, GND, signal) with no
+back-channel. There is no way to ask "what is plugged into channel 8." The only way to map servo channels
+is empirically — drive one channel at a time and observe motion. Do not chase a software solution here.
+
+### minPulse / maxPulse / neutralPulse are dead data
+
+`grep -rn "minPulse\|maxPulse\|neutralPulse"` across `services/hardwareService/index.js`,
+`python_wrappers/servo_cli.py`, `pca9685_control.py` and `servo_daemon.py` returns **zero hits**. The pulse
+mapping is hardcoded in `pca9685_control.py`: standard `SERVO_MIN_US 500` / `SERVO_MAX_US 2400`;
+continuous `neutral 1500, min 1000, max 2000`. Confirmed empirically — commanding Dragomir's jaw to 131°
+produced 1880 µs, and `500 + 131/180*1900 = 1882.8`.
+
+So every `minPulse`/`maxPulse` value in `data/models/servo_models.json` is decoration. **Decide: wire them
+through, or delete them.** As written they read like configuration and they sent two separate
+investigations after the wrong cause.
+
+### Calibration nudge starts from a fabricated 90°
+
+`server/calibration/adapters/AbsoluteServoAdapter.js:12` hardcodes `this.currentAngle = 90`, and
+`getOrCreateAdapter()` in `server/calibration/router.js` passes the stored position only to
+`OpenLoopLinearAdapter`, not to the servo adapter. Observed live: Dragomir's jaw was physically at 131.5°,
+a `{"dir":"min","scale":"fine"}` nudge reported *"Nudged min at fine"* and drove it to **88°** — a 43.5°
+jump, and below its calibrated minimum of 97°. The smallest, safest-looking control on the page is the one
+that hits a mechanical stop. Seed the adapter from the position store, and refuse dir/scale nudge when the
+position is unknown.
