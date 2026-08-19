@@ -72,6 +72,10 @@ export async function getSTTConfig() {
     vadEnabled: typeof raw.vadEnabled === 'boolean' ? raw.vadEnabled : true,
     vadThreshold: typeof raw.vadThreshold === 'number' ? raw.vadThreshold : 0.40,
     vadSilenceDuration: typeof raw.vadSilenceDuration === 'number' ? raw.vadSilenceDuration : 500,
+    // Far-field arrays only (e.g. ReSpeaker XVF3800): transcribe once per
+    // utterance from a gapless stream instead of per polled 0.3s chunk.
+    // Default false = legacy per-chunk behavior for lavalier/dongle nodes.
+    utteranceAggregation: typeof raw.utteranceAggregation === 'boolean' ? raw.utteranceAggregation : false,
     // Audio Filtering - optimized for speech clarity
     audioFilterEnabled: typeof raw.audioFilterEnabled === 'boolean' ? raw.audioFilterEnabled : true,
     highpassFreq: typeof raw.highpassFreq === 'number' ? raw.highpassFreq : 180,

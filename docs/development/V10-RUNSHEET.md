@@ -18,9 +18,9 @@ wave reverts alone. The v10.0.0 tag is hostage to the full browser suite.
 | 3 | **Service restart** (loads fixes + Scare Console route + Obsidian skin) | ✅ DONE | health 200 at 9.3.0, zero startup errors |
 | 4 | **Scare Console visual pass** + operator-requested AI deck tab | ✅ DONE | `8b964197`, `21d1c3c5`; 3 defects found and fixed; 0 console errors both viewports |
 | 5 | **v10 page sweep** — all 27 pages | ✅ DONE | `de9d4492`, `b3c3fdc2`, `acf60863`; 2 amber-vocabulary violations fixed; style guide teaches the system |
-| 6 | **Test pass**: specs re-pointed at the console; FULL browser suite (service stopped — the PID lock has no test-mode exemption, and BASE_URL must name port 3200) | 🔶 running | `c6d56776`; panel-sortable 9/9, conversation ×2 27/27 |
+| 6 | **Test pass**: specs re-pointed at the console; FULL browser suite (service stopped — the PID lock has no test-mode exemption, and BASE_URL must name port 3200) | ✅ DONE | `c6d56776`, `a2e3daa3`; full suite 504 passed / 8 failed / 3 skipped — all 8 triaged (2 never-firing MB_TEST_MODE guards fixed, 1 markup-shape test fixed, panel floor honest at 3; #ocvEnabled recorded in KNOWN-BUGS) |
 | 7 | **Docs regeneration**: README, CHANGELOG, TACTILE-OBSIDIAN.md, KNOWN-BUGS reconciliation | ✅ DONE | no doc names a removed page; version stays dynamic |
-| 8 | **v10.0.0**: bump `package.json`, commit, tag, push (gate runs), `deploy:all` to Orlok + Dragomir, post-deploy earcheck | ⏸ gated on 7 | tag on GitHub; fleet-health ×3 at 10.0.0; earcheck 3/3 |
+| 8 | **v10.0.0**: bump `package.json`, commit, tag, push (gate runs), `deploy:all` to Orlok + Dragomir, post-deploy earcheck | ✅ DONE | tag `v10.0.0` (`6659affe`) on GitHub; main pushed through `75fec397` (gate green 2026-08-18); fleet-health ×3 at 10.0.0 (PumpkinHead+Groundbreaker unplugged, deferred); earcheck 3/3 AUDIBLE + voiceCorrect (committed `2026-08-16T11-27-53`), voices re-verified release night voiceFallback:false. Earcheck run FROM Mina falsely reports peers OFFLINE (needs key SSH) — tracked in KNOWN-BUGS |
 
 ## Page-sweep matrix (phase 5) — 27 pages
 

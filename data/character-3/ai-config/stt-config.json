@@ -7,9 +7,9 @@
   "microphonePartId": "7",
   "microphoneDeviceId": "default",
   "vadEnabled": true,
-  "vadThreshold": 0.38,
+  "vadThreshold": 0.045,
   "vadSilenceDuration": 550,
-  "audioFilterEnabled": true,
+  "audioFilterEnabled": false,
   "highpassFreq": 320,
   "lowpassFreq": 3600,
   "denoiseLevel": -38,
@@ -17,6 +17,7 @@
   "validateEnglish": true,
   "minLetterRatio": 60,
   "requireVowels": true,
-  "_preset": "noisy-environment",
-  "_presetName": "Noisy Environment (Music/Crowds)"
+  "_preset": "xvf3800-array",
+  "_presetName": "XVF3800 Array (Far-Field, DSP-cleaned)",
+  "utteranceAggregation": true
 }

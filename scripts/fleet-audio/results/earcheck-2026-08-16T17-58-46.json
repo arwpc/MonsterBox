@@ -1,0 +1,138 @@
+{
+  "ranAt": "2026-08-16T17:58:46.453Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 2,
+      "name": "Mina",
+      "hostname": "mina",
+      "ip": "192.168.8.140",
+      "sink": "77. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.50]",
+      "sinkVolume": 1.5,
+      "phrase": "I have waited in these walls since fourteen sixty two for Thomas to come home.",
+      "sayOk": true,
+      "voiceUsed": "hkk1bPcdsxSQCLzLFMT2",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -78.8,
+          "castP90Db": -72.9,
+          "castPeakDb": -56,
+          "riseDb": 5.9,
+          "floorFlat": true,
+          "transcript": "I have waited in these walls since 1462 for Thomas to come",
+          "recall": 0.73
+        },
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -46.7,
+          "castP90Db": -20.9,
+          "castPeakDb": -3.8,
+          "riseDb": 25.8,
+          "floorFlat": false,
+          "transcript": "I have waited in these walls since 1462 for Thomas to come home",
+          "recall": 0.8
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -46.7,
+      "castDb": -20.9,
+      "riseDb": 25.8,
+      "recall": 0.8,
+      "transcript": "I have waited in these walls since 1462 for Thomas to come home",
+      "verdict": "AUDIBLE"
+    },
+    {
+      "id": 3,
+      "name": "Orlok",
+      "hostname": "orlok",
+      "ip": "192.168.8.120",
+      "sink": "81. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.50]",
+      "sinkVolume": 1.5,
+      "phrase": "You stand at my door uninvited. Mind your place, little one.",
+      "sayOk": true,
+      "voiceUsed": "Tj9l48J9AJbry5yCP5eW",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -45.4,
+          "castP90Db": -21.5,
+          "castPeakDb": -0.1,
+          "riseDb": 23.9,
+          "floorFlat": false,
+          "transcript": "You stand at my door uninvited. Mind your place, little one",
+          "recall": 1
+        },
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:4,0",
+          "floorDb": -43.9,
+          "castP90Db": -36.7,
+          "castPeakDb": -15.6,
+          "riseDb": 7.2,
+          "floorFlat": true,
+          "transcript": "You stand at my door uninvited. Mind your place, little one",
+          "recall": 1
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -45.4,
+      "castDb": -21.5,
+      "riseDb": 23.9,
+      "recall": 1,
+      "transcript": "You stand at my door uninvited. Mind your place, little one",
+      "verdict": "AUDIBLE"
+    },
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "hostname": "sirdragomir",
+      "ip": "192.168.8.130",
+      "sink": "64. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.55]",
+      "sinkVolume": 0.55,
+      "phrase": "Stai! The watch of the castle holds this road, and the road behind you is dark.",
+      "sayOk": true,
+      "voiceUsed": "wXvR48IpOq9HACltTmt7",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -43.3,
+          "castP90Db": -23.6,
+          "castPeakDb": -5.8,
+          "riseDb": 19.7,
+          "floorFlat": false,
+          "transcript": "Stay! The watch of the castle holds this road, and the road behind you is dark",
+          "recall": 0.94
+        },
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:4,0",
+          "floorDb": -79.1,
+          "castP90Db": -78.3,
+          "castPeakDb": -65.7,
+          "riseDb": 0.8,
+          "floorFlat": true,
+          "transcript": "",
+          "recall": 0
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -43.3,
+      "castDb": -23.6,
+      "riseDb": 19.7,
+      "recall": 0.94,
+      "transcript": "Stay! The watch of the castle holds this road, and the road behind you is dark",
+      "verdict": "AUDIBLE"
+    }
+  ]
+}

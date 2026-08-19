@@ -1,0 +1,66 @@
+{
+  "ranAt": "2026-08-19T00:04:30.461Z",
+  "conductor": "mina",
+  "rows": [
+    {
+      "id": 2,
+      "name": "Mina",
+      "hostname": "mina",
+      "ip": "192.168.8.140",
+      "sink": "77. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.90]",
+      "sinkVolume": 0.9,
+      "phrase": "I have waited in these walls since fourteen sixty two for Thomas to come home.",
+      "sayOk": true,
+      "voiceUsed": "hkk1bPcdsxSQCLzLFMT2",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -78.8,
+          "castP90Db": -77.8,
+          "castPeakDb": -65.2,
+          "riseDb": 1,
+          "floorFlat": false,
+          "transcript": "[pause]",
+          "recall": 0
+        },
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -43.7,
+          "castP90Db": -10,
+          "castPeakDb": 0,
+          "riseDb": 33.7,
+          "floorFlat": false,
+          "transcript": "I have waited in these walls since 1462 for Thomas to come home.",
+          "recall": 0.8
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -43.7,
+      "castDb": -10,
+      "riseDb": 33.7,
+      "recall": 0.8,
+      "transcript": "I have waited in these walls since 1462 for Thomas to come home.",
+      "verdict": "AUDIBLE"
+    },
+    {
+      "id": 3,
+      "name": "Orlok",
+      "hostname": "orlok",
+      "ip": "192.168.8.120",
+      "verdict": "OFFLINE",
+      "note": "no ssh/shell reachability"
+    },
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "hostname": "sirdragomir",
+      "ip": "192.168.8.130",
+      "verdict": "OFFLINE",
+      "note": "no ssh/shell reachability"
+    }
+  ]
+}

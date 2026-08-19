@@ -946,7 +946,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                     // servo move per network packet — 4-6 moves across a whole reply,
                                     // which reads as a twitch, not lip sync.
                                     try {
-                                        jawAnimationService.driveJawFromPcmStream(c.characterId, audioBuffer).catch(() => {});
+                                        jawAnimationService.driveJawFromPcmStream(c.characterId, audioBuffer, sampleRate).catch(() => {});
                                     } catch (_) { /* non-fatal */ }
                                 } else {
                                     serverPlaybackService.writeMp3Stream(audioBuffer, {

@@ -40,6 +40,9 @@ class ServerSTTListener {
       // Remove sessions older than timeout OR not running and older than 5 minutes
       if (age > this.sessionTimeoutMs || (!state.running && age > 300000)) {
         if (state.timer) clearTimeout(state.timer);
+        // Aggregated sessions own a continuous recorder — never leak it.
+        if (state.capture) { try { state.capture.stop(); } catch (_) { } state.capture = null; }
+        if (state._aggCleanup) { try { state._aggCleanup(); } catch (_) { } }
         toDelete.push(sessionId);
       }
     }
@@ -93,12 +96,20 @@ class ServerSTTListener {
           var t = cfg.vadThreshold; if (!(t >= 0.005 && t <= 0.6)) t = 0.40; state.vadThreshold = t;
         }
         console.log(`🎤 Session ${sessionId} VAD settings: enabled=${state.vadEnabled}, threshold=${state.vadThreshold}`);
+        // Far-field arrays (per-character opt-in): transcribe once per UTTERANCE
+        // from a gapless stream instead of per 0.3s polled chunk. 0.3s chunks
+        // split words mid-syllable and the ~1s recorder spawn between polls
+        // discards most of the speech. Default (knob absent/false) keeps the
+        // legacy per-chunk path byte-for-byte identical.
+        if (cfg.utteranceAggregation === true && state.running && !state.aggregation) {
+          this._startAggregatedCapture(sessionId, state, cfg);
+        }
       }).catch(() => { /* ignore */ });
     } catch (_) { /* ignore */ }
     this.sessions.set(sessionId, state);
 
     const tick = async () => {
-      if (!state.running) return;
+      if (!state.running || state.aggregation) return;
       try {
         const buffer = await this.captureChunkWav(deviceId, this.captureDurationSec);
         state.chunksCaptured += 1;
@@ -111,8 +122,16 @@ class ServerSTTListener {
           var shouldTranscribe = true;
           var rms = 0;
           try {
-            if (state.vadEnabled) {
+            // Env-gated per-chunk amplitude debug (MB_DEBUG_AUDIO=1): surfaces the
+            // exact RMS the VAD gate sees, so thresholds can be MEASURED per node.
+            var debugAudio = process.env.MB_DEBUG_AUDIO === '1';
+            if (state.vadEnabled || debugAudio) {
               rms = this._computeWavRms(buffer);
+              if (debugAudio) {
+                console.log(`🎚️ Session ${sessionId}: chunk ${state.chunksCaptured} rms=${rms.toFixed(4)} vadEnabled=${state.vadEnabled} threshold=${state.vadThreshold}`);
+              }
+            }
+            if (state.vadEnabled) {
               var thr = state.vadThreshold || 0.40;
               if (!(rms >= thr)) {
                 shouldTranscribe = false;
@@ -185,14 +204,17 @@ class ServerSTTListener {
           state.lastError = `Session stopped: ${state.maxConsecutiveErrors} consecutive errors`;
         }
       } finally {
-        if (state.running) {
+        if (state.running && !state.aggregation) {
           state.timer = setTimeout(tick, this.pollIntervalMs);
-        } else {
+        } else if (!state.running) {
           console.log(`🛑 Session ${sessionId}: Stopped (running=false)`);
         }
       }
     };
 
+    // Aggregated capture (when enabled) needs a way back to this legacy polling
+    // loop if no continuous capture method works on this node.
+    state._startLegacy = () => { if (state.running && !state.timer) state.timer = setTimeout(tick, 10); };
     state.timer = setTimeout(tick, 10);
     return { success: true, sessionId };
   }
@@ -203,6 +225,11 @@ class ServerSTTListener {
     console.log(`🛑 Stopping STT session ${sessionId} (captured=${s.chunksCaptured}, transcribed=${s.chunksTranscribed})`);
     s.running = false;
     if (s.timer) { clearTimeout(s.timer); s.timer = null; }
+    // Aggregated-capture sessions own a continuous recorder and possibly a
+    // buffered utterance: release the mic and transcribe what was in flight.
+    if (s.capture) { try { s.capture.stop(); } catch (_) { } s.capture = null; }
+    if (s._aggCleanup) { try { s._aggCleanup(); } catch (_) { } }
+    if (s._aggFinalize) { try { s._aggFinalize('session-stop'); } catch (_) { } }
     // Don't delete immediately - let cleanup handle it
     return { success: true };
   }
@@ -266,6 +293,144 @@ class ServerSTTListener {
       }
       var rms = Math.sqrt(sum / n); if (!isFinite(rms)) return 0.0; return rms;
     } catch (_) { return 0.0; }
+  }
+
+  // RMS of raw headerless PCM16LE (aggregated-capture frames).
+  _computePcmRms(buf) {
+    try {
+      if (!buf || buf.length < 2) return 0.0;
+      var n = Math.floor(buf.length / 2); if (n <= 0) return 0.0;
+      var sum = 0.0;
+      for (var i = 0; i < n; i++) {
+        var norm = buf.readInt16LE(i * 2) / 32768.0; sum += norm * norm;
+      }
+      var rms = Math.sqrt(sum / n); return isFinite(rms) ? rms : 0.0;
+    } catch (_) { return 0.0; }
+  }
+
+  /**
+   * Utterance-aggregated capture for a polling STT session — opt-in via the
+   * per-character stt-config `utteranceAggregation` knob (default false; nodes
+   * without the knob keep the legacy per-chunk path untouched).
+   *
+   * Why: the legacy path records 0.3s chunks with ~1s of recorder-spawn dead
+   * time between them, so far-field speech reaches the transcriber as isolated
+   * word fragments. Here ONE gapless continuous stream is re-framed into 300ms
+   * frames (so vadThreshold keeps the exact meaning it has on the legacy path);
+   * frames at/above threshold open an utterance (with a short pre-roll), and
+   * after vadSilenceDuration of quiet the whole utterance is transcribed in one
+   * call.
+   */
+  _startAggregatedCapture(sessionId, state, cfg) {
+    const self = this;
+    state.aggregation = true;
+    if (state.timer) { try { clearTimeout(state.timer); } catch (_) { } state.timer = null; }
+
+    const SR = 16000, CH = 1;
+    const FRAME_MS = 300; // same span as a legacy chunk => same RMS scale
+    const FRAME_BYTES = SR * 2 * (FRAME_MS / 1000); // 9600
+    const PREROLL_FRAMES = 2;   // 600ms of context so utterances do not start mid-word
+    const MAX_UTTER_MS = 15000; // hard cap: a noisy hour can never buffer unbounded
+    const silenceNeededMs = (typeof cfg.vadSilenceDuration === 'number' && cfg.vadSilenceDuration > 0) ? cfg.vadSilenceDuration : 550;
+    const thr = state.vadThreshold || 0.40;
+    const debugAudio = process.env.MB_DEBUG_AUDIO === '1';
+
+    console.log(`🎤 Session ${sessionId}: utterance aggregation ON (threshold=${thr}, silence=${silenceNeededMs}ms)`);
+
+    let pending = Buffer.alloc(0);
+    let preroll = [];
+    let utterFrames = null; // null = idle, array = collecting
+    let utterMs = 0;
+    let silenceMs = 0;
+    let bytesSinceCheck = 0;
+
+    const finalize = (reason) => {
+      const frames = utterFrames;
+      utterFrames = null; utterMs = 0; silenceMs = 0;
+      if (!frames || !frames.length) return;
+      const pcm = Buffer.concat(frames);
+      // Anything under ~0.4s is a click or a lone transient, not speech.
+      if (pcm.length < SR * 2 * 0.4) return;
+      const wav = self._encodeWavPCM16LE(pcm, SR, CH);
+      if (!wav || wav.length <= 44) return;
+      if (debugAudio) console.log(`🗣️ Session ${sessionId}: transcribing utterance ${(pcm.length / (SR * 2)).toFixed(1)}s (${reason})`);
+      elevenLabsSTTService.transcribeAudio(wav, { mimeType: 'audio/wav', model: state.model, language: state.language })
+        .then((result) => {
+          if (result && result.success && (result.transcript || result.text)) {
+            const text = (result.transcript || result.text || '').trim();
+            if (text) {
+              state.transcript += (state.transcript ? ' ' : '') + text;
+              state.chunksTranscribed += 1;
+              console.log(`✅ Session ${sessionId}: Transcribed utterance "${text}"`);
+            }
+            state.lastError = null;
+            state.lastActivityAt = Date.now();
+            state.consecutiveErrors = 0;
+          } else {
+            state.lastError = self._errText((result && result.error) || 'STT failed');
+            console.warn(`⚠️ Session ${sessionId}: Utterance transcription failed: ${state.lastError}`);
+          }
+        })
+        .catch((err) => {
+          state.lastError = self._errText(err);
+          console.error(`❌ Session ${sessionId}: Utterance transcription exception:`, err);
+        });
+    };
+    state._aggFinalize = finalize;
+
+    const onFrame = (frame) => {
+      state.chunksCaptured += 1;
+      state.lastChunkBytes = frame.length;
+      const rms = self._computePcmRms(frame);
+      if (debugAudio) console.log(`🎚️ Session ${sessionId}: frame ${state.chunksCaptured} rms=${rms.toFixed(4)} threshold=${thr} collecting=${!!utterFrames}`);
+      if (rms >= thr) {
+        state.chunksWithAudio += 1;
+        if (!utterFrames) { utterFrames = preroll.slice(); utterMs = utterFrames.length * FRAME_MS; preroll = []; }
+        utterFrames.push(frame); utterMs += FRAME_MS; silenceMs = 0;
+        if (utterMs >= MAX_UTTER_MS) finalize('max-length');
+      } else if (utterFrames) {
+        utterFrames.push(frame); utterMs += FRAME_MS; silenceMs += FRAME_MS;
+        if (silenceMs >= silenceNeededMs) finalize('silence');
+        else if (utterMs >= MAX_UTTER_MS) finalize('max-length');
+      } else {
+        preroll.push(frame);
+        if (preroll.length > PREROLL_FRAMES) preroll.shift();
+      }
+    };
+
+    const capture = self.startContinuousCapture(state.deviceId, (buf) => {
+      if (!state.running) return;
+      bytesSinceCheck += buf.length;
+      pending = pending.length ? Buffer.concat([pending, buf]) : buf;
+      while (pending.length >= FRAME_BYTES) {
+        const frame = Buffer.from(pending.subarray(0, FRAME_BYTES));
+        pending = pending.subarray(FRAME_BYTES);
+        try { onFrame(frame); } catch (_) { /* keep the stream alive */ }
+      }
+    }, (err) => {
+      // Every continuous method failed — fall back to the proven legacy polling
+      // path so the session still hears SOMETHING rather than going deaf.
+      console.warn(`⚠️ Session ${sessionId}: continuous capture unavailable (${self._errText(err)}); falling back to per-chunk polling`);
+      cleanup();
+      if (state.running && state._startLegacy) { state.aggregation = false; state._startLegacy(); }
+    });
+    state.capture = capture;
+
+    // Watchdog for the known trap where a recorder opens the source but streams
+    // zero frames (seen with hand-run parec on the XVF3800): kill the silent
+    // process so startContinuousCapture's close handler advances to the next
+    // capture method instead of waiting forever.
+    const watchdog = setInterval(() => {
+      if (!state.running) { cleanup(); return; }
+      if (bytesSinceCheck === 0 && capture.proc) {
+        console.warn(`⚠️ Session ${sessionId}: continuous capture (${capture.method}) produced no audio in 5s — advancing method`);
+        try { capture.proc.kill('SIGTERM'); } catch (_) { }
+      }
+      bytesSinceCheck = 0;
+    }, 5000);
+
+    function cleanup() { try { clearInterval(watchdog); } catch (_) { } }
+    state._aggCleanup = cleanup;
   }
 
   _getMicWrapperPath() {

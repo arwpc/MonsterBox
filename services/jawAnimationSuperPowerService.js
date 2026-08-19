@@ -1681,11 +1681,21 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
  * timer is the clock. Safe to call for every chunk — state is resolved once.
  */
 const pcmJawStreams = new Map();
-const PCM_JAW_FRAME_BYTES = 1600; // 16000Hz * 0.05s * 2 bytes
 const PCM_JAW_FRAME_MS = 50;
+const PCM_JAW_DEFAULT_RATE = 16000; // ConvAI default output format is pcm_16000
 const PCM_JAW_MAX_QUEUE = 400;    // ~20s of audio; safety valve against runaway buffering
 
-async function driveJawFromPcmStream(characterId, pcmChunk) {
+// Bytes of PCM16LE mono covering one 50ms drive frame at the given rate.
+// 16000Hz -> 1600 bytes (the historical constant); other agent output formats
+// (pcm_22050, pcm_24000, ...) get the matching size so frame count x 50ms still
+// equals the audio's real duration — a fixed 1600 made the jaw drift late by
+// (rate/16000)x over a long reply.
+function pcmJawFrameBytes(sampleRate) {
+  const rate = Number(sampleRate) > 0 ? Number(sampleRate) : PCM_JAW_DEFAULT_RATE;
+  return Math.max(2, Math.round(rate * (PCM_JAW_FRAME_MS / 1000)) * 2);
+}
+
+async function driveJawFromPcmStream(characterId, pcmChunk, sampleRate = PCM_JAW_DEFAULT_RATE) {
   const cid = String(characterId);
   if (!pcmChunk || pcmChunk.length === 0) return { success: false, message: 'empty chunk' };
 
@@ -1704,7 +1714,8 @@ async function driveJawFromPcmStream(characterId, pcmChunk) {
 
     stream = {
       queue: [], residual: Buffer.alloc(0), timer: null,
-      config, jawServo, guardrails, dropped: 0
+      config, jawServo, guardrails, dropped: 0,
+      frameBytes: pcmJawFrameBytes(sampleRate)
     };
     pcmJawStreams.set(cid, stream);
     jawServoDaemon.ensureRunning().catch(() => {});
@@ -1712,9 +1723,10 @@ async function driveJawFromPcmStream(characterId, pcmChunk) {
 
   // Carry partial frames across chunk boundaries so no audio is lost or duplicated.
   const buf = stream.residual.length ? Buffer.concat([stream.residual, pcmChunk]) : pcmChunk;
+  const frameBytes = stream.frameBytes || pcmJawFrameBytes(sampleRate);
   let offset = 0;
-  for (; offset + PCM_JAW_FRAME_BYTES <= buf.length; offset += PCM_JAW_FRAME_BYTES) {
-    const frame = buf.subarray(offset, offset + PCM_JAW_FRAME_BYTES);
+  for (; offset + frameBytes <= buf.length; offset += frameBytes) {
+    const frame = buf.subarray(offset, offset + frameBytes);
     let sum = 0;
     const sampleCount = frame.length >> 1;
     for (let i = 0; i < sampleCount; i++) {

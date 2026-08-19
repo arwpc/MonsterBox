@@ -457,6 +457,20 @@ exist yet.
   Until then: `sudo systemctl stop monsterbox.service`, run with `BASE_URL`
   set, and restart the service afterward.
 
+- 🟡 **`earcheck.mjs` run from Mina falsely reports Orlok and Dragomir
+  OFFLINE.** The script reaches peer nodes over SSH, and only Orlok holds the
+  fleet's key-based trust — from Mina the connection is refused before a single
+  frame is captured, and the row is written as `OFFLINE` even while the peer's
+  `/health` answers 200 at 10.0.0. Every "OFFLINE" earcheck row conducted from
+  Mina on 2026-08-18/19 is this, not silence (fleet-health showed all three
+  nodes up at the same minute). The 3/3 AUDIBLE proof standard is unaffected
+  when conducted from Orlok (committed artifact
+  `scripts/fleet-audio/results/earcheck-2026-08-16T11-27-53.json`).
+  *Fix direction:* either install the deploy key across nodes so any node can
+  conduct, or teach earcheck to use the app APIs (say + STT capture) instead of
+  SSH — and either way, distinguish "unreachable conductor path" from
+  "node offline" in the verdict.
+
 - 🟡 **The PIR watcher can respawn forever without ever falling back.**
   `services/lurkMotionWatcherService.js` (~240) — the rapid-failure counter
   resets to 0 on *any* exit that is non-rapid (>10 s uptime) or code 0, so a
