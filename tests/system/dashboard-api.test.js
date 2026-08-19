@@ -194,7 +194,8 @@ describe('Dashboard API — Deep Functional Tests', () => {
       const res = await request(BASE_URL).get('/conversation/api/speakers').expect(200);
       expect(res.body).to.have.property('success', true);
       expect(res.body).to.have.property('speakers').that.is.an('array');
-      // Orlok should have at least one speaker
+      // Shape-only: whichever character is selected may legitimately have no
+      // speakers configured, so assert the contract only when the list is non-empty.
       if (res.body.speakers.length > 0) {
         expect(res.body.speakers[0]).to.have.property('id');
         expect(res.body.speakers[0]).to.have.property('name');

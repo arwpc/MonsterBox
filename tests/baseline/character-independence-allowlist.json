@@ -82,13 +82,6 @@
     },
     {
       "pattern": "orlok-reference",
-      "file": "tests/system/dashboard-api.test.js",
-      "line": 182,
-      "snippet": "// Orlok should have at least one speaker",
-      "reason": "Dashboard API test with character-specific expectation."
-    },
-    {
-      "pattern": "orlok-reference",
       "file": "tests/system/head-animation.test.js",
       "line": 333,
       "snippet": "// All servos for Orlok should have config info",
