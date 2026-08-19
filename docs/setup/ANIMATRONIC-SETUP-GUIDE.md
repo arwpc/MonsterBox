@@ -15,6 +15,44 @@ This guide will help you set up log collection for all your animatronic RPIs. Ea
 
 > **Note:** nodes built before 2026-08-17 predate the automated baseline; `docs/troubleshooting/KNOWN-BUGS.md` and the `node-os-baseline` Claude memory describe hand-application.
 
+### The speaker sink must never suspend
+
+`install.sh` runs `scripts/apply-audio-nosuspend.sh`, which writes a WirePlumber rule
+setting `session.suspend-timeout-seconds = 0` for **this node's character speaker sink
+only** (matched by `node.name` — never a blanket all-sinks rule).
+
+Why it matters: playback is a one-shot `mpg123` per utterance. When WirePlumber has
+suspended the USB sink, the first sound waits for the ALSA device to resume, while the
+jaw timeline has already started at t+0 — so the jaw moves before the voice, by a
+*variable* amount. Removing suspend makes the remaining offset constant, which is what
+makes a single `audioLeadTimeMs` per character valid at all.
+
+The script is idempotent and safe to re-run; it detects the WirePlumber generation
+(0.4 → Lua fragment in `/etc/wireplumber/main.lua.d/`, 0.5+ → SPA-JSON in
+`/etc/wireplumber/wireplumber.conf.d/`), resolves the sink the same way the app does,
+restarts WirePlumber only when the rule actually changed, and verifies the property
+landed. To apply by hand on an existing node:
+
+```bash
+XDG_RUNTIME_DIR=/run/user/1000 scripts/apply-audio-nosuspend.sh          # auto-resolve the sink
+XDG_RUNTIME_DIR=/run/user/1000 scripts/apply-audio-nosuspend.sh <sink>   # or name it explicitly
+```
+
+Verify behaviourally rather than by reading the file back — play something, wait ~20 s,
+and confirm the sink is still `idle` rather than `suspended`:
+
+```bash
+XDG_RUNTIME_DIR=/run/user/1000 pw-dump | grep -A2 '"media.class": "Audio/Sink"'
+```
+
+Then tune that character's jaw offset by eye with `audioLeadTimeMs` (positive = delay the
+jaw) via `POST /setup/jaw-animation/api/jaw-animation/:characterId`. Use the endpoint, not
+a hand edit of `super-powers.json` — the play path reads an in-memory cache that only the
+save endpoint refreshes, so a hand edit stays invisible until the service restarts.
+
+> Note: `pactl` is **not** installed on every node — Mina has only `wpctl`/`pw-dump`.
+> Prefer `pw-dump`/`wpctl` in provisioning scripts and diagnostics.
+
 ## 🚀 Quick Setup (Automated)
 
 ### Option 1: PowerShell Script (Recommended for Windows)

@@ -367,6 +367,13 @@ if [ -f "$REPO_DIR/scripts/configure-wireplumber.sh" ]; then
     bash "$REPO_DIR/scripts/configure-wireplumber.sh" "$ACTUAL_USER" || print_warning "configure-wireplumber.sh reported a non-fatal issue"
 fi
 
+# Keep the character speaker sink awake. A suspended USB sink adds a variable
+# resume delay to the first sound of an utterance, which lands the audio behind
+# the jaw timeline (the jaw starts at t+0). Scoped to this node's speaker only.
+if [ -f "$REPO_DIR/scripts/apply-audio-nosuspend.sh" ]; then
+    bash "$REPO_DIR/scripts/apply-audio-nosuspend.sh" || print_warning "apply-audio-nosuspend.sh reported a non-fatal issue"
+fi
+
 if [ -f "$REPO_DIR/scripts/optimize-pi-performance.sh" ]; then
     bash "$REPO_DIR/scripts/optimize-pi-performance.sh" || print_warning "optimize-pi-performance.sh reported a non-fatal issue"
 fi

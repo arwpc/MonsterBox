@@ -17,7 +17,8 @@
         "quantizationLevels": 10,
         "preset": "speech",
         "minAngle": 22,
-        "maxAngle": 91
+        "maxAngle": 91,
+        "audioLeadTimeMs": 650
       }
     ]
   }
