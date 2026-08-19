@@ -113,16 +113,47 @@ async function getModelDefaultsForPart(part) {
         if (!modelId) return {};
         const fname = typeToModelsFile(part.type);
         if (!fname) return {};
-        const dataDir = await getDataDir();
-        const filePath = path.resolve(dataDir, fname);
-        const raw = await fs.readFile(filePath, 'utf8');
-        const models = JSON.parse(raw);
-        const model = Array.isArray(models) ? models.find(m => String(m.id) === String(modelId)) : null;
-        if (model && model.defaults && typeof model.defaults === 'object') {
-            return Object.assign({}, model.defaults);
+
+        // The models registry lives in data/models/, NOT in the per-character data
+        // dir. This used to resolve `getDataDir()` — which returns data/character-N —
+        // so it opened data/character-4/servo_models.json, a file that has never
+        // existed on any node, and the bare `catch` below turned that straight into
+        // {}. Fixing the modelId KEY in af2c1037 therefore changed nothing: the very
+        // next line still could not find the file. Two sessions chased servo
+        // behaviour that model defaults were never reaching.
+        //
+        // Per-character overrides are honoured first, which also makes
+        // data/character-N/models/ a real feature rather than a directory three
+        // characters carry and nothing ever reads.
+        const appRoot = path.resolve(__dirname, '../..');
+        const candidates = [];
+        try {
+            const dataDir = await getDataDir();
+            candidates.push(path.resolve(dataDir, 'models', fname));
+        } catch (_) { /* fall through to the global registry */ }
+        candidates.push(path.resolve(appRoot, 'data', 'models', fname));
+
+        for (const filePath of candidates) {
+            let raw;
+            try {
+                raw = await fs.readFile(filePath, 'utf8');
+            } catch (_) {
+                continue; // not here — try the next candidate
+            }
+            const models = JSON.parse(raw);
+            const list = Array.isArray(models) ? models : (models && Array.isArray(models.models) ? models.models : null);
+            const model = list ? list.find(m => String(m.id) === String(modelId)) : null;
+            if (model && model.defaults && typeof model.defaults === 'object') {
+                return Object.assign({}, model.defaults);
+            }
         }
+
+        // A declared modelId that resolves to nothing is a data bug, not a normal
+        // state. Saying so is what a silent catch cost us.
+        console.warn(`⚠️  modelId "${modelId}" (part ${part && part.id}, type ${part && part.type}) did not resolve in any models registry — using no model defaults`);
         return {};
     } catch (e) {
+        console.warn(`⚠️  model defaults lookup failed for part ${part && part.id}:`, e && e.message);
         return {};
     }
 }
