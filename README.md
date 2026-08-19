@@ -15,6 +15,39 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
+## What's New — v10.4.0 (August 2026) — What the machine tells you is what the machine did
+
+Nearly every fix in this release is the same fault wearing different clothes: the
+software reported the number it was **given** instead of the number it **used**.
+
+- **Mina's PCA9685 channel map, measured.** All sixteen channels swept with an acoustic
+  witness plus register readback: **channel 4 (Jaw) is the only channel with anything
+  responding on it.** The suspected 0/4/9/11 map and the off-by-one theory are both
+  refuted, `parts.json` needs no remap, and the fault is physical — see
+  `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md` and the three checks in
+  `docs/hardware/OPERATOR-TODO.md`.
+- **Calibration stopped guessing.** `nudge` no longer starts from a fabricated 90°
+  (which drove a jaw 43° past its calibrated minimum); it seeds from the position store
+  and refuses when position is unknown. Set Min/Set Max refuse too, instead of recording
+  0°/180° as if it were a measurement.
+- **Servo moves report the DRIVEN angle.** An inverted servo commanded to 60° drives to
+  119.6°; both `/goto` and `/api/parts/:id/test` used to reply "Moved to 60°".
+- **Dead settings removed, not documented.** The STT Sample Rate dropdown and five
+  buffer-timing sliders reached nothing. The one microphone gain slider that really
+  works was kept; its dead twin was removed.
+- **The cameras were always fine** — the panels were lying. A latched retry guard pinned
+  healthy webcams at "Webcam unavailable" forever; the dashboard reported "Streaming"
+  over a 503.
+- **USB model identity** (`meta.usbId`) so a part page can tell "same model" from
+  "different model" — vendor:product, never the per-unit serial.
+- **Browser suite: 507 passing, 0 failing** (from 501/6/8) — and it no longer drives the
+  coffin actuator on every run.
+- **A written contract for the part → model → calibration → hardware → API → UX chain**,
+  at `docs/development/PART-MODEL-CALIBRATION-UX-CHAIN.md`.
+
+Nothing in this release was verified by ear: speaker output was off throughout and all
+three nodes were confirmed muted.
+
 ## What's New — v10.0.0 (August 2026) — The Scare Console, and one skin over the whole platform
 
 The dashboard at `/` is now the **Scare Console**: a stage with the live camera,
@@ -891,11 +924,20 @@ npm test
 # Individual suites
 npm run test:system         # Mocha system tests
 npm run test:unit           # Mocha unit tests
-npm run test:browser        # Playwright browser tests (headless Chromium)
+npm run test:browser        # Playwright browser tests — see caveat below
 npm run test:hardware       # Hardware tests (needs real GPIO)
 npm run test:pact           # Per-character contract suite (iterates every character)
 npm run test:pact:character -- --char 3   # Same, scoped to one character
 npm run verify              # system + unit + browser
+
+# The browser suite against the ALREADY-RUNNING server (this is the one that works
+# on a node). `npm run test:browser` starts its own server on port 3200, trips
+# server.js's single-instance PID guard, and Playwright reports a CONFIG failure that
+# reads exactly like a test failure. Port 3100 serves the full app and is always up.
+MB_USE_RUNNING_SERVER=1 BASE_URL=http://localhost:3100 \
+  npx playwright test tests/browser --reporter=list
+# NOTE: port 3100 runs with MB_TEST_MODE unset, so a test that hits a hardware
+# endpoint drives REAL hardware unless it passes dryRun. ~54 min on an RPi4B.
 
 # Ratchets (also wrapped by `npm run gate`)
 npm run validate:schemas    # Per-character data files vs config/schemas/
