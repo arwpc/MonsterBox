@@ -104,7 +104,12 @@ function typeToModelsFile(type) {
 
 async function getModelDefaultsForPart(part) {
     try {
-        const modelId = part && part.config && part.config.modelId;
+        // modelId lives at the TOP level of a part (sibling of config) in every
+        // per-character parts.json; the older nested config.modelId form still
+        // exists on a couple of parts, so accept both. Reading only the nested
+        // form silently returned {} for 36 of 59 fleet parts, so model defaults
+        // never reached the hardware merge below.
+        const modelId = (part && part.modelId) || (part && part.config && part.config.modelId);
         if (!modelId) return {};
         const fname = typeToModelsFile(part.type);
         if (!fname) return {};

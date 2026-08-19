@@ -426,6 +426,81 @@ exist yet.
   chip as-is. If a servo is physically on ch15 it has been energized for days. Clears on
   the next hardware power-down; eyeball the channel while the case is open.
 
+### Opened from the 2026-08-19 séance session (Mina ↔ Orlok acoustic conversation)
+
+- 🔴 **Per-model hardware defaults never reached the hardware for 36 of 59 fleet parts —
+  the model was assigned, stored, schema-valid, and silently ignored.**
+  `services/hardwareService/index.js:107` read `part.config.modelId`, but every
+  `data/character-*/parts.json` stores `modelId` at the **top level, as a sibling of
+  `config`**. Only 2 of 59 parts use the older nested form. So `getModelDefaultsForPart()`
+  returned `{}` for everything else, and `modelDefaults` — the base layer of the
+  `Object.assign({}, modelDefaults, normalized, params, …)` merge that builds every
+  hardware command — was empty. Real values that never reached a servo: Miuzei 25 kg
+  `minPulse 500 / maxPulse 2500 / neutralPulse 1500 / rotationRangeDeg 180`, and the
+  continuous variant's `900/2100/360`. Nothing logged, nothing failed; parts silently used
+  wrapper defaults. **Fixed 2026-08-19**: the read now accepts both shapes
+  (`part.modelId || part.config?.modelId`). Model defaults remain lowest-priority in the
+  merge and `applySafetyLimits()` still clamps against the calibration profile, so the fix
+  can only fill gaps that were previously empty. Gate green; calibration 35 passing,
+  system-parts 22 passing. *This is the archetype for the whole class below: a setting that
+  is correct in the data, editable in the UI, and read from the wrong path.*
+- 🟡 **`getModelDefaultsForPart()` reads only the GLOBAL model registry, never the
+  per-character override.** It resolves `data/<file>_models.json` and ignores
+  `data/character-N/models/*.json`, which exist for characters 1, 2 and 3. Custom
+  per-character models are therefore inert on this path. Not fixed — flagged with the fix
+  above; needs `characterId` threaded into the lookup.
+- 🟡 **Missing/dangling `modelId` across the fleet, and no gate check catches it.**
+  Verified 2026-08-19: PumpkinHead (char 1) **16 of 24 parts** have no `modelId`;
+  Groundbreaker (char 5) **3 of 4**; Renfield (char 6) **2 of 3**. Mina, Orlok and Sir
+  Dragomir are clean (0 problems each). Sir Dragomir has **no `data/character-4/models/`
+  directory** at all, unlike chars 1–3. `npm run gate` validates schemas but never checks
+  that a `modelId` resolves to a real registry entry — that check belongs in
+  `validate:schemas`.
+- 🔴 **A muted speaker is indistinguishable from a deaf node, and cost most of a session.**
+  Post-reboot, Mina *and* Sir Dragomir came up with `muted: true`. `POST
+  /conversation/api/say` returned `{"success":true}` in 4 s while emitting nothing; the only
+  evidence was `🔇 Speaker muted — playback skipped` in `/var/log/monsterbox.log`. Proof of
+  the split: with the mute on, Mina's own mic — feet from her own speaker — recorded flat
+  room tone (max 250 ms RMS **0.007**) across a full utterance; unmuted, the same app path
+  read **0.345** with 14/78 frames over gate, and direct `mpg123` read **0.591**. The mic and
+  speaker were never faulty. *Fix direction:* surface `muted` in `/health` and in
+  `npm run earcheck`, which currently proves capture but never reads the mute flag — so it
+  scores a muted node exactly like a broken one.
+- 🔴 **With AI disabled, `askAgentQuestion` returns the agent's opening line verbatim
+  instead of answering the question — and reports success.** Reproduced three times
+  (turns 1, 3 and 5 of the séance): with `GET /conversation/api/ai-status` reporting
+  `enabled: false`, Mina's agent replied *"Wait — is someone there? …"* to three completely
+  different prompts, including an explicit "sing a Romanian song" instruction. Orlok, same
+  state, answered contextually — so it is not purely a function of the flag and needs
+  triage. `POST /conversation/api/ai-on {enabled:true}` fixed it instantly and she composed
+  an original Romanian verse. **Both nodes were shipped with AI disabled**, so this is the
+  default state, and the failure is silent: the response looks like a real answer.
+- 🟢 **Measured: the persistent chat session is 3–4× faster than `askAgentQuestion`,
+  confirming the existing fix direction below.** Same hardware, same night, same pair:
+  `askAgentQuestion` (fresh WebSocket per question) measured **10–13 s** end-of-speech to
+  reply audio, while the persistent conversational session logged **2.4–3.6 s**
+  `TOTAL-to-first-sound` over 24 consecutive turns (`speech-end→transcript` 2385–3549 ms,
+  `transcript→first-audio` 5–92 ms). This is the hard number the *"this path should route
+  into it"* entry was missing.
+- 🟡 **`microphone_cli.py stream_raw` takes CHANNELS as its third argument, not duration —
+  and there is no duration argument at all.** Signature is
+  `_stream_raw(device_id, sample_rate, channels)`; it streams until the pipe closes. Passing
+  a seconds value silently produces N-channel audio: `stream_raw default 16000 22` yielded
+  22-channel data that read as 543 s of near-silence when interpreted as mono, which looks
+  exactly like a dead microphone. Cost a wrong "the array is not hearing anything" conclusion
+  tonight. Control duration with `timeout` and always pass `1`. *Fix direction:* reject a
+  channels value above the device's `maxInputChannels` instead of accepting it.
+- 🟡 **Enabling AI opens a continuous capture session that respawns `microphone_cli` and is
+  not obvious from any UI.** `POST /api/ai-on` starts a persistent `chat_*` session that
+  holds the mic open and re-spawns the capture process within ~2 s of being killed; the
+  character then answers *anything* it hears, including the other animatronic. Echo
+  suppression works correctly (23 of 40 frames `suppressed=true` while speaking, so the pair
+  never talked over each other), but with AI on for two nodes the conversation is
+  **self-sustaining and unbounded** — Mina and Orlok held 24 coherent turns unprompted and
+  would have continued indefinitely, consuming ElevenLabs credits. Disabling AI stops the
+  respawn cleanly. *Fix direction:* surface live-session state in the dashboard, and consider
+  an idle/turn cap on unattended agent-to-agent exchange.
+
 ### Opened from the 2026-08-18 v10 page sweep + adversarial review
 
 - 🟡 **The OpenCV enable checkbox on `/setup/head-animation` will not stay

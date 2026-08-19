@@ -8,14 +8,14 @@
     "config": {
       "servoType": "continuous",
       "controllerType": "pca9685",
-      "channel": 0,
+      "channel": 1,
       "address": 64,
       "pca9685Frequency": 50
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_25kg_continuous",
-    "updated": "2026-03-29T23:30:00.000Z"
+    "updated": "2026-08-19T00:00:00.000Z"
   },
   {
     "id": "2",
@@ -26,14 +26,14 @@
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
-      "channel": 1,
+      "channel": 0,
       "address": 64,
       "pca9685Frequency": 50
     },
     "created": "2025-10-12T06:00:01.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_25kg",
-    "updated": "2026-03-29T23:30:00.000Z"
+    "updated": "2026-08-19T00:00:00.000Z"
   },
   {
     "id": "3",
