@@ -881,3 +881,16 @@
 
   .pca-assignment-table { display: block; overflow-x: auto; }
 }
+
+
+/* Calibrated stamp - operator-owned label on the Bounds panel. */
+.cal-stamp-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem; margin-top: 0.75rem; padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.cal-stamp-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; }
+.cal-stamp-label input[disabled] { cursor: not-allowed; opacity: 0.5; }
+.cal-stamp-state { font-size: 0.85rem; opacity: 0.85; text-align: right; }
+.cal-stamp-state.cal-stamp-yes { color: #4caf50; }
+.cal-stamp-state.cal-stamp-no  { color: #ffa726; }

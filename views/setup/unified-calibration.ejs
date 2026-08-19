@@ -202,6 +202,17 @@
             <button class="cal-action-btn" id="setMinBtn" disabled title="Set minimum bound here">Set Min</button>
             <button class="cal-action-btn" id="setMaxBtn" disabled title="Set maximum bound here">Set Max</button>
           </div>
+
+          <!-- Calibrated stamp. Works for every part type: a label the operator owns,
+               not a licence. The server refuses only a zero-span window. -->
+          <div class="cal-stamp-row">
+            <label class="cal-stamp-label" for="calibratedToggle"
+                   title="Mark this part calibrated. Clearing it keeps the measured numbers but stops anything trusting them.">
+              <input type="checkbox" id="calibratedToggle" disabled onchange="setCalibratedStamp(this.checked)" />
+              <span>Calibrated</span>
+            </label>
+            <span class="cal-stamp-state" id="calibratedState">&mdash;</span>
+          </div>
         </div>
 
         <!-- Learn Move Panel (for open-loop only) -->
@@ -375,6 +386,9 @@
 
         if (data.success && data.profile) {
           currentProfile = data.profile;
+          // Derived server-side by isCalibrated(): a degenerate window never reads
+          // as calibrated, whatever the stored flag says.
+          currentProfile.__calibrated = data.calibrated === true;
           enableControls();
           updateUI();
           showAlert(`Loaded profile for ${e.target.selectedOptions[0].text}`, 'info');
@@ -501,12 +515,55 @@
       document.getElementById('minBound').textContent = fmtBound(isAbsServo ? bounds.minAngle : bounds.minP);
       document.getElementById('maxBound').textContent = fmtBound(isAbsServo ? bounds.maxAngle : bounds.maxP);
 
+      // Calibrated stamp — applies to every capability kind, not just servos.
+      const calToggle = document.getElementById('calibratedToggle');
+      const calState = document.getElementById('calibratedState');
+      if (calToggle && calState) {
+        const stamped = currentProfile.__calibrated === true;
+        const pinned = !!currentProfile.degenerateBounds;
+        calToggle.checked = stamped;
+        calToggle.disabled = !currentPartId;
+        calState.textContent = pinned ? 'zero span \u2014 re-run Set Min / Set Max'
+                                      : (stamped ? 'measured' : 'not calibrated');
+        calState.classList.toggle('cal-stamp-yes', stamped && !pinned);
+        calState.classList.toggle('cal-stamp-no', !stamped || pinned);
+      }
+
       // Update capability
       document.getElementById('statusCapability').textContent =
         (currentProfile.capability && currentProfile.capability.kind) || '—';
 
       // Update presets list
       renderPresets();
+    }
+
+    // Stamp the part Calibrated on or off. The server is the authority: if it
+    // refuses (a zero-span window) the checkbox snaps back rather than showing a
+    // state the data does not support.
+    async function setCalibratedStamp(next) {
+      const toggle = document.getElementById('calibratedToggle');
+      if (!currentPartId) return;
+      try {
+        const response = await fetch(`/api/calibration/${currentPartId}/calibrated`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ calibrated: next })
+        });
+        const data = await response.json();
+        if (!data.success) {
+          if (toggle) toggle.checked = !next;
+          showAlert(data.error || 'Could not change the Calibrated stamp', 'danger');
+          return;
+        }
+        currentProfile = data.profile;
+        currentProfile.__calibrated = data.calibrated === true;
+        updateUI();
+        showAlert(data.warning || (next ? 'Stamped Calibrated' : 'Calibrated stamp cleared'),
+                  data.warning ? 'warning' : 'info');
+      } catch (err) {
+        if (toggle) toggle.checked = !next;
+        showAlert('Failed to update stamp: ' + err.message, 'danger');
+      }
     }
 
     function renderPresets() {
