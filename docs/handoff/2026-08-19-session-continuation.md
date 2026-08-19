@@ -184,3 +184,45 @@ E. CLAUDE SETTINGS — the operator wrote "update documentation, Claude settings
    permission (blocker for item 1 and item A), and a Bash allowlist for the read-only commands
    used constantly here (curl -sk to the three nodes, wpctl/pw-dump, git status/log/diff,
    npm run gate / test:*). The /fewer-permission-prompts skill can generate that allowlist.
+
+
+════════ UPDATE 01:10 — ELEVENLABS WORK PARTLY DONE (operator approved MCP writes) ════════
+LIVE CHANGES APPLIED AND VERIFIED via MCP agents_update. Each write was re-read in the
+response and every other field confirmed intact (voice, stability, tags, KB docs,
+pronunciation dictionaries, first_message, guardrails). ElevenLabs keeps version history if a
+revert is ever needed.
+
+ORLOK (agent_0801k3f1dw7xe2g8r4jkbxk0gt2n) — version agtvrsn_9201m0c91ahnfr8tk3b0pds770fr
+  * optimize_streaming_latency 3 → 0   (THE voice fix — at 3 the platform ran max latency
+    optimizations and disabled the text normalizer, flattening audio tags and gravel)
+  * NEW "# Names" prompt section: corrects a wrong name for himself once, coldly; never
+    guesses a guest's name; household names are canon; "MINA is never Anya, never Marniak."
+  * Platform Configuration Notes now records the latency change and warns not to raise it.
+
+MINA (agent_8401k3f1dx98e05t94yp6kz4vf8n) — version agtvrsn_3601m0c9477ce2p9410jz5ctyd8t
+  * optimize_streaming_latency 3 → 0   (she had the SAME problem)
+  * NEW "# Names" section in her voice; "ORLOK is never Scare-ooce."
+  * SONG rule strengthened: ALWAYS take words from KB_Mina_Songs, never improvise a Romanian
+    verse when a catalogued song exists.
+  * CONFIRMED the operator was right — KB_Mina_Songs.txt (id xlHMQoRSAqWRe71tqKEh) holds three
+    real songs: lullaby, waiting song, morning song, with meanings. Last session hand-wrote a
+    lullaby instead of using them.
+
+STILL TO DO ON ELEVENLABS:
+  - SIR DRAGOMIR agent_7901k3f1dza1ee68w1257zh3s9x6 — needs BOTH the latency check and the
+    "# Names" section, PLUS the squeaky-voice decision (setting vs voice swap; voice
+    wXvR48IpOq9HACltTmt7 at 0.5/0.8/speed 0.9 — operator wants him LOWER).
+  - PumpkinHead agent_0801k3f1dybkecj88sta18gwwrv5, Groundbreaker agent_4201k6s9y384f9v9hqmg67ygc645,
+    Renfield agent_1501m04ks76jf5svnxb70zyvz6s1 — "# Names" + latency. Deliberately deferred:
+    all three are offline/never-networked, so they were the right ones to skip under time pressure.
+  - CHECK EVERY AGENT for optimize_streaming_latency — two of two live agents were at 3, so
+    assume the rest are too. This may be a workspace-wide default worth changing at the source.
+  - VERIFY BY EAR when audio is permitted: Orlok's targets are median F0 65.6 Hz, sub-150Hz
+    fraction 0.685, 1.93 syl/s, pause 0.47. Nothing was heard tonight — the household is asleep
+    and all nodes remain muted. These changes are UNVERIFIED ACOUSTICALLY.
+  - Mina's prompt has a duplicated sentence in Goal item 6 ("THE OLD WAITING — her story, told
+    on request" appears twice). Pre-existing; preserved verbatim rather than silently edited.
+    Worth cleaning up deliberately.
+  - Orlok's ASR keywords already include every household name and it did NOT prevent the
+    Anya/Marniak drift — investigate whether keywords affect the agent's own output at all, or
+    only its transcription of the guest.
