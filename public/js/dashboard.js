@@ -1271,18 +1271,42 @@
       sel.disabled = false;
     }
 
+    function clearWebcamRetry() {
+      const status = $('webcamStatus');
+      if (!status) return;
+      status.onclick = null;
+      status.style.cursor = '';
+    }
+
     async function loadWebcam() {
       const img = $('webcamImg');
       const status = $('webcamStatus');
       const hint = $('webcamHint');
+
+      // Drop any retry handler left by a previous failure; every exit path below
+      // sets its own status text and must not inherit a stale click target.
+      clearWebcamRetry();
 
       try {
         const r = await fetch('/conversation/api/webcam-stream-url');
         const j = await r.json();
 
         if (j && j.success && j.url) {
+          // The URL resolving is not the stream working. Report what the <img>
+          // actually did — a panel that says "Streaming" over a blank tile is
+          // worse than one that admits the stream is down.
+          status.textContent = 'Connecting…';
+          img.onload = function () { status.textContent = 'Streaming'; clearWebcamRetry(); };
+          img.onerror = function () {
+            // Forget the dead URL so a retry is a fresh request, not a replay of the
+            // failed one. The retry lives on the status line, never on the image —
+            // the image's click belongs to click-to-track and must not be hijacked.
+            img.removeAttribute('src');
+            status.textContent = 'Webcam unavailable — click to retry';
+            status.style.cursor = 'pointer';
+            status.onclick = function () { loadWebcam(); };
+          };
           img.src = j.url + '?_=' + Date.now();
-          status.textContent = 'Streaming';
           if (hint) hint.textContent = j.url;
         } else {
           status.textContent = 'No webcam configured';

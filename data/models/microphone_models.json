@@ -40,5 +40,23 @@
       "ledRing": "RGB indicator ring",
       "notes": "Enumerates as a UAC composite device: one capture stream, one playback stream, plus a vendor-specific control interface used for device management. No kernel driver is needed for audio."
     }
+  },
+  {
+    "id": "mic_cmedia_usb_audio",
+    "name": "C-Media USB Audio Adapter (capture)",
+    "description": "Capture side of the common C-Media USB audio adapter, sold under many brand names. A UAC composite device with one capture and one playback stream; no kernel driver is needed.",
+    "defaults": {
+      "sampleRate": 16000,
+      "channels": 1,
+      "format": "s16le"
+    },
+    "controlsSchema": {},
+    "meta": {
+      "usbId": "0d8c:0014",
+      "usbProduct": "USB Audio Device",
+      "usbManufacturer": "C-Media Electronics Inc.",
+      "sharesDeviceWith": "speaker_cmedia_usb_audio",
+      "notes": "USB signature read from a live device on a MonsterNet node via /sys/bus/usb/devices. It identifies the MODEL, not the individual unit, so an identical replacement adapter still matches. C-Media licenses this controller to many resellers and the descriptor strings are generic by design - read a match as 'same adapter model', not 'same brand'. This is a near-field adapter for a headset or lapel capsule; it does no beamforming or echo cancellation."
+    }
   }
 ]

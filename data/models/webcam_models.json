@@ -186,5 +186,22 @@
       "maxOperatingTemp": "158F / 70C",
       "notes": "Compact 200-degree fisheye lens with IR night vision. IR switching is hardware-automatic (ambient light sensor). Night Mode preset optimizes V4L2 controls for IR viewing."
     }
+  },
+  {
+    "id": "webcam_sonix_streaming_camera",
+    "name": "SONix Streaming Camera (USB UVC)",
+    "description": "USB UVC camera built on a SONix streaming controller. Enumerates as a composite device - one UVC video interface plus a UAC capture stream - so the host sees both a camera and a microphone from the same plug.",
+    "defaults": {
+      "resolution": "640x480",
+      "fps": 15,
+      "quality": 85
+    },
+    "controlsSchema": {},
+    "meta": {
+      "usbId": "0c45:636b",
+      "usbProduct": "Streaming Camera",
+      "usbManufacturer": "SONix Technology Co., Ltd.",
+      "notes": "USB signature read from a live device on a MonsterNet node via /sys/bus/usb/devices. It identifies the MODEL, not the individual unit, so an identical replacement camera still matches. Many rebadged wide-angle USB cameras ship this same controller - read a match as 'same camera model', not 'same retail SKU'. controlsSchema is left empty on purpose: the V4L2 control ranges for this unit have not been measured, and inventing them would push wrong defaults at the device."
+    }
   }
 ]

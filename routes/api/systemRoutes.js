@@ -108,6 +108,75 @@ router.get('/info', (req, res) => {
 });
 
 /**
+ * GET /api/system/usb-devices - USB devices currently attached to this node
+ *
+ * Read-only, and deliberately reports MODEL identity, not unit identity: vendor
+ * id, product id and the descriptor strings, with the per-unit serial left out.
+ * An identical replacement webcam must read as the SAME model — recording the
+ * serial would make a like-for-like swap look like the wrong device, which is
+ * the opposite of what this is for.
+ *
+ * Sysfs is read directly rather than shelling out to lsusb: the kernel has
+ * already parsed the descriptors, so there is no subprocess and no output
+ * format to re-parse. Every attribute is optional — hubs routinely have no
+ * manufacturer string — so a missing file yields null, never a throw.
+ */
+router.get('/usb-devices', async (req, res) => {
+    const usbDevicesDir = '/sys/bus/usb/devices';
+
+    const readAttr = async (dir, name) => {
+        try {
+            return (await fs.readFile(path.join(dir, name), 'utf8')).trim() || null;
+        } catch (error) {
+            return null;
+        }
+    };
+
+    try {
+        let entries;
+        try {
+            entries = await fs.readdir(usbDevicesDir);
+        } catch (error) {
+            // No sysfs USB tree (dev box, container). Absence of the tree is not a failure.
+            return res.json({ success: true, source: 'sysfs', available: false, devices: [] });
+        }
+
+        const devices = [];
+        for (const entry of entries) {
+            // Interface nodes ("1-1:1.0") carry no device descriptor, and root hubs
+            // ("usb1") are the host controller itself, not anything plugged in.
+            if (entry.includes(':') || /^usb\d+$/.test(entry)) continue;
+
+            const dir = path.join(usbDevicesDir, entry);
+            const idVendor = await readAttr(dir, 'idVendor');
+            const idProduct = await readAttr(dir, 'idProduct');
+            if (!idVendor || !idProduct) continue;
+
+            devices.push({
+                idVendor: idVendor,
+                idProduct: idProduct,
+                // Same "vvvv:pppp" form stored as meta.usbId on model registry entries,
+                // so a caller can compare the two strings without reformatting either.
+                usbId: idVendor + ':' + idProduct,
+                product: await readAttr(dir, 'product'),
+                manufacturer: await readAttr(dir, 'manufacturer'),
+                busPath: entry
+            });
+        }
+
+        devices.sort((a, b) => a.busPath.localeCompare(b.busPath));
+        res.json({ success: true, source: 'sysfs', available: true, devices: devices });
+    } catch (error) {
+        console.error('Error listing USB devices:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to list USB devices',
+            message: error.message
+        });
+    }
+});
+
+/**
  * GET /api/system/performance - Live performance snapshot
  */
 router.get('/performance', async (req, res) => {

@@ -256,6 +256,9 @@
   // ---------- node cards ----------
   function cardId(id) { return 'node-' + String(id).replace(/[^a-z0-9]/gi, '_'); }
 
+  // Cache-buster so a retry is a real new request, not a replay of the failed one.
+  function startCam(img, id) { img.src = API + '/animatronic/' + id + '/webcam-stream?_=' + Date.now(); }
+
   function buildCard(node) {
     const col = el('div', 'col-sm-6 col-lg-4 col-xxl-3');
     col.id = cardId(node.id);
@@ -275,12 +278,22 @@
 
     // webcam
     const cam = el('div', 'fcc-cam-wrap');
-    const img = el('img'); img.alt = esc(node.name) + ' webcam'; img.loading = 'lazy';
+    // No loading="lazy" here: this is an endless multipart MJPEG response, and a
+    // lazily-deferred stream may never be started at all.
+    const img = el('img'); img.alt = esc(node.name) + ' webcam';
     const off = el('div', 'fcc-cam-off fcc-hidden', 'Webcam unavailable');
-    if (node.online) { img.src = API + '/animatronic/' + node.id + '/webcam-stream'; }
+    if (node.online) { startCam(img, node.id); }
     else { off.textContent = 'Node offline'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); }
-    img.onerror = function () { off.textContent = 'Webcam unavailable'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); };
+    // A dead stream must FORGET its src. updateCard() only restarts a camera whose
+    // img has no src, so leaving the failed URL in place latched that guard off
+    // forever and a recovered camera was never shown again.
+    img.onerror = function () {
+      img.removeAttribute('src');
+      off.textContent = 'Webcam unavailable — click to retry';
+      off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible');
+    };
     img.onload = function () { off.classList.add('fcc-hidden'); img.classList.remove('fcc-invisible'); };
+    off.onclick = function (ev) { ev.stopPropagation(); off.textContent = 'Reconnecting…'; startCam(img, node.id); };
     cam.appendChild(img); cam.appendChild(off);
     cam.onclick = function () { openCam(node); };
     card.appendChild(cam);
@@ -389,9 +402,15 @@
       }
     }
     setCardEnabled(col, node.online);
-    // If a node just came online and its webcam img has no src, start it.
+    // Restart the stream on every poll where the img has no src — that covers both
+    // "node just came online" and "the stream died and onerror cleared it", so a
+    // camera that recovers comes back on its own without a page reload.
     const img = col.querySelector('.fcc-cam-wrap img');
-    if (img && node.online && !img.getAttribute('src')) { img.src = API + '/animatronic/' + node.id + '/webcam-stream'; }
+    const camOff = col.querySelector('.fcc-cam-off');
+    if (img && node.online && !img.getAttribute('src')) {
+      if (camOff) camOff.textContent = 'Reconnecting…';
+      startCam(img, node.id);
+    }
   }
 
   function fmtUptime(s) { s = Math.round(s); if (s < 90) return s + 's'; if (s < 5400) return Math.round(s / 60) + 'm'; return Math.round(s / 3600) + 'h'; }
@@ -430,7 +449,7 @@
     if (!node.online) return;
     if (!camModal) camModal = new bootstrap.Modal($('#fccCamModal'));
     $('#fccCamTitle').textContent = node.name + ' — live';
-    $('#fccCamModalImg').src = API + '/animatronic/' + node.id + '/webcam-stream';
+    startCam($('#fccCamModalImg'), node.id); // cache-buster too: never replay a cached failure
     camModal.show();
   }
   $('#fccCamModal').addEventListener('hidden.bs.modal', () => { $('#fccCamModalImg').src = ''; });

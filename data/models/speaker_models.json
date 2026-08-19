@@ -28,5 +28,24 @@
       "sharesDeviceWith": "mic_respeaker_xvf3800",
       "echoCancellation": "on-device (AEC references the playback stream)"
     }
+  },
+  {
+    "id": "speaker_cmedia_usb_audio",
+    "name": "C-Media USB Audio Adapter (playback)",
+    "description": "Playback side of the common C-Media USB audio adapter, sold under many brand names. Drives a powered speaker from a USB port when the board's own headphone jack is unused or unavailable.",
+    "defaults": {
+      "outputDevice": "default",
+      "volume": 80,
+      "format": "mp3"
+    },
+    "controlsSchema": {},
+    "meta": {
+      "usbId": "0d8c:0014",
+      "usbProduct": "USB Audio Device",
+      "usbManufacturer": "C-Media Electronics Inc.",
+      "sharesDeviceWith": "mic_cmedia_usb_audio",
+      "echoCancellation": "none (host-side only - this adapter has no DSP)",
+      "notes": "USB signature read from a live device on a MonsterNet node via /sys/bus/usb/devices. It identifies the MODEL, not the individual unit, so an identical replacement adapter still matches."
+    }
   }
 ]

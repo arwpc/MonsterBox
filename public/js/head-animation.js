@@ -235,6 +235,13 @@
     if (!el.webcamSelect) return;
     el.webcamSelect.innerHTML = '<option value="">Select a webcam...</option>';
 
+    // A character with exactly one camera has nothing to choose between. Leaving
+    // it unselected only made the OpenCV toggle snap back with "select a webcam
+    // first" on any character that had never saved a webcamPartId.
+    if (!currentConfig.webcamPartId && webcams.length === 1) {
+      currentConfig.webcamPartId = webcams[0].id;
+    }
+
     webcams.forEach(function(webcam) {
       var opt = document.createElement('option');
       opt.value = webcam.id;
