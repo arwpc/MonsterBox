@@ -236,7 +236,8 @@ def guard(character_id, part, op, angle=None, speed=None, duration_ms=None,
     """Apply the committed limits to one outgoing command.
 
     Returns (values, clamps, safety) where `values` holds the possibly-narrowed
-    angle/speed/duration_ms. Raises WrapperError(E_SAFETY) for a refusal.
+    angle/duration_ms; `speed` is passed through unchanged. Raises
+    WrapperError(E_SAFETY) for a refusal.
     """
     clamps = []
     values = {'angle': angle, 'speed': speed, 'duration_ms': duration_ms}
@@ -292,12 +293,6 @@ def guard(character_id, part, op, angle=None, speed=None, duration_ms=None,
                 f"hardware-safety angle window {lo if lo is not None else '-'}"
                 f"..{hi if hi is not None else '-'}"))
             values['angle'] = applied
-
-    max_speed = safety.get('maxSpeedPct')
-    if speed is not None and max_speed is not None and float(speed) > float(max_speed):
-        clamps.append(clamp_record('speed', speed, max_speed,
-                                   'hardware-safety speed cap'))
-        values['speed'] = max_speed
 
     max_duration = safety.get('maxDurationMs')
     if duration_ms is not None and max_duration is not None and \

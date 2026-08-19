@@ -185,14 +185,6 @@ export async function evaluatePoseHealth(characterId, pose, parts = null) {
             }
         }
 
-        if (window.maxSpeedPct != null && target.speed != null && Number(target.speed) > window.maxSpeedPct) {
-            status = worse(status, HEALTH.DEGRADED);
-            reasons.push({
-                partId, level: HEALTH.DEGRADED, code: 'speed-capped',
-                message: `speed ${target.speed}% will be capped to ${window.maxSpeedPct}%`
-            });
-        }
-
         const durationMs = target.durationMs ?? target.duration;
         if (window.maxDurationMs != null && durationMs != null && Number(durationMs) > window.maxDurationMs) {
             status = worse(status, HEALTH.DEGRADED);
@@ -267,7 +259,6 @@ export async function getPartSafetySummary(characterId) {
             maxAngle: window.hi,
             calibrated: window.calibrated,
             placeholderCalibration: window.placeholderCalibration,
-            maxSpeedPct: window.maxSpeedPct,
             maxDurationMs: window.maxDurationMs,
             powerGroup: window.powerGroup,
             noRetractBelowMin: window.noRetractBelowMin,

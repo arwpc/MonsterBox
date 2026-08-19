@@ -6,8 +6,6 @@
     "`safety` block to TIGHTEN these further; the more restrictive value always wins.",
     "",
     "Per-part keys:",
-    "  maxSpeedPct        cap on speed/speedPct (0-100); also becomes the default speed",
-    "                     for motor/linear_actuator moves that omit one.",
     "  maxDurationMs      cap on how long a part may be energized in one command.",
     "  minAngle/maxAngle  additional angle window, intersected with calibrated bounds.",
     "  noRetractBelowMin  hard-block retract/reverse (protects a part already at its",
@@ -29,15 +27,13 @@
           "blockAllMotion": true,
           "blockReason": "Ambiguous BTS7960 wiring — parts.json declares rpwmPin 19 / lpwmPin 21, but the part description says GPIO 21=RPWM, 19=LPWM. linear_actuator_control_v2.py drives rpwmPin for 'extend', so if the description is right, 'extend' physically RETRACTS this actuator, which is already at its mechanical minimum. Trace the wires, make parts.json and the description agree, then drop blockAllMotion and keep noRetractBelowMin.",
           "noRetractBelowMin": true,
-          "maxSpeedPct": 80,
           "maxDurationMs": 4000,
           "notes": "Bow At The Waist (BTS7960, GPIO 21/19/5/22). Sitting at its safe mechanical minimum — extension only, once the wiring is confirmed. Retraction risks bending the linkage."
         },
         "4": {
           "blockAllMotion": true,
-          "blockReason": "Elbow servo is physically failed (operator-confirmed 2026-08-15). It sits on a rail whose fuse has blown before, so commanding a dead servo risks taking the rail with it. TO RE-ENABLE once the servo and power are sorted: delete this blockAllMotion and blockReason pair — the speed cap, angle window and fused-rail serialization below stay in force.",
+          "blockReason": "Elbow servo is physically failed (operator-confirmed 2026-08-15). It sits on a rail whose fuse has blown before, so commanding a dead servo risks taking the rail with it. TO RE-ENABLE once the servo and power are sorted: delete this blockAllMotion and blockReason pair — the angle window, duration cap and fused-rail serialization below stay in force.",
           "powerGroup": "arm-fused-rail",
-          "maxSpeedPct": 40,
           "maxDurationMs": 3000,
           "minAngle": 78,
           "maxAngle": 112,
@@ -45,7 +41,6 @@
         },
         "5": {
           "powerGroup": "arm-fused-rail",
-          "maxSpeedPct": 40,
           "maxDurationMs": 3000,
           "minAngle": 95,
           "maxAngle": 125,

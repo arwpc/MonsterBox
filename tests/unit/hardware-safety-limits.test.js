@@ -175,44 +175,7 @@ describe('Hardware safety limits', function () {
     });
   });
 
-  describe('speed and duration caps', function () {
-    it('caps speed above the configured maximum', function () {
-      const result = applySafetyLimits({
-        type: 'linear_actuator',
-        action: 'controlActuator',
-        params: { direction: 'extend', speed: 100 },
-        profile: null,
-        safety: { maxSpeedPct: 40 },
-        partId: 4
-      });
-      expect(result.params.speed).to.equal(40);
-    });
-
-    it('applies the cap as a default when the caller omits speed', function () {
-      // Without this the controller default (75-100%) would silently escape the cap.
-      const result = applySafetyLimits({
-        type: 'linear_actuator',
-        action: 'controlActuator',
-        params: { direction: 'extend' },
-        profile: null,
-        safety: { maxSpeedPct: 40 },
-        partId: 4
-      });
-      expect(result.params.speed).to.equal(40);
-    });
-
-    it('does not raise a speed that is already below the cap', function () {
-      const result = applySafetyLimits({
-        type: 'linear_actuator',
-        action: 'controlActuator',
-        params: { direction: 'extend', speed: 10 },
-        profile: null,
-        safety: { maxSpeedPct: 40 },
-        partId: 4
-      });
-      expect(result.params.speed).to.equal(10);
-    });
-
+  describe('duration caps', function () {
     it('caps how long a part may stay energized', function () {
       const result = applySafetyLimits({
         type: 'linear_actuator',
@@ -329,12 +292,12 @@ describe('Hardware safety limits', function () {
       expect(elbow.powerGroup).to.be.a('string');
       expect(forearm.powerGroup).to.equal(elbow.powerGroup);
       expect(elbow.powerGroupConfig.serialize).to.equal(true);
-      expect(elbow.maxSpeedPct).to.be.a('number');
+      expect(elbow.maxDurationMs).to.be.a('number');
     });
 
     it('returns empty limits for a part with no configuration', async function () {
       const unlisted = await getPartSafety(3, 9999, null);
-      expect(unlisted.maxSpeedPct).to.equal(undefined);
+      expect(unlisted.maxDurationMs).to.equal(undefined);
       expect(unlisted.powerGroup).to.equal(null);
       expect(unlisted.noRetractBelowMin).to.equal(false);
     });
@@ -397,19 +360,6 @@ describe('Supervised calibration override', function () {
       calibrationOverride: true
     });
     expect(result.blocked).to.be.a('string');
-  });
-
-  it('NEVER relaxes the speed cap that protects a fused rail', function () {
-    const result = applySafetyLimits({
-      type: 'servo',
-      action: 'moveToAngle',
-      params: { angleDeg: 100, speed: 100 },
-      profile: null,
-      safety: { maxSpeedPct: 40 },
-      partId: 4,
-      calibrationOverride: true
-    });
-    expect(result.params.speed).to.equal(40);
   });
 
   it('changes nothing when the flag is absent (default clamped behaviour)', function () {

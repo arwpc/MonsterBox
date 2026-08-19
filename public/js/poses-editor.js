@@ -182,7 +182,7 @@
     return html;
   }
 
-  // Non-blocking cautions: a capped speed/duration, a shared fused rail, or an
+  // Non-blocking cautions: a capped duration, a shared fused rail, or an
   // angle window that is a guess rather than a measurement.
   function renderPartSafetyNote(part) {
     var safety = safetyFor(part.id);
@@ -199,7 +199,6 @@
     if (safety.powerGroup) {
       notes.push('Shares the &quot;' + escapeHtml(safety.powerGroup) + '&quot; fused rail — moves are serialized');
     }
-    if (safety.maxSpeedPct != null) notes.push('Speed capped at ' + safety.maxSpeedPct + '%');
     if (safety.maxDurationMs != null) notes.push('Duration capped at ' + safety.maxDurationMs + 'ms');
     if (safety.noRetractBelowMin) notes.push('Retraction is disabled (part is at its mechanical minimum)');
 

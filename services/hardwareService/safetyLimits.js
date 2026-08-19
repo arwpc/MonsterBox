@@ -4,7 +4,7 @@
  * Re-implements the safety-limit layer that was dropped when per-part calibration
  * moved to unified profiles. Two jobs:
  *
- *  1. CLAMP  — bound every outgoing hardware command (angle, speed, duration) to
+ *  1. CLAMP  — bound every outgoing hardware command (angle, duration) to
  *              what the part is known to survive, and block moves that are known
  *              to damage hardware (e.g. retracting an actuator already sitting at
  *              its mechanical minimum).
@@ -88,7 +88,6 @@ export async function getPartSafety(characterId, partId, profile = null) {
 
     const merged = {
         // Tightest cap wins.
-        maxSpeedPct: minDefined(fromFile.maxSpeedPct, fromProfile.maxSpeedPct),
         maxDurationMs: minDefined(fromFile.maxDurationMs, fromProfile.maxDurationMs),
         // Tightest angle window wins (highest floor, lowest ceiling).
         minAngle: maxDefined(fromFile.minAngle, fromProfile.minAngle),
@@ -127,12 +126,6 @@ export async function isTestSafePart(characterId, partId, profile = null) {
 
 const RETRACT_DIRECTIONS = new Set(['retract', 'reverse', 'down', 'in']);
 
-// Actions that energize a motor/actuator and therefore draw current.
-const ENERGIZING_ACTIONS = new Set([
-    'moveToAngle', 'rotateContinuous', 'controlActuator', 'control',
-    'moveSteps', 'setSpeed', 'move', 'jog', 'jogRaw', 'goto'
-]);
-
 /**
  * Clamp an outgoing hardware command to its safe envelope.
  *
@@ -150,10 +143,10 @@ const ENERGIZING_ACTIONS = new Set([
  *   operator was stopped at the old ceiling on the very page whose job is to
  *   find the new one. The duration cap likewise stopped homing short of the
  *   endstop while the tracker still recorded "homed". What NEVER relaxes:
- *   blockAllMotion, noRetractBelowMin, speed caps, and power-group
- *   serialization — those protect wiring and fuses, and no measurement is
- *   worth re-blowing the fuse that taught us to add them. Only the
- *   operator-supervised calibration endpoints may set this flag.
+ *   blockAllMotion, noRetractBelowMin, and power-group serialization — those
+ *   protect wiring and fuses, and no measurement is worth re-blowing the fuse
+ *   that taught us to add them. Only the operator-supervised calibration
+ *   endpoints may set this flag.
  * @returns {{params: Object, adjustments: string[], blocked: string|null}}
  */
 export function applySafetyLimits({ type, action, params, profile, safety, partId, calibrationOverride = false }) {
@@ -210,26 +203,6 @@ export function applySafetyLimits({ type, action, params, profile, safety, partI
                 adjustments.push(`angleDeg ${requested}° → ${clamped}° (bounds ${lo ?? '-'}..${hi ?? '-'})`);
                 out.angleDeg = clamped;
             }
-        }
-    }
-
-    // --- Speed cap: limits peak current draw, which is what pops a shared fuse ---
-    if (safety.maxSpeedPct != null) {
-        for (const key of ['speed', 'speedPct']) {
-            if (out[key] != null) {
-                const requested = Number(out[key]);
-                if (!Number.isNaN(requested) && requested > safety.maxSpeedPct) {
-                    adjustments.push(`${key} ${requested}% → ${safety.maxSpeedPct}% (speed cap)`);
-                    out[key] = safety.maxSpeedPct;
-                }
-            }
-        }
-        // A move with no explicit speed would otherwise run at the controller
-        // default (75-100%), silently escaping the cap.
-        if (out.speed == null && ENERGIZING_ACTIONS.has(action) &&
-            (type === 'linear_actuator' || type === 'motor')) {
-            out.speed = safety.maxSpeedPct;
-            adjustments.push(`speed defaulted to ${safety.maxSpeedPct}% (speed cap)`);
         }
     }
 

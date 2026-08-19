@@ -62,7 +62,7 @@ function minDefined(a, b) {
  * @param {number|string} partId
  * @returns {Promise<{lo:number|null, hi:number|null, placeholderCalibration:boolean,
  *                    calibrated:boolean, blocked:boolean, blockReason:string|null,
- *                    powerGroup:string|null, maxSpeedPct:number|null,
+ *                    powerGroup:string|null,
  *                    maxDurationMs:number|null, noRetractBelowMin:boolean,
  *                    excludeFromAutomatedTests:boolean, notes:string|null}>}
  */
@@ -92,7 +92,6 @@ export async function getEffectiveWindow(characterId, partId) {
         blocked: !!safety.blockAllMotion,
         blockReason: safety.blockReason || null,
         powerGroup: safety.powerGroup || null,
-        maxSpeedPct: safety.maxSpeedPct ?? null,
         maxDurationMs: safety.maxDurationMs ?? null,
         noRetractBelowMin: !!safety.noRetractBelowMin,
         excludeFromAutomatedTests: !!safety.excludeFromAutomatedTests,
