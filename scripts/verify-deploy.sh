@@ -16,13 +16,21 @@ NODES="192.168.8.120 192.168.8.130 192.168.8.140"
 
 # One representative symbol per fix that shipped. Each must be absent before the
 # deploy and present after; a symbol that already existed proves nothing.
+# NOTE: this list once carried restoreArmedSuperpowers / restoreArmed /
+# restoreHeadTrackingArmedState. That feature was reverted before release, and the
+# script correctly reported them MISSING on every node — including the one that
+# built them. A verifier that only ever agrees with you is not a verifier; leaving
+# this note so the next person reads a MISS as "check which is stale, the code or
+# the list" rather than assuming a bad deploy.
 CHECKS="
 python_wrappers/webcam_cli.py:device_index
-server.js:restoreArmedSuperpowers
 server/calibration/router.js:describeServoMove
-services/movement/idleLoopService.js:restoreArmed
-controllers/motionTrackingController.js:restoreHeadTrackingArmedState
+server/calibration/adapters/OpenLoopLinearAdapter.js:MAX_DRIVE_MS
+server/calibration/adapters/AbsoluteServoAdapter.js:positionUnknown
+routes/api/partsApi.js:drivenAngle
 routes/api/systemRoutes.js:usb-devices
+data/models/webcam_models.json:usbId
+tests/browser/scene-concurrency.spec.js:dryRun
 "
 
 . /etc/monsterbox/env 2>/dev/null || true
