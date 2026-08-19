@@ -2,6 +2,81 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [10.0.1] - 2026-08-19 — Both ears open
+
+A patch release about hearing. v10.0.0 shipped a fleet that could speak; this one
+makes two of its characters able to listen to each other across a garage, and
+writes down the failure shape that hid the problem for three sessions.
+
+### The array was never starved of sound — it was starved of frames
+
+`parec`, `ffmpeg` and `arecord` all OPEN the ReSpeaker XVF3800 and then deliver
+nothing. Measured head-to-head over the same 3 s window on Orlok:
+
+    stream_raw (PyAudio)  69120 bytes     parec  0 bytes     arecord  0 bytes
+
+Continuous capture scored the zero-byte run as a failed candidate, walked the
+whole ladder, and fell back to the legacy ~0.3 s per-chunk path — for which the
+Scribe model returns an **empty transcript with HTTP 200, not an error**. Success
+at every layer, no audio anywhere. PyAudio is now the first capture candidate
+(`microphone_cli.py stream_raw`); the pulse/ALSA recorders remain as fallbacks.
+
+Underneath it sat a race worth more than the fix: the legacy poll tick was armed
+unconditionally 10 ms into every session while the aggregation decision was still
+in flight, and its recorder holds the mic exclusively for ~1.4 s. On a device where
+only PyAudio can stream, whoever won that race decided whether the session could
+hear. Identical sessions passed or failed on timing alone — which is why this
+presented as flakiness rather than as a bug.
+
+Proven twice across the garage, the second sentence by an adversarial verifier
+that had never seen the first:
+
+    said  "The crimson bell tolls seven times for the sleeping garden."
+    heard "The crimson bell tolled seven times for the sleeping garden"      90%
+    said  "Nine pale lanterns drift above the frozen orchard tonight."
+    heard "Nine pale lanterns drift above the frozen An orchard tonight"    100% in-order
+
+### Mina was listening to a dead socket
+
+Her PipeWire default source pointed at a USB dongle with nothing plugged into it
+(RMS 0.0001 — digital silence) while the working camera mic beside it read
+0.0060-0.0072. Repointing the default changed nothing, which exposed the real
+defect: the wrapper asked PortAudio for `default`, and ALSA's default PCM goes
+straight to a hardware card, bypassing PipeWire — so the node's default source and
+`PULSE_SOURCE` were both ignored. Device selection now prefers PortAudio's
+`pipewire`/`pulse` devices. It deliberately does **not** match hardware devices
+directly: that routes around PipeWire and makes capture exclusive, which is how
+contention starts.
+
+Her gate had Orlok's old disease — `vadThreshold` 0.35 against far-field speech.
+Measured with Orlok speaking across the garage: floor 0.003-0.008, his voice
+0.037-0.093. Now 0.015 with aggregation on. She transcribed him verbatim.
+
+### The jaw leads because the sink sleeps
+
+`scripts/apply-audio-nosuspend.sh` sets `session.suspend-timeout-seconds = 0` for
+the character speaker sink only, matched by `node.name` — never a blanket rule.
+Idempotent, WirePlumber-generation aware (0.4 Lua vs 0.5+ SPA-JSON), called from
+`install.sh` so new nodes inherit it. Applied and proven behaviourally on all three
+live nodes: play, wait 20 s, sink still `idle` where the default suspends in ~5.
+
+A variable offset cannot be corrected by a single number; removing suspend makes
+the remainder constant and therefore correctable. Mina's `audioLeadTimeMs` is 650
+on her ACTIVE config; Orlok and Sir Dragomir keep 300 pending a by-eye pass.
+
+### Also
+
+- **Sir Dragomir's jaw was enabled on his node** with `minAngle 0 / maxAngle 180`,
+  the full uncalibrated span, on a jaw that is meant to stay off until calibrated.
+  Predates this session (node file dated 2026-08-18 00:02). Disabled on the node.
+- **Two leaked audio players found on Mina** — a `pw-play` alive 2h18m and an
+  `mpg123` on stdin — pinning her sink open and masking every measurement.
+- `KNOWN-BUGS.md` had no entry for the zero-frames class at all; it now records all
+  three layers, the gate that sat above all speech, and the contention race.
+- CLAUDE.md records what this cost: logs are split and `.err` holds the reason;
+  judge capture on frames, not on the device opening; `pactl` is not installed on
+  every node.
+
 ## [10.0.0] - 2026-08-18 — The Scare Console, and one skin over the whole platform
 
 A major release because the page you open every day is a different, better thing.
