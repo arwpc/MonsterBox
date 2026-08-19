@@ -147,10 +147,19 @@ function firstNumber(...candidates) {
  * operators and explains the blown fuse and the ambiguous wiring in plain English;
  * it should reach them, not be discarded one layer short of the screen.
  */
-function testResponse(res, result, part, okMessage) {
+function testResponse(res, result, part, okMessage, extra = {}) {
     const ok = result && result.success !== false;
+    // controlPart reports every narrowing it made in safetyAdjustments. A clamp is
+    // not a refusal, so it still returns success — but the part did NOT go where the
+    // operator asked, and a bare "moved to 60°" hides that. Surface it in both the
+    // machine-readable fields and the sentence a human reads.
+    const adjustments = (result && Array.isArray(result.safetyAdjustments)) ? result.safetyAdjustments : [];
+    const clampInfo = adjustments.length > 0 ? { clamped: true, safetyAdjustments: adjustments } : {};
     if (ok) {
-        return res.json({ success: true, message: okMessage, part });
+        const message = adjustments.length > 0
+            ? `${okMessage} — safety limits applied: ${adjustments.join('; ')}`
+            : okMessage;
+        return res.json({ success: true, message, ...extra, ...clampInfo, part });
     }
     const reason = (result && (result.error || result.message)) || 'Hardware refused the command';
     // 409 for a deliberate safety refusal, 502 for a genuine hardware failure —
@@ -161,8 +170,26 @@ function testResponse(res, result, part, okMessage) {
         blockedBySafetyLimit: !!(result && result.blockedBySafetyLimit),
         error: reason,
         message: reason,
+        ...clampInfo,
         part
     });
+}
+
+/**
+ * Describe a finished servo move in terms of what the hardware actually did.
+ *
+ * An inverted servo is driven to the mirror of the commanded angle (invert lives on
+ * the calibration profile's capability, never on the part record), so echoing the
+ * request back told the operator "moved to 60°" while the PCA9685 register held
+ * 119.6°. Report the driven angle, and name the commanded one when they differ.
+ * Wording is kept identical to describeServoMove() in server/calibration/router.js
+ * so the two endpoints cannot describe the same move differently.
+ */
+function describeServoMove(verb, commandedAngle, drivenAngle) {
+    if (!Number.isFinite(drivenAngle) || Math.abs(drivenAngle - commandedAngle) < 0.05) {
+        return `${verb} ${commandedAngle}°`;
+    }
+    return `${verb} ${drivenAngle}° (commanded ${commandedAngle}° — inverted servo)`;
 }
 
 router.post('/:id/test', express.json(), async (req, res) => {
@@ -242,7 +269,18 @@ router.post('/:id/test', express.json(), async (req, res) => {
             }
 
             const result = await controlPart(part.id, 'moveToAngle', { angleDeg: angle, duration }, hw);
-            return testResponse(res, result, part, `Part ${part.name} moved to ${angle}°`);
+            // appliedParams carries the value actually sent to the hardware (post-invert,
+            // post-clamp). It is absent on dry runs and wrapper errors, in which case
+            // describeServoMove falls back to the old message shape.
+            const drivenAngle = result && result.appliedParams
+                ? Number(result.appliedParams.angleDeg)
+                : NaN;
+            const drivenField = Number.isFinite(drivenAngle) ? { drivenAngle } : {};
+            return testResponse(
+                res, result, part,
+                describeServoMove(`Part ${part.name} moved to`, angle, drivenAngle),
+                drivenField
+            );
         } else if (partType === 'light' || partType === 'led') {
             const rawAction = action || 'on';
             // Map short actions to controller method names

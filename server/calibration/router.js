@@ -74,6 +74,21 @@ function isOpenLoop(profile) {
 function angleToP(angle) { return Math.max(0, Math.min(1, angle / 180)); }
 function pToAngle(p) { return Math.round(Math.max(0, Math.min(1, p)) * 180 * 10) / 10; }
 
+/**
+ * Describe a finished servo move in terms of what the hardware actually did.
+ *
+ * An inverted servo is driven to the mirror of the commanded angle, so echoing
+ * the request back told the operator "Moved to 60" while the PCA9685 register
+ * held 119.6 - on the one page whose job is to measure real travel. Report the
+ * driven angle, and name the commanded one when the two differ.
+ */
+function describeServoMove(verb, commandedAngle, drivenAngle) {
+  if (!Number.isFinite(drivenAngle) || Math.abs(drivenAngle - commandedAngle) < 0.05) {
+    return `${verb} ${commandedAngle}°`;
+  }
+  return `${verb} ${drivenAngle}° (commanded ${commandedAngle}° — inverted servo)`;
+}
+
 /** Persist position for open-loop parts to disk */
 function persistPosition(partId, currentP, extra = {}) {
   const key = parseInt(partId, 10);
@@ -342,9 +357,12 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
       await adapter.nudge(dir, scale, { calibrationOverride: true });
 
       if (isAbsoluteServo(profile)) {
-        const currentAngle = adapter.currentAngle !== undefined ? adapter.currentAngle : 90;
+        // The adapter refuses the nudge outright when it has no starting angle,
+        // so by here currentAngle is a real number - no 90° stand-in.
+        const currentAngle = adapter.currentAngle;
+        const drivenAngle = Number.isFinite(adapter.lastDrivenAngle) ? adapter.lastDrivenAngle : currentAngle;
         positionState.set(partId, { currentAngle, currentP: angleToP(currentAngle), lastUpdated: new Date().toISOString() });
-        res.json({ success: true, message: `Nudged ${dir} at ${scale}`, currentAngle, currentP: angleToP(currentAngle) });
+        res.json({ success: true, message: `Nudged ${dir} at ${scale} — ${describeServoMove('now at', currentAngle, drivenAngle)}`, currentAngle, drivenAngle, currentP: angleToP(currentAngle) });
       } else {
         const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
         persistPosition(partId, currentP);
@@ -359,7 +377,14 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
       }
 
       if (isAbsoluteServo(profile)) {
-        const currentAngle = adapter.currentAngle !== undefined ? adapter.currentAngle : 90;
+        const currentAngle = adapter.currentAngle;
+        // A delta is relative as well, and nudge is deliberately bounds-free:
+        // started from an invented angle it lands somewhere arbitrary with
+        // nothing left to catch it. Refuse instead of guessing.
+        if (!Number.isFinite(currentAngle)) {
+          return res.status(409).json({ success: false, positionUnknown: true,
+            error: 'Servo position is unknown — move to an absolute angle (goto) first, then nudge' });
+        }
         // Deliberately NOT clamped to profile.bounds: nudge is the operator's
         // supervised tool for discovering limits at the calibration screen, and
         // set-min/set-max record wherever it lands. Clamping here would make an
@@ -369,9 +394,9 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         // silently re-clamped the "unclamped" nudge, and the operator was
         // stopped at the old ceiling while trying to measure past it.
         const newAngle = Math.max(0, Math.min(180, currentAngle + delta));
-        await adapter.gotoAngle(newAngle, { speedPct, durationMs, calibrationOverride: true });
+        const drivenAngle = await adapter.gotoAngle(newAngle, { speedPct, durationMs, calibrationOverride: true });
         positionState.set(partId, { currentAngle: newAngle, currentP: angleToP(newAngle), lastUpdated: new Date().toISOString() });
-        res.json({ success: true, message: `Nudged by ${delta}°`, currentAngle: newAngle, currentP: angleToP(newAngle) });
+        res.json({ success: true, message: `Nudged by ${delta}° — ${describeServoMove('now at', newAngle, drivenAngle)}`, currentAngle: newAngle, drivenAngle, currentP: angleToP(newAngle) });
       } else {
         const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
         // FIX: Apply calibration bounds to nudge (was missing before).
@@ -391,6 +416,11 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
   } catch (err) {
     if (String(err).includes('Unsupported capability')) {
       return res.status(400).json({ success: false, error: String(err) });
+    }
+    // An adapter that refuses a relative move it cannot start from is telling
+    // the operator what to do next, not failing.
+    if (err && err.positionUnknown) {
+      return res.status(409).json({ success: false, positionUnknown: true, error: err.message });
     }
     console.error(err);
     res.status(500).json({ success: false, error: 'Failed to nudge', message: String(err) });
@@ -561,9 +591,9 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       if (targetAngle !== angle) {
         console.warn(`🛡️  goto clamped part ${partId}: ${angle}° → ${targetAngle}° (calibrated bounds)`);
       }
-      await adapter.gotoAngle(targetAngle, { speedPct, calibrationOverride: calOverride });
+      const drivenAngle = await adapter.gotoAngle(targetAngle, { speedPct, calibrationOverride: calOverride });
       positionState.set(partId, { currentAngle: targetAngle, currentP: angleToP(targetAngle), lastUpdated: new Date().toISOString() });
-      res.json({ success: true, message: `Moved to ${targetAngle}°`, targetAngle, targetP: angleToP(targetAngle), requestedAngle: angle, clamped: targetAngle !== angle });
+      res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle), targetAngle, drivenAngle, targetP: angleToP(targetAngle), requestedAngle: angle, clamped: targetAngle !== angle });
     } else {
       const { p, speedPct } = req.body;
       if (typeof p !== 'number' || p < 0 || p > 1) {
@@ -581,12 +611,12 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
         actuatorPositionStore.markMoving(partId, clampedP > (adapter.currentP || 0.5) ? 'extend' : 'retract');
       }
 
-      await adapter.gotoNormalized(clampedP, { speedPct });
+      const drivenAngle = await adapter.gotoNormalized(clampedP, { speedPct });
 
       if (isAbsoluteServo(profile)) {
         const targetAngle = pToAngle(clampedP);
         positionState.set(partId, { currentAngle: targetAngle, currentP: clampedP, lastUpdated: new Date().toISOString() });
-        res.json({ success: true, message: `Moved to ${targetAngle}°`, targetP: clampedP, targetAngle });
+        res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle), targetP: clampedP, targetAngle, drivenAngle });
       } else {
         persistPosition(partId, clampedP);
         res.json({ success: true, message: `Moved to ${clampedP}`, targetP: clampedP });
@@ -609,7 +639,18 @@ router.post('/:partId/set-min', express.json(), async (req, res) => {
     const state = positionState.get(partId);
 
     if (isAbsoluteServo(profile)) {
-      const currentAngle = (state && state.currentAngle != null) ? state.currentAngle : 0;
+      // Refuse rather than substitute an angle the servo was never at. "Set min"
+      // records a MEASURED floor and stamps autoGenerated=false, so falling back
+      // to 0 wrote a fabricated angle as if an operator had jogged to it — on a
+      // part whose real window is {22, 91} that silently widens travel 22 degrees
+      // past the mechanical floor, and rejectDegenerateBounds cannot catch it
+      // because 0 !== 91.
+      if (!state || state.currentAngle == null) {
+        return res.status(409).json({ success: false, positionUnknown: true,
+          error: 'Servo position is unknown — move to an absolute angle (goto) first, then set min',
+          bounds: profile.bounds });
+      }
+      const currentAngle = state.currentAngle;
       const bounds = Object.assign({}, profile.bounds || {});
       bounds.minAngle = currentAngle;
       if (bounds.maxAngle != null && bounds.minAngle > bounds.maxAngle) {
@@ -645,7 +686,14 @@ router.post('/:partId/set-max', express.json(), async (req, res) => {
     const state = positionState.get(partId);
 
     if (isAbsoluteServo(profile)) {
-      const currentAngle = (state && state.currentAngle != null) ? state.currentAngle : 180;
+      // Same reasoning as set-min: 180 is a guess, and this write claims to be a
+      // measurement.
+      if (!state || state.currentAngle == null) {
+        return res.status(409).json({ success: false, positionUnknown: true,
+          error: 'Servo position is unknown — move to an absolute angle (goto) first, then set max',
+          bounds: profile.bounds });
+      }
+      const currentAngle = state.currentAngle;
       const bounds = Object.assign({}, profile.bounds || {});
       bounds.maxAngle = currentAngle;
       if (bounds.minAngle != null && bounds.minAngle > bounds.maxAngle) {
@@ -739,20 +787,27 @@ function getOrCreateAdapter(partId, profile) {
 
   // For open-loop parts: use persisted position as initial position (not 0.5)
   let initialP = 0.5;
+  // Absolute servos get null when nothing is stored: an unknown position must
+  // stay unknown so a relative nudge refuses instead of starting from a made-up
+  // 90° - that stand-in drove a jaw sitting at 131.5° down to 88°, past its
+  // calibrated minimum, because nudge is deliberately bounds-free.
+  let initialAngle = null;
   const persistedState = actuatorPositionStore.load(partId);
-  if (persistedState && persistedState.currentP != null && persistedState.positionKnown !== false) {
-    initialP = persistedState.currentP;
-  } else {
-    // Also check in-memory state (may have been set during this session)
-    const memState = positionState.get(partId);
-    if (memState && memState.currentP != null) {
-      initialP = memState.currentP;
-    }
+  const memState = positionState.get(partId);
+  // Same store, same precedence as the open-loop adapter: disk first, then any
+  // position recorded during this session.
+  const knownState = (persistedState && persistedState.currentP != null && persistedState.positionKnown !== false)
+    ? persistedState
+    : ((memState && memState.currentP != null && memState.positionKnown !== false) ? memState : null);
+  if (knownState) {
+    initialP = knownState.currentP;
+    // Servo records carry the angle they were driven to; p is the fallback.
+    initialAngle = Number.isFinite(knownState.currentAngle) ? knownState.currentAngle : knownState.currentP * 180;
   }
 
   let adapter;
   if (cap.kind === 'absolute-servo') {
-    adapter = new AbsoluteServoAdapter(partId, cap.usMin || 500, cap.usMax || 2500, cap.invert || false);
+    adapter = new AbsoluteServoAdapter(partId, cap.usMin || 500, cap.usMax || 2500, cap.invert || false, initialAngle);
   } else if (cap.kind === 'openloop-linear' && profile.motion && profile.motion.type === 'time-at-speed') {
     adapter = new OpenLoopLinearAdapter(partId, profile.motion, cap.invert || false, initialP);
   } else if (cap.kind === 'continuous-servo') {
@@ -796,15 +851,27 @@ router.delete('/:partId/profile', async (req, res) => {
 // Clear all calibration profiles for current character
 router.post('/clear-all', express.json(), async (req, res) => {
   try {
-    const { characterId, partIds } = req.body;
+    const { partIds } = req.body;
     if (!Array.isArray(partIds) || partIds.length === 0) {
       return res.status(400).json({ success: false, error: 'Must provide array of partIds to clear' });
     }
 
+    // The body's characterId used to be destructured and then never passed on, so
+    // a fleet client asking to clear character 3 wiped THIS node's character
+    // instead — and reported success. Profiles are keyed "characterId:partId" and
+    // part ids repeat across characters, so an unscoped delete is always a delete
+    // of the wrong thing on a node serving someone else.
+    const ctx = await resolveCharacter(req);
+    const characterId = ctx && ctx.id;
+
     let cleared = 0;
     for (const partId of partIds) {
       try {
-        await store.delete(parseInt(partId, 10));
+        await store.delete(parseInt(partId, 10), characterId);
+        // NOTE: the adapter cache is still keyed by bare partId, so it is only
+        // correct while a node serves one character. Keying it per character
+        // means threading characterId through getOrCreateAdapter and all eight
+        // cache sites — tracked in KNOWN-BUGS rather than done untested here.
         adapterCache.delete(parseInt(partId, 10));
         // Preserve position state
         cleared++;
@@ -813,7 +880,7 @@ router.post('/clear-all', express.json(), async (req, res) => {
       }
     }
 
-    res.json({ success: true, message: `Cleared ${cleared} calibration profile(s)`, cleared });
+    res.json({ success: true, message: `Cleared ${cleared} calibration profile(s)`, cleared, characterId });
   } catch (err) {
     console.error('Error clearing all calibrations:', err);
     res.status(500).json({ success: false, error: 'Failed to clear calibrations', message: String(err) });

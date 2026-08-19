@@ -11,6 +11,11 @@ const ENDPOINT_THRESHOLD = 0.02;
 // Set high (50%) to overcome friction, weight, and load on arms/actuators.
 const ENDPOINT_OVERDRIVE_FACTOR = 0.50;
 
+// Hard ceiling on motor-on time for a single move, matching the cap jog-raw
+// already applies in server/calibration/router.js. A caller-supplied duration is
+// a request, not permission to run the motor indefinitely.
+const MAX_DRIVE_MS = 30000;
+
 export class OpenLoopLinearAdapter {
   constructor(partId, motion, invert = false, initialP = 0.5) {
     this.partId = partId;
@@ -71,6 +76,10 @@ export class OpenLoopLinearAdapter {
    * the mechanical stop, then resets the position tracker.
    * This corrects any accumulated open-loop drift.
    *
+   * This is the ONLY path that gets endstop overdrive by default. An ordinary
+   * gotoNormalized() that lands on 0 or 1 gets it only with { homing: true },
+   * so a small move can no longer become a full-force endstop drive.
+   *
    * @param {'retract'|'extend'} direction - Which endstop to seek
    * @param {number} speedPct - Motor speed percentage (default 50)
    */
@@ -120,20 +129,37 @@ export class OpenLoopLinearAdapter {
     if (this.lastDir && this.lastDir !== currentDir && this.reversalCompensationBeta > 0) compensatedDelta += this.reversalCompensationBeta;
     const speedPct = (opts && opts.speedPct) || 50;
 
-    // Calculate pure motor-on time (without settle)
-    let driveMs = (opts && opts.timeoutMs) || this.calculateDriveTime(compensatedDelta, speedPct);
+    // Calculate pure motor-on time (without settle).
+    // Both spellings are honoured: the nudge/goto routes send durationMs while
+    // older callers send timeoutMs, and reading only timeoutMs discarded the
+    // operator's requested duration in silence.
+    // Capped at the same 30 s ceiling jog-raw uses (router.js). Honouring the
+    // caller's duration is the fix; honouring it UNBOUNDED turned a nudge into a
+    // motor-on time of the caller's choosing — {"delta":0.01,"durationMs":600000}
+    // would have run the actuator continuously for ten minutes. Before this
+    // duration was read at all it was silently ignored, so the cap restores the
+    // old safety ceiling while keeping the new behaviour.
+    const requestedDurationMs = (opts && (opts.durationMs || opts.timeoutMs)) || null;
+    const explicitDurationMs = (typeof requestedDurationMs === 'number' && requestedDurationMs > 0)
+      ? Math.min(requestedDurationMs, MAX_DRIVE_MS)
+      : null;
+    let driveMs = explicitDurationMs || this.calculateDriveTime(compensatedDelta, speedPct);
 
-    // Endpoint overdrive: when moving to a physical stop (near 0 or 1),
+    // Endpoint overdrive: when HOMING to a physical stop (near 0 or 1),
     // add extra time to guarantee contact with the mechanical endstop.
     // This resets accumulated positional drift from open-loop estimation.
+    // Only when the caller says it is homing: an ordinary "nudge by -0.05"
+    // that happens to land on p=0 was silently turned into a full-force,
+    // full-range drive into the endstop.
     const isEndpoint = clampedP <= ENDPOINT_THRESHOLD || clampedP >= (1 - ENDPOINT_THRESHOLD);
-    if (isEndpoint && !(opts && opts.timeoutMs)) {
+    const overdrive = isEndpoint && !!(opts && opts.homing === true) && !explicitDurationMs;
+    if (overdrive) {
       const bin = this.selectBin(speedPct);
       const fullRangeMs = (1.0 / bin.unitsPerSec) * 1000;
       driveMs += Math.round(fullRangeMs * ENDPOINT_OVERDRIVE_FACTOR);
     }
 
-    console.log(`🔧 OpenLoopLinearAdapter: partId=${this.partId}, direction=${direction}, speed=${speedPct}%, driveMs=${driveMs}ms, settleMs=${this.settleMs}ms, deltaP=${deltaP.toFixed(3)}${isEndpoint ? ' (ENDPOINT OVERDRIVE)' : ''}`);
+    console.log(`🔧 OpenLoopLinearAdapter: partId=${this.partId}, direction=${direction}, speed=${speedPct}%, driveMs=${driveMs}ms, settleMs=${this.settleMs}ms, deltaP=${deltaP.toFixed(3)}${overdrive ? ' (ENDPOINT OVERDRIVE)' : ''}`);
     try {
       const hwOptions = {};
       if (opts && opts.characterId != null) hwOptions.characterId = opts.characterId;
@@ -154,9 +180,10 @@ export class OpenLoopLinearAdapter {
       await new Promise(r => setTimeout(r, this.settleMs));
       this.currentP = clampedP;
       this.lastDir = currentDir;
-      // At endpoints, the physical stop guarantees actual position matches.
-      // Reset tracker to exact endpoint to eliminate accumulated drift.
-      if (isEndpoint) {
+      // Snapping the tracker to an exact endpoint is only honest when we
+      // actually overdrove into the physical stop; without the overdrive the
+      // motor merely ran the calculated time and the drift is still there.
+      if (overdrive) {
         this.currentP = clampedP <= ENDPOINT_THRESHOLD ? 0 : 1;
       }
     } catch (err) { console.error('OpenLoopLinearAdapter goto failed', err); throw err; }

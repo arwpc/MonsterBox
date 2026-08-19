@@ -3,17 +3,37 @@ import hardwareService from '../../../services/hardwareService/index.js';
 // Nudge scales in degrees (not normalized)
 const NUDGE_SCALES = { fine: 2, med: 5, coarse: 15 };
 
+function positionUnknownError() {
+  const err = new Error('Servo position is unknown — move to an absolute angle (goto) first, then nudge');
+  err.positionUnknown = true;
+  return err;
+}
+
 export class AbsoluteServoAdapter {
-  constructor(partId, usMin = 500, usMax = 2500, invert = false) {
+  constructor(partId, usMin = 500, usMax = 2500, invert = false, initialAngle = null) {
     this.partId = partId;
     this.usMin = usMin;
     this.usMax = usMax;
     this.invert = invert;
-    this.currentAngle = 90; // degrees (0-180)
+    // These servos give no feedback, so position is only ever what the caller
+    // last recorded. It used to default to 90°, and a relative nudge from that
+    // invented number is an arbitrary jump: a jaw physically at 131.5° took a
+    // "fine" nudge and drove to 88°, past its calibrated minimum of 97°,
+    // because nudge is deliberately bounds-free. null means UNKNOWN, and
+    // relative moves refuse rather than guess.
+    this.currentAngle = Number.isFinite(initialAngle)
+      ? Math.max(0, Math.min(180, initialAngle))
+      : null;
+    // Angle actually written to the controller (differs from the request on
+    // inverted servos); null until a move succeeds.
+    this.lastDrivenAngle = null;
   }
 
-  // Backward compat: currentP as computed property
-  get currentP() { return this.currentAngle / 180; }
+  get positionKnown() { return this.currentAngle !== null; }
+
+  // Backward compat: currentP as computed property. null when position is unknown —
+  // 0.5 or 0 would be another invented position.
+  get currentP() { return this.currentAngle === null ? null : this.currentAngle / 180; }
   set currentP(p) { this.currentAngle = Math.round(p * 180 * 10) / 10; }
 
   getCapabilities() { return { kind: 'absolute-servo', usMin: this.usMin, usMax: this.usMax, invert: this.invert }; }
@@ -30,6 +50,9 @@ export class AbsoluteServoAdapter {
 
   /** Nudge by old-style dir/scale (uses degree-based scales) */
   async nudge(dir, scale, opts) {
+    // A relative move needs a real starting angle. Nudge is bounds-free by
+    // design, so guessing the start makes the destination unbounded too.
+    if (!this.positionKnown) throw positionUnknownError();
     const delta = NUDGE_SCALES[scale] || NUDGE_SCALES.med;
     const newAngle = dir === 'max'
       ? Math.min(180, this.currentAngle + delta)
@@ -37,7 +60,12 @@ export class AbsoluteServoAdapter {
     await this.gotoAngle(newAngle, opts);
   }
 
-  async stop() { await this.gotoAngle(this.currentAngle); }
+  async stop() {
+    // Stop re-commands the held angle; with an unknown position that would
+    // drive the servo to 0° instead of holding it still.
+    if (!this.positionKnown) return;
+    await this.gotoAngle(this.currentAngle);
+  }
 
   /** Move to an angle in degrees (0-180). Primary method for absolute servos. */
   async gotoAngle(angleDeg, opts) {
@@ -65,7 +93,16 @@ export class AbsoluteServoAdapter {
         err.blockedBySafetyLimit = !!result.blockedBySafetyLimit;
         throw err;
       }
+      // controlPart mirrors the angle for inverted servos, so the value that
+      // reached the PCA9685 is not the value asked for. Keep it: callers that
+      // echoed the request back told the operator "moved to 60°" while the
+      // register went to 119.6°.
+      const applied = result && result.appliedParams && result.appliedParams.angleDeg;
+      this.lastDrivenAngle = Number.isFinite(applied)
+        ? applied
+        : (result && Number.isFinite(result.angleDeg) ? result.angleDeg : clamped);
       this.currentAngle = clamped;
+      return this.lastDrivenAngle;
     } catch (err) {
       console.error('AbsoluteServoAdapter move failed', err);
       throw err;
@@ -75,7 +112,7 @@ export class AbsoluteServoAdapter {
   /** Backward compat: accept normalized 0-1, convert to angle internally */
   async gotoNormalized(p, opts) {
     const angleDeg = Math.max(0, Math.min(1, p)) * 180;
-    await this.gotoAngle(angleDeg, opts);
+    return await this.gotoAngle(angleDeg, opts);
   }
 }
 
