@@ -10,5 +10,23 @@
     },
     "controlsSchema": {},
     "meta": {}
+  },
+  {
+    "id": "speaker_respeaker_xvf3800",
+    "name": "ReSpeaker XVF3800 USB Speaker",
+    "description": "Playback side of the ReSpeaker XVF3800. Sharing one device between output and capture is what lets the XVF3800 cancel its own voice out of the mic feed, so a character can listen while it speaks.",
+    "defaults": {
+      "outputDevice": "default",
+      "volume": 80,
+      "format": "mp3"
+    },
+    "controlsSchema": {},
+    "meta": {
+      "manufacturer": "Seeed Studio",
+      "dsp": "XMOS XVF3800",
+      "usbId": "2886:001a",
+      "sharesDeviceWith": "mic_respeaker_xvf3800",
+      "echoCancellation": "on-device (AEC references the playback stream)"
+    }
   }
 ]

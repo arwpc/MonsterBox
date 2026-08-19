@@ -3,8 +3,42 @@
     "id": "mic_generic_usb",
     "name": "Generic USB Microphone",
     "description": "UAC1/UAC2 compliant USB microphone",
-    "defaults": { "sampleRate": 16000, "channels": 1, "format": "s16le" },
+    "defaults": {
+      "sampleRate": 16000,
+      "channels": 1,
+      "format": "s16le"
+    },
     "controlsSchema": {},
-    "meta": { "manufacturer": "Generic" }
+    "meta": {
+      "manufacturer": "Generic"
+    }
+  },
+  {
+    "id": "mic_respeaker_xvf3800",
+    "name": "ReSpeaker XVF3800 USB 4-Mic Array",
+    "description": "Seeed ReSpeaker 4-mic circular array driven by the XMOS XVF3800 DSP. The DSP does beamforming, de-reverberation, acoustic echo cancellation and direction-of-arrival on-device, so the host receives one already-cleaned mono stream rather than four raw capsules.",
+    "defaults": {
+      "sampleRate": 16000,
+      "channels": 1,
+      "format": "s16le"
+    },
+    "controlsSchema": {},
+    "meta": {
+      "manufacturer": "Seeed Studio",
+      "dsp": "XMOS XVF3800",
+      "usbId": "2886:001a",
+      "micCount": 4,
+      "geometry": "circular array",
+      "pickupPattern": "360 degrees",
+      "farFieldRangeMeters": 5,
+      "features": [
+        "beamforming",
+        "de-reverberation",
+        "acoustic echo cancellation",
+        "direction-of-arrival"
+      ],
+      "ledRing": "RGB indicator ring",
+      "notes": "Enumerates as a UAC composite device: one capture stream, one playback stream, plus a vendor-specific control interface used for device management. No kernel driver is needed for audio."
+    }
   }
 ]

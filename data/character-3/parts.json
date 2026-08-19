@@ -70,7 +70,7 @@
     "name": "Elbow",
     "type": "servo",
     "pin": null,
-    "description": "RDS51150SG 150kg 270° robot servo - steel gears, double bearing, 18T spline, 9-12.6V",
+    "description": "RDS51150SG 150kg 270\u00b0 robot servo - steel gears, double bearing, 18T spline, 9-12.6V",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
@@ -103,32 +103,32 @@
   },
   {
     "id": "6",
-    "name": "Speaker Orlok",
+    "name": "Speaker Orlok (ReSpeaker XVF3800)",
     "type": "speaker",
     "pin": null,
     "description": "audio output devices",
     "config": {
-      "audioDeviceId": "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+      "audioDeviceId": "alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200027-00.analog-stereo",
       "volume": 100
     },
     "created": "2025-10-05T18:13:31.695Z",
     "enabled": true,
-    "modelId": "default_speaker",
+    "modelId": "speaker_respeaker_xvf3800",
     "characterId": 3,
     "updated": "2025-10-11T02:22:02.627Z"
   },
   {
     "id": "7",
-    "name": "Microphone Orlok",
+    "name": "Microphone Orlok (ReSpeaker XVF3800)",
     "type": "microphone",
     "pin": null,
     "description": "audio input devices",
     "config": {
-      "deviceId": "default"
+      "deviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200027-00.analog-stereo"
     },
     "created": "2025-10-05T18:13:53.101Z",
     "enabled": true,
-    "modelId": "mic_generic_usb",
+    "modelId": "mic_respeaker_xvf3800",
     "updated": "2025-10-06T02:11:40.479Z"
   },
   {
