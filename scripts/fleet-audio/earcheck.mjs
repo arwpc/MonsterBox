@@ -22,6 +22,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
+import { sshArgv, scpArgv, sshEnv } from './ssh-auth.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hostname } from 'node:os';
@@ -122,12 +123,8 @@ function sh(cmd, { node, timeout = 60000 } = {}) {
   if (!node || node.local) {
     return execFileSync('bash', ['-lc', cmd], { timeout, encoding: 'utf8' });
   }
-  return execFileSync(
-    'ssh',
-    ['-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=no', '-o', 'ConnectTimeout=8',
-     `remote@${node.ip}`, cmd],
-    { timeout, encoding: 'utf8' }
-  );
+  const { file, args } = sshArgv(`remote@${node.ip}`, cmd);
+  return execFileSync(file, args, { timeout, encoding: 'utf8', env: sshEnv() });
 }
 
 function reachable(node) {
@@ -166,8 +163,10 @@ function startCapture(node, dev, secs, tag) {
   const recCmd = `arecord -D ${dev} -f S16_LE -r 16000 -c 1 -d ${secs} ${remotePath} >/dev/null 2>&1 || true`;
   const child = node.local
     ? spawn('bash', ['-lc', recCmd])
-    : spawn('ssh', ['-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=no',
-                    '-o', 'ConnectTimeout=8', `remote@${node.ip}`, recCmd]);
+    : (() => {
+        const { file, args } = sshArgv(`remote@${node.ip}`, recCmd);
+        return spawn(file, args, { env: sshEnv() });
+      })();
 
   return new Promise(resolve => {
     const timer = setTimeout(() => { child.kill(); }, (secs + 25) * 1000);
@@ -175,8 +174,10 @@ function startCapture(node, dev, secs, tag) {
       clearTimeout(timer);
       try {
         if (node.local) sh(`cp ${remotePath} ${localPath}`);
-        else execFileSync('scp', ['-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=no',
-                                  `remote@${node.ip}:${remotePath}`, localPath], { timeout: 60000 });
+        else {
+          const { file, args } = scpArgv(`remote@${node.ip}:${remotePath}`, localPath);
+          execFileSync(file, args, { timeout: 60000, env: sshEnv() });
+        }
         sh(`rm -f ${remotePath}`, { node });
         resolve(localPath);
       } catch (err) {

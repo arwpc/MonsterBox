@@ -18,6 +18,7 @@
  */
 import { readFileSync } from 'fs';
 import { execFileSync } from 'child_process';
+import { sshArgv, sshEnv } from './ssh-auth.mjs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -55,10 +56,8 @@ const localIps = (() => {
 function run(node, cmd) {
   const isLocal = node.ip && localIps.includes(node.ip);
   if (isLocal) return execFileSync('bash', ['-lc', `${WPCTL} ${cmd}`], { encoding: 'utf8', timeout: 15000 });
-  return execFileSync('ssh', [
-    '-o', 'StrictHostKeyChecking=no', '-o', 'ConnectTimeout=8',
-    `remote@${node.ip}`, `${WPCTL} ${cmd}`
-  ], { encoding: 'utf8', timeout: 20000 });
+  const { file, args } = sshArgv(`remote@${node.ip}`, `${WPCTL} ${cmd}`);
+  return execFileSync(file, args, { encoding: 'utf8', timeout: 20000, env: sshEnv() });
 }
 
 const readVolume = node => {
