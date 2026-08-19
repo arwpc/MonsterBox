@@ -114,8 +114,13 @@ hand-picked voices):
 - **Mina** — "The Siren's Voicemail" kept (a seduction-built voice for the heart of the
   story); stability 0.35→0.30 measured warmer with more beckoning pause; speed 0.87
   on the agent path. Ear-verified 31.8 dB / 80% recall, canonical.
-- **Sir Dragomir** — "Dante" kept for the century-old knight; stability 0.5 / speed 0.9
+- **Sir Dragomir** — voice `wXvR48IpOq9HACltTmt7` kept for the century-old knight;
+  stability 0.5 / speed 0.9
   measured lower (113.5 Hz), rumblier, more deliberate. Ear-verified 20.6 dB / 94%.
+  *(2026-08-19: that id resolves in the library as "Ancient Monster - Evil and
+  Scary". This entry originally called it "Dante"; no voice by that name exists in
+  the library, so the name here was wrong — the id, which is what actually
+  drives playback, has never changed. Worth an ear before the knight goes out.)*
 - **PumpkinHead** — "Toby - Little Mythical Monster" kept for the screeching graveyard
   lure; stability 0.25 widens the shriek-to-creak swing (p10 58.8 ↔ medF0 160 across
   test lines). Not ear-verified — node offline.
