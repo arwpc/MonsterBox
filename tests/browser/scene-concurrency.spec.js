@@ -25,11 +25,18 @@ test.describe('Scene Concurrency API', () => {
             return;
         }
 
-        // Execute first scene — should not timeout even with concurrent audio
+        // Execute first scene — should not timeout even with concurrent audio.
+        // dryRun is not a convenience here: /play is deliberately synchronous
+        // (it returns only once the scene has finished), so a real run drives
+        // the physical parts and the TTS API of whatever node hosts the suite —
+        // a browser test must never move an actuator. dryRun walks the same
+        // executor and concurrency path with the hardware calls short-circuited.
+        // The explicit timeout replaces Playwright's 10 s API default, which a
+        // multi-step scene can exceed even without hardware.
         const scene = listData.scenes[0];
-        const startTime = Date.now();
-        const playRes = await request.post(`${BASE_URL}/scenes/api/${scene.id}/play`);
-        const elapsed = Date.now() - startTime;
+        const playRes = await request.post(`${BASE_URL}/scenes/api/${scene.id}/play?dryRun=1`, {
+            timeout: 60000
+        });
 
         // Should complete (200 or success)
         expect(playRes.status()).toBeLessThan(500);

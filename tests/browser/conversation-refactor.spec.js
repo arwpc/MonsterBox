@@ -18,7 +18,22 @@ const TEST_TIMEOUT = 60000;
 async function openAiTab(page) {
   // The conversation moved out of the drawer and into the AI deck tab beside
   // the stage; its elements are the same, only their home changed.
-  await page.locator('.sc-tab-ai').click();
+  const tab = page.locator('.sc-tab-ai');
+  await tab.scrollIntoViewIfNeeded();
+  // At phone width the fixed .mb-control-bar (position: fixed, z-index 100,
+  // full width, pinned to the bottom of the viewport) lies over the bottom of
+  // the deck tablist, so the tab's centre — where a click lands — is hit-tested
+  // to the PANIC button instead and the click times out. Scroll the tab clear
+  // first, which is what a thumb does before tapping. This is a genuine
+  // responsive overlap in the layout, not a test artefact; see notes.
+  await tab.evaluate((el) => {
+    const bar = document.querySelector('.mb-control-bar');
+    const barTop = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+    const overlap = el.getBoundingClientRect().bottom - barTop;
+    if (overlap > 0) window.scrollBy({ top: overlap + 12, behavior: 'instant' });
+  });
+  await page.waitForTimeout(200); // let the scroll settle before hit-testing
+  await tab.click();
   await expect(page.locator('#chatLog')).toBeVisible();
   await page.waitForTimeout(300);
 }
@@ -240,8 +255,23 @@ test.describe('Conversation Control - Monster Features', () => {
     expect(newChecked).toBe(!initialChecked);
   });
 
-  test('should toggle Head Tracking', async ({ page }) => {
+  test('should toggle Head Tracking', async ({ page, request }) => {
     const toggle = page.locator('#headTrackToggle');
+
+    // Head tracking needs a webcam AND a pan servo. On a character with neither,
+    // POST /conversation/api/head-tracking answers 400 ("No servo found for pan
+    // axis") and the dashboard reverts the checkbox — so asserting a flip here
+    // asserted something the contract forbids. Ask the server what this
+    // character can actually do; the capabilities endpoint uses the very same
+    // webcam + findPanServo predicate as the enable handler.
+    const capRes = await request.get(`${BASE_URL}/conversation/api/lurk-mode/capabilities`);
+    const caps = capRes.ok() ? ((await capRes.json()).capabilities || {}) : {};
+
+    if (!caps.headTracking && await toggle.isDisabled()) {
+      // The honest UI for a character that cannot track: offer no live control.
+      await expect(toggle).toBeDisabled();
+      return;
+    }
 
     // Get initial state
     const initialChecked = await toggle.isChecked();
@@ -252,9 +282,14 @@ test.describe('Conversation Control - Monster Features', () => {
     // Wait for save
     await page.waitForTimeout(500);
 
-    // Should be opposite of initial
     const newChecked = await toggle.isChecked();
-    expect(newChecked).toBe(!initialChecked);
+    if (caps.headTracking) {
+      // Capable character: the toggle must flip and stick
+      expect(newChecked).toBe(!initialChecked);
+    } else {
+      // No pan servo: the toggle must not claim a capability the node lacks
+      expect(newChecked).toBe(initialChecked);
+    }
   });
 });
 
