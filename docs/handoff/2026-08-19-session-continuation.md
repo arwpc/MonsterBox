@@ -127,3 +127,60 @@ NEVER COMMIT: .mcp.json, config/app-config.json, data/audio-library/library.json
 data/character-2/poses.json. Also currently dirty and node-local: data/character-2/super-powers.json,
 data/character-2/ai_agent_state.json (untracked). Agents never commit — the lead reviews and commits.
 SSH: sudo sh -c '. /etc/monsterbox/env; export SSHPASS="$MONSTERBOX_SSH_PASSWORD"; sshpass -e ssh remote@<ip> "<cmd>"'
+
+════════ ADDENDUM — REQUESTS THE LAST SESSION DROPPED (found on final review) ════════
+The operator made these asks mid-session and they were acknowledged but NOT completed. They
+are first-class work items, not nice-to-haves.
+
+A. NAME CORRECTION FOR ALL AGENTS — *** EXPLICITLY REQUESTED, NEVER DONE ***
+   Operator: "You can also give all of the AI the capability to correct the user if they get
+   the name wrong. In this case, Mina would've corrected Orlok, and so forth. Use MCP."
+   Real evidence from tonight's conversation: Orlok heard Mina's name as "Anya"/"Anja" and
+   used it for 20+ turns; later he drifted to "Marniak". Mina heard Orlok's name as
+   "Scare-ooce". NEITHER character ever corrected the other — they just adopted the error.
+   DO: add a short block to EVERY agent's prompt (all six) via MCP agents_update, e.g.
+     "NAME CORRECTION — This step is important: if someone addresses you by a name that is
+      not yours, correct them once, in character, briefly, then continue. Do not adopt a
+      wrong name. Your name is <NAME>. If you mishear a guest's name, ask them to repeat it
+      rather than guessing."
+   Word it in each character's own voice (Orlok would correct coldly; Mina gently).
+   ALSO consider adding character names to each agent's ASR `keywords` array — Orlok already
+   has ["Orlok","Mina","Dragomir",...] which should have helped and did not; investigate why.
+   NOTE: agents_update was BLOCKED by the auto-mode classifier last session. Get permission first.
+
+B. MINA'S ROMANIAN SONGS LIVE IN HER AGENT CAPABILITIES — never inspected.
+   Operator: "They're in her agent capabilities in ElevenLabs." Last session hand-wrote a
+   Romanian lullaby instead of using her real catalogue, then (with AI on) she improvised an
+   original verse. DO: agents_get on Mina (agent_8401k3f1dx98e05t94yp6kz4vf8n), read her
+   knowledge_base entries and prompt, find the actual song catalogue, and confirm she can be
+   asked for a SPECIFIC named song. Orlok's KB pattern for reference: KB_Orlok_Voice_Patterns,
+   KB_Orlok_Lore_Canon, KB_Orlok_Conversational_Tactics, KB_Orlok_Known_Guests.
+
+C. ORLOK'S CAMERA — operator said "it didn't look like Orlok's camera was working either."
+   CHECKED at the very end of the session: the camera IS fine. His MJPEG proxy returned
+   HTTP 200, content-type multipart/x-mixed-replace, 933 KB in 6 s, and 127.0.0.1:8090 on his
+   node serves too. So this is a UI-SIDE rendering bug, not hardware — chase it in the
+   Fleet Command Center / webcam panel during the page-by-page sweep (item 5).
+
+D. "MODEL ISN'T FILLED IN" — the operator's ORIGINAL complaint is still not fully explained.
+   His words: "I went thru Sir Dragomir's parts — they're kind of a mess. Model isn't filled
+   in, misassigned servos." The misassigned servos are FIXED. But note: all of Dragomir's
+   modelIds DO resolve against data/models/*.json, so the blank he saw is probably the UI
+   dropdown having no options to offer — data/character-4/models/ DOES NOT EXIST, while
+   characters 1, 2 and 3 each have one. Characters 5 and 6 also have none.
+   DO: trace how the parts UI populates the model dropdown (start controllers/modelsController.js
+   and routes/setup/calibration.js — a grep for the view-side source came up empty last
+   session and was not chased down). Then decide whether char 4/5/6 need their own models dir
+   or whether the UI should fall back to the global registry.
+   RELATED, both open: (i) 21 fleet parts have NO modelId at all — PumpkinHead 16 of 24,
+   Groundbreaker 3 of 4, Renfield 2 of 3; (ii) getModelDefaultsForPart() reads ONLY the global
+   registry and ignores data/character-N/models/ overrides entirely, so per-character models
+   are inert even where the directory exists. Neither is fixed. A gate check that every
+   modelId resolves belongs in validate:schemas.
+
+E. CLAUDE SETTINGS — the operator wrote "update documentation, Claude settings (you do that
+   too!!!)". Treat that emphasis as: actually DO it this session, do not just delegate it.
+   Use the /update-config skill on .claude/settings.json. Candidates: the ElevenLabs MCP write
+   permission (blocker for item 1 and item A), and a Bash allowlist for the read-only commands
+   used constantly here (curl -sk to the three nodes, wpctl/pw-dump, git status/log/diff,
+   npm run gate / test:*). The /fewer-permission-prompts skill can generate that allowlist.
