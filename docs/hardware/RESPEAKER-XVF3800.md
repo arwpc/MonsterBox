@@ -72,11 +72,77 @@ touches another animatronic's audio.
   listener captured happily from the same source. Trust the app's capture path
   (`services/serverSTTListener.js`, which falls back python → ffmpeg → arecord →
   parec) over a hand-rolled `parec` when judging whether the mic works.
+  ⚠️ **Half of this is now known to be wrong** — the listener was *also* being
+  starved and was silently falling back. See **Capture traps** below.
 - **`timeout N parec … --file-format=wav` writes a 44-byte header and no
   samples** — it is killed before it flushes. Capture raw PCM, or let the app do
   it.
 - **Backgrounding a capture over SSH with `nohup … &` dies when the session
   exits.** Run it synchronously, or the file will be empty.
+
+## Capture traps — the zero-frames failure
+
+Found on Orlok 2026-08-18 while chasing "the far-field mic hears nothing." The
+array is **not** deaf. The streaming recorders open it and then deliver nothing.
+
+**What the symptom looks like.** Conversation and STT are silent — no
+transcripts, no error on the page — while the array's own LED ring visibly
+points at whoever is speaking across the room, so the hardware is plainly
+working. The evidence is in the log, and it is in the *other* log: on the nodes
+`console.warn` and `console.error` go **only** to `/var/log/monsterbox.err`,
+while `console.log` goes to `/var/log/monsterbox.log`. Grep the `.log` file
+alone and you see a healthy-looking capture session start and keep running. The
+`.err` file is where the recorder that produced no frames is named and where the
+fallback to the legacy path is announced. **Grepping only `.log` hides the
+reason.**
+
+**What actually happens.** `parec`, `ffmpeg` and `arecord` each *open* the
+XVF3800 USB source without error and then deliver **zero frames** for the life
+of the process — a stream that is valid and empty. `startContinuousCapture()`
+scores a candidate that produced nothing as failed and falls back to the legacy
+per-chunk path, which grabs ~0.3 s fragments one at a time. Those fragments are
+too short to be speech, and the Scribe STT model returns an **empty transcript**
+for them rather than an error. Every layer therefore reports success and the
+character hears nothing. Two faults compound: a fallback nobody was told about,
+and a model that answers `""` instead of failing.
+
+**Why PyAudio works and the other three do not.** Not root-caused below the
+device — and the honest version is worth keeping. What is *measured* is that
+PortAudio/PyAudio reads frames from the same source, on the same node, in the
+same minute that `parec`, `ffmpeg` and `arecord` read none. So PyAudio is the
+only capture layer that reliably streams from this array, and the rule is
+empirical rather than theoretical. It is also the reverse of the usual advice,
+where a one-line `parec` is the trustworthy probe and the application is the
+suspect part.
+
+**The practical rule for the six arrays still to fit.** When you install the
+next one:
+
+1. **Never conclude "the mic works" because a recorder opened the device.**
+   Opening succeeds on a device that will never hand you a sample. Judge on
+   **frames**: a non-zero byte count *and* a non-zero RMS.
+2. **Probe with PyAudio, not with `parec` / `ffmpeg` / `arecord`.** Use the
+   capture path the app itself uses (`python_wrappers/microphone_cli.py`) so the
+   probe and production agree; a hand-rolled recorder on this array proves
+   nothing either way.
+3. **Read `/var/log/monsterbox.err`** — not just `/var/log/monsterbox.log` —
+   whenever capture looks fine but nothing is transcribed. Why a candidate was
+   dropped is only ever in `.err`.
+4. **Treat an empty transcript as a capture symptom until proven otherwise.** On
+   this array, "the model returned nothing" has meant "the model was handed a
+   third of a second of nothing" far more often than it has meant a bad model,
+   a bad key, or a bad gate.
+5. **A fixed voice gate does not mean capture works.** Orlok needed both: the
+   old `vadThreshold` of 0.38 sat *above* real speech (garage silence measured
+   RMS 0.033–0.038, Mina's voice across the garage ~0.17, now gated at 0.045),
+   and *underneath* that the capture layer was delivering nothing at all. Fixing
+   the gate alone changed no transcript. Prove the two separately.
+
+**Status.** The capture fix — a PyAudio `stream_raw` subcommand made the first
+candidate in `startContinuousCapture()` — is being proven end to end on Orlok as
+this is written. Until a cross-node transcript exists, treat continuous capture
+on an XVF3800 node as **unproven**, and read any silence through the five rules
+above rather than through the hardware.
 
 ## Why it matters per feature
 

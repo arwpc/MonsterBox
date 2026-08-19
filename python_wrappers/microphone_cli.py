@@ -180,6 +180,86 @@ def _record_wav(device_id, sample_rate, channels, duration):
             pass
 
 
+def _stream_raw(device_id, sample_rate, channels):
+    """
+    Stream headerless PCM16LE to stdout continuously until the parent closes
+    the pipe or kills the process. Exists because PyAudio is the only capture
+    method that reliably streams from the ReSpeaker XVF3800 array — parec and
+    pw-record open that source but deliver zero frames. Same device selection
+    as record_wav; small (~20ms) buffers flushed per read for low latency.
+    Returns exit code (0 on clean pipe close).
+    """
+    def _err(msg):
+        try:
+            sys.stderr.write("stream_raw: %s\n" % msg)
+        except Exception:
+            pass
+
+    if pyaudio is None:
+        _err("PyAudio not available")
+        return 1
+    pa = pyaudio.PyAudio()
+    stream = None
+    try:
+        idx = _get_default_input_device(pa)
+        if idx is None:
+            _err("no input device found")
+            return 1
+        try:
+            dinfo = pa.get_device_info_by_index(idx)
+            max_in = int(dinfo.get('maxInputChannels') or 0)
+        except Exception:
+            max_in = 0
+        if max_in < 1:
+            _err("device index %s has no input channels" % idx)
+            return 1
+        if channels > max_in:
+            channels = max_in
+        frames_per_buffer = max(128, int(sample_rate * 0.02))
+        fmt = pyaudio.paInt16
+        try:
+            stream = pa.open(format=fmt, channels=channels, rate=sample_rate, input=True,
+                             input_device_index=idx, frames_per_buffer=frames_per_buffer)
+        except Exception as e:
+            _err("cannot open input device %s at %sHz/%sch: %s" % (idx, sample_rate, channels, e))
+            return 1
+        out = sys.stdout.buffer
+        consecutive_failures = 0
+        while True:
+            try:
+                data = stream.read(frames_per_buffer, exception_on_overflow=False)
+            except Exception:
+                # A dead/unplugged device raises on every read — exit so the
+                # caller can restart or advance methods instead of spinning.
+                consecutive_failures += 1
+                if consecutive_failures >= 50:
+                    _err("device read failing repeatedly; giving up")
+                    return 1
+                time.sleep(0.02)
+                continue
+            consecutive_failures = 0
+            if not data:
+                # A source that hands back empty reads must not pin a core on
+                # this RPi while the caller's watchdog decides to advance.
+                time.sleep(0.01)
+                continue
+            try:
+                out.write(data)
+                out.flush()
+            except (BrokenPipeError, IOError):
+                return 0  # parent went away: normal shutdown
+    finally:
+        try:
+            if stream is not None:
+                stream.stop_stream(); stream.close()
+        except Exception:
+            pass
+        try:
+            pa.terminate()
+        except Exception:
+            pass
+
+
 if __name__ == '__main__':
     try:
         if len(sys.argv) < 2:
@@ -252,6 +332,14 @@ if __name__ == '__main__':
             # Setup PipeWire routing via env and record bytes to stdout
             _setup_pipewire_source(device_id)
             code = _record_wav(device_id, sample_rate, channels, duration)
+            sys.exit(code)
+
+        elif cmd == 'stream_raw':
+            device_id = sys.argv[2] if len(sys.argv) > 2 else 'default'
+            sample_rate = int(sys.argv[3]) if len(sys.argv) > 3 else 16000
+            channels = int(sys.argv[4]) if len(sys.argv) > 4 else 1
+            _setup_pipewire_source(device_id)
+            code = _stream_raw(device_id, sample_rate, channels)
             sys.exit(code)
 
         else:

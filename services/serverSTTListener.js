@@ -90,7 +90,7 @@ class ServerSTTListener {
     // Load VAD settings asynchronously from STT config (no await to keep sync start)
     try {
       getSTTConfig().then((cfg) => {
-        if (!cfg) return;
+        if (!cfg) { state._startLegacy(); return; }
         state.vadEnabled = !!cfg.vadEnabled;
         if (typeof cfg.vadThreshold === 'number') {
           var t = cfg.vadThreshold; if (!(t >= 0.005 && t <= 0.6)) t = 0.40; state.vadThreshold = t;
@@ -102,10 +102,13 @@ class ServerSTTListener {
         // discards most of the speech. Default (knob absent/false) keeps the
         // legacy per-chunk path byte-for-byte identical.
         if (cfg.utteranceAggregation === true && state.running && !state.aggregation) {
+          if (state._legacyKick) { try { clearTimeout(state._legacyKick); } catch (_) { } state._legacyKick = null; }
           this._startAggregatedCapture(sessionId, state, cfg);
+        } else {
+          state._startLegacy();
         }
-      }).catch(() => { /* ignore */ });
-    } catch (_) { /* ignore */ }
+      }).catch(() => { state._startLegacy(); });
+    } catch (_) { state._startLegacy && state._startLegacy(); }
     this.sessions.set(sessionId, state);
 
     const tick = async () => {
@@ -214,8 +217,19 @@ class ServerSTTListener {
 
     // Aggregated capture (when enabled) needs a way back to this legacy polling
     // loop if no continuous capture method works on this node.
-    state._startLegacy = () => { if (state.running && !state.timer) state.timer = setTimeout(tick, 10); };
-    state.timer = setTimeout(tick, 10);
+    state._startLegacy = () => {
+      if (!state.running || state.aggregation) return;
+      if (state._legacyKick) { try { clearTimeout(state._legacyKick); } catch (_) { } state._legacyKick = null; }
+      if (!state.timer) state.timer = setTimeout(tick, 10);
+    };
+    // The legacy poll must NOT start before the aggregation decision is made.
+    // Its recorder opens the mic exclusively for ~1.4s, and on a device where
+    // only PyAudio can stream (ReSpeaker XVF3800) that collision makes the
+    // continuous capture's open fail — which silently demoted the whole session
+    // back to the legacy path. Measured on Orlok: identical sessions passed or
+    // failed purely on which of the two won the race. This kick is the safety
+    // net for a config read that never resolves.
+    state._legacyKick = setTimeout(() => { state._legacyKick = null; state._startLegacy(); }, 1500);
     return { success: true, sessionId };
   }
 
@@ -225,6 +239,7 @@ class ServerSTTListener {
     console.log(`🛑 Stopping STT session ${sessionId} (captured=${s.chunksCaptured}, transcribed=${s.chunksTranscribed})`);
     s.running = false;
     if (s.timer) { clearTimeout(s.timer); s.timer = null; }
+    if (s._legacyKick) { try { clearTimeout(s._legacyKick); } catch (_) { } s._legacyKick = null; }
     // Aggregated-capture sessions own a continuous recorder and possibly a
     // buffered utterance: release the mic and transcribe what was in flight.
     if (s.capture) { try { s.capture.stop(); } catch (_) { } s.capture = null; }
@@ -704,10 +719,22 @@ class ServerSTTListener {
     const sr = 16000, ch = 1;
     const self = this;
     const handle = { stopped: false, proc: null, restarts: 0, restartTimer: null, stop: null };
+    // A method that yields nothing gets ONE retry before being written off: a
+    // transient collision with another recorder must not permanently demote the
+    // only capture path that works on this device.
+    const retriedOnce = new Set();
 
     // Ordered candidates, all emitting headerless PCM16LE on stdout.
     function buildCommand(sourceArg) {
       return [
+        // PyAudio via the app's own wrapper FIRST: it is the only method proven
+        // to stream from the ReSpeaker XVF3800 array (parec/pw-record open that
+        // source but deliver zero frames — see docs/hardware/RESPEAKER-XVF3800.md),
+        // and it is the same capture layer every node already uses for the
+        // legacy per-chunk STT path, so it is the least-surprising choice
+        // everywhere. The pulse/ALSA recorders remain as fallbacks.
+        { cmd: 'python3', args: [self._getMicWrapperPath(), 'stream_raw', String(sourceArg || 'default'),
+          String(sr), String(ch)] },
         // --latency-msec keeps parec from handing back 2-second 64KB blocks, which
         // would put a 2s delay in front of every user turn.
         { cmd: 'parec', args: ['--device=' + sourceArg, '--rate=' + sr, '--channels=' + ch, '--format=s16le',
@@ -738,7 +765,9 @@ class ServerSTTListener {
 
       let proc;
       try {
-        const env = cmd === 'arecord'
+        // python3 mirrors _captureWithPython: the wrapper reads PULSE_SOURCE to
+        // route PyAudio at the requested source. arecord needs it for pulse.
+        const env = (cmd === 'arecord' || cmd === 'python3')
           ? Object.assign({}, process.env, { PULSE_SOURCE: sourceArg })
           : process.env;
         proc = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'ignore'], env });
@@ -759,7 +788,7 @@ class ServerSTTListener {
 
       proc.on('error', (err) => {
         if (handle.stopped) return;
-        scheduleRestart(gotAudio ? idx : idx + 1, err);
+        scheduleRestart(nextAfterFailure(idx, gotAudio), err);
       });
 
       proc.on('close', () => {
@@ -769,14 +798,20 @@ class ServerSTTListener {
         // work here, so advance to the next candidate.
         const ranLong = (Date.now() - startedAt) > 5000 && gotAudio;
         if (ranLong) handle.restarts = 0;
-        scheduleRestart(gotAudio ? idx : idx + 1, null);
+        scheduleRestart(nextAfterFailure(idx, gotAudio), null);
       });
+    }
+
+    function nextAfterFailure(idx, gotAudio) {
+      if (gotAudio) return idx;
+      if (!retriedOnce.has(idx)) { retriedOnce.add(idx); return idx; }
+      return idx + 1;
     }
 
     function scheduleRestart(nextIndex, err) {
       if (handle.stopped) return;
       handle.proc = null;
-      if (nextIndex > 2) {
+      if (nextIndex > 3) { // == buildCommand() candidate count - 1
         // Every capture method failed — report once and stop trying.
         if (onError) { try { onError(err || new Error('all capture methods failed')); } catch (_) { } }
         return;

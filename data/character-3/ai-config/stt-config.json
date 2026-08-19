@@ -8,7 +8,7 @@
   "microphoneDeviceId": "default",
   "vadEnabled": true,
   "vadThreshold": 0.045,
-  "vadSilenceDuration": 550,
+  "vadSilenceDuration": 1200,
   "audioFilterEnabled": false,
   "highpassFreq": 320,
   "lowpassFreq": 3600,

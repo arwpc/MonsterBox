@@ -67,3 +67,31 @@ Session dir: `~/.claude/projects/-home-remote-MonsterBox/86006247-97bc-50c5-b7b9
 - char-2 parts.json webcam headTracking.panServoId went "2"→"" (runtime write,
   head-animation page). Restore Neck binding or leave unbound until the
   calibration evening?
+
+## ADDENDUM (same night, post-limit): MISSION 1 PROVEN ✅
+
+The finisher agents stalled on the API limit but had already deployed everything
+(code + config byte-identical Mina↔Orlok, `utteranceAggregation: true` both
+copies, Orlok restarted). During the proof they hit the documented XVF3800
+zero-frames trap in the aggregation's continuous capture and wired the PROVEN
+PyAudio path as first candidate (`microphone_cli.py stream_raw`, 84 lines +
+`startContinuousCapture` wiring — in this commit). The lead then ran the
+cross-node proof directly (it is only fleet HTTP — no model API needed):
+
+- Spoken by Mina / heard by Orlok's array across the garage:
+  1. "The crimson bell tolls seven times for the sleeping garden." →
+     "The crimson bell tolled seven times for the sleeping garden" (10/10
+     words in order; one tense inflection). 85 chunks, 9 with audio,
+     **1 aggregated transcription** — the design working as intended.
+  2. Fresh-sentence verify: "A copper lantern swings above the drowned orchard
+     gate." → transcribed **verbatim** (10/10). Session
+     `stt_1787108151022_ahqsl7`, 6 audio chunks, 1 transcription.
+- Cleanup done: `/etc/systemd/system/monsterbox.service.d/zz-stt-debug.conf`
+  removed from Orlok, daemon-reload, service restarted, health 200 @ 10.0.0.
+  Listener deviceId of record:
+  `alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200027-00.analog-stereo`.
+
+**Sunday now starts at:** conversation-mode mic-path evidence (code read) +
+formal jaw-citation verify → fleet-jaw-align → séance → v10.0.1 wrap. The
+10.0.1 tag's proof condition (cross-node transcript) is SATISFIED and recorded
+here.
