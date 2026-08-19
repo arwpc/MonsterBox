@@ -1827,7 +1827,7 @@ export async function controlPart(partId, action, params = {}, options = {}) {
         // options.calibrationOverride: supervised-calibration mode from the
         // calibration endpoints only — relaxes the angle window and duration
         // cap so an operator can measure real travel; quarantines, retract
-        // blocks, speed caps and power groups still apply (see safetyLimits).
+        // blocks and power groups still apply (see safetyLimits).
         const limited = applySafetyLimits({
             type, action, params: actionParams, profile: calProfile, safety, partId,
             calibrationOverride: options.calibrationOverride === true

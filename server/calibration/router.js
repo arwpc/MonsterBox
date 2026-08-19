@@ -466,7 +466,7 @@ router.post('/:partId/home', express.json(), async (req, res) => {
     }
     actuatorPositionStore.markMoving(partId, dir);
     // Supervised calibration: homing must reach the physical endstop, so the
-    // duration cap does not apply (quarantines and speed caps still do).
+    // duration cap does not apply (quarantines and power groups still do).
     await adapter.home(dir, speedPct, { calibrationOverride: true });
     const currentP = adapter.currentP !== undefined ? adapter.currentP : (dir === 'retract' ? 0 : 1);
     // Homing gives us high-confidence position

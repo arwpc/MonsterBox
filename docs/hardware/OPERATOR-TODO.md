@@ -108,3 +108,30 @@ a `{"dir":"min","scale":"fine"}` nudge reported *"Nudged min at fine"* and drove
 jump, and below its calibrated minimum of 97°. The smallest, safest-looking control on the page is the one
 that hits a mechanical stop. Seed the adapter from the position store, and refuse dir/scale nudge when the
 position is unknown.
+
+### Mina: only ONE of three servos responds — channels 8/9/11 are physically dead (measured 2026-08-19)
+
+Your hypothesis was *"Mina has his servos on zero, four, nine, 11."* **Measured answer: no — and it is not
+an off-by-one either.** All sixteen channels were swept with an acoustic witness and register readback.
+**Channel 4 (Jaw) is the only channel with anything responding on it.** Channels 0–3 and 5–15 are all at
+the noise floor, including 9, including 11, and including 12 (where the Eye used to be mapped before
+v8.1.5). Full method and per-channel numbers: `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`.
+
+The software above it is exonerated — the chip accepted every write and the register sampler saw the
+correct angles go out on the silent channels, while the jaw on the same chip and the same V+ rail moved
++18 dB. **Nothing in `parts.json` needs remapping.** The fault is on the far side of the header.
+
+Three checks, in order:
+
+1. Follow the **jaw's** harness back to the header — that is your known-good reference — then compare how
+   the neck and eye leads sit at channels 8 and 11 (signal row vs V+ row is the classic one).
+2. Meter the neck/eye servo **V+ while the jaw is moving.** The jaw proves *a* rail is live; it does not
+   prove *theirs* is.
+3. **Swap the jaw lead onto channel 8.** If it moves there, channel 8 and all the software is proven good
+   and the fault is the neck servo or its wiring. If it does not, the fault is board-side.
+
+Worth knowing: these three parts carried **GPIO pins** (12/16/17/18/19/20/21) until v7.9.6 moved Mina to
+PCA9685 channels, and v8.1.5 moved the Eye ch12→ch11. Both were software-only edits that were never
+physically confirmed. If the neck and eye were never actually rewired to the PCA9685, that alone explains
+the result. GPIO pins were deliberately not swept — blindly driving GPIO outputs risks whatever else is on
+them.
