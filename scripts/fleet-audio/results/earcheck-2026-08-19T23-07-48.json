@@ -1,0 +1,50 @@
+{
+  "ranAt": "2026-08-19T23:07:48.450Z",
+  "conductor": "mina",
+  "rows": [
+    {
+      "id": 2,
+      "name": "Mina",
+      "hostname": "mina",
+      "ip": "192.168.8.140",
+      "sink": "77. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.50]",
+      "sinkVolume": 1.5,
+      "phrase": "I have waited in these walls since fourteen sixty two for Thomas to come home.",
+      "sayOk": true,
+      "voiceUsed": "hkk1bPcdsxSQCLzLFMT2",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -78.7,
+          "castP90Db": -72.2,
+          "castPeakDb": -57.1,
+          "riseDb": 6.5,
+          "floorFlat": true,
+          "transcript": "I have waited in these walls since 1462 for Thomas to come home",
+          "recall": 0.8
+        },
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -45.5,
+          "castP90Db": -3.7,
+          "castPeakDb": 0,
+          "riseDb": 41.8,
+          "floorFlat": false,
+          "transcript": "I have waited in these walls since 1462 for Thomas to come home",
+          "recall": 0.8
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -45.5,
+      "castDb": -3.7,
+      "riseDb": 41.8,
+      "recall": 0.8,
+      "transcript": "I have waited in these walls since 1462 for Thomas to come home",
+      "verdict": "AUDIBLE"
+    }
+  ]
+}
