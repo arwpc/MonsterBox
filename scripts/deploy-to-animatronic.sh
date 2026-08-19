@@ -140,6 +140,10 @@ ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'data/calibration_profiles.json' \
     --exclude 'data/actuator-positions.json' \
     --exclude 'data/monsterbox.pid' \
+    --exclude 'data/manual-nodes.json' \
+    --exclude 'data/startup-health.json' \
+    --exclude 'data/performance-history.json' \
+    --exclude 'data/scene-analytics.json' \
     --exclude 'config/app-config.json' \
     --exclude 'scripts/fleet-audio/results' \
     --exclude 'scripts/halloween-judges/results' \
