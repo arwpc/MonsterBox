@@ -4,20 +4,27 @@
 > Organized by animatronic (for one-node-at-a-time work) plus cross-cutting software,
 > data-hygiene, and security items.
 >
-> **Last hardware verification:** 2026-08-16 (v9.2.0 session) — **Orlok** (servo/gesture/I²C
-> work) plus **remote audio-only checks on Mina and Sir Dragomir**. See the per-part notes
-> below for exactly what was proven and what remains unproven. Software items updated through
-> v9.2.0. Hardware status may have changed since — re-verify on each node before relying on it.
-> Update this file as issues are fixed (strike them through and note the version).
+> **Last hardware verification:** 2026-08-18 (10.0.x session) — **Orlok**, far-field
+> microphone capture on the ReSpeaker XVF3800 array, proven twice end to end through real air
+> (see *Far-field STT* below). The 2026-08-16 v9.2.0 pass — **Orlok** servo/gesture/I²C work
+> plus **remote audio-only checks on Mina and Sir Dragomir** — still stands for everything it
+> covered. See the per-part notes below for exactly what was proven and what remains unproven.
+> Software items updated through the 10.0.x line. Hardware status may have changed since —
+> re-verify on each node before relying on it. Update this file as issues are fixed (strike
+> them through and note the version).
 
-> 🔴 **Three of six nodes were OFFLINE for the whole v9.2.0 session and are UNVERIFIED.**
-> **PumpkinHead** (char 1) and **Groundbreaker** (char 5) never answered; **Renfield** (char 6)
-> has never been on the network at all. Nothing in v9.1.0/v9.2.0 has been exercised on their
-> hardware — treat every claim about them as untested.
+> ⚪ **Three of six nodes are UNVERIFIED — by choice, not by fault.**
+> **PumpkinHead** (char 1) and **Groundbreaker** (char 5) are **deliberately unplugged** and
+> are expected to be unreachable; they are not a mystery outage. **Renfield** (char 6) has
+> never been on the network at all. Nothing in the 9.x or 10.x trains has been exercised on
+> their hardware — treat every claim about them as untested, and re-verify from scratch when
+> they are powered back up.
 >
-> 🟢 **All three reachable nodes are on 9.2.0.** Measured 2026-08-16 10:22 via `GET /health`:
-> **Orlok 9.2.0 · Sir Dragomir 9.2.0 · Mina 9.2.0**, all serving HTTPS 200. PumpkinHead and
-> Groundbreaker did not answer.
+> 🟢 **The three live nodes run the 10.0.x line** (Orlok · Sir Dragomir · Mina), all
+> serving HTTPS. The exact release number lives in `package.json` and nowhere else — read it
+> there rather than trusting a number written into prose here. Per-node version claims in the
+> sections below may lag; the last fleet-wide `/health` sweep that all three answered was
+> 2026-08-18.
 >
 > ⚠️ **A fix only exists on a node that received the deploy** — this is not theoretical: the
 > ear-check caught Sir Dragomir still speaking in his *retired* voice until v9.2.0 was actually
@@ -172,12 +179,6 @@ verification block at the top). No new physical work was done on parts 2/3/4/5.
   reference, floor 20 dB below, gamma expansion). Measured by I2C register sampling
   on the agent path: max angle **77.53° → 130.73°** against a 131 ceiling, travel used
   **21.8% → 100%**, distinct positions **31 → 115**, with no over-travel either way.
-- ⚪ *(superseded)* **Agent-path jaw opening was shallow.** The jaw moves correctly and stays inside its
-  calibrated 63–131 window (v9.0.0 stopped the 0–180 over-drive), but opening **tops out
-  around 77–79° against a 131° ceiling** because the conversational agent's audio RMS is low
-  relative to this character's configured jaw `sensitivity: 1`. **This is a tuning value, not
-  a code defect** — it needs a pass on `/setup/jaw-animation` with the jaw physically watched,
-  raising sensitivity until the full range is used without slamming the stops.
 - ⚪ **The 34-pose library is authored and statically validated, NOT hardware-confirmed.**
   `data/character-3/poses.json` grew 8 → 34 in v9.0.0 inside the verified-safe envelope (head
   60–120, elbow 80–110, short actuator moves, lamp), excluding parts 2, 3, 5 and 10. No pose
@@ -533,6 +534,92 @@ each is scoped small enough to fix in a single wave.
   flake). Waiting on `load` is the reliable choice. Consider also gating the 5 s
   refresh on the panel's collapsed state to cut SD-era polling.
 
+### Far-field STT — opened and closed 2026-08-18 (Orlok · ReSpeaker XVF3800)
+
+> Orlok stood in a room with a working microphone, a working transcriber and a green health
+> check, and heard **nothing**. Every layer reported success. These three entries are the
+> anatomy of that silence — recorded in full because the failure *shape* (success everywhere,
+> no audio anywhere) will recur on other devices, and it cost days to see the first time.
+> Fixed on the 10.0.x line, commit `552dbbbf`.
+
+- ~~**A recorder can OPEN the XVF3800 source and deliver ZERO frames — and every layer above
+  it calls that success.**~~ — **fixed 2026-08-18** (`552dbbbf`). The far-field silence was
+  three faults stacked, each of which independently reported OK:
+  1. **The recorder moved no bytes.** `parec`, `ffmpeg` and `arecord` all open the ReSpeaker
+     XVF3800 source cleanly, exit 0, and stream **nothing**. Measured head-to-head on Orlok,
+     same source, same 3-second window: `python3 microphone_cli.py stream_raw` → **69120
+     bytes**; `parec` → **0 bytes**; `arecord` → **0 bytes**. Not a permissions error, not a
+     busy device — an open handle that never yields a frame.
+  2. **The ladder swallowed it.** `startContinuousCapture()` scored the zero-byte run as a
+     failed candidate, walked the *entire* candidate list, and then **silently fell back** to
+     the legacy ~0.3 s per-chunk path. The session went on "working" — at 0.3 s of speech per
+     poll, which is a fragment, not a sentence.
+  3. **Scribe returned an empty transcript, not an error.** ElevenLabs Scribe answers a bare
+     fragment with `""` and HTTP 200. So the transcriber reported success for hearing nothing,
+     the capture layer reported success for a fallback nobody asked for, and the health check
+     reported success for a node that was deaf.
+  **The fix:** a new `stream_raw` PyAudio subcommand in `python_wrappers/microphone_cli.py`,
+  wired as the **FIRST** candidate in `startContinuousCapture()`
+  (`services/serverSTTListener.js`); the pulse/ALSA recorders are retained *below* it as
+  fallbacks, so nothing regresses on the USB-mic nodes. Tuning shipped with it:
+  `vadSilenceDuration` **550 → 1200 ms** (`data/character-3/ai-config/stt-config.json`) —
+  frames are 300 ms, so 550 ms closed the utterance after **two quiet frames** and
+  guillotined the sentence-final decay.
+  **Proof — two sentences, the second spoken by an adversarial verifier that had never seen
+  the first:** said *"The crimson bell tolls seven times for the sleeping garden."* / heard
+  *"The crimson bell tolled seven times for the sleeping garden"* = **90%**. Said *"Nine pale
+  lanterns drift above the frozen orchard tonight."* / heard *"Nine pale lanterns drift above
+  the frozen An orchard tonight"* = **100% in order**. **Zero fallback lines** in
+  `/var/log/monsterbox.err` for those sessions, and the source-file mtimes predate the service
+  start, so the running process demonstrably held the new code. Smoke **459 passing / 14
+  pending**, unchanged.
+  **See** `docs/hardware/RESPEAKER-XVF3800.md` → *"Capture traps — the zero-frames failure"*
+  for the device-level detail and the reproduction commands.
+  ⚠️ **Honest limits — read these before citing this as "far-field works":**
+  - The gate is **narrow**: only **6 of 148 frames** cleared the 0.045 threshold against a
+    room-tone floor of **0.033–0.041**. There is very little headroom between "speech" and
+    "silence" here.
+  - Proven **only for `deviceId: "default"`**, **only on Orlok**, and **only with Mina's TTS
+    as the sound source**. No live human voice, no other distances or angles, no competing
+    room audio.
+  - **Only `test:smoke` was run.** No system, browser or hardware suite covers this path yet.
+  - 🟡 *Residual, still open:* the 1200 ms window **bridges** truncation, it does not solve
+    it. Even in the passing run the utterance still split in two, and Scribe inserted a
+    spurious *"An"* at the seam. A real fix is endpointing that understands sentence decay,
+    not a longer timer.
+
+- ~~**The `vadThreshold` gate sat ABOVE all real speech — a default tuned for a lavalier,
+  applied to a beamforming array.**~~ — **fixed/measured 2026-08-18.** The configured gate was
+  **0.38** (the code default is `0.40`, `services/serverSTTListener.js`), while measured
+  far-field speech through the XVF3800 arrives at roughly **0.17** and silence sits at
+  **0.033–0.038**. The gate was therefore **above every sound the array would ever produce**:
+  no frame could open it, ever. Now **0.045** — chosen because the room-tone floor measures
+  0.033–0.041, so anything **≤ 0.042 gates open on silence** and anything much higher gates
+  shut on speech.
+  **The lesson worth keeping:** fixing this gate **alone changed no transcript**, because the
+  capture fault above sat *underneath* it — a correct threshold applied to zero frames is
+  still zero. A near-mic default is simply the wrong number for a beamforming array that
+  delivers a normalized, distance-compensated signal; per-device VAD calibration is not
+  optional, and the only trustworthy way to set it is to **measure the floor on that node**
+  (`MB_DEBUG_AUDIO=1` prints the per-frame RMS the gate actually sees).
+
+- ~~**Mic contention decided whether a session could hear at all — and it looked like
+  flakiness, not a bug.**~~ — **fixed 2026-08-18.** The legacy poll tick was armed
+  **unconditionally, ~10 ms into every session**, while the asynchronous
+  "aggregate or poll?" config read was still in flight. That tick's recorder holds the
+  microphone **EXCLUSIVELY for ~1.4 s**. On a device where **only** PyAudio can stream, the
+  winner of that race decided whether the session could hear anything at all — so **identical
+  sessions passed or failed on timing alone**.
+  **Fixed:** the legacy tick now starts **only from the config callback**, with a **1500 ms
+  safety kick** if the config read never resolves (so a broken config still yields a hearing
+  session), plus a **one-retry-before-write-off** rule per capture method, so a transient
+  collision with another recorder cannot permanently demote the only path that works on this
+  device.
+  **Diagnostic lesson — the reason this hid for so long:** *a bug that flips on timing
+  presents as flakiness.* The tell was not an error message; it was that **identical sessions
+  gave opposite results**. When a component is intermittently deaf, suspect an exclusive
+  resource and a race before suspecting the network or the vendor.
+
 ### Opened from the 2026-08-16 evening evidence sweep (v9.3.0 session)
 
 - 🟡 **"Mute Speaker" silences the show but not TTS — decide the intended semantics.**
@@ -549,6 +636,11 @@ each is scoped small enough to fix in a single wave.
 - 🟡 **`speaker_cli.py` accepts garbage device IDs and reports success** (observed casting
   to devices `"81"` and `"34"` — wpctl ids passed where ALSA names belong — with
   `status: success`). Masks silent-audio failures. Needs device validation in the wrapper.
+  *Same failure family as the zero-frames capture bug* (*Far-field STT*, Cross-Cutting): a
+  wrapper returning `success` for a path down which **no audio actually moved**. On the
+  output side it is a device id that does not exist; on the input side it was a source that
+  opened and delivered nothing. Both want the same rule: **a wrapper may only report success
+  for bytes it can account for.**
 - 🟡 **`jog-raw` has no per-part serialization**: two overlapping jogs on one part spawn two
   `actuator_cli.py` processes on the same pins → `'GPIO busy'` / `E_BUS_IO` (observed once,
   operator double-click during a 7.5 s home). Wants a per-part in-flight lock in the UI or route.
@@ -674,6 +766,14 @@ each is scoped small enough to fix in a single wave.
   every tick — which is part of what made each tick so expensive — so a mid-session device
   switch used to be picked up automatically. Toggle the conversation/agent off and on after
   changing a character's microphone.
+  ✅ **Re-confirmed still open 2026-08-18**, after the `stream_raw` rewrite of the candidate
+  ladder in that same function. `deviceId` is a closure parameter of
+  `startContinuousCapture()` (`services/serverSTTListener.js:718`), fixed at the single call
+  site `startContinuousCapture(state.deviceId, …)` (`:416`), and `state.deviceId` is written
+  once in `startSession()` and never re-read from the part config. Each relaunch re-resolves
+  the *Pulse source* for that same `deviceId` (30 s cache), so a source that moves underneath
+  a stable device name is picked up — **but changing which microphone the character uses is
+  not.** One device per session still holds.
 - ⚪ **`.env` is never loaded — put env vars in the systemd unit.** The app does not use
   `dotenv` anywhere, so a `.env` file has **no effect** on the running service. Both
   `MONSTERBOX_SSH_PASSWORD` and `MB_ADMIN_TOKEN` must be set in `monsterbox.service` (or a
@@ -830,6 +930,11 @@ each is scoped small enough to fix in a single wave.
   still logged two spurious "user" turns (`"Yes."`, `"..."`) while the character was
   speaking. May need real acoustic echo cancellation rather than time-based
   suppression.
+  **2026-08-18:** the ReSpeaker XVF3800 array now supplies **on-device AEC on Orlok** — which
+  is exactly what this entry asks for. **Re-measure on Orlok before writing any more
+  time-based suppression**; the right fix may be to *remove* code rather than add it. Left
+  open deliberately: hardware AEC is claimed by the vendor, not yet measured here, and the
+  other nodes still have no AEC at all.
 
 ## Test Suite (known-flaky)
 
@@ -1108,6 +1213,9 @@ Plus one that was not flake at all:
   the opening line); the jaw driven 0–180 on every path; and echo suppression that stopped
   working after the first reply, so the agent heard its own voice and conversed with itself.
   Live proof: complete verbatim user turns and zero echo turns.
+  *See also:* the continuous stream introduced by this fix is the very thing that later
+  fell back to the legacy per-chunk path **silently** on the ReSpeaker XVF3800 — the direct
+  descendant bug, *Far-field STT* under Cross-Cutting.
 - ~~A placeholder calibration profile overrode hand-set jaw markers~~ — fixed **v9.0.0** for
   the jaw path. Verified by I²C register tracing: 115 register changes on the TTS path, 434
   across an agent exchange, **zero** samples outside the calibrated window, jaw parks at 62.7°
@@ -1153,6 +1261,10 @@ Plus one that was not flake at all:
   capture path) and reports real byte counts — an empty capture is now a failure, not a
   success. Verified on Orlok's USB mic: 32044 bytes for 1 s @ 16 kHz mono, peak 2096 /
   RMS 931 (non-silent).
+  ⚠️ **Do not cite this as proof that an empty capture can never be reported as success.**
+  That guard only ever covered the per-**chunk** path. The **continuous** stream is exactly
+  where zero frames slipped through silently for months — see *Far-field STT* under
+  Cross-Cutting. Still fixed; just narrower than it reads.
 - ~~Motor `stop` never stopped the motor~~ — fixed **v9.0.0** (it sent direction `'stop'`,
   which `motor_control.py` rejects; now drives PWM low at speed 0 and releases the pins).
 - ~~Conversation start/stop does not open/close the ElevenLabs WebSocket~~ — fixed
