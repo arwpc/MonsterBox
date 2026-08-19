@@ -22,7 +22,7 @@
     "name": "Neck",
     "type": "servo",
     "pin": null,
-    "description": "Head/neck servo for turning \u2014 pan servo for head tracking",
+    "description": "Head/neck servo for turning — pan servo for head tracking",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
@@ -58,7 +58,7 @@
     "name": "Servo Channel Laser",
     "type": "light",
     "pin": null,
-    "description": "Eye laser powered via PCA9685 channel 0 \u2014 toggle on/off",
+    "description": "Eye laser powered via PCA9685 channel 0 — toggle on/off",
     "config": {
       "controllerType": "pca9685",
       "address": 64,
@@ -135,7 +135,7 @@
     "created": "2025-10-12T06:00:06.000Z",
     "enabled": true,
     "modelId": "default-uvc-1",
-    "updated": "2026-08-18T23:49:46.333Z"
+    "updated": "2026-08-19T10:38:44.119Z"
   },
   {
     "id": "8",
