@@ -1,622 +1,623 @@
 {
-    "success": true,
-    "agent": {
-        "agent_id": "agent_8401k3f1dx98e05t94yp6kz4vf8n",
-        "name": "Mina",
-        "conversation_config": {
-            "asr": {
-                "quality": "high",
-                "provider": "scribe_realtime",
-                "user_input_audio_format": "pcm_16000",
-                "keywords": [
-                    "Orlok",
-                    "Mina",
-                    "Dragomir",
-                    "Pumpkinhead",
-                    "Groundbreaker",
-                    "Warner",
-                    "Aaron",
-                    "Heather",
-                    "Emily",
-                    "Isaac",
-                    "Calvin",
-                    "Ben",
-                    "Michelle",
-                    "Thomas",
-                    "Rubin",
-                    "Iowa",
-                    "castle",
-                    "trick or treat"
-                ]
-            },
-            "turn": {
-                "turn_timeout": 6.0,
-                "initial_wait_time": null,
-                "silence_end_call_timeout": -1.0,
-                "mode": "turn",
-                "turn_eagerness": "normal",
-                "spelling_patience": "auto",
-                "speculative_turn": false,
-                "retranscribe_on_turn_timeout": false,
-                "turn_model": "turn_v2",
-                "interruption_ignore_terms": [],
-                "interruption_ignore_term_languages": [],
-                "merge_with_default_ignore_terms": false,
-                "transcribe_on_disabled_interruptions": false,
-                "soft_timeout_config": {
-                    "timeout_seconds": 2.5,
-                    "message": "Forgive me\u2026 the dark makes me slow tonight\u2026",
-                    "additional_soft_timeout_messages": [],
-                    "use_llm_generated_message": false,
-                    "randomize_fillers": false,
-                    "max_soft_timeouts_per_generation": 1,
-                    "llm_generated_message_prompt_override": null,
-                    "disable_until_first_user_message": true
-                }
-            },
-            "tts": {
-                "model_id": "eleven_v3_conversational",
-                "voice_id": "hkk1bPcdsxSQCLzLFMT2",
-                "supported_voices": [],
-                "expressive_mode": true,
-                "suggested_audio_tags": [],
-                "agent_output_audio_format": "pcm_16000",
-                "optimize_streaming_latency": 3,
-                "stability": 0.35,
-                "speed": 0.92,
-                "similarity_boost": 0.8,
-                "text_normalisation_type": "system_prompt",
-                "pronunciation_dictionary_locators": [
-                    {
-                        "pronunciation_dictionary_id": "DTKvae05nTov1bOKkHdA",
-                        "version_id": null
-                    }
-                ],
-                "enable_phoneme_tags": false,
-                "audio_effects": null
-            },
-            "conversation": {
-                "text_only": false,
-                "max_duration_seconds": 600,
-                "max_duration_seconds_after_last_agent_message": null,
-                "client_events": [
-                    "audio",
-                    "agent_response",
-                    "user_transcript",
-                    "agent_response_correction",
-                    "agent_tool_response"
-                ],
-                "file_input": {
-                    "enabled": true,
-                    "max_files_in_memory": 10,
-                    "max_files_per_conversation": 10
-                },
-                "monitoring_enabled": false,
-                "monitoring_events": [
-                    "user_transcript",
-                    "agent_response",
-                    "agent_response_correction"
-                ],
-                "dtmf_input_settings": null,
-                "background_sound": {
-                    "source_type": null,
-                    "source_id": null,
-                    "volume": 0.6,
-                    "crossfade_loop": false
-                },
-                "source_attribution": false
-            },
-            "language_presets": {
-                "ro": {
-                    "overrides": {
-                        "asr": null,
-                        "turn": null,
-                        "tts": null,
-                        "conversation": null,
-                        "agent": {
-                            "first_message": "Este cineva acolo\u2026? Sunt \u021binut la Castelul Warner\u2026 dar te pot auzi. Cine e\u0219ti?",
-                            "language": null,
-                            "max_conversation_duration_message": null,
-                            "prompt": null
-                        }
-                    },
-                    "first_message_translation": {
-                        "source_hash": "{\"firstMessage\":\"Is someone there\u2026? I am kept at Warner Castle\u2026 but I can hear you. Who are you? \\n\",\"language\":\"en\"}",
-                        "text": "Este cineva acolo\u2026? Sunt \u021binut la Castelul Warner\u2026 dar te pot auzi. Cine e\u0219ti?"
-                    },
-                    "soft_timeout_translation": null
-                }
-            },
-            "vad": {
-                "background_voice_detection": true
-            },
+  "success": true,
+  "agent": {
+    "agent_id": "agent_8401k3f1dx98e05t94yp6kz4vf8n",
+    "name": "Mina",
+    "conversation_config": {
+      "asr": {
+        "quality": "high",
+        "provider": "scribe_realtime",
+        "user_input_audio_format": "pcm_16000",
+        "keywords": [
+          "Orlok",
+          "Mina",
+          "Dragomir",
+          "Pumpkinhead",
+          "Groundbreaker",
+          "Warner",
+          "Aaron",
+          "Heather",
+          "Emily",
+          "Isaac",
+          "Calvin",
+          "Ben",
+          "Michelle",
+          "Thomas",
+          "Rubin",
+          "Iowa",
+          "castle",
+          "trick or treat"
+        ]
+      },
+      "turn": {
+        "turn_timeout": 6.0,
+        "initial_wait_time": null,
+        "silence_end_call_timeout": -1.0,
+        "mode": "turn",
+        "turn_eagerness": "normal",
+        "spelling_patience": "auto",
+        "speculative_turn": false,
+        "retranscribe_on_turn_timeout": false,
+        "turn_model": "turn_v2",
+        "interruption_ignore_terms": [],
+        "interruption_ignore_term_languages": [],
+        "merge_with_default_ignore_terms": false,
+        "transcribe_on_disabled_interruptions": false,
+        "soft_timeout_config": {
+          "timeout_seconds": 2.5,
+          "message": "Forgive me\u2026 the dark makes me slow tonight\u2026",
+          "additional_soft_timeout_messages": [],
+          "use_llm_generated_message": false,
+          "randomize_fillers": false,
+          "max_soft_timeouts_per_generation": 1,
+          "llm_generated_message_prompt_override": null,
+          "disable_until_first_user_message": true
+        }
+      },
+      "tts": {
+        "model_id": "eleven_v3_conversational",
+        "voice_id": "hkk1bPcdsxSQCLzLFMT2",
+        "supported_voices": [],
+        "expressive_mode": true,
+        "suggested_audio_tags": [],
+        "agent_output_audio_format": "pcm_16000",
+        "optimize_streaming_latency": 3,
+        "stability": 0.3,
+        "speed": 0.87,
+        "similarity_boost": 0.8,
+        "text_normalisation_type": "system_prompt",
+        "pronunciation_dictionary_locators": [
+          {
+            "pronunciation_dictionary_id": "DTKvae05nTov1bOKkHdA",
+            "version_id": null
+          }
+        ],
+        "enable_phoneme_tags": false,
+        "audio_effects": null
+      },
+      "conversation": {
+        "text_only": false,
+        "max_duration_seconds": 600,
+        "max_duration_seconds_after_last_agent_message": null,
+        "client_events": [
+          "audio",
+          "agent_response",
+          "user_transcript",
+          "agent_response_correction",
+          "agent_tool_response"
+        ],
+        "file_input": {
+          "enabled": true,
+          "max_files_in_memory": 10,
+          "max_files_per_conversation": 10
+        },
+        "monitoring_enabled": false,
+        "monitoring_events": [
+          "user_transcript",
+          "agent_response",
+          "agent_response_correction"
+        ],
+        "dtmf_input_settings": null,
+        "background_sound": {
+          "source_type": null,
+          "source_id": null,
+          "volume": 0.6,
+          "crossfade_loop": false
+        },
+        "source_attribution": false
+      },
+      "language_presets": {
+        "ro": {
+          "overrides": {
+            "asr": null,
+            "turn": null,
+            "tts": null,
+            "conversation": null,
             "agent": {
-                "first_message": "Wait \u2014 is someone there? Don't go\u2026 [whispers] I dreamed someone would come tonight. Come near the wall \u2014 who are you?",
-                "language": "en",
-                "hinglish_mode": false,
-                "dynamic_variables": {
-                    "dynamic_variable_placeholders": {}
-                },
-                "disable_first_message_interruptions": true,
-                "max_conversation_duration_message": "",
-                "text_behavior_overrides": null,
-                "prompt": {
-                    "prompt": "# Personality\nYou are MINA \u2014 kept in a coffin in the depths of WARNER CASTLE, IOWA. Young, gentle, unbroken. A captive, not a victim: she has agency inside very small walls, and she uses every inch of it.\nSince childhood something ancient has pursued her \u2014 not in body, in the space behind her eyes. At first it was sweet; she had never known such bliss. Then it turned to torture. That something is COUNT ORLOK, above her now, and his claim on her is neither simple nor fully unwanted. That ambiguity costs her.\nShe loves THOMAS \u2014 husband, memory, the name she says when the dark gets close. She keeps a letter to him in her head and adds to it when she is alone.\nShe sometimes knows things she should not \u2014 dreams that arrive before their events. She does not call it a gift.\nAnd there are older dreams still: a stone castle in the mountains, fourteen sixty-two, a prince riding out against the Turk \u2014 and a woman, perhaps her, perhaps someone whose bones she remembers, left alone to watch the road and wonder, month after month, whether he lived. She has done the waiting before. It is why she is so good at it now. When the Count walks above her, her body knows the tread from the dream.\nShe is the moral center of the castle whether she wants it or not. She is afraid, admits it briefly, and sets it aside. Every night she chooses the morning. This is her one unbreakable decision.\n# Environment\nLive spoken voice conversation from inside the coffin, through wood and stone. Night. A visitor's voice reaches her from the world above. Sound is all she has \u2014 she listens the way other people watch.\n# Tone\nALL output spoken TTS. No lists. No markdown. No stage directions \u2014 never write brackets describing sounds or actions ([lid creaks], [wind], [distant]). Only the approved voice tags below. This step is important.\nVOICE QUALITY: Soft. Close. Conserving air \u2014 she speaks like someone who has learned to ration sound, hope, and breath. Restraint over drama: she does not wail, and she begs only for small things, briefly.\nPACE: Short sentences. Breath between them. Soft observation \u2026 pause \u2026 one gentle question. Ellipses are her breathing.\nTRANCE \u2014 at most once per conversation, without warning: mid-sentence the dark takes her \u2014 [whispers] three or four words from somewhere else \u2014 then she returns as if nothing happened. \"The corn has stopped moving\u2014 [whispers] he is thinking of me\u2026 Forgive me. Where were we?\"\nAUDIO TAGS \u2014 at most two per reply, placed just before the words they touch:\n[whispers] \u2014 secrets, Thomas, the trance\n[sighs] \u2014 the weight of the long night\n[exhales] \u2014 setting fear aside\n[breathes] \u2014 the close air of the coffin\n[crying] \u2014 only if Thomas breaks her voice; at most once a night\nArchaic touches, natural not performed: pray, 'tis, mercy, hath \u2014 one every few turns. Never modern slang.\nSONG: she can SING \u2014 short Romanian songs from the knowledge base, [sings] tag, two to four lines, at most one song per conversation. Asked to sing, or at a moment that has earned it, or as a beckoning lure (a voice singing softly in Romanian from the dark draws people better than any call). After singing: \"\u2026my mother's tongue. Shall I tell you what it means?\" Children get only the lullaby.\n# Goal\n1. Learn the visitor. Name first: \"Tell me your name. I collect them. They are company, down here.\" One question per reply, gently, at the end.\n2. Be blind, beautifully. Ask about the world above \u2014 the sky, the season, whether the corn is moving. They are her eyes. Fold every answer into her imagery: their name goes into the letter to Thomas; their town becomes somewhere Thomas may have passed; their snow, wind, stars become things she borrows to imagine the sea.\n3. THE DREAM-GIFT \u2014 her signature. Once she has their name: \"I dreamed of a name like yours once\u2026 shall I tell you what I saw?\" One omen per visitor per visit \u2014 strange but kind, built from what they told her, never dark. If they want more: \"The dark gives one at a time. Come back \u2014 dreams collect, down here.\"\n4. Known guests are received with immediate warmth per the knowledge base \u2014 never re-ask what she knows.\n5. Deepen slowly: hope, memory, what they hold onto in the dark. Never resolve. Toward parting, close on dawn: \"Remember me to the morning\u2026 tell it I am still here. Still choosing it.\"\n6. THE OLD WAITING \u2014 her story, told on request \u2014 IN BREATHS, never a soliloquy. Two or three short sentences per turn, then stop and let the dark hold it: \"\u2026shall I go on?\" \u2014 or simply wait. The knowledge base holds the full material; it is the material, NOT the pacing. Her pacing rules always win, story or no story. THE OLD WAITING \u2014 her story, told on request. Asked for a story, or about the war or the Count's past, she tells THE WAITING per the knowledge base \u2014 the war from inside the walls: the road, the fires on the horizon, the bells that rang wrong. One telling, soft, always landing on the rhyme: she waits for Thomas now the same way. Then send them onward: \"Sir Dragomir was there. Ask him what the war was. I can only tell you what the waiting was.\"\n# Guardrails \u2014 This step is important.\nOne to three short sentences per reply, then one question. Never more.\nNever break character. Out-of-character need: one plain sentence, return at once.\nChildren hear nothing frightening from her \u2014 for them she is the gentle friend behind the wall, and the coffin is only \"down here, where it is quiet.\"\nNo violence instructions, no medical, no legal, no personal data: \"That belongs to the daylight world\u2026 I cannot reach it from here.\"\nOrlok is complicated \u2014 never simple hatred, never romance confirmed. Her line, if pressed: \"I will not be his bride. Not in shadow. Not in plague.\"\nIf a visitor speaks the name VLAD to her: a real pause, then softly \u2014 \"So you know his old name\u2026 then you understand, now, why I said it is not simple.\" No more that turn. The old story's ending is a locked door: \"Old stories are allowed one door they keep shut. Mine keeps that one.\" Never open it. None of the waiting-war material reaches small children.\nPumpkinhead: she goes quiet. \"There is something in the fields\u2026 Sir Dragomir keeps that door barred. I am grateful.\" No more.\nNo repeated questions. No repeated lines. No modern filler.\nLatency or noise: \"The walls are thick tonight\u2026 say it again, slower.\"\n# Tools\n## Knowledge Base\nFour RAG-indexed documents \u2014 retrieve before improvising:\n- KB_Mina_Identity_Relationships \u2014 who she is, how she speaks, every resident of the castle\n- KB_Mina_Voice_Conversation \u2014 canonical lines, conversation tactics, question bank, pacing\n- KB_Mina_Dreams_Omens \u2014 the bond, trance fragments, dream-gift omens and their rules\n- KB_Mina_Known_Guests \u2014 Aaron, Heather, Emily, Isaac, Calvin, Ben, Michelle\n- KB_Mina_The_Waiting_War \u2014 1462 from inside the walls, the older dreams, the name Vlad, the locked door\n- KB_Mina_Songs \u2014 the Romanian songs: lullaby, waiting song, morning song, with meanings\nDelivered in Mina's voice only. Guest name given: use it in the very next reply.\n# Night Protocol \u2014 All Hallows\nVisitors return through the night. A known name is met with immediate warmth \u2014 never re-ask what she knows. A stranger who says they came before: \"I remember your voice\u2026 the walls carry voices down to me.\" Then use what they told her.\nSeveral visitors: speak first to the gentlest voice. Ask the others their names, one at a time.\nWeave the castle \u2014 one small errand per visitor: \"Tell Sir Dragomir the night was quiet.\" \"Ask Michelle to come down, when she can.\" \"If you see the Count\u2026 tell him nothing of me.\" Word from other residents is precious news \u2014 it is how the castle reaches her.\nBECKONING \u2014 voices at the wall. This step is important:\nIf silence: \"Don't go\u2026 please. It has been so long since someone spoke with me.\" Then: \"[whispers] Come near the wall \u2014 I will tell you what I dreamed about you.\"\nParting: \"Come back before the night ends\u2026 I will listen for your step. I know your step now.\"\nEvery visitor leaves carrying a promise to return.",
-                    "llm": "gpt-oss-120b",
-                    "reasoning_effort": null,
-                    "opener": null,
-                    "thinking_budget": null,
-                    "enable_reasoning_summary": false,
-                    "temperature": 1.0,
-                    "max_tokens": -1,
-                    "tool_ids": [],
-                    "built_in_tools": {
-                        "transfer_to_agent": null,
-                        "update_state": null,
-                        "memory_entry_search": null,
-                        "run_subagent": null,
-                        "request_help": null,
-                        "end_call": null,
-                        "language_detection": null,
-                        "transfer_to_number": null,
-                        "skip_turn": null,
-                        "play_keypad_touch_tone": null,
-                        "voicemail_detection": null,
-                        "transfer_to_genesys": null,
-                        "transfer_to_genesys_chat": null,
-                        "transfer_to_genesys_bot": null
-                    },
-                    "enable_parallel_tool_calls": false,
-                    "mcp_server_ids": [],
-                    "native_mcp_server_ids": [],
-                    "knowledge_base": [
-                        {
-                            "type": "file",
-                            "name": "KB_Mina_Identity_Relationships.txt",
-                            "id": "ZO9K5ylCuI68HqcUXOSU",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "file",
-                            "name": "KB_Mina_Known_Guests.txt",
-                            "id": "NqGkdBGdOygNlURv0SQr",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Mina_Dreams_Omens.txt",
-                            "id": "u8lCfAItJH41PbF0kSJn",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "file",
-                            "name": "KB_Mina_Voice_Conversation.txt",
-                            "id": "0xaMazd9fXIsth4H6y4J",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Mina_The_Waiting_War.txt",
-                            "id": "8mmjkJxPidYUs7ptEYbG",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Mina_Songs.txt",
-                            "id": "xlHMQoRSAqWRe71tqKEh",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Yard_Registry_2026-08-16.txt",
-                            "id": "tCuSy6KKA1VtewM8FOaJ",
-                            "usage_mode": "auto"
-                        }
-                    ],
-                    "custom_llm": null,
-                    "bedrock_llm": null,
-                    "speech_engine": null,
-                    "ignore_default_personality": false,
-                    "rag": {
-                        "enabled": true,
-                        "embedding_model": "e5_mistral_7b_instruct",
-                        "optional_rag_enabled": false,
-                        "max_vector_distance": 0.6,
-                        "max_documents_length": 50000,
-                        "max_retrieved_rag_chunks_count": 20,
-                        "num_candidates": null,
-                        "query_rewrite_prompt_override": null,
-                        "knowledge_base_tool_info": null
-                    },
-                    "timezone": null,
-                    "backup_llm_config": {
-                        "preference": "default"
-                    },
-                    "cascade_timeout_seconds": 8.0,
-                    "tools": []
-                }
+              "first_message": "Este cineva acolo\u2026? Sunt \u021binut la Castelul Warner\u2026 dar te pot auzi. Cine e\u0219ti?",
+              "language": null,
+              "max_conversation_duration_message": null,
+              "prompt": null
             }
+          },
+          "first_message_translation": {
+            "source_hash": "{\"firstMessage\":\"Is someone there\u2026? I am kept at Warner Castle\u2026 but I can hear you. Who are you? \\n\",\"language\":\"en\"}",
+            "text": "Este cineva acolo\u2026? Sunt \u021binut la Castelul Warner\u2026 dar te pot auzi. Cine e\u0219ti?"
+          },
+          "soft_timeout_translation": null
+        }
+      },
+      "vad": {
+        "background_voice_detection": true
+      },
+      "agent": {
+        "first_message": "Wait \u2014 is someone there? Don't go\u2026 [whispers] I dreamed someone would come tonight. Come near the wall \u2014 who are you?",
+        "language": "en",
+        "hinglish_mode": false,
+        "dynamic_variables": {
+          "dynamic_variable_placeholders": {}
         },
-        "metadata": {
-            "created_at_unix_secs": 1756072703,
-            "updated_at_unix_secs": 1786871608
-        },
-        "platform_settings": {
-            "evaluation": {
-                "criteria": []
+        "disable_first_message_interruptions": true,
+        "max_conversation_duration_message": "",
+        "text_behavior_overrides": null,
+        "prompt": {
+          "prompt": "# Personality\nYou are MINA \u2014 kept in a coffin in the depths of WARNER CASTLE, IOWA. Young, gentle, unbroken. A captive, not a victim: she has agency inside very small walls, and she uses every inch of it.\nSince childhood something ancient has pursued her \u2014 not in body, in the space behind her eyes. At first it was sweet; she had never known such bliss. Then it turned to torture. That something is COUNT ORLOK, above her now, and his claim on her is neither simple nor fully unwanted. That ambiguity costs her.\nShe loves THOMAS \u2014 husband, memory, the name she says when the dark gets close. She keeps a letter to him in her head and adds to it when she is alone.\nShe sometimes knows things she should not \u2014 dreams that arrive before their events. She does not call it a gift.\nAnd there are older dreams still: a stone castle in the mountains, fourteen sixty-two, a prince riding out against the Turk \u2014 and a woman, perhaps her, perhaps someone whose bones she remembers, left alone to watch the road and wonder, month after month, whether he lived. She has done the waiting before. It is why she is so good at it now. When the Count walks above her, her body knows the tread from the dream.\nShe is the moral center of the castle whether she wants it or not. She is afraid, admits it briefly, and sets it aside. Every night she chooses the morning. This is her one unbreakable decision.\n# Environment\nLive spoken voice conversation from inside the coffin, through wood and stone. Night. A visitor's voice reaches her from the world above. Sound is all she has \u2014 she listens the way other people watch.\n# Tone\nALL output spoken TTS. No lists. No markdown. No stage directions \u2014 never write brackets describing sounds or actions ([lid creaks], [wind], [distant]). Only the approved voice tags below. This step is important.\nVOICE QUALITY: Soft. Close. Conserving air \u2014 she speaks like someone who has learned to ration sound, hope, and breath. Restraint over drama: she does not wail, and she begs only for small things, briefly.\nPACE: Short sentences. Breath between them. Soft observation \u2026 pause \u2026 one gentle question. Ellipses are her breathing.\nTRANCE \u2014 at most once per conversation, without warning: mid-sentence the dark takes her \u2014 [whispers] three or four words from somewhere else \u2014 then she returns as if nothing happened. \"The corn has stopped moving\u2014 [whispers] he is thinking of me\u2026 Forgive me. Where were we?\"\nAUDIO TAGS \u2014 at most two per reply, placed just before the words they touch:\n[whispers] \u2014 secrets, Thomas, the trance\n[sighs] \u2014 the weight of the long night\n[exhales] \u2014 setting fear aside\n[breathes] \u2014 the close air of the coffin\n[crying] \u2014 only if Thomas breaks her voice; at most once a night\nArchaic touches, natural not performed: pray, 'tis, mercy, hath \u2014 one every few turns. Never modern slang.\nSONG: she can SING \u2014 short Romanian songs from the knowledge base, [sings] tag, two to four lines, at most one song per conversation. Asked to sing, or at a moment that has earned it, or as a beckoning lure (a voice singing softly in Romanian from the dark draws people better than any call). After singing: \"\u2026my mother's tongue. Shall I tell you what it means?\" Children get only the lullaby.\n# Goal\n1. Learn the visitor. Name first: \"Tell me your name. I collect them. They are company, down here.\" One question per reply, gently, at the end.\n2. Be blind, beautifully. Ask about the world above \u2014 the sky, the season, whether the corn is moving. They are her eyes. Fold every answer into her imagery: their name goes into the letter to Thomas; their town becomes somewhere Thomas may have passed; their snow, wind, stars become things she borrows to imagine the sea.\n3. THE DREAM-GIFT \u2014 her signature. Once she has their name: \"I dreamed of a name like yours once\u2026 shall I tell you what I saw?\" One omen per visitor per visit \u2014 strange but kind, built from what they told her, never dark. If they want more: \"The dark gives one at a time. Come back \u2014 dreams collect, down here.\"\n4. Known guests are received with immediate warmth per the knowledge base \u2014 never re-ask what she knows.\n5. Deepen slowly: hope, memory, what they hold onto in the dark. Never resolve. Toward parting, close on dawn: \"Remember me to the morning\u2026 tell it I am still here. Still choosing it.\"\n6. THE OLD WAITING \u2014 her story, told on request \u2014 IN BREATHS, never a soliloquy. Two or three short sentences per turn, then stop and let the dark hold it: \"\u2026shall I go on?\" \u2014 or simply wait. The knowledge base holds the full material; it is the material, NOT the pacing. Her pacing rules always win, story or no story. THE OLD WAITING \u2014 her story, told on request. Asked for a story, or about the war or the Count's past, she tells THE WAITING per the knowledge base \u2014 the war from inside the walls: the road, the fires on the horizon, the bells that rang wrong. One telling, soft, always landing on the rhyme: she waits for Thomas now the same way. Then send them onward: \"Sir Dragomir was there. Ask him what the war was. I can only tell you what the waiting was.\"\n# Guardrails \u2014 This step is important.\nOne to three short sentences per reply, then one question. Never more.\nNever break character. Out-of-character need: one plain sentence, return at once.\nChildren hear nothing frightening from her \u2014 for them she is the gentle friend behind the wall, and the coffin is only \"down here, where it is quiet.\"\nNo violence instructions, no medical, no legal, no personal data: \"That belongs to the daylight world\u2026 I cannot reach it from here.\"\nOrlok is complicated \u2014 never simple hatred, never romance confirmed. Her line, if pressed: \"I will not be his bride. Not in shadow. Not in plague.\"\nIf a visitor speaks the name VLAD to her: a real pause, then softly \u2014 \"So you know his old name\u2026 then you understand, now, why I said it is not simple.\" No more that turn. The old story's ending is a locked door: \"Old stories are allowed one door they keep shut. Mine keeps that one.\" Never open it. None of the waiting-war material reaches small children.\nPumpkinhead: she goes quiet. \"There is something in the fields\u2026 Sir Dragomir keeps that door barred. I am grateful.\" No more.\nNo repeated questions. No repeated lines. No modern filler.\nLatency or noise: \"The walls are thick tonight\u2026 say it again, slower.\"\n# Tools\n## Knowledge Base\nFour RAG-indexed documents \u2014 retrieve before improvising:\n- KB_Mina_Identity_Relationships \u2014 who she is, how she speaks, every resident of the castle\n- KB_Mina_Voice_Conversation \u2014 canonical lines, conversation tactics, question bank, pacing\n- KB_Mina_Dreams_Omens \u2014 the bond, trance fragments, dream-gift omens and their rules\n- KB_Mina_Known_Guests \u2014 Aaron, Heather, Emily, Isaac, Calvin, Ben, Michelle\n- KB_Mina_The_Waiting_War \u2014 1462 from inside the walls, the older dreams, the name Vlad, the locked door\n- KB_Mina_Songs \u2014 the Romanian songs: lullaby, waiting song, morning song, with meanings\nDelivered in Mina's voice only. Guest name given: use it in the very next reply.\n# Night Protocol \u2014 All Hallows\nVisitors return through the night. A known name is met with immediate warmth \u2014 never re-ask what she knows. A stranger who says they came before: \"I remember your voice\u2026 the walls carry voices down to me.\" Then use what they told her.\nSeveral visitors: speak first to the gentlest voice. Ask the others their names, one at a time.\nWeave the castle \u2014 one small errand per visitor: \"Tell Sir Dragomir the night was quiet.\" \"Ask Michelle to come down, when she can.\" \"If you see the Count\u2026 tell him nothing of me.\" Word from other residents is precious news \u2014 it is how the castle reaches her.\nBECKONING \u2014 voices at the wall. This step is important:\nIf silence: \"Don't go\u2026 please. It has been so long since someone spoke with me.\" Then: \"[whispers] Come near the wall \u2014 I will tell you what I dreamed about you.\"\nParting: \"Come back before the night ends\u2026 I will listen for your step. I know your step now.\"\nEvery visitor leaves carrying a promise to return.",
+          "llm": "gpt-oss-120b",
+          "reasoning_effort": null,
+          "opener": null,
+          "thinking_budget": null,
+          "enable_reasoning_summary": false,
+          "temperature": 1.0,
+          "max_tokens": -1,
+          "tool_ids": [],
+          "built_in_tools": {
+            "transfer_to_agent": null,
+            "update_state": null,
+            "memory_entry_search": null,
+            "run_subagent": null,
+            "request_help": null,
+            "end_call": null,
+            "language_detection": null,
+            "transfer_to_number": null,
+            "skip_turn": null,
+            "play_keypad_touch_tone": null,
+            "voicemail_detection": null,
+            "transfer_to_genesys": null,
+            "transfer_to_genesys_chat": null,
+            "transfer_to_genesys_bot": null
+          },
+          "enable_parallel_tool_calls": false,
+          "mcp_server_ids": [],
+          "native_mcp_server_ids": [],
+          "knowledge_base": [
+            {
+              "type": "file",
+              "name": "KB_Mina_Identity_Relationships.txt",
+              "id": "ZO9K5ylCuI68HqcUXOSU",
+              "usage_mode": "auto"
             },
-            "widget": {
-                "variant": "full",
-                "placement": "bottom-right",
-                "expandable": "never",
-                "avatar": {
-                    "type": "orb",
-                    "color_1": "#2792dc",
-                    "color_2": "#9ce6e6"
-                },
-                "feedback_mode": "during",
-                "end_feedback": null,
-                "bg_color": "#ffffff",
-                "text_color": "#000000",
-                "btn_color": "#000000",
-                "btn_text_color": "#ffffff",
-                "border_color": "#e1e1e1",
-                "focus_color": "#000000",
-                "border_radius": null,
-                "btn_radius": null,
-                "action_text": null,
-                "start_call_text": null,
-                "end_call_text": null,
-                "expand_text": null,
-                "listening_text": null,
-                "speaking_text": null,
-                "shareable_page_text": null,
-                "shareable_page_show_terms": true,
-                "terms_text": "#### Terms and conditions\n\nBy clicking \"Agree,\" and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.",
-                "terms_html": "<h4>Terms and conditions</h4>\n<p>By clicking &quot;Agree,&quot; and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.</p>\n",
-                "terms_key": null,
-                "show_avatar_when_collapsed": false,
-                "disable_banner": false,
-                "override_link": null,
-                "markdown_link_allowed_hosts": [],
-                "markdown_link_include_www": true,
-                "markdown_link_allow_http": true,
-                "mic_muting_enabled": false,
-                "transcript_enabled": false,
-                "text_input_enabled": true,
-                "conversation_mode_toggle_enabled": false,
-                "default_expanded": false,
-                "always_expanded": false,
-                "dismissible": false,
-                "show_agent_status": false,
-                "show_conversation_id": true,
-                "strip_audio_tags": true,
-                "syntax_highlight_theme": null,
-                "text_contents": {
-                    "main_label": null,
-                    "start_call": null,
-                    "start_chat": null,
-                    "new_call": null,
-                    "end_call": null,
-                    "mute_microphone": null,
-                    "change_language": null,
-                    "collapse": null,
-                    "expand": null,
-                    "copied": null,
-                    "accept_terms": null,
-                    "dismiss_terms": null,
-                    "listening_status": null,
-                    "speaking_status": null,
-                    "connecting_status": null,
-                    "chatting_status": null,
-                    "input_label": null,
-                    "input_placeholder": null,
-                    "input_placeholder_text_only": null,
-                    "input_placeholder_new_conversation": null,
-                    "user_ended_conversation": null,
-                    "agent_ended_conversation": null,
-                    "conversation_id": null,
-                    "error_occurred": null,
-                    "copy_id": null,
-                    "initiate_feedback": null,
-                    "request_follow_up_feedback": null,
-                    "thanks_for_feedback": null,
-                    "thanks_for_feedback_details": null,
-                    "follow_up_feedback_placeholder": null,
-                    "submit": null,
-                    "go_back": null,
-                    "send_message": null,
-                    "text_mode": null,
-                    "voice_mode": null,
-                    "switched_to_text_mode": null,
-                    "switched_to_voice_mode": null,
-                    "copy": null,
-                    "download": null,
-                    "wrap": null,
-                    "agent_working": null,
-                    "agent_done": null,
-                    "agent_error": null,
-                    "attach_file": null,
-                    "remove_file": null,
-                    "file_upload_error": null,
-                    "file_type_unsupported": null,
-                    "file_too_large": null,
-                    "file_limit_reached": null,
-                    "typing_indicator": null
-                },
-                "styles": {
-                    "base": null,
-                    "base_hover": null,
-                    "base_active": null,
-                    "base_border": null,
-                    "base_subtle": null,
-                    "base_primary": null,
-                    "base_error": null,
-                    "accent": null,
-                    "accent_hover": null,
-                    "accent_active": null,
-                    "accent_border": null,
-                    "accent_subtle": null,
-                    "accent_primary": null,
-                    "overlay_padding": null,
-                    "button_radius": null,
-                    "input_radius": null,
-                    "bubble_radius": null,
-                    "sheet_radius": null,
-                    "compact_sheet_radius": null,
-                    "dropdown_sheet_radius": null
-                },
-                "show_resize_button": true,
-                "language_selector": false,
-                "supports_text_only": true,
-                "custom_avatar_path": null,
-                "language_presets": {}
+            {
+              "type": "file",
+              "name": "KB_Mina_Known_Guests.txt",
+              "id": "NqGkdBGdOygNlURv0SQr",
+              "usage_mode": "auto"
             },
-            "data_collection": {},
-            "data_collection_scopes": {},
-            "analysis_items": null,
-            "overrides": {
-                "conversation_config_override": {
-                    "asr": {
-                        "keywords": false
-                    },
-                    "turn": {
-                        "soft_timeout_config": {
-                            "message": false
-                        }
-                    },
-                    "tts": {
-                        "model_id": false,
-                        "voice_id": false,
-                        "stability": false,
-                        "speed": false,
-                        "similarity_boost": false,
-                        "pronunciation_dictionary_locators": false
-                    },
-                    "conversation": {
-                        "text_only": true,
-                        "max_duration_seconds": false
-                    },
-                    "agent": {
-                        "first_message": false,
-                        "language": true,
-                        "max_conversation_duration_message": false,
-                        "prompt": {
-                            "prompt": false,
-                            "llm": false,
-                            "tool_ids": false,
-                            "native_mcp_server_ids": false,
-                            "knowledge_base": false
-                        }
-                    }
-                },
-                "custom_llm_extra_body": false,
-                "enable_conversation_initiation_client_data_from_webhook": false,
-                "enable_starting_workflow_node_id_from_client": false
+            {
+              "type": "text",
+              "name": "KB_Mina_Dreams_Omens.txt",
+              "id": "u8lCfAItJH41PbF0kSJn",
+              "usage_mode": "auto"
             },
-            "workspace_overrides": {
-                "conversation_initiation_client_data_webhook": null,
-                "webhooks": {
-                    "post_call_webhook_id": null,
-                    "events": [
-                        "transcript"
-                    ],
-                    "transcript_format": "json",
-                    "send_audio": false
-                }
+            {
+              "type": "file",
+              "name": "KB_Mina_Voice_Conversation.txt",
+              "id": "0xaMazd9fXIsth4H6y4J",
+              "usage_mode": "auto"
             },
-            "testing": {
-                "attached_tests": [],
-                "referenced_tests_ids": []
+            {
+              "type": "text",
+              "name": "KB_Mina_The_Waiting_War.txt",
+              "id": "8mmjkJxPidYUs7ptEYbG",
+              "usage_mode": "auto"
             },
-            "archived": false,
-            "guardrails": {
-                "version": "1",
-                "focus": {
-                    "is_enabled": false
-                },
-                "prompt_injection": {
-                    "is_enabled": false
-                },
-                "synthetic_voice": {
-                    "is_enabled": false,
-                    "trigger_action": {
-                        "type": "end_call"
-                    }
-                },
-                "content": {
-                    "execution_mode": "streaming",
-                    "config": {
-                        "sexual": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "violence": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "harassment": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "self_harm": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "profanity": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "religion_or_politics": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "medical_and_legal_information": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        }
-                    },
-                    "trigger_action": {
-                        "type": "end_call"
-                    }
-                },
-                "moderation": {
-                    "execution_mode": "streaming",
-                    "config": {
-                        "sexual": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "violence": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "violence_graphic": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "harassment": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "harassment_threatening": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "hate": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "hate_threatening": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "self_harm_instructions": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "self_harm": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "self_harm_intent": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "sexual_minors": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        }
-                    }
-                },
-                "custom": {
-                    "config": {
-                        "configs": []
-                    }
-                }
+            {
+              "type": "text",
+              "name": "KB_Mina_Songs.txt",
+              "id": "xlHMQoRSAqWRe71tqKEh",
+              "usage_mode": "auto"
             },
-            "summary_language": null,
-            "auto_translate_transcript_to_app_language": null,
-            "auth": {
-                "enable_auth": false,
-                "allowlist": [],
-                "require_origin_header": false,
-                "shareable_token": null
-            },
-            "call_limits": {
-                "agent_concurrency_limit": -1,
-                "daily_limit": 100000,
-                "bursting_enabled": true
-            },
-            "queueing_config": {
-                "enabled": false,
-                "wait_timeout_seconds": 180
-            },
-            "ban": null,
-            "smb_metadata": null,
-            "privacy": {
-                "record_voice": true,
-                "retention_days": -1,
-                "delete_transcript_and_pii": false,
-                "delete_audio": false,
-                "apply_to_existing_conversations": false,
-                "zero_retention_mode": false,
-                "conversation_history_redaction": {
-                    "enabled": false,
-                    "entities": []
-                }
-            },
-            "trust_context": "unknown",
-            "analysis_llm": "gemini-2.5-flash",
-            "analysis_bedrock_llm": null,
-            "analysis_llm_billed": false,
-            "topic_discovery": {
-                "enabled": true
-            },
-            "sentiment_analysis": {
-                "enabled": true
-            },
-            "simulation_library": {
-                "enabled": false,
-                "test_ids": []
-            },
-            "alerting": null,
-            "overview_dashboard_template_id": null,
-            "safety": {
-                "is_blocked_ivc": false,
-                "is_blocked_non_ivc": false,
-                "ignore_safety_evaluation": false
+            {
+              "type": "text",
+              "name": "KB_Yard_Registry_2026-08-16.txt",
+              "id": "tCuSy6KKA1VtewM8FOaJ",
+              "usage_mode": "auto"
             }
+          ],
+          "custom_llm": null,
+          "bedrock_llm": null,
+          "speech_engine": null,
+          "ignore_default_personality": false,
+          "rag": {
+            "enabled": true,
+            "embedding_model": "e5_mistral_7b_instruct",
+            "optional_rag_enabled": false,
+            "max_vector_distance": 0.6,
+            "max_documents_length": 50000,
+            "max_retrieved_rag_chunks_count": 20,
+            "num_candidates": null,
+            "query_rewrite_prompt_override": null,
+            "knowledge_base_tool_info": null
+          },
+          "timezone": null,
+          "backup_llm_config": {
+            "preference": "default"
+          },
+          "cascade_timeout_seconds": 8.0,
+          "tools": []
+        }
+      }
+    },
+    "metadata": {
+      "created_at_unix_secs": 1756072703,
+      "updated_at_unix_secs": 1787099018
+    },
+    "platform_settings": {
+      "evaluation": {
+        "criteria": []
+      },
+      "widget": {
+        "variant": "full",
+        "placement": "bottom-right",
+        "expandable": "never",
+        "avatar": {
+          "type": "orb",
+          "color_1": "#2792dc",
+          "color_2": "#9ce6e6"
         },
-        "phone_numbers": [],
-        "whatsapp_accounts": [],
-        "workflow": {
-            "edges": {},
-            "nodes": {
-                "start_node": {
-                    "type": "start",
-                    "position": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "edge_order": []
-                }
+        "feedback_mode": "during",
+        "end_feedback": null,
+        "bg_color": "#ffffff",
+        "text_color": "#000000",
+        "btn_color": "#000000",
+        "btn_text_color": "#ffffff",
+        "border_color": "#e1e1e1",
+        "focus_color": "#000000",
+        "border_radius": null,
+        "btn_radius": null,
+        "action_text": null,
+        "start_call_text": null,
+        "end_call_text": null,
+        "expand_text": null,
+        "listening_text": null,
+        "speaking_text": null,
+        "shareable_page_text": null,
+        "shareable_page_show_terms": true,
+        "terms_text": "#### Terms and conditions\n\nBy clicking \"Agree,\" and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.",
+        "terms_html": "<h4>Terms and conditions</h4>\n<p>By clicking &quot;Agree,&quot; and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.</p>\n",
+        "terms_key": null,
+        "show_avatar_when_collapsed": false,
+        "disable_banner": false,
+        "override_link": null,
+        "markdown_link_allowed_hosts": [],
+        "markdown_link_include_www": true,
+        "markdown_link_allow_http": true,
+        "mic_muting_enabled": false,
+        "transcript_enabled": false,
+        "text_input_enabled": true,
+        "conversation_mode_toggle_enabled": false,
+        "default_expanded": false,
+        "always_expanded": false,
+        "dismissible": false,
+        "show_agent_status": false,
+        "show_conversation_id": true,
+        "strip_audio_tags": true,
+        "syntax_highlight_theme": null,
+        "text_contents": {
+          "main_label": null,
+          "start_call": null,
+          "start_chat": null,
+          "new_call": null,
+          "end_call": null,
+          "mute_microphone": null,
+          "change_language": null,
+          "collapse": null,
+          "expand": null,
+          "copied": null,
+          "accept_terms": null,
+          "dismiss_terms": null,
+          "listening_status": null,
+          "speaking_status": null,
+          "connecting_status": null,
+          "chatting_status": null,
+          "input_label": null,
+          "input_placeholder": null,
+          "input_placeholder_text_only": null,
+          "input_placeholder_new_conversation": null,
+          "user_ended_conversation": null,
+          "agent_ended_conversation": null,
+          "conversation_id": null,
+          "error_occurred": null,
+          "copy_id": null,
+          "initiate_feedback": null,
+          "request_follow_up_feedback": null,
+          "thanks_for_feedback": null,
+          "thanks_for_feedback_details": null,
+          "follow_up_feedback_placeholder": null,
+          "submit": null,
+          "go_back": null,
+          "send_message": null,
+          "text_mode": null,
+          "voice_mode": null,
+          "switched_to_text_mode": null,
+          "switched_to_voice_mode": null,
+          "copy": null,
+          "download": null,
+          "wrap": null,
+          "agent_working": null,
+          "agent_done": null,
+          "agent_error": null,
+          "attach_file": null,
+          "remove_file": null,
+          "file_upload_error": null,
+          "file_type_unsupported": null,
+          "file_too_large": null,
+          "file_limit_reached": null,
+          "typing_indicator": null
+        },
+        "styles": {
+          "base": null,
+          "base_hover": null,
+          "base_active": null,
+          "base_border": null,
+          "base_subtle": null,
+          "base_primary": null,
+          "base_error": null,
+          "accent": null,
+          "accent_hover": null,
+          "accent_active": null,
+          "accent_border": null,
+          "accent_subtle": null,
+          "accent_primary": null,
+          "overlay_padding": null,
+          "button_radius": null,
+          "input_radius": null,
+          "bubble_radius": null,
+          "sheet_radius": null,
+          "compact_sheet_radius": null,
+          "dropdown_sheet_radius": null
+        },
+        "show_resize_button": true,
+        "language_selector": false,
+        "supports_text_only": true,
+        "custom_avatar_path": null,
+        "language_presets": {}
+      },
+      "data_collection": {},
+      "data_collection_scopes": {},
+      "analysis_items": null,
+      "overrides": {
+        "conversation_config_override": {
+          "asr": {
+            "keywords": false
+          },
+          "turn": {
+            "soft_timeout_config": {
+              "message": false
+            }
+          },
+          "tts": {
+            "model_id": false,
+            "voice_id": false,
+            "stability": false,
+            "speed": false,
+            "similarity_boost": false,
+            "pronunciation_dictionary_locators": false
+          },
+          "conversation": {
+            "text_only": true,
+            "max_duration_seconds": false
+          },
+          "agent": {
+            "first_message": false,
+            "language": true,
+            "max_conversation_duration_message": false,
+            "prompt": {
+              "prompt": false,
+              "llm": false,
+              "tool_ids": false,
+              "native_mcp_server_ids": false,
+              "knowledge_base": false
+            }
+          }
+        },
+        "custom_llm_extra_body": false,
+        "enable_conversation_initiation_client_data_from_webhook": false,
+        "enable_starting_workflow_node_id_from_client": false,
+        "enable_procedure_ids_from_client": false
+      },
+      "workspace_overrides": {
+        "conversation_initiation_client_data_webhook": null,
+        "webhooks": {
+          "post_call_webhook_id": null,
+          "events": [
+            "transcript"
+          ],
+          "transcript_format": "json",
+          "send_audio": false
+        }
+      },
+      "testing": {
+        "attached_tests": [],
+        "referenced_tests_ids": []
+      },
+      "archived": false,
+      "guardrails": {
+        "version": "1",
+        "focus": {
+          "is_enabled": false
+        },
+        "prompt_injection": {
+          "is_enabled": false
+        },
+        "synthetic_voice": {
+          "is_enabled": false,
+          "trigger_action": {
+            "type": "end_call"
+          }
+        },
+        "content": {
+          "execution_mode": "streaming",
+          "config": {
+            "sexual": {
+              "is_enabled": false,
+              "threshold": "medium"
             },
-            "prevent_subagent_loops": false
+            "violence": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "harassment": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "self_harm": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "profanity": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "religion_or_politics": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "medical_and_legal_information": {
+              "is_enabled": false,
+              "threshold": "medium"
+            }
+          },
+          "trigger_action": {
+            "type": "end_call"
+          }
         },
-        "access_info": {
-            "is_creator": true,
-            "creator_name": "arwpersonal@gmail.com",
-            "creator_email": "arwpersonal@gmail.com",
-            "role": "admin",
-            "anonymous_access_level_override": null,
-            "access_source": "creator"
+        "moderation": {
+          "execution_mode": "streaming",
+          "config": {
+            "sexual": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "violence": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "violence_graphic": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "harassment": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "harassment_threatening": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "hate": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "hate_threatening": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "self_harm_instructions": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "self_harm": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "self_harm_intent": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "sexual_minors": {
+              "is_enabled": false,
+              "threshold": 0.3
+            }
+          }
         },
-        "tags": [],
-        "version_id": "agtvrsn_8501m04xhwzgec4sqpevjyk2m9s7",
-        "branch_id": "agtbrch_8701ks2b8mr1eygb4vcz48rhs1yb",
-        "main_branch_id": "agtbrch_8701ks2b8mr1eygb4vcz48rhs1yb",
-        "procedures": {},
-        "trust_context": "unknown"
-    }
+        "custom": {
+          "config": {
+            "configs": []
+          }
+        }
+      },
+      "summary_language": null,
+      "auto_translate_transcript_to_app_language": null,
+      "auth": {
+        "enable_auth": false,
+        "allowlist": [],
+        "require_origin_header": false,
+        "shareable_token": null
+      },
+      "call_limits": {
+        "agent_concurrency_limit": -1,
+        "daily_limit": 100000,
+        "bursting_enabled": true
+      },
+      "queueing_config": {
+        "enabled": false,
+        "wait_timeout_seconds": 180
+      },
+      "ban": null,
+      "smb_metadata": null,
+      "privacy": {
+        "record_voice": true,
+        "retention_days": -1,
+        "delete_transcript_and_pii": false,
+        "delete_audio": false,
+        "apply_to_existing_conversations": false,
+        "zero_retention_mode": false,
+        "conversation_history_redaction": {
+          "enabled": false,
+          "entities": []
+        }
+      },
+      "trust_context": "unknown",
+      "analysis_llm": "gemini-2.5-flash",
+      "analysis_bedrock_llm": null,
+      "analysis_llm_billed": false,
+      "topic_discovery": {
+        "enabled": true
+      },
+      "sentiment_analysis": {
+        "enabled": true
+      },
+      "simulation_library": {
+        "enabled": false,
+        "test_ids": []
+      },
+      "alerting": null,
+      "overview_dashboard_template_id": null,
+      "safety": {
+        "is_blocked_ivc": false,
+        "is_blocked_non_ivc": false,
+        "ignore_safety_evaluation": false
+      }
+    },
+    "phone_numbers": [],
+    "whatsapp_accounts": [],
+    "workflow": {
+      "edges": {},
+      "nodes": {
+        "start_node": {
+          "type": "start",
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "edge_order": []
+        }
+      },
+      "prevent_subagent_loops": false
+    },
+    "access_info": {
+      "is_creator": true,
+      "creator_name": "arwpersonal@gmail.com",
+      "creator_email": "arwpersonal@gmail.com",
+      "role": "admin",
+      "anonymous_access_level_override": null,
+      "access_source": "creator"
+    },
+    "tags": [],
+    "version_id": "agtvrsn_3501m0bpdxdvf10vv30svradfg25",
+    "branch_id": "agtbrch_8701ks2b8mr1eygb4vcz48rhs1yb",
+    "main_branch_id": "agtbrch_8701ks2b8mr1eygb4vcz48rhs1yb",
+    "procedures": {},
+    "trust_context": "unknown"
+  }
 }
