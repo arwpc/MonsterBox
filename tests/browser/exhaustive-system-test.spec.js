@@ -409,7 +409,7 @@ test.describe('Phase 1: Dashboard', () => {
 
     // Character selector in navbar
     const charBtn = page.locator('#character-select, .character-dropdown, [data-character-select]');
-    const navCharBtn = page.locator('nav button:has-text("Orlok"), nav .dropdown-toggle');
+    const navCharBtn = page.locator('nav .dropdown-toggle');
 
     if (await navCharBtn.count() > 0) {
       await navCharBtn.first().click();
@@ -433,7 +433,7 @@ test.describe('Phase 1: Dashboard', () => {
         // Switch back
         await page.goto(`${BASE}/`, { waitUntil: 'load' });
         await page.waitForTimeout(1000);
-        const navCharBtn2 = page.locator('nav button:has-text("Orlok"), nav .dropdown-toggle').first();
+        const navCharBtn2 = page.locator('nav .dropdown-toggle').first();
         if (await navCharBtn2.count() > 0) {
           await navCharBtn2.click();
           await page.waitForTimeout(300);

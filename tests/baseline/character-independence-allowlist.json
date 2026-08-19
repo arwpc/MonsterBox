@@ -1,5 +1,5 @@
 {
-  "description": "Baseline of known character-bias violations as of v8.2.2 (stabilization Pillar 5). This list only shrinks — adding a new violation without a corresponding allowlist entry fails npm run gate. Remove entries as bias is parameterized out of the codebase.",
+  "description": "Baseline of known character-bias violations as of v8.2.2 (stabilization Pillar 5). This list only shrinks \u2014 adding a new violation without a corresponding allowlist entry fails npm run gate. Remove entries as bias is parameterized out of the codebase.",
   "approvedDate": "2026-04-19",
   "approvedBy": "stabilization plan Phase 0 baseline",
   "entries": [
@@ -26,48 +26,6 @@
     },
     {
       "pattern": "orlok-reference",
-      "file": "tests/browser/exhaustive-system-test.spec.js",
-      "line": 358,
-      "snippet": "const navCharBtn = page.locator('nav button:has-text(\"Orlok\"), nav .dropdown-toggle');",
-      "reason": "Exhaustive test spec with character name references — migrate to pact iteration."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/browser/exhaustive-system-test.spec.js",
-      "line": 382,
-      "snippet": "const navCharBtn2 = page.locator('nav button:has-text(\"Orlok\"), nav .dropdown-toggle').first();",
-      "reason": "Exhaustive test spec with character name references — migrate to pact iteration."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/browser/relay-toggle.spec.js",
-      "line": 12,
-      "snippet": "// These tests require Orlok (char_id=3) with specific hardware parts",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
-    },
-    {
-      "pattern": "char_id-3",
-      "file": "tests/browser/relay-toggle.spec.js",
-      "line": 12,
-      "snippet": "// These tests require Orlok (char_id=3) with specific hardware parts",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/browser/relay-toggle.spec.js",
-      "line": 14,
-      "snippet": "test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3)');",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
-    },
-    {
-      "pattern": "char_id-3",
-      "file": "tests/browser/relay-toggle.spec.js",
-      "line": 14,
-      "snippet": "test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3)');",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
-    },
-    {
-      "pattern": "orlok-reference",
       "file": "tests/browser/test-calibration-presets-ui.js",
       "line": 6,
       "snippet": "* 1. Iterates through all 5 target animatronics (PumpkinHead, Mina, Orlok, Sir Dragomir, Groundbreaker)",
@@ -85,70 +43,42 @@
       "file": "tests/browser/webcam-capture.spec.js",
       "line": 3,
       "snippet": "* Verifies that the Arducam B0205 (Eye of Orlok, part 9) captures a real image",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+      "reason": "Browser test with hardcoded character references \u2014 migrate to pact-style iteration."
     },
     {
       "pattern": "orlok-reference",
       "file": "tests/browser/webcam-capture.spec.js",
-      "line": 15,
-      "snippet": "// These tests require Orlok (char_id=3) with Arducam webcam and mjpg-streamer",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
-    },
-    {
-      "pattern": "char_id-3",
-      "file": "tests/browser/webcam-capture.spec.js",
-      "line": 15,
-      "snippet": "// These tests require Orlok (char_id=3) with Arducam webcam and mjpg-streamer",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/browser/webcam-capture.spec.js",
-      "line": 17,
-      "snippet": "test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3) and mjpg-streamer');",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
-    },
-    {
-      "pattern": "char_id-3",
-      "file": "tests/browser/webcam-capture.spec.js",
-      "line": 17,
-      "snippet": "test.skip(!!process.env.MB_TEST_MODE, 'Requires Orlok hardware (char_id=3) and mjpg-streamer');",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/browser/webcam-capture.spec.js",
-      "line": 73,
+      "line": 86,
       "snippet": "expect(res.part.name).toBe('Eye of Orlok');",
-      "reason": "Browser test with hardcoded character references — migrate to pact-style iteration."
+      "reason": "Browser test with hardcoded character references \u2014 migrate to pact-style iteration."
     },
     {
       "pattern": "orlok-reference",
       "file": "tests/hardware/test-hardware-timing.js",
       "line": 65,
-      "snippet": "console.log('🎯 Testing 8000ms movements at 100% position on Mina and Orlok');",
-      "reason": "Timing test with hostname branching — parameterize in a follow-up pass."
+      "snippet": "console.log('\ud83c\udfaf Testing 8000ms movements at 100% position on Mina and Orlok');",
+      "reason": "Timing test with hostname branching \u2014 parameterize in a follow-up pass."
     },
     {
       "pattern": "orlok-reference",
       "file": "tests/hardware/test-hardware-timing.js",
       "line": 74,
       "snippet": "// Test Orlok system - common servo parts",
-      "reason": "Timing test with hostname branching — parameterize in a follow-up pass."
+      "reason": "Timing test with hostname branching \u2014 parameterize in a follow-up pass."
     },
     {
       "pattern": "orlok-reference",
       "file": "tests/hardware/test-hardware-timing.js",
       "line": 75,
       "snippet": "results.push(await testHardwareMovement('Orlok', 'head_tilt_servo', 8000, 100));",
-      "reason": "Timing test with hostname branching — parameterize in a follow-up pass."
+      "reason": "Timing test with hostname branching \u2014 parameterize in a follow-up pass."
     },
     {
       "pattern": "orlok-reference",
       "file": "tests/hardware/test-hardware-timing.js",
       "line": 76,
       "snippet": "results.push(await testHardwareMovement('Orlok', 'jaw_servo', 8000, 100));",
-      "reason": "Timing test with hostname branching — parameterize in a follow-up pass."
+      "reason": "Timing test with hostname branching \u2014 parameterize in a follow-up pass."
     },
     {
       "pattern": "orlok-reference",
@@ -175,64 +105,50 @@
       "pattern": "orlok-reference",
       "file": "views/setup/style-guide.ejs",
       "line": 26,
-      "snippet": "<div class=\"mb-display mb-text-4xl\">The Orlok stirs…</div>",
-      "reason": "Style guide doc with example IPs and character names — not runtime code."
+      "snippet": "<div class=\"mb-display mb-text-4xl\">The Orlok stirs\u2026</div>",
+      "reason": "Style guide doc with example IPs and character names \u2014 not runtime code."
     },
     {
       "pattern": "orlok-reference",
       "file": "views/setup/style-guide.ejs",
       "line": 116,
       "snippet": "<input id=\"sg-input-1\" class=\"mb-input\" type=\"text\" placeholder=\"e.g. Orlok\" value=\"Orlok\" title=\"Text input example\">",
-      "reason": "Style guide doc with example IPs and character names — not runtime code."
+      "reason": "Style guide doc with example IPs and character names \u2014 not runtime code."
     },
     {
       "pattern": "orlok-reference",
       "file": "views/setup/style-guide.ejs",
       "line": 130,
-      "snippet": "<option>Orlok — bass</option>",
-      "reason": "Style guide doc with example IPs and character names — not runtime code."
+      "snippet": "<option>Orlok \u2014 bass</option>",
+      "reason": "Style guide doc with example IPs and character names \u2014 not runtime code."
     },
     {
       "pattern": "orlok-reference",
       "file": "views/setup/style-guide.ejs",
       "line": 157,
       "snippet": "<label class=\"mb-check\"><input type=\"checkbox\" checked title=\"Checkbox example\"> Enable Orlok</label>",
-      "reason": "Style guide doc with example IPs and character names — not runtime code."
+      "reason": "Style guide doc with example IPs and character names \u2014 not runtime code."
     },
     {
       "pattern": "orlok-reference",
       "file": "views/setup/style-guide.ejs",
       "line": 198,
       "snippet": "<h4 class=\"mb-heading mb-heading-3 mb-mt-1\">Orlok</h4>",
-      "reason": "Style guide doc with example IPs and character names — not runtime code."
+      "reason": "Style guide doc with example IPs and character names \u2014 not runtime code."
     },
     {
       "pattern": "monsternet-ip",
       "file": "views/setup/style-guide.ejs",
       "line": 199,
       "snippet": "<p class=\"mb-text-muted mb-text-sm\">192.168.8.120</p>",
-      "reason": "Style guide doc with example IPs and character names — not runtime code."
+      "reason": "Style guide doc with example IPs and character names \u2014 not runtime code."
     },
     {
       "pattern": "orlok-reference",
       "file": "views/setup/style-guide.ejs",
       "line": 328,
-      "snippet": "<div class=\"mb-modal-body\"><p class=\"mb-text-secondary\">This will permanently remove <strong>Orlok · Rise from Crypt</strong>. Linked audio files stay untouched.</p></div>",
-      "reason": "Style guide doc with example IPs and character names — not runtime code."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "scripts/night-memory/scrub-test.mjs",
-      "line": 25,
-      "snippet": "{ n: 'plain full name', in: 'The guest, Emily Rodriguez, asked Orlok for a fortune.', ... }",
-      "reason": "PHI scrubber test fixture. Proving the scrubber strips a visitor's SURNAME while leaving first names and canon character names intact requires literal names — parameterizing them would test nothing."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "scripts/night-memory/scrub-test.mjs",
-      "line": 77,
-      "snippet": "{ n: 'canon single names survive', in: 'Mina sang for Emily while Orlok watched from the coffin.', ... }",
-      "reason": "PHI scrubber test fixture. This case exists specifically to prove canon character names are NOT scrubbed; the names ARE the assertion."
+      "snippet": "<div class=\"mb-modal-body\"><p class=\"mb-text-secondary\">This will permanently remove <strong>Orlok \u00b7 Rise from Crypt</strong>. Linked audio files stay untouched.</p></div>",
+      "reason": "Style guide doc with example IPs and character names \u2014 not runtime code."
     },
     {
       "pattern": "orlok-reference",
@@ -240,6 +156,20 @@
       "line": 57,
       "snippet": "'warner castle', 'master warner', 'count orlok', 'lady mina', 'herr knock',",
       "reason": "Canon lore phrases the Yard Registry must preserve. Character NAMES are already derived from data/characters.json on the lines above; this literal list is the lore vocabulary (titles, place names, in-world terms) that has no registry to come from."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/night-memory/scrub-test.mjs",
+      "line": 25,
+      "snippet": "{ n: 'plain full name', in: 'The guest, Emily Rodriguez, asked Orlok for a fortune.', no: ['Rodriguez'], yes: ['Emily', 'Orlok'] },",
+      "reason": "Fixture prose for the PII scrubber: character names are the CONTROL that must survive scrubbing, not a hardcoded dependency."
+    },
+    {
+      "pattern": "orlok-reference",
+      "file": "scripts/night-memory/scrub-test.mjs",
+      "line": 77,
+      "snippet": "{ n: 'canon single names survive', in: 'Mina sang for Emily while Orlok watched from the coffin.', no: [], yes: ['Mina', 'Emily', 'Orlok'] },",
+      "reason": "Fixture prose for the PII scrubber: character names are the CONTROL that must survive scrubbing, not a hardcoded dependency."
     }
   ]
 }

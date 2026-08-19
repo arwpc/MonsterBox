@@ -9,18 +9,18 @@ import { test, expect } from '@playwright/test';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3200';
 const RELAY_PART_ID = '8';
 
-// These tests require Orlok (char_id=3) with specific hardware parts
-// Skip in CI where MB_TEST_MODE defaults to char_id=1
+// These tests require the node that physically carries these parts
+// Skipped automatically by the probe below when the part is absent
 // The old guard read MB_TEST_MODE from the RUNNER's env, but playwright.config
 // only sets it on the spawned server's command line — so it never fired and
-// these Orlok-only parts failed on every other node. Probe the node instead.
+// these node-specific parts failed everywhere else. Probe the node instead.
 async function skipUnlessPart(page, partId, modelId) {
   const res = await page.evaluate(async (id) => {
     try { const r = await fetch('/api/parts/' + id); return await r.json(); }
     catch (e) { return null; }
   }, partId);
   const present = !!(res && res.success && res.part && res.part.modelId === modelId);
-  test.skip(!present, `part ${partId} on this node is not ${modelId} — Orlok-only hardware`);
+  test.skip(!present, `part ${partId} on this node is not ${modelId} — hardware lives on another node`);
 }
 
 test.describe('Relay Toggle — ACEIRMC 3V 1-Channel', () => {
