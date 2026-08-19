@@ -2,6 +2,98 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [10.1.0] - 2026-08-19 — The setting you made is the setting that survives
+
+Most of this release is one bug wearing four different coats: an operator set
+something — a calibration verdict, a mute, a speed cap, a performance direction in a
+line of dialogue — and the machine either dropped it at the next restart or never let
+it be said at all.
+
+### The operator can finally say "I calibrated this"
+
+`calibrated` was never a statement; it was a side effect. It became true because
+someone had once pressed Set Min and Set Max, and it stayed true forever after — so a
+drifted calibration kept its good name, and a part measured by hand with a protractor
+could never be blessed at all.
+
+There is now an explicit, operator-settable stamp: `POST /api/calibration/:partId/calibrated`
+with `{ calibrated: true|false }`, `isCalibrated()` in `server/calibration/store.js`,
+and a toggle on the Bounds panel of the unified calibration page.
+
+Two properties matter more than the button:
+
+- **It works for every capability kind.** Only `absolute-servo` carries a bounds
+  window. Continuous servos and the open-loop linear kinds — linear actuators, motors,
+  steppers — are created `bounds: null` and calibrate through their motion model
+  instead. An earlier shape of this guard demanded bounds, and so refused to stamp
+  every part on the fleet except a standard servo.
+- **The only refusal is a zero-span window.** Stamping ON a degenerate window is
+  rejected, because a pinned `min == max` window does not merely mislabel a part — it
+  freezes it at one angle. Stamping OFF destroys nothing: the captured numbers stay in
+  the file, but `calibratedBounds()` withholds them from everything that moves
+  hardware. An untouched auto-generated 0–180 span is stamped with a *warning* rather
+  than a refusal — state the caveat, do not overrule the operator.
+
+The stamp is a LABEL, never a licence: `isCalibrated()` still returns false for a
+degenerate window however the flag is set.
+
+### The mute you set for the night did not survive a restart
+
+Speaker mute lived in a constructor field and nowhere else. Every service restart
+re-armed every speaker on the node — including the restart `npm run deploy:all`
+performs, which is precisely the moment a fleet is least supervised and a household
+most likely to be asleep. Mute now persists to `data/speaker-state.json` and is read
+back at construction, so the state an operator chose is the state that comes back up.
+
+### A speed cap that forgets is not a safety cap
+
+The global speed cap had the same defect with a sharper edge: in-memory only, so a
+restart quietly restored full speed to a fleet that had been deliberately slowed. It
+now persists to `data/motion-state.json`.
+
+It also accepted `0`. A cap of zero is not "stopped" — it is a divisor, and it planned
+a move of infinite duration. Zero is now rejected.
+
+### Audio tags are stripped only where they would be read aloud
+
+`[whispers]`, `[sings]`, `[Romanian accent]` are performance directions on
+`eleven_v3` — on that model they ARE the performance. On the older models they are
+just text, and the character solemnly pronounces the word "whispers".
+
+`services/elevenLabsTTSService.js` now exports `stripAudioTags()` and
+`textForModel(text, modelId)`. Tags are removed **only** for models that would speak
+them; v3 receives the line exactly as written, tags intact. Both the one-shot and the
+streaming paths route their outbound text through `textForModel()`.
+
+### The six agents, reconciled
+
+Every ElevenLabs agent on the fleet was moved off `optimize_streaming_latency: 3` — a
+setting that buys a few milliseconds by degrading the expressiveness these characters
+exist for. Each agent also gained an explicit `# Names` correction block, because a
+character that hears its own name misheard will adopt the mishearing and answer to it
+for the rest of the conversation. Audio tags were reconciled across all six so the
+tags in a prompt match what that agent's model can actually perform.
+
+### A node's `/health` version is not proof of a deploy
+
+Two nodes reported the current version string while still running pre-`af2c1037`
+code. The version is read from `package.json`, and `package.json` on disk can be
+current while the service on that node is still executing what it loaded at boot. A
+deploy is proven by a behaviour only the new code produces — never by the version
+banner. Written down in the troubleshooting docs so the next session does not
+re-learn it live.
+
+### Also
+
+- **Model defaults never reached 36 of 59 fleet parts.** `getModelDefaultsForPart()`
+  read `part.config.modelId`, but `modelId` sits at the TOP level of a part in every
+  per-character `parts.json`. Both shapes are now accepted.
+- **The TTS settings page can tell which of its controls are live.** Every agent sets
+  `overrides.conversation_config_override.tts.*` to false, so `stability`,
+  `similarity_boost`, `speed`, `voice_id` and `model` cannot reach a conversation —
+  they bite only on the one-shot path. `conversationalMode` is now surfaced through
+  `services/aiConfigStore.js` so the UI can say so instead of offering dead knobs.
+
 ## [10.0.1] - 2026-08-19 — Both ears open
 
 A patch release about hearing. v10.0.0 shipped a fleet that could speak; this one

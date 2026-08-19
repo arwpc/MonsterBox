@@ -39,9 +39,35 @@
                 </div>
                 <div class="mb-panel-body">
                     <form id="ttsConfigForm">
+                        <!-- Which path does this character actually talk through?
+                             Every ElevenLabs agent ships with
+                             overrides.conversation_config_override.tts.* = false, so nothing in
+                             tts-config.json can reach a conversation. The toggle exists so the
+                             page can say which of its own controls are live right now. -->
+                        <div class="mb-alert mb-alert-info mb-3" id="conversationalModeBlock">
+                            <label class="mb-switch" for="conversationalMode">
+                                <input type="checkbox" id="conversationalMode"
+                                    title="ON = this character speaks through its ElevenLabs agent (agent-side voice and tuning win)">
+                                <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                                <span><strong>Conversational AI mode &mdash; this character talks through its ElevenLabs agent</strong></span>
+                            </label>
+                            <small class="mb-field-hint d-block mt-2">
+                                When <strong>ON</strong>, the voice settings below <strong>do not apply to
+                                conversation</strong> &mdash; the agent&rsquo;s own server-side model, voice and
+                                tuning win, and the greyed-out controls are inert for it. They still apply to
+                                <strong>one-shot TTS</strong>: scene <code>sayThis</code> steps and the test
+                                buttons on this page. Change the conversation voice in the agent editor.
+                            </small>
+                            <a id="agentEditorLink" class="mb-btn mb-btn-secondary mb-btn-sm mt-2 ai-hidden"
+                                target="_blank" rel="noopener"
+                                title="Open this character's agent in the ElevenLabs agent editor (new tab)">
+                                <i class="bi bi-box-arrow-up-right"></i> Edit agent on ElevenLabs
+                            </a>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="ai-field">
+                                <div class="ai-field" id="ttsModelField">
                                     <label for="ttsModel" class="mb-field-label">TTS Model</label>
                                     <select class="mb-select" id="ttsModel" name="model" title="Select the text-to-speech model">
                                         <option value="eleven_v3">Eleven v3 (Most Expressive)</option>
@@ -63,7 +89,7 @@
 
                         <!-- Voice Settings -->
                         <h3 class="ai-subhead">Voice Settings</h3>
-                        <div class="row">
+                        <div class="row" id="agentControlledVoiceSettings">
                             <div class="col-md-6">
                                 <div class="ai-field">
                                     <label for="stability" class="mb-field-label">Stability</label>

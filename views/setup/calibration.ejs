@@ -966,9 +966,6 @@
     const devName = document.getElementById('devName');
     const devMeta = document.getElementById('devMeta');
     const bottomRail = document.getElementById('bottomRail');
-    const globalSpeedCap = document.getElementById('globalSpeedCap');
-    const globalSpeedCapVal = document.getElementById('globalSpeedCapVal');
-    const globalSpeedCapValue = function() { return globalSpeedCap ? parseInt(globalSpeedCap.value, 10) : 75; };
 
     let parts = [];
     let selected = null;
@@ -1008,8 +1005,6 @@
         });
       });
     }
-
-    if (globalSpeedCap) globalSpeedCap.addEventListener('input', () => { if (globalSpeedCapVal) globalSpeedCapVal.textContent = globalSpeedCap.value + '%'; });
 
     async function loadParts() {
       // Use server-provided character ID (set at render time, no extra API call needed)

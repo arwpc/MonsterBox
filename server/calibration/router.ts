@@ -7,7 +7,7 @@ import express from 'express';
 import { AbsoluteServoAdapter } from './adapters/AbsoluteServoAdapter.js';
 import { OpenLoopLinearAdapter } from './adapters/OpenLoopLinearAdapter.js';
 import type { CalibrationProfile, MotionModel } from './models.js';
-import { clampP, getGlobalSpeedCap, setGlobalSpeedCap } from './planner.js';
+import { clampP } from './planner.js';
 import { getCalibrationStore } from './store.js';
 
 const router = express.Router();
@@ -253,33 +253,6 @@ router.get('/:partId/sensors', async (req, res) => {
     console.error('Error reading sensors:', err);
     res.status(500).json({ success: false, error: 'Failed to read sensors', message: err.message });
   }
-});
-
-/**
- * POST /global-speed-cap - Set global speed limit
- */
-router.post('/global-speed-cap', express.json(), async (req, res) => {
-  try {
-    const { speedPct } = req.body;
-
-    if (typeof speedPct !== 'number' || speedPct < 0 || speedPct > 100) {
-      return res.status(400).json({ success: false, error: 'speedPct must be 0..100' });
-    }
-
-    setGlobalSpeedCap(speedPct);
-    res.json({ success: true, message: `Global speed cap set to ${speedPct}%`, speedPct });
-  } catch (err: any) {
-    console.error('Error setting speed cap:', err);
-    res.status(500).json({ success: false, error: 'Failed to set speed cap', message: err.message });
-  }
-});
-
-/**
- * GET /global-speed-cap - Get current global speed limit
- */
-router.get('/global-speed-cap', (req, res) => {
-  const speedPct = getGlobalSpeedCap();
-  res.json({ success: true, speedPct });
 });
 
 /**

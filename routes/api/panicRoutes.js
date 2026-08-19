@@ -16,10 +16,76 @@
  */
 
 import express from 'express';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import orchestrationService from '../../services/orchestrationService.js';
 import { resolveCharacter } from '../../services/characterContext.js';
 
+const execFileAsync = promisify(execFile);
+
 const router = express.Router();
+
+/**
+ * Anything that can still make noise or motion after the queue has been stopped.
+ *
+ * Halting the scene queue stops MonsterBox from ISSUING new commands; it does not
+ * touch the child processes already running. An mpg123 mid-track keeps playing,
+ * an ffmpeg filter keeps piping, the jaw daemon keeps driving its servo, and the
+ * microphone capture keeps holding the array. To the operator standing in front of
+ * a guest, a panic button that leaves audio playing has not worked.
+ */
+const NOISE_AND_MOTION = [
+    'mpg123', 'ffmpeg', 'ffplay', 'pw-play', 'paplay', 'aplay', 'mpv', 'vlc', 'cvlc',
+];
+
+/**
+ * Kill every media/hardware child process this node has spawned, without killing
+ * ourselves.
+ *
+ * Deliberately NOT `pkill -f <pattern>`: the pattern matches the shell running the
+ * pkill, and it can match this very node process because the repo path appears in
+ * its command line. That has killed the command mid-panic twice. Enumerate with ps,
+ * exclude our own process and its ancestors, then signal by PID.
+ *
+ * SIGTERM first so a player can close its sink cleanly; anything still alive after
+ * a moment gets SIGKILL, because panic must not wait on a wedged process.
+ */
+async function killNoiseAndMotion() {
+    const { stdout } = await execFileAsync('ps', ['-eo', 'pid,ppid,args', '--no-headers']);
+    const self = process.pid;
+    const parent = process.ppid;
+    const victims = [];
+
+    for (const line of stdout.split('\n')) {
+        const m = line.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/);
+        if (!m) continue;
+        const pid = Number(m[1]);
+        const args = m[3];
+        if (pid === self || pid === parent || pid === 1) continue;
+        // Never kill the app itself — that is the one service that must survive, or
+        // the operator loses the very UI they just hit STOP on.
+        if (/node\s+server\.js/.test(args) || /monsterbox\.service/.test(args)) continue;
+
+        const isPlayer = NOISE_AND_MOTION.some(n => new RegExp(`(^|/)${n}( |$)`).test(args));
+        // Our own hardware wrappers: servo/motor/LED drivers, the jaw daemon and the
+        // microphone capture. Scoped to this repo's python_wrappers so we cannot
+        // reach into an unrelated python process on the box.
+        const isWrapper = /python3?\s+\S*python_wrappers\/\S+\.py/.test(args);
+        if (isPlayer || isWrapper) victims.push({ pid, args: args.slice(0, 80) });
+    }
+
+    for (const v of victims) {
+        try { process.kill(v.pid, 'SIGTERM'); } catch (_) { /* already gone */ }
+    }
+    if (victims.length) {
+        await new Promise(r => setTimeout(r, 300));
+        for (const v of victims) {
+            try { process.kill(v.pid, 0); process.kill(v.pid, 'SIGKILL'); } catch (_) { /* gone, good */ }
+        }
+        console.warn(`🛑 PANIC killed ${victims.length} media/hardware process(es): ${victims.map(v => v.pid).join(', ')}`);
+    }
+    return victims.length;
+}
 
 /**
  * Run one local action, never throwing — panic must not abort partway because
@@ -96,6 +162,34 @@ router.post('/', express.json(), async (req, res) => {
             await conv.disarmLurkCompletely(characterId);
         }));
     }
+
+    // Turn AI OFF. Stopping playback does not stop a live agent: an open ElevenLabs
+    // session keeps listening and will answer the next thing it hears, so the
+    // animatronic starts talking again on its own after the operator hit STOP.
+    // The operator's requirement is explicit — panic disables ALL AI capability.
+    if (characterId != null) {
+        localActions.push(runLocal('disable-ai', async () => {
+            const mod = await import('../../services/elevenLabsWebSocketService.js');
+            const svc = mod.default || mod;
+            if (typeof svc.setAgentEnabledForCharacter === 'function') {
+                await svc.setAgentEnabledForCharacter(characterId, false);
+            }
+            // Persist it, so ai_agent_state.json and /conversation/api/ai-status
+            // cannot keep claiming the agent is live after a panic.
+            // There is no shared getDataDir export — each module builds this path
+            // itself (services/scenes/sceneExecutor.js:18, routes/setup/calibration.js:693).
+            // Match the layout rather than inventing an import that does not exist.
+            const fs = (await import('fs/promises')).default;
+            const path = (await import('path')).default;
+            const file = path.resolve(process.cwd(), 'data', `character-${characterId}`, 'ai_agent_state.json');
+            await fs.mkdir(path.dirname(file), { recursive: true });
+            await fs.writeFile(file, JSON.stringify({ characterId, enabled: false, timestamp: Date.now() }, null, 2), 'utf8');
+        }));
+    }
+
+    // Last locally: kill whatever is still making noise or moving. Done after the
+    // graceful stops so a player that shut itself down cleanly is already gone.
+    localActions.push(runLocal('kill-media-processes', killNoiseAndMotion));
 
     const local = await Promise.all(localActions);
 

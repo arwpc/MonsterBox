@@ -23,8 +23,8 @@
         </button>
 
         <div class="speed-cap">
-          <label>Speed Cap:</label>
-          <input type="range" class="mb-range" id="speedCap" min="0" max="100" value="50" title="Set global speed cap" />
+          <label>Move Speed:</label>
+          <input type="range" class="mb-range" id="speedCap" min="0" max="100" value="50" title="Speed used for moves from this page" />
           <span class="speed-value" id="speedValue">50%</span>
         </div>
       </div>
@@ -313,7 +313,9 @@
     let currentPartId = null;
     let currentProfile = null;
     let currentScale = 'fine';
-    let globalSpeedCap = 50;
+    // Page-local move speed, passed as speedPct on this page's own motion
+    // requests. It is NOT a global governor and does not persist anywhere.
+    let moveSpeedPct = 50;
     let isMoving = false;
 
     // PCA9685 board state
@@ -324,7 +326,6 @@
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       setupEventListeners();
-      updateSpeedCap();
       loadPcaBoardState();
     });
 
@@ -335,11 +336,10 @@
       // E-Stop
       document.getElementById('eStopBtn').addEventListener('click', emergencyStop);
 
-      // Speed cap
+      // Move speed (local to this page)
       document.getElementById('speedCap').addEventListener('input', (e) => {
-        globalSpeedCap = parseInt(e.target.value, 10);
-        document.getElementById('speedValue').textContent = globalSpeedCap + '%';
-        updateSpeedCap();
+        moveSpeedPct = parseInt(e.target.value, 10);
+        document.getElementById('speedValue').textContent = moveSpeedPct + '%';
       });
 
       // Scale selection
@@ -735,7 +735,7 @@
         const response = await fetch(`/api/calibration/${currentPartId}/goto`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p: preset.p, speedPct: globalSpeedCap })
+          body: JSON.stringify({ p: preset.p, speedPct: moveSpeedPct })
         });
 
         const data = await response.json();
@@ -848,18 +848,6 @@
         }
       } catch (err) {
         console.warn('Could not read position:', err.message);
-      }
-    }
-
-    async function updateSpeedCap() {
-      try {
-        await fetch('/api/calibration/global-speed-cap', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ speedPct: globalSpeedCap })
-        });
-      } catch (err) {
-        console.error('Failed to update speed cap:', err);
       }
     }
 

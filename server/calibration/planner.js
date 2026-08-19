@@ -1,60 +1,5 @@
 // Motion planner (JS runtime)
 
-import { readFileSync } from 'fs';
-import fsp from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __plannerDir = path.dirname(fileURLToPath(import.meta.url));
-const SPEED_CAP_PATH = path.resolve(__plannerDir, '..', '..', 'data', 'motion-state.json');
-
-// The floor is deliberately NOT zero. setGlobalSpeedCap used to clamp to [0,1],
-// and the cap is applied as `msPerNorm / globalSpeedCap` — so a cap of 0 makes
-// every planned move Infinity milliseconds long. An operator dragging a "speed
-// cap" slider to 0 expects "don't move", not a move with an infinite timeout.
-const MIN_SPEED_CAP = 0.05;
-
-/**
- * The global motion speed governor.
- *
- * This is a SAFETY control: it exists so an operator who has just watched a part
- * slam can slow everything down immediately. It used to live only in this
- * module-level binding, so any restart — a crash, a deploy, `systemctl restart` —
- * silently returned it to 1.0, fully permissive, with no log line and nothing in
- * the UI to say the protection had lapsed. That is the same shape as the speaker
- * mute that survived only in RAM; a safety limit is the worst place for it.
- *
- * Persisted to node-local state (gitignored) and restored at module load, before
- * any motion can be planned.
- */
-function loadSpeedCap() {
-  try {
-    const parsed = JSON.parse(readFileSync(SPEED_CAP_PATH, 'utf8') || '{}');
-    const v = Number(parsed.globalSpeedCap);
-    if (!Number.isFinite(v)) return 1.0;
-    const clamped = Math.max(MIN_SPEED_CAP, Math.min(1, v));
-    if (clamped < 1) console.log(`🐢 Global speed cap restored from disk: ${Math.round(clamped * 100)}%`);
-    return clamped;
-  } catch (_) {
-    return 1.0;
-  }
-}
-
-let globalSpeedCap = loadSpeedCap();
-
-export function setGlobalSpeedCap(pct) {
-  globalSpeedCap = Math.max(MIN_SPEED_CAP, Math.min(1, Number(pct)));
-  // Fire-and-forget: the in-memory value governs this process; the file only has
-  // to be right by the time the next one boots. Never let a failed write throw
-  // inside a motion path.
-  fsp.mkdir(path.dirname(SPEED_CAP_PATH), { recursive: true })
-    .then(() => fsp.writeFile(SPEED_CAP_PATH, JSON.stringify({ globalSpeedCap, updatedAt: new Date().toISOString() }, null, 2)))
-    .catch((e) => console.error('Failed to persist global speed cap:', e));
-  return globalSpeedCap;
-}
-
-export function getGlobalSpeedCap() { return globalSpeedCap; }
-
 export function clampP(p, bounds) {
   let v = Math.max(0, Math.min(1, p));
   if (bounds && typeof bounds.minP === 'number' && typeof bounds.maxP === 'number') {
@@ -117,7 +62,6 @@ export function planTimeAtSpeed(motionModel, fromP, toP) {
       if (isReversal) {
         effectiveRate = rate * (1 + beta);
       }
-      effectiveRate = effectiveRate / globalSpeedCap;
       totalMs += distance * effectiveRate;
       currentP = segmentEnd;
     } else if (targetP < currentP && targetP < binEnd) {
@@ -125,7 +69,6 @@ export function planTimeAtSpeed(motionModel, fromP, toP) {
       const distance = currentP - Math.max(targetP, 0);
       let effectiveRate = rate;
       effectiveRate = rate * (1 + beta); // Always apply reversal comp for backward
-      effectiveRate = effectiveRate / globalSpeedCap;
       totalMs += distance * effectiveRate;
       currentP = Math.max(targetP, 0);
       break;
@@ -158,4 +101,4 @@ export function calculateTimeout(durationMs, margin = 2.0) {
   return Math.max(100, Math.round(durationMs * margin));
 }
 
-export default { setGlobalSpeedCap, getGlobalSpeedCap, clampP, planDirectMap, planTimeAtSpeed, planMotion, calculateTimeout };
+export default { clampP, planDirectMap, planTimeAtSpeed, planMotion, calculateTimeout };

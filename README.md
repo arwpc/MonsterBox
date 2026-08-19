@@ -521,6 +521,10 @@ For manual/partial setup or multi-node deployment: docs/deployment/README.md
 ## Audio (PipeWire/WirePlumber)
 Goals: device-first routing (avoid hw: directly), VU meters, server-side microphone/STT and speaker/TTS per Character.
 
+**Speaker mute is persistent.** The mute toggle is stored in `data/speaker-state.json`
+and restored on startup, so a node muted for the night stays muted across a service
+restart — including the restart performed by `npm run deploy:all`.
+
 - Device enumeration (server):
 ```bash
 wpctl status
@@ -558,6 +562,14 @@ curl -s http://localhost:8090/?action=stream | dd bs=1k count=64 2>/dev/null | \
 - Calibration panels shown only for **movement parts**: servos, motors, linear actuators, steppers
 - Non-movement parts (webcam, microphone, speaker, light, sensor) show type-specific controls only — no calibration UI
 - Guardrails: Jaw Animation and Head Tracking respect Min/Max
+- **Calibrated stamp**: the Bounds panel carries an explicit operator toggle —
+  `POST /api/calibration/:partId/calibrated` with `{ calibrated: true|false }`. Use it to
+  bless a part you verified by hand, or to retire a calibration you no longer trust
+  (stamping OFF keeps the captured numbers on disk but stops every motion path from
+  trusting them). It works for **all** capability kinds: only absolute servos carry a
+  bounds window — continuous servos, linear actuators, motors and steppers are
+  `bounds: null` and calibrate through their motion model. The one refusal is a
+  zero-span (`min == max`) window, which would freeze the part at a single position.
 - **Clear Calibration**: Remove calibration data for individual parts or all parts of current character
   - Individual Clear: Click "Clear" button in calibration panel (removes min/max/presets for selected part)
   - Clear All: Click "Clear All Calibrations" button next to mode toggle (clears all parts of current character)
@@ -698,6 +710,16 @@ All AI voice services run through **ElevenLabs** (single provider, single API ke
 | TTS | `eleven_multilingual_v2` | Narration / high-quality |
 | STT | `scribe_v2` | File-based transcription |
 | STT | `scribe_v2_realtime` | Real-time streaming via WebSocket |
+
+**Audio tags are model-aware.** `[whispers]`, `[sings]`, `[Romanian accent]` and friends
+are performance directions on `eleven_v3` and are sent through untouched. On any model
+that would pronounce them instead of performing them they are stripped before the
+request — see `stripAudioTags()` / `textForModel()` in `services/elevenLabsTTSService.js`.
+
+**Not every TTS control reaches a conversation.** Each ElevenLabs agent sets
+`overrides.conversation_config_override.tts.*` to false, so `stability`,
+`similarity_boost`, `speed`, `voice_id` and `model` bite only on the one-shot say/TTS
+path; in conversational mode the agent's own voice settings win.
 
 ### Architecture
 - **Per-character config**: `data/character-{N}/ai-config/tts-config.json` and `stt-config.json`

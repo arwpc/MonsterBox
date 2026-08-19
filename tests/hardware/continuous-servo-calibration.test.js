@@ -238,21 +238,6 @@ describe('Servo calibration — unified API contract', function () {
             expect(res.body.error).to.match(/homing/i);
         });
 
-        it('rejects a nonsensical global speed cap', async function () {
-            const res = await request(app)
-                .post('/api/calibration/global-speed-cap')
-                .send({ speedPct: 150 });
-
-            expect(res.status).to.equal(400);
-        });
-
-        it('reports the current global speed cap', async function () {
-            const res = await request(app).get('/api/calibration/global-speed-cap');
-            expect(res.status).to.equal(200);
-            expect(res.body).to.have.property('success', true);
-            expect(res.body.speedPct).to.be.a('number');
-        });
-
         it('refuses clear-all without an explicit part list', async function () {
             const res = await request(app).post('/api/calibration/clear-all').send({});
             expect(res.status).to.equal(400);

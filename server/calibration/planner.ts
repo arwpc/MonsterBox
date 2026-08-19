@@ -18,19 +18,6 @@ export interface PlanResult {
 }
 
 /**
- * Global speed cap (safety limit)
- */
-let globalSpeedCap = 100; // Percentage
-
-export function setGlobalSpeedCap(pct: number): void {
-  globalSpeedCap = Math.max(0, Math.min(100, pct));
-}
-
-export function getGlobalSpeedCap(): number {
-  return globalSpeedCap;
-}
-
-/**
  * Clamp position to calibration bounds
  */
 export function clampP(p: number, bounds: CalibrationBounds): number {
@@ -56,7 +43,6 @@ export function planDirectMap(
 
   // Apply speed constraints
   let speedPct = command.speedPct || 100;
-  speedPct = Math.min(speedPct, globalSpeedCap);
   if (safety?.maxDutyPct) {
     speedPct = Math.min(speedPct, safety.maxDutyPct);
   }
@@ -104,7 +90,6 @@ export function planTimeAtSpeed(
 
   // Apply speed constraints
   let speedPct = command.speedPct || 50; // Default to 50% for open-loop
-  speedPct = Math.min(speedPct, globalSpeedCap);
   if (safety?.maxDutyPct) {
     speedPct = Math.min(speedPct, safety.maxDutyPct);
   }

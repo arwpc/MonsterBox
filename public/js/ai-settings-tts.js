@@ -20,6 +20,7 @@ TTSManager.prototype.init = function () {
     this.loadCharacterBanner();
     this.loadCharacterVoiceConfig();
     this.updateV3Visibility();
+    this.updateConversationalVisibility();
 
     console.log('TTS Manager initialized');
 };
@@ -85,11 +86,19 @@ TTSManager.prototype.loadCharacterVoiceConfig = function () {
                     if (spk) spk.checked = !!cfg.use_speaker_boost;
                 }
 
+                // Conversational mode + the deep link to the agent that owns the
+                // conversation-side settings.
+                var conv = document.getElementById('conversationalMode');
+                if (conv) conv.checked = !!cfg.conversationalMode;
+                self.updateAgentLink(cfg.agent_id);
+
                 self.updateRangeDisplays();
                 self.updateCurrentVoiceDisplay(cfg.voice_id);
-                // Setting .value in code fires no 'change', so the v3 rules
-                // have to be re-applied by hand once the real model is known.
-                self.updateV3Visibility();
+                // Setting .value/.checked in code fires no 'change', so the v3 and
+                // conversational rules have to be re-applied by hand once the real
+                // model and mode are known. (updateConversationalVisibility re-runs
+                // updateV3Visibility, so the two compose instead of overwriting.)
+                self.updateConversationalVisibility();
             }
         })
         .catch(function (e) {
@@ -269,6 +278,14 @@ TTSManager.prototype.bindEvents = function () {
         });
     }
 
+    // Conversational mode — flips which controls are live
+    var convToggle = document.getElementById('conversationalMode');
+    if (convToggle) {
+        convToggle.addEventListener('change', function () {
+            self.updateConversationalVisibility();
+        });
+    }
+
     // Model select — toggle v3-specific UI
     var modelSelect = document.getElementById('ttsModel');
     if (modelSelect) {
@@ -350,6 +367,10 @@ TTSManager.prototype.updateV3Visibility = function () {
     var boostInput = document.getElementById('speakerBoost');
     var block = document.getElementById('legacyVoiceSettings');
     var isV3 = modelSelect && modelSelect.value === 'eleven_v3';
+    // Two independent reasons a control can be inert: the model ignores it, or
+    // the ElevenLabs agent overrides it. Whichever applies, it stays disabled —
+    // neither rule may re-enable what the other switched off.
+    var inert = isV3 || this.isConversationalMode();
 
     // Eleven v3 ignores Style and Speaker Boost. Footnoting that while leaving
     // both controls live and switched on told the operator they were tuning
@@ -360,17 +381,70 @@ TTSManager.prototype.updateV3Visibility = function () {
         else note.classList.add('ai-hidden');
     }
     if (block) {
-        if (isV3) block.classList.add('ai-inactive');
+        if (inert) block.classList.add('ai-inactive');
         else block.classList.remove('ai-inactive');
     }
     if (styleInput) {
-        styleInput.disabled = isV3;
-        styleInput.setAttribute('aria-disabled', isV3 ? 'true' : 'false');
+        styleInput.disabled = inert;
+        styleInput.setAttribute('aria-disabled', inert ? 'true' : 'false');
     }
     if (boostInput) {
-        boostInput.disabled = isV3;
-        boostInput.setAttribute('aria-disabled', isV3 ? 'true' : 'false');
+        boostInput.disabled = inert;
+        boostInput.setAttribute('aria-disabled', inert ? 'true' : 'false');
     }
+};
+
+TTSManager.prototype.isConversationalMode = function () {
+    var conv = document.getElementById('conversationalMode');
+    return !!(conv && conv.checked);
+};
+
+// Deep link to the agent that actually owns the conversation-side voice. Only
+// shown when this character has an agent_id — otherwise it points at nothing.
+TTSManager.prototype.updateAgentLink = function (agentId) {
+    var link = document.getElementById('agentEditorLink');
+    if (!link) return;
+    if (agentId) {
+        link.href = 'https://elevenlabs.io/app/agents/' + encodeURIComponent(agentId);
+        link.classList.remove('ai-hidden');
+    } else {
+        link.removeAttribute('href');
+        link.classList.add('ai-hidden');
+    }
+};
+
+// Every agent sets overrides.conversation_config_override.tts.* to false, so in
+// conversational mode the model, stability and similarity below cannot reach the
+// conversation at all — they only bite on one-shot TTS. Grey them so the page
+// stops implying otherwise. Same mechanism as updateV3Visibility: .ai-inactive
+// on the block, .disabled + aria-disabled on the controls.
+TTSManager.prototype.updateConversationalVisibility = function () {
+    var convOn = this.isConversationalMode();
+    var modelField = document.getElementById('ttsModelField');
+    var block = document.getElementById('agentControlledVoiceSettings');
+    var controls = [
+        document.getElementById('ttsModel'),
+        document.getElementById('stability'),
+        document.getElementById('similarityBoost')
+    ];
+
+    if (modelField) {
+        if (convOn) modelField.classList.add('ai-inactive');
+        else modelField.classList.remove('ai-inactive');
+    }
+    if (block) {
+        if (convOn) block.classList.add('ai-inactive');
+        else block.classList.remove('ai-inactive');
+    }
+    for (var i = 0; i < controls.length; i++) {
+        if (!controls[i]) continue;
+        controls[i].disabled = convOn;
+        controls[i].setAttribute('aria-disabled', convOn ? 'true' : 'false');
+    }
+
+    // Style and Speaker Boost are inert under EITHER rule; updateV3Visibility
+    // owns that decision and reads the toggle, so re-run it rather than fight it.
+    this.updateV3Visibility();
 };
 
 TTSManager.prototype.saveConfiguration = function () {
@@ -395,6 +469,20 @@ TTSManager.prototype.saveConfiguration = function () {
             if (checkboxes[i].name) config[checkboxes[i].name] = checkboxes[i].checked;
         }
     }
+
+    // Disabled controls are omitted from FormData entirely. Conversational mode
+    // disables the model select and both sliders, so trusting FormData alone here
+    // would post defaults over the character's tuned values on every save — the
+    // exact way voice configs have been flattened before. Read the elements.
+    var modelEl = document.getElementById('ttsModel');
+    if (modelEl) config.model = modelEl.value;
+    var stabilityEl = document.getElementById('stability');
+    if (stabilityEl) config.stability = stabilityEl.value;
+    var similarityEl = document.getElementById('similarityBoost');
+    if (similarityEl) config.similarity_boost = similarityEl.value;
+    var styleEl = document.getElementById('style');
+    if (styleEl) config.style = styleEl.value;
+    config.conversationalMode = self.isConversationalMode();
 
     // Normalize types
     config.stability = parseFloat(config.stability || '0.5');

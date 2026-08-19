@@ -565,6 +565,66 @@ false` where Orlok and Sir Dragomir are `true`, so ElevenLabs' default personali
 **OPEN — PumpkinHead's agent prompt contradicts itself**: it states "You never use audio tags" while
 carrying its own `# Audio Tags` section naming laughs / whispers / shouts / sighs.
 
+**PERSISTENCE — a sweep of operator-facing settings found nine that do not survive a service
+restart.** One shared root cause, five distinct defects. In each case the setting lives only in a
+module-level binding or a singleton's constructor; the setter mutates RAM and returns success, nothing
+writes it to disk, and nothing restores it at boot. The archetype is the speaker mute fixed earlier
+tonight (`services/serverPlaybackService.js`, above) — same shape, and it is the reason the household
+was woken. A restart is not a rare event on this fleet: `npm run deploy:all` restarts every node, so a
+routine deploy silently reverts all of these at once. Worse than plain volatility, several of them leave
+a *disk* copy behind that nothing re-arms, so the file and the runtime disagree and the UI reports the
+file.
+
+**REMOVED — `globalSpeedCap` is gone entirely (operator decision, 2026-08-19).** It was briefly
+persisted this session after a sweep found it silently reset to 1.0 (fully permissive) on every restart.
+The operator then decided he has no use for it — "remove that global speed cap forever" — so the binding,
+both `/global-speed-cap` routes, the dead UI block in `calibration.ejs` and `data/motion-state.json` are
+all deleted. The two `effectiveRate / globalSpeedCap` divisions in `planTimeAtSpeed` are gone too;
+dividing by 1.0 was a no-op, so planner output is unchanged (verified: forward 0.2→0.8 @ 2000 msPerNorm
+= 1200 ms; reverse with beta 0.2 = 1440 ms, reversal compensation intact).
+**This is NOT the safety speed cap.** `safety.maxSpeedPct`
+(`services/hardwareService/safetyLimits.js:216`) — the per-part cap that limits peak current draw and
+which CLAUDE.md says NEVER relaxes — is untouched and still enforced. Two different things shared a name.
+One user-visible consequence on `/setup/calibration/unified`: the slider is now a page-local *Move Speed*
+that reaches preset `goto` only; jog/nudge never sent `speedPct` and now run at the adapter's own speed.
+
+**OPEN — superpower: head tracking is armed only in an in-memory Map, and the disk copy lies.**
+`headTrackingConfigs` is a `Map` in `controllers/motionTrackingController.js:20`. The parameters
+(`panServoId`, `centerDeg`, `rangeDeg`, `smoothing`) *do* persist to `super-powers.json`; only the armed
+bit is lost. That asymmetry is what makes it worse than volatile: `data/character-3/super-powers.json`
+carries `headTracking.enabled: true` and **nothing re-arms it at boot**, while every status endpoint
+answers from the Map. So the disk claims ON, the runtime is OFF, and the UI shows whichever the code
+path happens to read.
+
+**OPEN — superpower: motion / PIR watcher has no persisted field at all.**
+`services/lurkMotionWatcherService.js` has `start()`/`stop()` and no stored enabled state anywhere.
+A restart stops PIR polling silently — no error, no log line, and the dashboard toggle re-renders from
+nothing. The character simply stops noticing people.
+
+**OPEN — superpower: idle loop stops on shutdown and is never started again.** `let running = false`
+in `services/movement/idleLoopService.js:55` is the whole state. `server.js:969` correctly calls
+`idleLoop.stop()` during shutdown; there is no matching start on boot and no persisted flag, so an
+animatronic left idling comes back inert after any restart or deploy.
+
+**OPEN — AI-enabled does not survive a restart, and `ai_agent_state.json` outlives the session that
+wrote it.** The agent socket lives in `services/elevenLabsWebSocketService.js`; a restart drops it, so
+AI comes back **off**. That direction is fail-safe and correct. The defect is the leftover file:
+`data/character-2/ai_agent_state.json` keeps whatever the last toggle wrote (`routes/conversation.js:716`)
+and nothing clears or re-arms it at boot, so after a restart the disk can still read `enabled: true`
+with no session in existence. *Partially refuted by adversarial verification:* `GET
+/conversation/api/ai-status` (`routes/conversation.js:736`) already reconciles — it answers
+`enabled: live` from `isAgentEnabledForCharacter()` and uses the file only for `characterId` and
+`timestamp` — so the status endpoint does **not** report AI on when no socket exists. Any *other*
+consumer reading the file directly still will. What remains open: nothing re-arms AI after a deploy, and
+the stale file is a standing trap for the next reader.
+
+**REFUTED by adversarial verification — these four are FINE, do not "fix" them.** Global speaker mute
+(now persisted to `data/speaker-state.json` and restored at construction — see the FIXED entry above);
+master/system sink volume (held by PipeWire/ALSA state, not by MonsterBox, and it comes back); default
+sink and default source (likewise persisted outside the app); and the lurk-mode master flag (already
+written to disk and read back at boot). Each was suspected during the sweep and each survived a real
+restart.
+
 ### Opened from the 2026-08-18 v10 page sweep + adversarial review
 
 - 🟡 **The OpenCV enable checkbox on `/setup/head-animation` will not stay

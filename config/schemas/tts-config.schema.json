@@ -10,6 +10,8 @@
     "similarity_boost": { "type": "number" },
     "style": { "type": "number" },
     "use_speaker_boost": { "type": "boolean" },
-    "voice_id": { "type": "string" }
+    "voice_id": { "type": "string" },
+    "agent_id": { "type": "string" },
+    "conversationalMode": { "type": "boolean", "default": false }
   }
 }
