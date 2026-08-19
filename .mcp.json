@@ -1,8 +1,16 @@
 {
   "mcpServers": {
     "playwright": {
-      "type": "sse",
-      "url": "http://localhost:8931/sse"
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "node_modules/@playwright/mcp/cli.js",
+        "--headless",
+        "--browser",
+        "chromium",
+        "--executable-path",
+        "/home/remote/.cache/ms-playwright/chromium-1208/chrome-linux/chrome"
+      ]
     }
   }
 }
