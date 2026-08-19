@@ -67,18 +67,24 @@ test.describe('Global control bar', () => {
         });
       }
 
-      test('page never scrolls sideways', async ({ page }) => {
-        // Horizontal overflow is the classic responsive failure and makes a
-        // fixed bottom bar drift out of reach.
-        for (const target of PAGES) {
+      // One test PER PAGE, not one test over all seven. The combined version
+      // shared a single 30 s budget across seven page loads, and /orchestration
+      // holds an open MJPEG webcam stream so its networkidle wait can never
+      // settle -- on an RPi4B that reliably timed out before asserting anything,
+      // which reads as "the control bar overflows" when measurement shows every
+      // page/viewport pair at 0 px. Per-page tests also name the offender.
+      for (const target of PAGES) {
+        test(`${target.name} never scrolls sideways`, async ({ page }) => {
+          // Horizontal overflow is the classic responsive failure and makes a
+          // fixed bottom bar drift out of reach.
           await page.goto(target.path);
           await ready(page);
           const overflow = await page.evaluate(
             () => document.documentElement.scrollWidth - document.documentElement.clientWidth
           );
           expect(overflow, `${target.path} overflows horizontally by ${overflow}px`).toBeLessThanOrEqual(1);
-        }
-      });
+        });
+      }
     });
   }
 });
