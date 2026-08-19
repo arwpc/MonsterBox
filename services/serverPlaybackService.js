@@ -1,5 +1,7 @@
 import { spawnSync } from 'child_process';
 import fs from 'fs/promises';
+import { readFileSync } from 'fs';
+import { writeJsonAtomic } from './atomicStore.js';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -94,14 +96,67 @@ class ServerPlaybackService {
     this._pcmStreams = new Map();
     this._lastPlay = null; // telemetry for tests/diagnostics
     this._lastAIPlay = null; // dedicated telemetry for AI playback
-    this._speakerMuted = false; // global speaker mute flag
+    // Restored from disk, not defaulted. See _loadMuteState().
+    this._speakerMuted = this._loadMuteState();
     this._mpg123Available = this._detectMpg123();
     this._ffmpegAvailable = this._detectCmd('ffmpeg');
     this._pwplayAvailable = this._detectCmd('pw-play');
   }
 
+  /**
+   * Where the speaker mute flag survives a restart.
+   *
+   * Node-local runtime state, alongside actuator-positions.json and
+   * movement-telemetry.json, and gitignored for the same reason: it describes THIS
+   * node right now, not the project.
+   */
+  _muteStatePath() {
+    return path.resolve(__dirname, '..', 'data', 'speaker-state.json');
+  }
+
+  /**
+   * The mute flag used to be initialised to `false` in the constructor and kept only
+   * in memory, so every restart of monsterbox.service — a crash, a deploy, a plain
+   * `systemctl restart` — silently re-armed every speaker in the house. An operator
+   * who muted for the night got audio back with no warning and no log line.
+   *
+   * That is not a theoretical risk: the household was woken at 00:20 by two
+   * animatronics talking, the fleet was muted in response, and a single restart
+   * would have undone it.
+   *
+   * Reading synchronously is deliberate — it happens exactly once, at construction,
+   * and the flag must be correct BEFORE anything can ask whether it may make noise.
+   * A missing or unreadable file defaults to unmuted, which is the historical
+   * behaviour, so this is strictly non-regressive.
+   */
+  _loadMuteState() {
+    try {
+      const parsed = JSON.parse(readFileSync(this._muteStatePath(), 'utf8') || '{}');
+      const muted = parsed.speakerMuted === true;
+      if (muted) console.log('🔇 Speaker mute restored from disk — this node boots muted');
+      return muted;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async _persistMuteState(muted) {
+    try {
+      await writeJsonAtomic(this._muteStatePath(), {
+        speakerMuted: !!muted,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      // Never let a failed state write break the mute itself — the in-memory flag
+      // is authoritative for this process; the file only has to be right by the
+      // time the next one boots.
+      console.error('Failed to persist speaker mute state:', e);
+    }
+  }
+
   setSpeakerMuted(muted) {
     this._speakerMuted = !!muted;
+    this._persistMuteState(this._speakerMuted);
   }
 
   isSpeakerMuted() {
