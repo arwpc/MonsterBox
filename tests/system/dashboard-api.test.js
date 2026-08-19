@@ -138,11 +138,26 @@ describe('Dashboard API — Deep Functional Tests', () => {
 
   // ── Monster Features: Speaker Mute ───────────────────────────────
   describe('Speaker Mute Toggle', () => {
+    // The mute flag PERSISTS to data/speaker-state.json and is reapplied on boot
+    // ("Speaker mute restored from disk -- this node boots muted"), so a run that
+    // dies between the mute and the unmute leaves the show silent through every
+    // subsequent reboot. So restore the value the operator actually had rather
+    // than a hardcoded false -- a deliberately-silent night must survive the suite.
+    //
+    // No afterEach here on purpose: 'GET should confirm muted state' asserts the
+    // flag survives between cases, so unmuting after every case would break the
+    // very persistence this block exists to cover.
+    let originalMuted = false;
+
+    before(async () => {
+      const res = await request(BASE_URL).get('/conversation/api/speaker-mute');
+      originalMuted = res.body && res.body.muted === true;
+    });
+
     after(async () => {
-      // Ensure unmuted after tests
       await request(BASE_URL)
         .post('/conversation/api/speaker-mute')
-        .send({ muted: false });
+        .send({ muted: originalMuted });
     });
 
     it('GET /conversation/api/speaker-mute should return mute state', async () => {
