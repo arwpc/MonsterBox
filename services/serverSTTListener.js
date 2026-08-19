@@ -226,7 +226,7 @@ class ServerSTTListener {
     // Its recorder opens the mic exclusively for ~1.4s, and on a device where
     // only PyAudio can stream (ReSpeaker XVF3800) that collision makes the
     // continuous capture's open fail — which silently demoted the whole session
-    // back to the legacy path. Measured on Orlok: identical sessions passed or
+    // back to the legacy path. Measured on the XVF3800 node: identical sessions passed or
     // failed purely on which of the two won the race. This kick is the safety
     // net for a config read that never resolves.
     state._legacyKick = setTimeout(() => { state._legacyKick = null; state._startLegacy(); }, 1500);
