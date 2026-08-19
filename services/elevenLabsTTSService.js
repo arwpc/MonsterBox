@@ -20,6 +20,47 @@ const MODELS_HONORING_SPEED = new Set([
     'eleven_turbo_v2_5'
 ]);
 
+// Models that PERFORM bracketed audio tags rather than pronouncing them.
+//
+// Every character prompt in this project is written in tags — [whispers],
+// [sings], [Romanian accent], [labored breath], [shouts] — and AI-generated
+// lines carry them too. On a v3 model those are direction and the voice acts
+// them. On any other model they are just text, so ElevenLabs reads them ALOUD:
+// "[whispers] come closer" is spoken as the word "whispers", then "come closer".
+// A character switched to a non-v3 model therefore stops performing and starts
+// reciting its own stage directions.
+//
+// ElevenLabs strips them for exactly this reason on their web widget
+// (platform_settings.widget.strip_audio_tags). MonsterBox never did.
+//
+// This is deliberately NOT an always-on filter: on v3 the tags are the
+// performance and stripping them would flatten every character.
+const MODELS_RENDERING_AUDIO_TAGS = new Set([
+    'eleven_v3',
+    'eleven_v3_conversational'
+]);
+
+// A bracketed tag: [sighs], [Romanian accent], [labored breath].
+// Narrow on purpose — letters/hyphens, at most three words — so it cannot eat
+// legitimate bracketed prose. Brackets are never meant to be spoken aloud in
+// this project, so a false positive costs a pair of brackets; a false negative
+// costs the illusion.
+const AUDIO_TAG_RE = /\[[A-Za-z][A-Za-z-]*(?:\s+[A-Za-z][A-Za-z-]*){0,2}\]/g;
+
+/**
+ * Remove audio tags from text bound for a model that would pronounce them.
+ * Exported so tests and the STT/scene paths can share one definition.
+ */
+export function stripAudioTags(text) {
+    if (typeof text !== 'string' || text.indexOf('[') === -1) return text;
+    return text.replace(AUDIO_TAG_RE, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+
+/** The text actually sent for a given model. */
+export function textForModel(text, modelId) {
+    return MODELS_RENDERING_AUDIO_TAGS.has(modelId) ? text : stripAudioTags(text);
+}
+
 class ElevenLabsTTSService {
     constructor() {
         // Resolve config lazily (see getters below). getElevenLabsConfig() throws
@@ -164,8 +205,14 @@ class ElevenLabsTTSService {
                 voiceSettings.use_speaker_boost = (options.use_speaker_boost !== undefined ? options.use_speaker_boost : true);
             }
 
+            // On a non-v3 model the tags would be spoken aloud — see textForModel().
+            const outboundText = textForModel(text, modelId);
+            if (outboundText !== text) {
+                console.log(`🏷️  Stripped audio tags for ${modelId} (it would pronounce them)`);
+            }
+
             const requestData = {
-                text: text,
+                text: outboundText,
                 model_id: modelId,
                 voice_settings: voiceSettings
             };
@@ -217,7 +264,7 @@ class ElevenLabsTTSService {
             }
 
             const requestData = {
-                text: text,
+                text: textForModel(text, streamModelId),
                 model_id: streamModelId,
                 voice_settings: streamVoiceSettings
             };

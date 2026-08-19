@@ -161,6 +161,16 @@ export async function getTTSConfig() {
   return {
     // agent_id is optional and indicates a conversational AI agent to use
     agent_id: d && typeof d.agent_id === 'string' && d.agent_id.trim() ? d.agent_id : undefined,
+    // Conversational mode: does this character talk through its ElevenLabs AGENT
+    // (server-side voice, agent prompt, agent TTS settings) or through MonsterBox's
+    // own one-shot TTS using the values in this file?
+    //
+    // It matters because the two are not interchangeable. Every agent has
+    // overrides.conversation_config_override.tts.* set to FALSE, so stability,
+    // similarity_boost, speed, voice_id and model CANNOT reach a conversation —
+    // they only bite on the one-shot path. Without this flag the settings page has
+    // no way to tell the operator which of its controls are live right now.
+    conversationalMode: !!(d && d.conversationalMode),
     voice_id: d && typeof d.voice_id === 'string' && d.voice_id.trim() ? d.voice_id : base.voice_id,
     model: (d && d.model) || base.model,
     stability: d && typeof d.stability === 'number' ? d.stability : base.stability,
@@ -210,6 +220,7 @@ export async function getTTSConfigForCharacter(characterId) {
     return {
       // include agent_id if specified for this character
       agent_id: parsed.agent_id && String(parsed.agent_id).trim() ? parsed.agent_id : undefined,
+      conversationalMode: !!parsed.conversationalMode,
       voice_id: resolveVoiceId(parsed.voice_id, characterId),
       model: parsed.model || 'eleven_v3',
       stability: typeof parsed.stability === 'number' ? parsed.stability : 0.5,

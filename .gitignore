@@ -83,6 +83,7 @@ data/performance-history.json
 data/startup-health.json
 data/actuator-positions.json
 data/speaker-state.json
+data/motion-state.json
 data/character-*/lurk-mode-state.json
 # PID-based lock files created by the audio/video library services at runtime.
 data/audio-library/library.lock
