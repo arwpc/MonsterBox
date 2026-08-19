@@ -501,6 +501,70 @@ exist yet.
   respawn cleanly. *Fix direction:* surface live-session state in the dashboard, and consider
   an idle/turn cap on unattended agent-to-agent exchange.
 
+### Opened from the 2026-08-19 v10.1 session (persistence, deploy drift, ElevenLabs close-out)
+
+**FIXED — Speaker mute did not survive a service restart.** `this._speakerMuted = false` lived only in
+the `ServerPlaybackService` constructor (`services/serverPlaybackService.js:97`). Nothing wrote it to
+disk, nothing restored it at boot, so *every* restart — a crash, `systemctl restart`, and critically
+`npm run deploy:all` — silently re-armed every speaker in the house with no log line and no warning.
+Found by tripping over it: a service restart to test an unrelated endpoint brought the node back
+unmuted, hours after the household was woken at 00:20 and the fleet was muted in response. Now persists
+to `data/speaker-state.json` (node-local, gitignored) and restores synchronously at construction, before
+anything can ask whether it may make noise. Proven through a full fleet deploy+restart: all three nodes
+came back `muted:true`. Missing file still defaults to unmuted, so it is non-regressive.
+
+**FIXED — deploy drift: nodes report the new version while running old code.** Orlok and Sir Dragomir
+both served `version: 10.0.1` over `/health` while `services/hardwareService/index.js` still contained
+the pre-`af2c1037` `config.modelId` read and zero occurrences of the `part.modelId` fix. `deploy-all.sh`
+rsyncs files without moving git, so a node's git HEAD is not evidence of what it runs — Sir Dragomir's
+HEAD read `609245f5` (v9.3.0) with 107 dirty files while serving 10.0.1. **A version string is not proof
+of a deploy. Grep the node for the actual fix.** Consequence: the modelId fix had been committed for a
+full session but had never reached two of three nodes, so 36 of 59 fleet parts were still resolving to
+`{}` model defaults on the hardware that matters.
+
+**Sir Dragomir's neck — root cause was the undeployed modelId fix, not the channel.** The channel
+transposition (head ch1 / jaw ch0) was already corrected in both repo and node. The remaining cause: his
+Head Servo is a CONTINUOUS servo (`servo_miuzei_25kg_continuous`, minPulse 900 / maxPulse 2100 /
+neutral 1500). On a continuous servo the pulse width sets **speed and direction**, with ~1500 µs = stop —
+so generic 500–2500 defaults put the stop point and the whole speed curve in the wrong place. With the
+model defaults unreachable, the neck could not behave correctly. Fixed by deploying.
+
+**OPEN — Sir Dragomir has zero scenes and `defaultSceneId: null`.** `GET /scenes/api/` on
+`192.168.8.130` returns `{"scenes":[]}`, and his `config/animatronics.json` entry has no
+`defaultSceneId`. `startAllQueueLoops()` (`services/orchestrationService.js:601`) returns
+`'No defaultSceneId configured'` for him, so he silently drops out of every fleet queue loop. Not an
+error the operator ever sees — the fleet call still reports overall success.
+
+**OPEN — browser tests cannot run while the service is running.** `npm run test:browser` starts its own
+server on 3200, which hits `server.js`'s single-instance PID guard and exits, and Playwright reports it
+as a *config* failure ("Process from config.webServer was not able to start") rather than the port/PID
+conflict it is. The escape hatch already exists and is documented in `playwright.config.js:52` but is
+not in CLAUDE.md's test table: `MB_USE_RUNNING_SERVER=1 BASE_URL=http://localhost:3100 npx playwright
+test tests/browser`. Port 3100 serves the full app.
+
+**OPEN — `optimize_streaming_latency: 3` was mis-diagnosed as disabling the text normalizer.** It does
+not; **level 4** does. Per current ElevenLabs docs: 0 = off, 1 = normal, 2 = strong, 3 = max latency
+optimizations, 4 = max *plus* text normalizer off. Level 3 is still quality-degrading and all six agents
+were on it (now all 0), but the "flattened the audio tags because the normalizer was off" explanation is
+wrong and should not be repeated. The real normalizer control is the separate `text_normalisation_type`
+field.
+
+**OPEN — `text_normalisation_type` is inconsistent across the fleet.** Orlok `elevenlabs`; Mina and
+Sir Dragomir `system_prompt`. Never reconciled or explained.
+
+**OPEN — local `tts-config.json` cannot reach the conversational path, by design at the agent.** Every
+agent has `overrides.conversation_config_override.tts.*` set to `false`
+(`model_id`, `voice_id`, `stability`, `speed`, `similarity_boost`, `pronunciation_dictionary_locators`).
+Only `text_only` and `language` are overridable. So no value tuned locally can affect an agent
+conversation regardless of what MonsterBox sends — the UI must say so, or the controls must go.
+
+**OPEN — Mina's agent differs from the others in two unexplained ways.** `suggested_audio_tags: []`
+though her prompt uses `[whispers]`, `[sighs]`, `[sings]`, `[crying]`; and `ignore_default_personality:
+false` where Orlok and Sir Dragomir are `true`, so ElevenLabs' default personality is blended into her.
+
+**OPEN — PumpkinHead's agent prompt contradicts itself**: it states "You never use audio tags" while
+carrying its own `# Audio Tags` section naming laughs / whispers / shouts / sighs.
+
 ### Opened from the 2026-08-18 v10 page sweep + adversarial review
 
 - 🟡 **The OpenCV enable checkbox on `/setup/head-animation` will not stay
