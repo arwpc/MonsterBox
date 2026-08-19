@@ -181,18 +181,6 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="ai-field">
-                                    <label for="sampleRate" class="mb-field-label">Sample Rate</label>
-                                    <select class="mb-select" id="sampleRate" name="sampleRate" title="Audio sample rate">
-                                        <option value="8000">8 kHz</option>
-                                        <option value="16000" selected>16 kHz</option>
-                                        <option value="22050">22.05 kHz</option>
-                                        <option value="44100">44.1 kHz</option>
-                                        <option value="48000">48 kHz</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="ai-field">
                                     <span class="mb-field-label">Voice Activity Detection (VAD)</span>
                                     <label class="mb-switch">
                                         <input type="checkbox" id="vadEnabled" title="Enable voice activity detection"
@@ -264,70 +252,6 @@
                                     <input type="range" class="mb-range" id="vadSilenceDuration" title="Silence duration before ending speech"
                                         name="vadSilenceDuration" min="100" max="2000" step="100" value="500">
                                     <small class="mb-field-hint">How long to wait before ending speech</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Buffer Timing Section -->
-                        <hr class="ai-rule">
-                        <h3 class="ai-subhead"><i class="bi bi-clock-history"></i> Buffer Timing &amp; Capture Settings</h3>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="ai-field">
-                                    <label for="captureChunkDuration" class="mb-field-label">
-                                        Capture Chunk Duration: <span id="captureChunkDurationValue" class="mb-mono">0.5</span>s
-                                    </label>
-                                    <input type="range" class="mb-range" id="captureChunkDuration" title="Duration of each audio capture chunk"
-                                        name="captureChunkDuration" min="0.25" max="1.0" step="0.25" value="0.5">
-                                    <small class="mb-field-hint">Duration of each audio capture chunk (0.5s recommended)</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="ai-field">
-                                    <label for="sttThrottleInterval" class="mb-field-label">
-                                        STT Throttle Interval: <span id="sttThrottleIntervalValue" class="mb-mono">2500</span>ms
-                                    </label>
-                                    <input type="range" class="mb-range" id="sttThrottleInterval" title="How often audio is sent to STT"
-                                        name="sttThrottleInterval" min="1000" max="5000" step="500" value="2500">
-                                    <small class="mb-field-hint">How often to send audio to STT service</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="ai-field">
-                                    <label for="minBufferDuration" class="mb-field-label">
-                                        Minimum Buffer Duration: <span id="minBufferDurationValue" class="mb-mono">2.5</span>s
-                                    </label>
-                                    <input type="range" class="mb-range" id="minBufferDuration" title="Minimum audio duration before transcription"
-                                        name="minBufferDuration" min="1.0" max="5.0" step="0.5" value="2.5">
-                                    <small class="mb-field-hint">Minimum audio duration before transcription (2.5s captures
-                                        full sentences)</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="ai-field">
-                                    <label for="maxBufferDuration" class="mb-field-label">
-                                        Maximum Buffer Duration: <span id="maxBufferDurationValue" class="mb-mono">6.0</span>s
-                                    </label>
-                                    <input type="range" class="mb-range" id="maxBufferDuration" title="Maximum audio buffer size"
-                                        name="maxBufferDuration" min="3.0" max="10.0" step="1.0" value="6.0">
-                                    <small class="mb-field-hint">Maximum audio buffer size (6s allows long phrases)</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="ai-field">
-                                    <label for="microphoneInputGain" class="mb-field-label">
-                                        Microphone Input Gain: <span id="microphoneInputGainValue" class="mb-mono">70</span>%
-                                    </label>
-                                    <input type="range" class="mb-range" id="microphoneInputGain" title="System microphone input volume"
-                                        name="microphoneInputGain" min="25" max="100" step="5" value="70">
-                                    <small class="mb-field-hint">System microphone volume (70% prevents clipping)</small>
                                 </div>
                             </div>
                         </div>

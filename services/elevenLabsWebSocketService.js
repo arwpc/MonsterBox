@@ -1809,7 +1809,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
         if (connection.characterId != null) {
             try { deviceId = await getMicrophoneDeviceForCharacter(connection.characterId); } catch (_) { deviceId = 'default'; }
         } else {
-            try { const cfg = await getSTTConfig(); deviceId = cfg.deviceId || cfg.microphoneDeviceId || 'default'; } catch (_) { deviceId = 'default'; }
+            // microphoneDeviceId is what the operator's mic dropdown writes, and it is
+            // the only device key getSTTConfig() actually surfaces — its return is an
+            // explicit literal that never carries `deviceId`, so the old
+            // `cfg.deviceId || cfg.microphoneDeviceId` read could only ever resolve to
+            // the second operand. The raw stt-config.json on some nodes still holds a
+            // stale `deviceId` (e.g. "pulse"); it is inert HERE, but see KNOWN-BUGS for
+            // the capture paths that read the raw file directly.
+            try { const cfg = await getSTTConfig(); deviceId = cfg.microphoneDeviceId || 'default'; } catch (_) { deviceId = 'default'; }
         }
         connection._lastDevId = deviceId;
         try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_device', data: { deviceId } }); } catch (_) { }

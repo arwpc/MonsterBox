@@ -228,34 +228,6 @@ class ElevenLabsSTTService {
     }
 
     /**
-     * Validate STT configuration
-     */
-    validateSTTConfig(config) {
-        const errors = [];
-
-        if (!config.model) {
-            errors.push('Model is required');
-        }
-
-        if (!config.language) {
-            errors.push('Language is required');
-        }
-
-        if (!config.format || !['wav', 'mp3', 'm4a', 'flac', 'ogg', 'webm'].includes(config.format)) {
-            errors.push('Invalid audio format');
-        }
-
-        if (!config.sampleRate || ![8000, 16000, 22050, 44100, 48000].includes(config.sampleRate)) {
-            errors.push('Invalid sample rate');
-        }
-
-        return {
-            valid: errors.length === 0,
-            errors
-        };
-    }
-
-    /**
      * Test STT functionality with sample audio
      */
     async testSTT(config = {}) {
