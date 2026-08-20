@@ -108,6 +108,34 @@ measured may not be the windows that hold.
 
 **Evidence:** `dmesg` on mina, 2026-08-20. Surfaced by the standing log review after commit #2270.
 
+### Planned fix (operator, 2026-08-20): remove the USB hub, plug straight into the Pi
+
+Aaron's call, and it is the right one — the Pi 4B has four ports and Mina only has two USB devices.
+Removing both cascaded hubs takes the camera and the audio adapter off a shared, sagging rail.
+
+**Expect these to change on replug, and re-verify each:**
+
+| Thing | Will it move? | How to re-check |
+|---|---|---|
+| ALSA card index (`plughw:3,0`, `plughw:4,0`) | **Yes, very likely** | `arecord -l` / `aplay -l` — enumeration order changes with port order |
+| `/dev/videoN` | **Yes, likely** | `v4l2-ctl -d /dev/videoN --info` to find the one whose Card type is `Streaming Camera` |
+| PipeWire `node.name` | **No** | keyed by vendor/product (`alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo`), not by port. The WirePlumber no-suspend rule matches on this, so it survives |
+| Sink volume | Resets on replug | `node scripts/fleet-audio/apply-volumes.mjs --nodes 2` (canonical 1.5) |
+
+**Already broken, and this is a symptom of the same fault:** `data/character-2/parts.json` part 7
+"Mina Cam" pins `devicePath: /dev/video0`, and **`/dev/video0` does not exist** — the camera is
+currently `/dev/video1`. It disconnected and re-enumerated three times (device 5 → 6 → 7) under the
+over-current, and the config was never updated. Fix the path after replugging, once it has settled.
+
+**Success criterion:** after a clean boot with no hub, `dmesg | grep -c over-current` should read
+**0**. It was 24 at the start of the 2026-08-19 session and 40 by the end — it climbs during normal
+operation.
+
+**Then, and only then**, re-test whether the Unitek capture side is genuinely dead (section 3). If it
+starts hearing once it has a stable rail, it was never broken and no adapter needs buying.
+
+
+
 ---
 
 ## 5. Sir Dragomir has no scenes
