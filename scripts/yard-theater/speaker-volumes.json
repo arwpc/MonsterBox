@@ -46,16 +46,61 @@
       "sinkVolume": 1.3,
       "apiSettable": 1.0,
       "sink": "Audio Adapter (Unitek Y-247A) Analog Stereo",
-      "confirmed": { "castDb": -21.2, "riseDb": 24.7, "recall": 1.0, "verdict": "AUDIBLE" },
+      "confirmed": {
+        "castDb": -21.2,
+        "riseDb": 24.7,
+        "recall": 1.0,
+        "verdict": "AUDIBLE"
+      },
       "sweep": [
-        { "volume": 0.65, "castDb": -32.6, "riseDb": 13.8, "recall": 1.0 },
-        { "volume": 0.65, "castDb": -33.1, "riseDb": 14.1, "recall": 1.0 },
-        { "volume": 0.9, "castDb": -28.3, "riseDb": 16.6, "recall": 1.0 },
-        { "volume": 0.95, "castDb": -26.9, "riseDb": 20.1, "recall": 1.0 },
-        { "volume": 1.0, "castDb": -27.5, "riseDb": 19.3, "recall": 1.0 },
-        { "volume": 1.3, "castDb": -19.2, "riseDb": 24.8, "recall": 1.0 },
-        { "volume": 1.3, "castDb": -21.2, "riseDb": 24.7, "recall": 1.0 },
-        { "volume": 1.5, "castDb": -21.5, "riseDb": 23.9, "recall": 1.0 }
+        {
+          "volume": 0.65,
+          "castDb": -32.6,
+          "riseDb": 13.8,
+          "recall": 1.0
+        },
+        {
+          "volume": 0.65,
+          "castDb": -33.1,
+          "riseDb": 14.1,
+          "recall": 1.0
+        },
+        {
+          "volume": 0.9,
+          "castDb": -28.3,
+          "riseDb": 16.6,
+          "recall": 1.0
+        },
+        {
+          "volume": 0.95,
+          "castDb": -26.9,
+          "riseDb": 20.1,
+          "recall": 1.0
+        },
+        {
+          "volume": 1.0,
+          "castDb": -27.5,
+          "riseDb": 19.3,
+          "recall": 1.0
+        },
+        {
+          "volume": 1.3,
+          "castDb": -19.2,
+          "riseDb": 24.8,
+          "recall": 1.0
+        },
+        {
+          "volume": 1.3,
+          "castDb": -21.2,
+          "riseDb": 24.7,
+          "recall": 1.0
+        },
+        {
+          "volume": 1.5,
+          "castDb": -21.5,
+          "riseDb": 23.9,
+          "recall": 1.0
+        }
       ],
       "note": [
         "1.50 measured no louder than 1.30 (-21.5 vs -19.2/-21.2), but that gap is",
@@ -70,31 +115,67 @@
       "name": "Mina",
       "characterId": 2,
       "ip": "192.168.8.140",
-      "sinkVolume": 1.5,
+      "sinkVolume": 1.0,
       "apiSettable": 1.0,
       "sink": "Audio Adapter (Unitek Y-247A) Analog Stereo",
-      "confirmed": { "castDb": -21.5, "riseDb": 21.9, "recall": 0.8, "verdict": "AUDIBLE" },
+      "confirmed": {
+        "castDb": -21.5,
+        "riseDb": 21.9,
+        "recall": 0.8,
+        "verdict": "AUDIBLE"
+      },
       "sweep": [
-        { "volume": 0.65, "castDb": -38.3, "riseDb": 5.0, "recall": 0.6 },
-        { "volume": 0.65, "castDb": -37.8, "riseDb": 10.2, "recall": 0.47, "verdict": "GARBLED" },
-        { "volume": 0.9, "castDb": -30.6, "riseDb": 14.9, "recall": 0.8 },
-        { "volume": 0.9, "castDb": -31.4, "riseDb": 15.8, "recall": 0.6 },
-        { "volume": 1.0, "castDb": -29.9, "riseDb": 15.8, "recall": 0.8 },
-        { "volume": 1.3, "castDb": -23.1, "riseDb": 22.9, "recall": 0.8 },
-        { "volume": 1.5, "castDb": -20.9, "riseDb": 25.8, "recall": 0.8 },
-        { "volume": 1.5, "castDb": -21.5, "riseDb": 21.9, "recall": 0.8 }
+        {
+          "volume": 0.65,
+          "castDb": -38.3,
+          "riseDb": 5.0,
+          "recall": 0.6
+        },
+        {
+          "volume": 0.65,
+          "castDb": -37.8,
+          "riseDb": 10.2,
+          "recall": 0.47,
+          "verdict": "GARBLED"
+        },
+        {
+          "volume": 0.9,
+          "castDb": -30.6,
+          "riseDb": 14.9,
+          "recall": 0.8
+        },
+        {
+          "volume": 0.9,
+          "castDb": -31.4,
+          "riseDb": 15.8,
+          "recall": 0.6
+        },
+        {
+          "volume": 1.0,
+          "castDb": -29.9,
+          "riseDb": 15.8,
+          "recall": 0.8
+        },
+        {
+          "volume": 1.3,
+          "castDb": -23.1,
+          "riseDb": 22.9,
+          "recall": 0.8
+        },
+        {
+          "volume": 1.5,
+          "castDb": -20.9,
+          "riseDb": 25.8,
+          "recall": 0.8
+        },
+        {
+          "volume": 1.5,
+          "castDb": -21.5,
+          "riseDb": 21.9,
+          "recall": 0.8
+        }
       ],
-      "note": [
-        "Mina still scaled cleanly at 1.50 (+2.2 dB over 1.30 against a cubic-predicted",
-        "+1.9 dB), so she is given the extra level -- she is the quietest rig and needs it.",
-        "Her recall sits at 80% at EVERY level from 1.00 to 1.50. That ceiling is not a",
-        "volume problem: it does not move when level moves. It is her diction/voice",
-        "against Scribe. The old GARBLED reading at 0.65 was a genuine level failure",
-        "and is gone.",
-        "1.50 is the top of wireplumber's default range on these nodes -- no headroom",
-        "left. If Mina is still weak in the yard on the night, the remaining fix is",
-        "physical (amp/speaker), not a number in this file."
-      ]
+      "note": "RE-MEASURE. The 1.50 figure was tuned on the C-Media Unitek Y-247A, which was removed 2026-08-20 along with the USB hub. This node now outputs through a reSpeaker XVF3800 (same model as Orlok, whose measured figure is 1.30). Unity is a safe placeholder, not a measurement - re-run earcheck and record."
     },
     {
       "id": 4,
@@ -104,14 +185,49 @@
       "sinkVolume": 0.55,
       "apiSettable": 0.55,
       "sink": "Audio Adapter (Unitek Y-247A) Analog Stereo",
-      "confirmed": { "castDb": -25.7, "riseDb": 17.7, "recall": 0.94, "verdict": "AUDIBLE" },
+      "confirmed": {
+        "castDb": -25.7,
+        "riseDb": 17.7,
+        "recall": 0.94,
+        "verdict": "AUDIBLE"
+      },
       "sweep": [
-        { "volume": 0.4, "castDb": -34.1, "riseDb": 9.1, "recall": 0.94 },
-        { "volume": 0.55, "castDb": -23.7, "riseDb": 19.7, "recall": 0.94 },
-        { "volume": 0.55, "castDb": -23.6, "riseDb": 19.7, "recall": 0.94 },
-        { "volume": 0.55, "castDb": -25.7, "riseDb": 17.7, "recall": 0.94 },
-        { "volume": 0.85, "castDb": -10.0, "riseDb": 33.5, "recall": 0.94 },
-        { "volume": 1.0, "castDb": -9.6, "riseDb": 33.3, "recall": 0.69 }
+        {
+          "volume": 0.4,
+          "castDb": -34.1,
+          "riseDb": 9.1,
+          "recall": 0.94
+        },
+        {
+          "volume": 0.55,
+          "castDb": -23.7,
+          "riseDb": 19.7,
+          "recall": 0.94
+        },
+        {
+          "volume": 0.55,
+          "castDb": -23.6,
+          "riseDb": 19.7,
+          "recall": 0.94
+        },
+        {
+          "volume": 0.55,
+          "castDb": -25.7,
+          "riseDb": 17.7,
+          "recall": 0.94
+        },
+        {
+          "volume": 0.85,
+          "castDb": -10.0,
+          "riseDb": 33.5,
+          "recall": 0.94
+        },
+        {
+          "volume": 1.0,
+          "castDb": -9.6,
+          "riseDb": 33.3,
+          "recall": 0.69
+        }
       ],
       "note": [
         "He is the outlier rig, and it is NOT the USB adapter -- all three nodes run the",
@@ -126,7 +242,15 @@
   ],
   "offline": {
     "_comment": "Never measured -- these nodes were powered down for the whole session. No value here is a guess; there simply is no entry.",
-    "nodes": [1, 5, 6],
-    "names": ["PumpkinHead", "Groundbreaker", "Renfield"]
+    "nodes": [
+      1,
+      5,
+      6
+    ],
+    "names": [
+      "PumpkinHead",
+      "Groundbreaker",
+      "Renfield"
+    ]
   }
 }

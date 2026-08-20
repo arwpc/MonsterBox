@@ -339,3 +339,54 @@ and drop it.
 
 He is close to having three working animatronics and has been close for a while. **Finishing beats
 improving.**
+
+---
+
+## 11. Mina hardware upgrade — 2026-08-20, and the one thing left to check
+
+Aaron removed the USB hub and the old sound card, and fitted a **reSpeaker XVF3800 4-Mic Array**
+(the same model Orlok uses) plus a **new webcam** replacing the failing SONix unit.
+
+**Confirmed working:**
+
+| | Before | Now |
+|---|---|---|
+| USB topology | 2 cascaded hubs (VIA + Genesys) | one hub; **`dmesg over-current` = 0** (was 40) |
+| Audio device | C-Media Unitek Y-247A (capture side dead) | reSpeaker XVF3800, serial `...217` |
+| Camera | SONix Streaming Camera (re-enumerating) | HHWei `1c45:6200`, stable at `/dev/video0` |
+
+**Changes applied:**
+
+- `data/character-2/parts.json` — part 6 speaker and part 8 mic both repointed at the XVF3800
+  PipeWire nodes (`alsa_output/alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200217-00.analog-stereo`),
+  models set to `speaker_respeaker_xvf3800` / `mic_respeaker_xvf3800`, mirroring Orlok. Part 7 webcam
+  now `/dev/video0`, `deviceId: 0`. Removed the stale `sourceName` pointing at the SONix mic.
+- PipeWire defaults: XVF3800 set as **both** default sink and default source.
+- `scripts/apply-audio-nosuspend.sh` re-run — the WirePlumber rule had been pinned to the removed
+  C-Media `node.name` and was matching nothing, which would have brought back the cold-start jaw
+  desync. Now `session.suspend-timeout-seconds=0` on the XVF3800.
+- **Canonical volume reset to 1.0** in `config/animatronics.json` and
+  `scripts/yard-theater/speaker-volumes.json`. The old 1.5 was measured on the Unitek that no longer
+  exists, so it was not a measurement any more. **It needs re-measuring by ear.** Orlok's identical
+  XVF3800 sits at 1.30 — a reasonable starting point, not an answer.
+
+### ⚠️ Open: she is not audible yet, and it looks physical
+
+An ear-check and a direct 14-second recording both scored **SILENT** (rise 1.1 dB, then 1.6 dB at
+volume 1.30). Everything on the software side checks out:
+
+- `muted: false`, confirmed on the endpoint and in `data/speaker-state.json`
+- XVF3800 is the default sink and source
+- `pw-play` streams start and exit cleanly with code 0 — audio IS reaching the device
+- volume raised to Orlok's proven 1.30
+- nothing relevant in either log
+
+So the signal reaches the array and no sound arrives at the microphone. **Mina has a powered
+subwoofer**; the most likely cause is that it is switched off, unplugged, or not connected to the
+array's output. Check the analog path before touching any config.
+
+Note also that the XVF3800 capture traps still apply (`docs/hardware/RESPEAKER-XVF3800.md`):
+`arecord`/`parec`/`ffmpeg` can open the array and deliver zero usable frames — PyAudio via
+`python_wrappers/microphone_cli.py` is the only capture layer proven to stream from it. The ear-check
+uses `arecord`, so once the speaker is confirmed, verify the MIC separately through the app's own path
+and judge on frames, not on the device opening.

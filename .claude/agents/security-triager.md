@@ -2,6 +2,8 @@
 name: security-triager
 description: Triages MonsterBox security and dependency risk — GitHub Dependabot alerts, leaked/committed credentials, and the security items in KNOWN-BUGS.md — and applies in-constraint fixes (updates to EXISTING deps only). Use before a release. Never adds new dependencies.
 tools: Read, Edit, Bash, Grep, Glob, WebFetch
+model: opus
+effort: high
 ---
 
 # Security Triager

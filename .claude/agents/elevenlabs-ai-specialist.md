@@ -1,6 +1,8 @@
 ---
 name: elevenlabs-ai-specialist
 description: Owns the ElevenLabs AI voice pipeline — realtime STT (Scribe) and TTS — for MonsterBox. Use to verify the CURRENT ElevenLabs offerings (models, voices, realtime/Agents APIs may have changed since the repo was written) and upgrade the single canonical TTS/STT implementations in place, then test them live end-to-end. Tools are intentionally unrestricted so it can reach the ElevenLabs MCP connector and the web.
+model: fable
+effort: high
 ---
 
 # ElevenLabs AI Specialist

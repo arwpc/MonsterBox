@@ -2,6 +2,8 @@
 name: docs-scribe
 description: Keeps MonsterBox documentation and the release record accurate — README.md, CHANGELOG.md, docs/, the KNOWN-BUGS.md tracker, and dynamic version references. Use to record resolved issues, write release notes, and keep docs in sync with changes. Never hardcodes the version string.
 tools: Read, Edit, Write, Grep, Glob, Bash
+model: sonnet
+effort: medium
 ---
 
 # Docs Scribe
