@@ -27,6 +27,48 @@ async function resolvePartsPath() {
 
 // Resolve PipeWire sink ID from a speaker part object.
 // Canonical field: config.audioDeviceId — legacy fallbacks kept for backward compat.
+/**
+ * Watchdog budget for one playback, scaled to how long the audio actually is.
+ *
+ * WHY: this was a flat 15000ms at all three player call sites. The timer exists so a
+ * stuck audio device cannot hang the request, but a fixed 15s is also a hard ceiling
+ * on utterance length: anything longer was SIGTERMed mid-sentence and returned
+ * playback_timeout, so the caller saw a failure and the listener heard the line cut
+ * off partway. A 16.3s character line — an ordinary length for a scene — reproduced it
+ * every time.
+ *
+ * Estimate the real duration from the payload, then allow generous headroom on top so
+ * a slow decode or a resuming sink still finishes. Short clips keep the old 15s floor,
+ * so nothing that worked before waits any longer to fail.
+ *
+ * @returns {number} milliseconds
+ */
+function _playbackTimeoutMs(buffer, contentType = '') {
+  const FLOOR_MS = 15000;    // unchanged behaviour for anything short
+  const CEILING_MS = 300000; // a genuinely stuck device still fails, just not at 15s
+  const len = (buffer && buffer.length) || 0;
+  if (!len) return FLOOR_MS;
+
+  let estMs = 0;
+  if (/wav|wave|pcm/i.test(contentType)) {
+    // RIFF byte-rate lives at offset 28 as uint32 LE. Fall back to 16kHz/16-bit mono.
+    let byteRate = 0;
+    try {
+      if (len > 44 && buffer.slice(0, 4).toString('ascii') === 'RIFF') {
+        byteRate = buffer.readUInt32LE(28);
+      }
+    } catch (_) { /* fall through to the assumption below */ }
+    if (!byteRate || byteRate < 1000) byteRate = 16000 * 2;
+    estMs = ((len - 44) / byteRate) * 1000;
+  } else {
+    // ElevenLabs MP3 is 128 kbps => 16000 bytes/sec. Over-estimating the duration only
+    // buys more headroom, so a wrong guess here fails safe.
+    estMs = (len / 16000) * 1000;
+  }
+
+  return Math.max(FLOOR_MS, Math.min(CEILING_MS, Math.round(estMs * 1.5) + 5000));
+}
+
 function _resolveSpeakerDevice(speaker) {
   if (!speaker) return 'default';
   const cfg = speaker.config || {};
@@ -502,7 +544,7 @@ class ServerPlaybackService {
               try { pw.kill('SIGTERM'); } catch (_) {}
               setTimeout(() => { try { pw.kill('SIGKILL'); } catch (_) {} }, 500);
               finishOnce({ success: false, error: 'playback_timeout', player: 'pw-play', deviceId });
-            }, 15000);
+            }, _playbackTimeoutMs(buffer, contentType));
             pw.on('exit', (code, sig) => {
               this._lastPlay = {
                 ts: Date.now(),
@@ -545,7 +587,7 @@ class ServerPlaybackService {
               try { proc.kill('SIGTERM'); } catch (_) {}
               setTimeout(() => { try { proc.kill('SIGKILL'); } catch (_) {} }, 500);
               finishOnce({ success: false, error: 'playback_timeout', player: 'mpg123', deviceId });
-            }, 15000);
+            }, _playbackTimeoutMs(buffer, contentType));
             proc.on('error', (e) => {
               console.error('mpg123(ai) spawn error:', e && e.message);
               this._lastAIPlay = { ts: Date.now(), characterId, deviceId, player: 'mpg123', contentType, streamed: 0, volume, simulated: false, kind: 'ai', error: e && e.message };
@@ -633,7 +675,7 @@ class ServerPlaybackService {
             try { ff.kill('SIGKILL'); } catch (_) {}
             try { pw.kill('SIGKILL'); } catch (_) {}
             resolve({ success: false, error: 'playback_timeout', player: 'ffmpeg|pw-play', deviceId });
-          }, 15000);
+          }, _playbackTimeoutMs(buffer, contentType));
 
           ff.on('exit', () => { /* wait for pw-play */ });
           pw.on('exit', () => finish('ffmpeg|pw-play'));
