@@ -136,7 +136,13 @@
           <label for="audioLeadTimeRange" class="mb-field-label">
             Audio Sync Offset <span class="mb-badge" id="audioLeadTimeValue">0ms</span>
           </label>
-          <input type="range" class="mb-range" id="audioLeadTimeRange" min="-500" max="500" step="25" value="0" title="Adjust audio sync offset">
+          <!-- Range is +/-1000ms to match the engine, which already clamps to
+               Math.max(-1000, Math.min(1000, ...)) in jawAnimationSuperPowerService.
+               The slider used to stop at 500 while the engine accepted twice that,
+               so an operator who needed more delay than 500ms had no way to ask for
+               it. Cold USB-sink resume alone can cost 150-450ms on top of mpg123
+               spawn and decode, which puts a cold start past the old limit. -->
+          <input type="range" class="mb-range" id="audioLeadTimeRange" min="-1000" max="1000" step="25" value="0" title="Adjust audio sync offset">
           <div class="d-flex justify-content-between">
             <small class="mb-field-hint">Jaw leads &larr;</small>
             <small class="mb-field-hint">&rarr; Audio leads</small>
