@@ -552,20 +552,29 @@ async function loadHeadTrackingGuardrails(servoId, characterId) {
       if (typeof profile.bounds.minAngle === 'number') minAngle = profile.bounds.minAngle;
       if (typeof profile.bounds.maxAngle === 'number') maxAngle = profile.bounds.maxAngle;
     } else {
-      // Fallback: read markers from parts.json
+      // Legacy `part.markers` are NO LONGER a guardrail source (retired 2026-08-21,
+      // same as in jawAnimationSuperPowerService). The marker EDITOR does not exist
+      // — every DOM id its code targets is absent from every view — so the values
+      // are invisible and uncorrectable, and one part on this fleet still carries
+      // Min 63 / Max 131 against a measured window of 33-98, i.e. past its
+      // mechanical stops. Autonomously sweeping a servo between numbers nobody can
+      // see or fix is not a fallback, it is a hazard. Naming them keeps the refusal
+      // honest instead of silent.
       try {
         const partsPath = await getPartsFilePath();
         const partsData = await fs.readFile(partsPath, 'utf8');
         const parts = JSON.parse(partsData);
         const part = parts.find(p => String(p.id) === String(servoId));
-        if (part && Array.isArray(part.markers)) {
-          const minMarker = part.markers.find(m => m.name === 'Min');
-          const maxMarker = part.markers.find(m => m.name === 'Max');
-          if (minMarker) minAngle = parseFloat(minMarker.value);
-          if (maxMarker) maxAngle = parseFloat(maxMarker.value);
+        const markers = part && Array.isArray(part.markers) ? part.markers : [];
+        const minMarker = markers.find(m => m.name === 'Min');
+        const maxMarker = markers.find(m => m.name === 'Max');
+        if (minMarker && maxMarker) {
+          console.warn('Head tracking: servo ' + servoId + ' has legacy markers Min '
+            + minMarker.value + ' / Max ' + maxMarker.value + ' — NOT used as guardrails. '
+            + 'Calibrate the part instead.');
         }
       } catch (partsError) {
-        console.warn('Could not read parts.json markers for guardrails:', partsError.message);
+        console.warn('Could not read parts.json while checking legacy markers:', partsError.message);
       }
     }
 
@@ -655,6 +664,45 @@ function recordHeadDriveResult(state, webcamId, ok, detail) {
 async function maybeDriveHead(webcamId, status) {
   const cfg = headTrackingConfigs.get(webcamId);
   if (!cfg || !cfg.enabled) return;
+
+  // Pin the character BEFORE anything reads calibration, because the guardrail
+  // lookup below is character-scoped. controlPart falls back to the node's
+  // selectedCharacter when no characterId is given, so a selection change (or a
+  // test flipping it) mid-session re-resolved the servo id against a different
+  // character's parts — the source of the "Part 2 not found" flood and, worse, of
+  // driving another character's channel.
+  if (cfg.characterId == null) {
+    try {
+      const appCfg = await readConfig();
+      cfg.characterId = appCfg && appCfg.selectedCharacter != null ? appCfg.selectedCharacter : null;
+    } catch (_) { /* keep null — controlPart falls back as before */ }
+  }
+
+  // NEVER hold a claim we cannot use.
+  //
+  // This used to claim the pan servo FIRST and only discover further down that the
+  // servo has no usable calibrated window and must not be driven. The claim is at
+  // PRIORITY.HEAD_TRACKING (80) and the idle loop is 30, so the result was a servo
+  // locked to an owner that would never move it: one node logged 239 "no usable
+  // calibrated window" refusals while the idle loop reported "All servos preempted
+  // by higher priority, pausing..." for the whole session. The head sat still and
+  // the idle motion it was starving never ran either — worst of both.
+  //
+  // So resolve the guardrails first, and if there is no window, actively give the
+  // servo back rather than sitting on it. releaseServo is owner-checked, so this
+  // can only free our own claim.
+  if (cfg.panServoId != null) {
+    const gate = await loadHeadTrackingGuardrails(cfg.panServoId, cfg.characterId);
+    if (!gate) {
+      const owner = getOwner(cfg.panServoId);
+      if (owner && owner.owner === headOwner(webcamId)) {
+        releaseServo(cfg.panServoId, headOwner(webcamId));
+        console.warn('Head tracking: released the claim on servo ' + cfg.panServoId
+          + ' — it has no usable calibrated window, so holding it only starves lower-priority motion');
+      }
+      return;
+    }
+  }
 
   // A higher-priority owner (scene, semantic gesture) preempts our claim
   // silently, and its release deletes the claim entirely — so re-claim whenever
