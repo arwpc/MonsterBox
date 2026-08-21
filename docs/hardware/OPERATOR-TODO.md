@@ -13,6 +13,10 @@ Ordered by what unblocks the most. Items 1–3 are new this session.
 
 ## A. USB 5 V rail is browning out on the dev node — **highest priority**
 
+**2026-08-21 update: now 831 over-current events in one boot (was 155, then 447). At that
+point the camera stopped answering snapshots entirely — HTTP 000, 0 bytes — while the
+service still reported active.**
+
 **Evidence:** 447 `over-current change` events in `journalctl -k -b` on one boot (155 measured four
 hours earlier, so it is accelerating). `usb2-port1: over-current change #47`, `usb2-port4: #27`, and
 repeated `usb 1-1.1` / `usb 1-1.2` disconnect-and-re-enumerate cycles — those two are the camera and

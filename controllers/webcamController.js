@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, execFileSync } from 'child_process';
 import fsSync from 'fs';
 import fs from 'fs/promises';
 import nodeFetch from 'node-fetch';
@@ -330,6 +330,132 @@ async function checkMjpgStreamerHealth() {
   }
 }
 
+/**
+ * Find the running mjpg_streamer's full command line, as an unprivileged process.
+ *
+ * scanVideoUsage() cannot be used for this and never could: it walks /proc/PID/fd,
+ * and mjpg-streamer runs as root while this app runs as `remote`, so those symlinks
+ * are unreadable and the scan returns []. That is also why the health endpoint's
+ * `pid` field has always been null on a node where the stream is plainly running.
+ *
+ * /proc/PID/cmdline IS world-readable, so match on that instead. systemd's MainPID
+ * is tried first because it is one read instead of a full /proc walk.
+ */
+
+function readMjpgStreamerPid() {
+  try {
+    const shown = execFileSync('systemctl', ['show', 'mjpg-streamer', '-p', 'MainPID'],
+      { encoding: 'utf8', timeout: 3000 });
+    const m = /MainPID=(\d+)/.exec(shown);
+    return (m && m[1] !== '0') ? parseInt(m[1], 10) : null;
+  } catch (_) { return null; }
+}
+
+function findMjpgStreamerCmdline() {
+  const readCmdline = (pid) => {
+    try {
+      return fsSync.readFileSync(path.join('/proc', String(pid), 'cmdline'), 'utf8')
+        .replace(/\0/g, ' ').trim();
+    } catch (_) { return ''; }
+  };
+
+  try {
+    const shown = execFileSync('systemctl', ['show', 'mjpg-streamer', '-p', 'MainPID'],
+      { encoding: 'utf8', timeout: 3000 });
+    const m = /MainPID=(\d+)/.exec(shown);
+    if (m && m[1] !== '0') {
+      const line = readCmdline(m[1]);
+      if (/mjpg_streamer/i.test(line)) return line;
+    }
+  } catch (_) { /* systemd may not own it (a hand-started stream) — fall through */ }
+
+  try {
+    for (const entry of fsSync.readdirSync('/proc')) {
+      if (!/^\d+$/.test(entry)) continue;
+      const line = readCmdline(entry);
+      if (/mjpg_streamer/i.test(line)) return line;
+    }
+  } catch (_) { /* nothing readable */ }
+  return '';
+}
+
+/**
+ * What geometry is the camera ACTUALLY streaming at, right now?
+ *
+ * Read from the running mjpg_streamer's own argv, because that is the only source
+ * that cannot be stale. Four different places used to claim to describe webcam
+ * geometry and none of them was consulted by the camera:
+ *
+ *   1. scripts/mjpg-launcher.sh — the REAL one. Its defaults (640x480 @ 15fps q60)
+ *      are the operator's spec: remote monitoring happens on a phone, so motion
+ *      matters more than detail and USB bandwidth matters more than both. Overridable
+ *      per node via /etc/default/monsterbox-cam.
+ *   2. data/models/webcam_models.json `defaults` — the camera's SENSOR MAXIMUM, which
+ *      the UI displayed as though it were the operational setting. One node's camera
+ *      is an Arducam B0205, so the UI advertised 1920x1080@30 while the stream was
+ *      and always had been 640x480@15. That is the "it's still running high
+ *      resolution video" report: the number on screen, not the camera.
+ *   3. controllers/webcamController.applyDeviceToService — writes a systemd drop-in.
+ *      Unreachable in practice: the app runs as an unprivileged user and the drop-in
+ *      directory is root-owned, so the write fails with EACCES.
+ *   4. views/setup/calibration.ejs Edit-Part width/height — read by nothing.
+ *
+ * So the fix is not to add a fifth source. It is to report the truth and stop
+ * presenting a sensor maximum as a live setting.
+ *
+ * @returns {{resolution:string|null, fps:number|null, quality:number|null,
+ *            devicePath:string|null, source:string}}
+ */
+export function readActiveStreamGeometry() {
+  try {
+    const line = findMjpgStreamerCmdline();
+    if (line) {
+      const res = /-r\s+(\d+x\d+)/.exec(line);
+      const fps = /-f\s+(\d+)/.exec(line);
+      const q = /-q\s+(\d+)/.exec(line);
+      const dev = /-d\s+(\S+)/.exec(line);
+      if (res || fps || q) {
+        return {
+          resolution: res ? res[1] : null,
+          fps: fps ? parseInt(fps[1], 10) : null,
+          quality: q ? parseInt(q[1], 10) : null,
+          devicePath: dev ? dev[1] : null,
+          source: 'running mjpg_streamer process'
+        };
+      }
+    }
+  } catch (_) { /* fall through to the file, then to the documented defaults */ }
+
+  // Not running: report what it WOULD start with, and say so, rather than guessing.
+  try {
+    const raw = fsSync.readFileSync('/etc/default/monsterbox-cam', 'utf8');
+    const pick = (key) => {
+      const m = new RegExp('^\\s*' + key + '\\s*=\\s*"?([^"\\s#]+)', 'm').exec(raw);
+      return m ? m[1] : null;
+    };
+    const resolution = pick('MB_CAM_RES');
+    const fps = pick('MB_CAM_FPS');
+    const quality = pick('MB_CAM_Q');
+    if (resolution || fps || quality) {
+      return {
+        resolution: resolution || '640x480',
+        fps: fps ? parseInt(fps, 10) : 15,
+        quality: quality ? parseInt(quality, 10) : 60,
+        devicePath: pick('MB_CAM_DEV'),
+        source: '/etc/default/monsterbox-cam (stream not running)'
+      };
+    }
+  } catch (_) { /* no override file is the normal case */ }
+
+  return {
+    resolution: '640x480',
+    fps: 15,
+    quality: 60,
+    devicePath: null,
+    source: 'scripts/mjpg-launcher.sh defaults (stream not running)'
+  };
+}
+
 export const getHealthStatus = async (req, res) => {
   try {
     const [isRunning, devices] = await Promise.all([
@@ -344,7 +470,15 @@ export const getHealthStatus = async (req, res) => {
       mjpgStreamer: {
         running: isRunning,
         url: MJPG_STREAMER_URL,
-        pid: usage.find(item => /mjpg-streamer/i.test(item.cmd || ''))?.pid || null
+        // Was ALWAYS null: it searched scanVideoUsage(), which walks /proc/PID/fd and
+        // cannot see a root-owned process from this unprivileged app. Ask systemd.
+        pid: readMjpgStreamerPid(),
+        // The geometry actually in effect, read from the running process — NOT a
+        // model default. A model's `defaults` is the sensor maximum; showing it as
+        // the live setting is what made one node appear to stream 1080p30 while it
+        // had always been 640x480@15. `source` names where the number came from so a
+        // reader can never mistake a fallback for a measurement.
+        activeGeometry: readActiveStreamGeometry()
       },
       devices: {
         total: devices.length,

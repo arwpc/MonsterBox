@@ -1153,7 +1153,15 @@ const HARDWARE_CONTROLLERS = {
                 success: true,
                 partType: 'webcam',
                 deviceId: deviceId,
-                resolution: resolution,
+                // `requestedResolution`, NOT `resolution`. This function only probes
+                // mjpg-streamer's snapshot URL and may start the service; it does not
+                // configure geometry — scripts/mjpg-launcher.sh owns that. Echoing the
+                // caller's argument back as `resolution` reported a setting that had
+                // no relationship to what the camera was serving, which is the same
+                // defect class as a `success: true` that proves nothing. Callers that
+                // want the real thing read mjpgStreamer.activeGeometry from
+                // GET /setup/calibration/api/webcam/health.
+                requestedResolution: resolution,
                 streamUrl: proxyPath,
                 directStreamUrl: MJPG_STREAM_ENDPOINT,
                 snapshotUrl: `${MJPG_STREAMER_URL}/?action=snapshot`,

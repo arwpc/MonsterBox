@@ -6,7 +6,7 @@
     "defaults": {
       "resolution": "640x480",
       "fps": 15,
-      "quality": 85
+      "quality": 60
     },
     "controlsSchema": {
       "brightness": {
@@ -43,7 +43,10 @@
     },
     "meta": {
       "vendor": "UVC",
-      "notes": "Attach this model to a Webcam part to push reasonable defaults; per-device overrides still apply"
+      "notes": "Attach this model to a Webcam part to push reasonable defaults; per-device overrides still apply",
+      "maxResolution": "640x480",
+      "maxFps": 15,
+      "geometryNote": "defaults are the OPERATIONAL geometry this fleet streams at, not the sensor maximum (see maxResolution). The live setting is owned by scripts/mjpg-launcher.sh, overridable per node via /etc/default/monsterbox-cam. These defaults only seed a new part; nothing here configures the camera. Read mjpgStreamer.activeGeometry from the webcam health endpoint for what is actually streaming."
     }
   },
   {
@@ -51,9 +54,9 @@
     "name": "Arducam B0205 Wide-Angle USB Camera",
     "description": "Arducam 1080p 200-degree wide-angle USB camera with infrared night vision, auto-focus, f/1.6 aperture, 1/2.7-inch CMOS sensor",
     "defaults": {
-      "resolution": "1920x1080",
-      "fps": 30,
-      "quality": 90
+      "resolution": "640x480",
+      "fps": 15,
+      "quality": 60
     },
     "controlsSchema": {
       "brightness": {
@@ -184,7 +187,8 @@
       "dimensions": "1.5 x 1.5 x 1.5 inches",
       "weight": "0.07 kg",
       "maxOperatingTemp": "158F / 70C",
-      "notes": "Compact 200-degree fisheye lens with IR night vision. IR switching is hardware-automatic (ambient light sensor). Night Mode preset optimizes V4L2 controls for IR viewing."
+      "notes": "Compact 200-degree fisheye lens with IR night vision. IR switching is hardware-automatic (ambient light sensor). Night Mode preset optimizes V4L2 controls for IR viewing.",
+      "geometryNote": "defaults are the OPERATIONAL geometry this fleet streams at, not the sensor maximum (see maxResolution). The live setting is owned by scripts/mjpg-launcher.sh, overridable per node via /etc/default/monsterbox-cam. These defaults only seed a new part; nothing here configures the camera. Read mjpgStreamer.activeGeometry from the webcam health endpoint for what is actually streaming."
     }
   },
   {
@@ -194,14 +198,17 @@
     "defaults": {
       "resolution": "640x480",
       "fps": 15,
-      "quality": 85
+      "quality": 60
     },
     "controlsSchema": {},
     "meta": {
       "usbId": "0c45:636b",
       "usbProduct": "Streaming Camera",
       "usbManufacturer": "SONix Technology Co., Ltd.",
-      "notes": "USB signature read from a live device on a MonsterNet node via /sys/bus/usb/devices. It identifies the MODEL, not the individual unit, so an identical replacement camera still matches. Many rebadged wide-angle USB cameras ship this same controller - read a match as 'same camera model', not 'same retail SKU'. controlsSchema is left empty on purpose: the V4L2 control ranges for this unit have not been measured, and inventing them would push wrong defaults at the device."
+      "notes": "USB signature read from a live device on a MonsterNet node via /sys/bus/usb/devices. It identifies the MODEL, not the individual unit, so an identical replacement camera still matches. Many rebadged wide-angle USB cameras ship this same controller - read a match as 'same camera model', not 'same retail SKU'. controlsSchema is left empty on purpose: the V4L2 control ranges for this unit have not been measured, and inventing them would push wrong defaults at the device.",
+      "maxResolution": "640x480",
+      "maxFps": 15,
+      "geometryNote": "defaults are the OPERATIONAL geometry this fleet streams at, not the sensor maximum (see maxResolution). The live setting is owned by scripts/mjpg-launcher.sh, overridable per node via /etc/default/monsterbox-cam. These defaults only seed a new part; nothing here configures the camera. Read mjpgStreamer.activeGeometry from the webcam health endpoint for what is actually streaming."
     }
   }
 ]

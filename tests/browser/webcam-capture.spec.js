@@ -70,7 +70,15 @@ test.describe('Webcam Capture — Arducam B0205', () => {
     expect(arducam.name).toContain('Arducam');
     expect(arducam.meta.modelNumber).toBe('B0205');
     expect(arducam.meta.nightVision).toBe(true);
-    expect(arducam.defaults.resolution).toBe('1920x1080');
+    // `defaults` is the OPERATIONAL geometry this fleet streams at, deliberately NOT
+    // the sensor maximum. This test used to assert 1920x1080 and so pinned a fiction:
+    // the UI advertised 1080p30 for this camera while the stream was, and always had
+    // been, 640x480@15 — which is what the operator reported as "still running high
+    // resolution video". The ceiling is preserved as meta.maxResolution, so both the
+    // capability and the operating point are now asserted.
+    expect(arducam.defaults.resolution).toBe('640x480');
+    expect(arducam.defaults.fps).toBe(15);
+    expect(arducam.meta.maxResolution).toBe('1920x1080');
   });
 
   test('should have webcam part 9 with arducam-b0205 model', async () => {
