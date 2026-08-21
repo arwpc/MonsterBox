@@ -1,7 +1,7 @@
 # v11.0 Production-Readiness — Session Handoff
 
 **Written:** 2026-08-21, ~10:00Z
-**Repo state:** `0958f3aa` on `main`, pushed. Gate green (6/6) on every commit.
+**Repo state:** `48fd5e33` on `main`, pushed. Gate green (6/6) on every commit.
 **Version:** `package.json` is still `10.4.0`. Bump to `11.0.0` only at the release tag.
 **Working tree:** clean apart from node-local files that must NOT be committed (see §6).
 
@@ -60,16 +60,14 @@ depends on `/tmp` or on the workflow journals surviving.
 | 2 | `markers-invisible-live-fallback` — invisible, uneditable `part.markers` were the live jaw guardrail fallback; one part carries Min 63/Max 131 against a measured 33–98 | **FIXED** `a356ff2a` |
 | 3 | `invert-split-brain` — two different invert formulas, 756 µs apart on a live part | **FIXED** `a356ff2a` |
 | 4 | `UP-1` — webcam "apply device" destroys the self-healing mjpg launcher | **REFUTED** — app runs as `User=remote`; the systemd drop-in dir is root-owned, so the write gets EACCES. Not reachable. |
-| 5 | `UP-2` — head-tracking pan-servo claim leaks on tracker crash and is held while driving is refused | **OPEN** — highest-priority remaining software item |
+| 5 | `UP-2` — head-tracking held a pan servo it had refused to drive, starving the idle loop | **FIXED** `48fd5e33` |
 
-`UP-2` is visible live in the logs as:
-```
-[PriorityManager] DENIED claim on servo 15 by "idle-loop" (pri 30) — held by "head-tracking:9" (pri 80)
-[IdleLoop] All servos preempted by higher priority, pausing...
-```
-Head tracking holds servo 15 permanently while refusing to drive it, starving the idle loop. Note the
-refusal side is now partly relieved: Orlok's head has a real window again (§3), so head tracking can
-actually drive. Re-measure before assuming the finding is unchanged.
+**All show-stoppers are closed.** `UP-2` was an ordering bug: `maybeDriveHead()` claimed the pan servo
+at priority 80 and only afterwards discovered the servo had no usable window, so the servo was locked
+to an owner that would never move it — 239 refusals alongside "All servos preempted by higher
+priority, pausing...". The guardrail check now precedes the claim and actively releases when there is
+no window. Head tracking also still fell back to legacy `part.markers` for guardrails; that was
+retired here too, matching the jaw fix.
 
 ---
 
@@ -116,7 +114,6 @@ limit — those are marked *(unjudged)* and should be re-verified before acting.
 ### Uptime / performance — majors
 | ID | Title | Note |
 |---|---|---|
-| UP-2 | Head-tracking claim leaks/blocks; head can freeze for the night | **show-stopper, do first** |
 | UP-3 | Video geometry has four disagreeing sources; UI advertises 1080p30 while the stream is VGA15 | Aaron explicitly asked for ONE canonical resolution applied to all six characters, including offline nodes |
 | UP-4 | `performance-history.json` fully rewritten every 5 min — ~427 MB/day of SD writes, non-atomic | SD-card life |
 | UP-5 | No liveness watchdog: an app alive but not serving on :3000 is never auto-recovered | Verifier's correction is important — do **not** use `WatchdogSec`+`sd_notify` (no dep, `MainPID` is npm). Use a systemd timer curling `/health` with a 3-consecutive-failure threshold. |
@@ -163,15 +160,22 @@ missed — the Markers `setMinBtn`/`setMaxBtn` writing `config.markers`) · `tes
 - **Dragomir's `parts.json` diverges from Orlok's copy of it** (jaw ch0 vs ch1). Each node's own copy
   is authoritative for itself.
 
-### UNRESOLVED — one thread left open honestly
-A full `npm run test:system` run **still leaves the broken elbow's channel energized at 1445.3 µs**
-via a path that emits **no log line and trips no guard**. Bisecting by test area does not reproduce
-it; only the full suite does. Ruled out: the part-test route (now selects a healthy servo, and the
-refused no-angle request produces no `Servo route` line), `batchMoveServos` (now filtered, logs zero
-drops), `pca9685_control` init (touches only MODE1/PRESCALE), the jaw daemon's `release_all` (writes
-0). The 5-minute `stallGuard` sweep is a backstop that does not depend on finding the writer — but
-**the writer is still unidentified and worth finding.** 1445.3 µs = off-count 296 = 85° on the 0–180
-scale; that value also appeared on Mina ch4/ch8 and Dragomir ch3, so it may be a shared default.
+### RESOLVED — the phantom channel leak (`92e68ae5`)
+A full `test:system` run kept energizing the broken elbow's channel at 1445.3 µs with **no
+corresponding command in the Node-side log**. Found by instrumenting rather than guessing: a
+read-only register watcher showed the write at a fixed offset (deterministic); running the suspected
+suite alone did NOT reproduce it (so, background actor); `lsof /dev/i2c-1` showed the only persistent
+holder is the servo daemon — and it is `jaw_servo_daemon.py`, a 34-line shim over `servo_daemon.py`,
+not the file being read. A trace at that daemon's single write chokepoint proved it: 226 writes,
+222 to the jaw, **2 to the broken part's channel**. The Node layer logs its *intent*, not what
+reaches the chip, which is why every earlier search came up empty.
+
+The deny now lives at the transport: `servo_daemon._write()` refuses to ENERGIZE a channel owned by a
+part declared broken (releases still allowed, so a stall can be cleared). That daemon is the only
+persistent owner of the I2C bus, so the stdin jaw protocol, the unix socket and one-shot CLI calls all
+funnel through it — nothing can bypass it. `MB_SERVO_TRACE=1` leaves the trace permanently available.
+`tests/unit/broken-channel-denial.test.js` pins it as a cross-language contract, because
+`physical-faults.json` is now read by both runtimes and a silent disagreement would reopen the leak.
 
 ---
 
@@ -237,11 +241,41 @@ scale; that value also appeared on Mina ch4/ch8 and Dragomir ch3, so it may be a
 
 ```
 gate            6/6 green
-unit            466 passing (12 new this session)
+unit            472 passing (18 new this session)
 system          366 passing
 hardware         44 passing
 browser         532 of 533 (the 1 is the USB camera dropping off the bus)
-service         active, 0 restarts, 53.5°C, no throttling
+service         active, 0 restarts, no throttling
 fleet           .120 / .130 / .140 all HTTP 200
 held channels   ch0 (head) + ch3 (jaw) only — no broken part energized
+show-stoppers   4 of 4 closed (3 calibration + UP-2); UP-1 refuted as unreachable
 ```
+
+---
+
+## 9. Cloud vs bridge — what the successor can and cannot do remotely
+
+The successor runs in a CLOUD environment, not on this Pi. Most of the remaining work is fine there;
+a specific subset is not.
+
+**Fine in the cloud** — all of the open calibration majors and minors, `UP-3` (choosing the canonical
+webcam geometry and where it lives), `UP-4`/`UP-6` (atomic writes, SD-write reduction), `UP-7`,
+`UP-8`, `UP-10`, `UP-12`, plus `npm run gate`, `test:unit` and `test:pact`. These are code and data
+changes verifiable by reading, by unit tests, and by the gate.
+
+**Requires the bridge machine (this Pi), because it needs real hardware or a real node:**
+- Anything reading or writing the PCA9685 — `servo_cli.py reconcile`, channel probes, the stall guard,
+  the `MB_SERVO_TRACE` path. There is no chip in the cloud.
+- `npm run test:system` and `npm run test:browser` against port 3100/3000. Port 3100 drives REAL
+  hardware; the suites also exercise the daemon, the camera and audio. Cloud runs of these are not
+  meaningful and should not be treated as verification.
+- Ear-checks and anything about audio routing, volume, or the mute flag.
+- The webcam/mjpg-streamer path, `/etc/default/monsterbox-cam`, and the USB over-current work.
+- Reading a peer node's own `parts.json` / `calibration_profiles.json` over SSH; fleet SSH trust lives
+  on this box.
+- Deploying (`npm run deploy:all`) and any grep-on-node verification.
+- Every item in §5.
+
+**So:** the cloud successor should write the fix, prove what it can with unit tests and the gate, and
+explicitly hand the hardware verification back — labelled as unverified until run on the bridge.
+Do not report a hardware-dependent fix as proven from the cloud.
