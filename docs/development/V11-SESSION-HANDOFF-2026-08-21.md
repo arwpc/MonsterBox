@@ -1,7 +1,7 @@
 # v11.0 Production-Readiness — Session Handoff
 
 **Written:** 2026-08-21, ~10:00Z
-**Repo state:** `3df27187` on `main`, pushed. Gate green (6/6) on every commit.
+**Repo state:** `d53c97db` on `main`, pushed. Gate green (6/6) on every commit.
 **Version:** `package.json` is still `10.4.0`. Bump to `11.0.0` only at the release tag.
 **Working tree:** clean apart from node-local files that must NOT be committed (see §6).
 
@@ -120,6 +120,20 @@ These came out of the work rather than the audit, and matter more than most of t
   webcam's controls and modelId. Correcting an fps field silently discarded all of it and returned
   "saved successfully". Now deep-merged. Verified live with an exact backup, then restored
   byte-for-byte (sha256 confirmed) so the check left no trace in operator data.
+- **UP-3 closed — one canonical webcam geometry, and the UI now reports the real one** (`1ebd052e`).
+  Every node always streamed 640x480@15 q60 from `mjpg-launcher.sh`; the UI showed the MODEL default,
+  and the Arducam's was its SENSOR MAXIMUM (1920x1080@30), so that character advertised 1080p30 while
+  serving VGA15 — the "still running high resolution video" report was the number on screen, not the
+  camera. Model defaults are now the operational geometry, identical across all three models, with
+  the ceiling preserved as `meta.maxResolution`. The webcam health endpoint returns
+  `mjpgStreamer.activeGeometry` read from the running process's own argv, with a `source` field so a
+  default can never be mistaken for a measurement. `startStream` no longer echoes a `resolution` it
+  never applied. The health endpoint's `pid` was ALWAYS null (it walked `/proc/PID/fd`, unreadable
+  for a root-owned process from this unprivileged app) — now read via systemd MainPID + cmdline.
+- **The webcam health check reported a healthy camera delivering nothing** (`d53c97db`). It GET the
+  mjpg-streamer root URL, which `output_http.so` serves happily with a dead input plugin. `running`
+  now means frames are actually flowing, with `httpResponding` and `notStreamingReason` alongside.
+  Verified in both directions on real hardware.
 - **Orlok part 5 modelId** corrected from a 40 kg `ds3240mg` to the 150 kg part, which silenced a
   false `mixes incompatible voltage classes` warning that had fired on every boot
   (`⚠ servoChannels: warning` → `✓ servoChannels: ok`). **Node-local, uncommitted.**
@@ -134,7 +148,6 @@ limit — those are marked *(unjudged)* and should be re-verified before acting.
 ### Uptime / performance — majors
 | ID | Title | Note |
 |---|---|---|
-| UP-3 | Video geometry has four disagreeing sources; UI advertises 1080p30 while the stream is VGA15 | Aaron explicitly asked for ONE canonical resolution applied to all six characters, including offline nodes |
 | UP-4 | `performance-history.json` fully rewritten every 5 min — ~427 MB/day of SD writes, non-atomic | SD-card life |
 | UP-5 | No liveness watchdog: an app alive but not serving on :3000 is never auto-recovered | Verifier's correction is important — do **not** use `WatchdogSec`+`sd_notify` (no dep, `MainPID` is npm). Use a systemd timer curling `/health` with a 3-consecutive-failure threshold. |
 | UP-6 | `characters.json` and the tts-config class written non-atomically | Verifier says start with `sceneAnalyticsService.js:195` — 13.8 KB rewritten non-atomically on **every scene execution** |
@@ -267,7 +280,8 @@ gate            6/6 green
 unit            481 passing (27 new this session)
 system          366 passing
 hardware         44 passing
-browser         532 of 533 (the 1 is the USB camera dropping off the bus)
+browser         533 of 533 with a live camera (the previously-failing webcam spec now passes);
+                the webcam spec fails whenever the camera is off the bus — hardware, not code
 service         active, 0 restarts, no throttling
 fleet           .120 / .130 / .140 all HTTP 200
 held channels   ch0 (head) + ch3 (jaw) only — no broken part energized

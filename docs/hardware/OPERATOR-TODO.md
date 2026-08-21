@@ -51,6 +51,20 @@ curl -s -o /tmp/f.jpg -w '%{http_code} %{size_download}\n' 'http://localhost:809
 file /tmp/f.jpg     # must say "JPEG image data", and bytes must be > 1 KB
 ```
 
+**2026-08-21 11:30 — the stopgap STOPPED WORKING.** The reset succeeded once, then stopped
+recovering the camera at all. Current state: the device re-enumerates and authorizes
+(`Found UVC 1.00 device USB Camera (0c45:6366)`, `authorized to connect`) and appears on the bus, but
+attaches DEGRADED — `Failed to query (GET_INFO) UVC control 5 on unit 1` and
+`cannot get freq at ep 0x84`. mjpg-streamer then reports a clean start
+(`Frames Per Second: 15`, `Format: JPEG`) while delivering ZERO frames: port 8090 listening,
+snapshot hangs indefinitely. So the camera is no longer recoverable in software.
+
+Also note the counters: `usb2-port1` reached over-current **#232** with ports 2, 3 and 4 reporting
+too (#153/#142/#137). Multiple ports on the USB 3 root hub, not one bad device — so suspect the
+rail/hub rather than the camera itself. Try: a powered hub, a different port, and a known-good cable,
+in that order. The camera also migrated `/dev/video0` -> `/dev/video1` during this, and the
+`/dev/v4l/by-id/` symlink followed it correctly, which is exactly why the launcher resolves by-id.
+
 **This is deliberately NOT automated.** Auto-resetting USB on failure would keep the camera limping
 and hide an escalating hardware fault — and the counter has gone 155 -> 447 -> 831 -> 857 in one
 session. Note the device path is `1-1.1`; the ReSpeaker mic array is `1-1.2`, so toggling the camera
