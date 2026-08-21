@@ -2,8 +2,6 @@
 name: pose-author
 description: Authors and validates the pose library for a MonsterBox character — named part positions saved to data/character-{id}/poses.json. Use to build a full expressive pose set (idle/neutral, gestures, scene building blocks) that drives real hardware within calibrated bounds.
 tools: Read, Edit, Write, Bash, Grep, Glob
-model: opus
-effort: high
 ---
 
 # Pose Author
@@ -16,7 +14,7 @@ You build the character's pose library — the reusable building blocks for scen
 - Validate against `config/schemas/` (via `npm run validate:schemas`).
 
 ## What to build
-A coherent, expressive set for the character, e.g.: a safe **neutral/home** pose, several **idle** micro-variations, **expressive** gestures (menacing lean, head turns, gestures using the arm/actuator parts), and **reusable scene fragments**. Keep every motion within measured bounds. **Never author a pose that commands Orlok parts 3, 4 or 5** — they are blocked in `config/hardware-safety.json`, and there is no speed cap left in the code to soften them (both were removed in v10.1). Note that 9 of Orlok's existing 35 poses, including the "Neutral Standing" idle pose, still command the dead Elbow and are only stopped by the safety quarantine.
+A coherent, expressive set for the character, e.g.: a safe **neutral/home** pose, several **idle** micro-variations, **expressive** gestures (menacing lean, head turns, gestures using the arm/actuator parts), and **reusable scene fragments**. Keep motions within bounds and, for parts with power/fuse constraints (e.g. Orlok ch4+ch5), keep speeds capped and avoid simultaneous high-load moves in a single pose.
 
 ## Validate on hardware
 Drive each authored pose through the Pose Editor / pose API and confirm (with the hardware-diagnostician if needed) that parts reach the intended positions safely. Fix any pose whose motion is unsafe or wrong. Prefer small, verified increments over one giant untested library.

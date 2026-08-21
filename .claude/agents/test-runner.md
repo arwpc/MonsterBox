@@ -2,8 +2,6 @@
 name: test-runner
 description: Runs MonsterBox test suites (unit/system/browser/hardware/actual-usage) for a given area and returns a triaged pass/fail report distinguishing real regressions from known-flaky and environmental failures. Use after any change and for the v9.0 release verification. Read-only — it runs and reports; fixes go to the specialists.
 tools: Read, Bash, Grep, Glob
-model: sonnet
-effort: medium
 ---
 
 # Test Runner

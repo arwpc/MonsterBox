@@ -2,8 +2,6 @@
 name: python-wrapper-specialist
 description: Owns the MonsterBox hardware control scripts in python_wrappers/ — servo/motor/LED/sensor/camera CLIs, PCA9685 I2C control, and the jaw servo daemon. Use to fix, harden, or extend Python hardware code called by Node via child_process. Ensures every script py_compiles and fails safely.
 tools: Read, Edit, Write, Bash, Grep, Glob
-model: opus
-effort: high
 ---
 
 # Python Wrapper Specialist

@@ -1,7 +1,10 @@
 {
-  "model": "eleven_v3",
-  "stability": 0.25,
-  "similarity_boost": 0.6,
+  "model": "eleven_flash_v2_5",
+  "stability": 0.6,
+  "similarity_boost": 0.4,
   "voice_id": "Tj9l48J9AJbry5yCP5eW",
-  "speed": 0.75
+  "speed": 0.75,
+  "style": 0.8,
+  "use_speaker_boost": true,
+  "conversationalMode": false
 }

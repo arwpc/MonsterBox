@@ -35,7 +35,7 @@ dead servo, broken/unseated signal lead, missing V+, or a burned output driver.
 
 | Node | Part | Channel | Evidence |
 |---|---|---|---|
-| Sir Dragomir (4) | 1 Head Servo (neck), **multi-turn 900°** (goBILDA Stingray-2, *not* continuous — corrected 2026-08-20) | PCA **ch4** | 1645 µs CW / 1348 µs CCW, correct duration, clean release, no creep → **+0.4 dB**. Same chip, same rail, ch0 jaw → **+29 dB** |
+| Sir Dragomir (4) | 1 Head Servo (neck), continuous | PCA **ch1** | 1645 µs CW / 1348 µs CCW, correct duration, clean release, no creep → **+0.4 dB**. Same chip, same rail, ch0 jaw → **+29 dB** |
 | Mina (2) | 2 Neck | PCA **ch8** | PWM correct and changing 1445↔1763 µs, invert applied → **+2.3 dB** vs ch4 jaw **+14 dB** |
 | Mina (2) | 3 Eye | PCA **ch11** | Now drives 1133↔1445 µs → **+2.8 dB**. Had **never been driven since chip init** before this test |
 | Orlok (3) | 2 Left Arm of Manipulation | GPIO 18/13, MDD10A | GPIO pins claimed and driven; 3 commands incl. a 2.75 s drive all read **+6.4–6.7 dB**, identical to the idle control |
@@ -62,83 +62,9 @@ quiet room. The camera mic on each node reads ≈ −50 dBFS and hears everythin
 **On Mina, ALSA `default` routes to that dead input.** Any ear-check recording from `default` on Mina
 will score her deaf. Record from the camera-mic card explicitly. This will bite `npm run earcheck`.
 
-> **Before replacing either adapter, read section 4.** Mina's USB 5 V rail is tripping over-current,
-> and a browning-out hub is indistinguishable from a failed capture input. The Unitek may be fine.
-
 ---
 
-## 4. Mina's USB 5 V rail is tripping over-current  ← operator action
-
-`dmesg` on Mina shows **24 over-current events this boot**, across five different ports
-(`usb2-port1`, `usb2-port2`, `1-1-port1`, `1-1-port3`, `1-1-port4`), plus the webcam dropping off
-the bus and re-enumerating three times:
-
-```
-usb usb2-port1: over-current change #1
-usb 1-1-port4:  over-current change #3
-usb 1-1.4: USB disconnect, device number 5   → 6 → 7
-```
-
-Everything hangs off one rail behind **two cascaded hubs**:
-
-| Port | Device | Note |
-|---|---|---|
-| — | VIA Labs hub `2109:3431` | first hub |
-| — | Genesys Logic hub `05e3:0610` | **second hub, chained behind the first** |
-| `1-1.2` | C-Media Audio Adapter (Unitek Y-247A) | the adapter whose capture side reads a flat −79.7 dBFS |
-| `1-1.4` | Microdia Streaming Camera | the device that keeps disconnecting |
-
-**Why this is not cosmetic.** A sagging 5 V rail and a dead peripheral look identical from software.
-Section 3 records the Unitek's capture side as dead on the strength of a −79.7 dBFS floor — but that
-adapter shares a browning-out rail with a camera that cannot hold a connection. The capture side may
-be starved rather than broken, and replacing the adapter would fix nothing.
-
-It also undermines calibration: a part measured through a USB path while the rail is sagging can read
-differently run to run, so **settle the power before the calibration session**, or the windows
-measured may not be the windows that hold.
-
-**Operator action, cheapest first:**
-
-1. Move the camera to a **powered** USB hub, or straight onto a root port, so it is not sharing with
-   the audio adapter behind two chained hubs.
-2. Re-check with `dmesg | grep -c over-current` after a clean boot. Zero is the goal.
-3. Only if over-current is gone and the Unitek capture is *still* flat, treat it as genuinely dead.
-4. If over-current persists on a bare root port, the Pi's own 5 V supply is the suspect — check the
-   PSU rating and the cable, not the peripherals.
-
-**Evidence:** `dmesg` on mina, 2026-08-20. Surfaced by the standing log review after commit #2270.
-
-### Planned fix (operator, 2026-08-20): remove the USB hub, plug straight into the Pi
-
-Aaron's call, and it is the right one — the Pi 4B has four ports and Mina only has two USB devices.
-Removing both cascaded hubs takes the camera and the audio adapter off a shared, sagging rail.
-
-**Expect these to change on replug, and re-verify each:**
-
-| Thing | Will it move? | How to re-check |
-|---|---|---|
-| ALSA card index (`plughw:3,0`, `plughw:4,0`) | **Yes, very likely** | `arecord -l` / `aplay -l` — enumeration order changes with port order |
-| `/dev/videoN` | **Yes, likely** | `v4l2-ctl -d /dev/videoN --info` to find the one whose Card type is `Streaming Camera` |
-| PipeWire `node.name` | **No** | keyed by vendor/product (`alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo`), not by port. The WirePlumber no-suspend rule matches on this, so it survives |
-| Sink volume | Resets on replug | `node scripts/fleet-audio/apply-volumes.mjs --nodes 2` (canonical 1.5) |
-
-**Already broken, and this is a symptom of the same fault:** `data/character-2/parts.json` part 7
-"Mina Cam" pins `devicePath: /dev/video0`, and **`/dev/video0` does not exist** — the camera is
-currently `/dev/video1`. It disconnected and re-enumerated three times (device 5 → 6 → 7) under the
-over-current, and the config was never updated. Fix the path after replugging, once it has settled.
-
-**Success criterion:** after a clean boot with no hub, `dmesg | grep -c over-current` should read
-**0**. It was 24 at the start of the 2026-08-19 session and 40 by the end — it climbs during normal
-operation.
-
-**Then, and only then**, re-test whether the Unitek capture side is genuinely dead (section 3). If it
-starts hearing once it has a stable rail, it was never broken and no adapter needs buying.
-
-
-
----
-
-## 5. Sir Dragomir has no scenes
+## 4. Sir Dragomir has no scenes
 
 `GET /scenes/api/` on 192.168.8.130 returns `{"scenes":[]}` and his `config/animatronics.json` entry has
 no `defaultSceneId`, so `startAllQueueLoops()` skips him and he silently drops out of every fleet queue
@@ -146,7 +72,7 @@ loop. The fleet call still reports overall success, so nothing surfaces it.
 
 ---
 
-## 6. Software follow-ups these findings created
+## 5. Software follow-ups these findings created
 
 ### Store a USB signature with the Model (operator's idea — worth building)
 

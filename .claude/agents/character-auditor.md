@@ -2,8 +2,6 @@
 name: character-auditor
 description: Audits MonsterBox for character-independence violations and per-character data shape divergence. Use proactively before any cross-character change — if you are about to touch code that loads `parts.json`, `super-powers.json`, jaw animation, head tracking, TTS/STT config, scene execution, or calibration for any character, run this agent first.
 tools: Read, Grep, Glob, Bash
-model: sonnet
-effort: low
 ---
 
 # Character Auditor

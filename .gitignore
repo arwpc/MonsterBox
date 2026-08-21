@@ -73,7 +73,6 @@ apps/monsterbox4/tests/ui/traces/
 !.claude/commands/
 !.claude/agents/
 !.claude/skills/
-!.claude/workflows/
 !.claude/settings.json
 
 # Runtime state (regenerates every run, per-node — not source-of-truth)

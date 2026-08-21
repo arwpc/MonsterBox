@@ -70,7 +70,7 @@
     "name": "Elbow",
     "type": "servo",
     "pin": null,
-    "description": "RDS51150SG 150kg 270\u00b0 robot servo - steel gears, double bearing, 18T spline, 9-12.6V",
+    "description": "RDS51150SG 150kg 270° robot servo - steel gears, double bearing, 18T spline, 9-12.6V",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
@@ -108,14 +108,16 @@
     "pin": null,
     "description": "audio output devices",
     "config": {
-      "audioDeviceId": "alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200027-00.analog-stereo",
-      "volume": 100
+      "audioDeviceId": "default",
+      "volume": 100,
+      "bass": 0,
+      "treble": 0
     },
     "created": "2025-10-05T18:13:31.695Z",
     "enabled": true,
     "modelId": "speaker_respeaker_xvf3800",
     "characterId": 3,
-    "updated": "2025-10-11T02:22:02.627Z"
+    "updated": "2026-08-21T02:15:33.390Z"
   },
   {
     "id": "7",
@@ -124,12 +126,14 @@
     "pin": null,
     "description": "audio input devices",
     "config": {
-      "deviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200027-00.analog-stereo"
+      "deviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200027-00.analog-stereo",
+      "sampleRate": 44100,
+      "gain": 50
     },
     "created": "2025-10-05T18:13:53.101Z",
     "enabled": true,
     "modelId": "mic_respeaker_xvf3800",
-    "updated": "2025-10-06T02:11:40.479Z"
+    "updated": "2026-08-16T08:07:55.519Z"
   },
   {
     "id": "8",
@@ -252,7 +256,7 @@
     "id": "15",
     "enabled": true,
     "created": "2026-02-22T21:43:45.126Z",
-    "updated": "2026-02-22T22:30:02.746Z",
+    "updated": "2026-08-20T04:24:23.253Z",
     "modelId": "servo_miuzei_25kg"
   }
 ]

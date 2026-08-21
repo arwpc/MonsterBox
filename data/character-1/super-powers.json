@@ -1,7 +1,7 @@
 {
   "jawAnimation": {
-    "enabled": false,
-    "servoPartId": null,
+    "enabled": true,
+    "servoPartId": "10",
     "activeConfigId": "config-1",
     "configs": [
       {
@@ -19,24 +19,24 @@
         "minAngle": 63,
         "maxAngle": 131,
         "audioLeadTimeMs": 0,
-        "testText": "I am the Pumpkin King of this patch."
+        "testText": "Hello I am Count Orlok."
       }
     ]
   },
   "headTracking": {
-    "opencvEnabled": true,
+    "opencvEnabled": false,
     "enabled": false,
     "panServoId": null,
     "webcamPartId": null,
-    "centerDeg": 0,
-    "rangeDeg": 60,
-    "invertPan": false,
-    "smoothing": 0.25,
-    "deadzone": 5,
-    "motionThreshold": 25,
-    "minContourArea": 3000,
-    "maxContourArea": 100000,
-    "backgroundLearningRate": 0.005,
+    "centerDeg": 10,
+    "rangeDeg": 45,
+    "invertPan": true,
+    "smoothing": 0.5,
+    "deadzone": 8,
+    "motionThreshold": 40,
+    "minContourArea": 500,
+    "maxContourArea": 20000,
+    "backgroundLearningRate": 0.05,
     "noiseReductionKernelSize": 5,
     "blurSize": 5,
     "dilateSize": 9,
@@ -44,7 +44,6 @@
     "targetLockStrength": 5,
     "confirmFrames": 3,
     "detectInterval": 5,
-    "detectionMode": "person",
-    "presets": []
+    "detectionMode": "person"
   }
 }

@@ -17,8 +17,8 @@ Sir Dragomir is a skull-based animatronic knight with head rotation, jaw servo, 
 
 | ID | Name | Type | Details |
 |----|------|------|---------|
-| 1 | Head Servo | servo | PCA9685 **ch4**, **multi-turn position** (900° / 2.5 turns), model: goBILDA Stingray-2 |
-| 2 | Jaw Servo | servo | PCA9685 **ch0**, standard (180°), model: Miuzei MG90S |
+| 1 | Head Servo | servo | PCA9685 ch0, **continuous rotation** (360°), model: Miuzei 25kg continuous |
+| 2 | Jaw Servo | servo | PCA9685 ch1, standard (180°), model: Miuzei 25kg |
 | 3 | Magic Box Servo | servo | PCA9685 ch3, standard (180°), model: Miuzei 25kg |
 | 4 | Sir Dragomir Cam | webcam | /dev/video0 |
 | 5 | Webcam Microphone | microphone | Default audio input device |
@@ -32,31 +32,38 @@ PCA9685 I2C at address `0x40`, 50 Hz:
 
 | Servo | Channel | Type | Notes |
 |-------|---------|------|-------|
-| Head Servo | 4 | **Multi-turn position** | 900° travel; holds position. Calibrated window is what protects the head cabling |
-| Jaw Servo | 0 | Standard | Mouth movement, jaw animation sync |
+| Head Servo | 0 | **Continuous** | Rotation only — cannot hold position |
+| Jaw Servo | 1 | Standard | Mouth movement, jaw animation sync |
 | Magic Box Servo | 3 | Standard | Special effect mechanism |
 
-## Head Servo — multi-turn, NOT continuous rotation
+## Continuous Servo Gotchas
 
-The Head Servo (**ch4**) is a **goBILDA Stingray-2 gearbox: 900 deg (2.5 turns) of MULTI-TURN
-POSITION travel**. It was long recorded here as a continuous-rotation servo, and `parts.json`
-carried `servoType: "continuous"` to match. That was wrong, and it was dangerous:
+The Head Servo (ch0) is a **continuous rotation** servo. This is fundamentally different from standard servos:
 
-- `hardwareService/index.js` routes a `continuous` servo's ANGLE command to
-  `rotate_continuous_pca <ch> <dir> <speed> 1000` — it SPINS for a second instead of moving to a
-  position. The log shows 99 such commands historically.
-- A full rotation **tears the head cabling**.
+- **Cannot hold angular position** — pulse width controls speed/direction, not angle
+- **1500us = stopped**, <1500us = clockwise, >1500us = counterclockwise
+- **Do NOT assign to head tracking** — tracking requires angle-based positioning
+- **Do NOT include in angle-based poses** — angle commands are meaningless
+- **Use `rotate_continuous_pca` commands** — specify direction, speed (0-100%), and duration
+- **Calibration profile uses `continuous-servo` capability** — not `absolute-servo`
 
-Corrected to `servoType: "multi-turn"` (2026-08-20), which routes to the multi-turn positioning
-path instead. Consequences:
+## Jaw Animation
 
-- It **holds position** and is commanded by angle, like any positional servo.
-- Its **calibrated window is the cable guard** — not a timing guess. Keep travel inside it.
-- It **can** be used for head tracking and in poses, as an angle target.
-- Its travel is 0-900 deg, not 0-180, so never assume the 180 default for this part.
+- Jaw servo: Part 2 (ch1), standard servo
+- Jaw angle range: 0° - 180°
+- Jaw animation config: sensitivity 1.5, smoothing 0.4, attack 30ms, release 100ms, quantization 18
 
-Still to do: a supervised calibration to establish the cable-safe min/max, with eyes on the part.
-Until that exists the drive path correctly refuses to move it. Center — Jaw 90°, Magic Box 90°
+## Head Tracking
+
+Head tracking is **disabled** because the head servo is continuous rotation and cannot hold angular positions. The webcam (part 4) is configured as the tracking source, but no pan servo is assigned.
+
+## Poses
+
+4 poses created (excluding continuous head servo):
+- Neutral — Jaw 90°, Magic Box 90°
+- Mouth Open — Jaw 150°
+- Magic Box Open — Magic Box 150°
+- All Center — Jaw 90°, Magic Box 90°
 
 ## Configuration Files
 

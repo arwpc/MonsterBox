@@ -16,33 +16,9 @@
         "useAGC": true,
         "quantizationLevels": 10,
         "preset": "speech",
-        "minAngle": 22,
-        "maxAngle": 91,
-        "audioLeadTimeMs": 500
+        "minAngle": 17,
+        "maxAngle": 153
       }
     ]
-  },
-  "headTracking": {
-    "opencvEnabled": true,
-    "enabled": false,
-    "panServoId": null,
-    "webcamPartId": "7",
-    "centerDeg": 0,
-    "rangeDeg": 60,
-    "invertPan": false,
-    "smoothing": 0.25,
-    "deadzone": 5,
-    "motionThreshold": 25,
-    "minContourArea": 3000,
-    "maxContourArea": 100000,
-    "backgroundLearningRate": 0.005,
-    "noiseReductionKernelSize": 5,
-    "blurSize": 5,
-    "dilateSize": 9,
-    "varThreshold": 25,
-    "targetLockStrength": 5,
-    "confirmFrames": 3,
-    "detectInterval": 5,
-    "detectionMode": "person"
   }
 }
