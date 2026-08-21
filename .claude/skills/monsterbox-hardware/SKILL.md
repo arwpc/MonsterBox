@@ -1,25 +1,29 @@
 ---
 name: monsterbox-hardware
-description: Commanding MonsterBox physical hardware safely — the parts that must never move and the incident behind each, the servo-kind traps (continuous vs absolute vs multi-turn), what calibration data may be trusted, and how to prove a part is alive when every success field can lie. Load before commanding, calibrating, probing, or re-typing any part.
+description: Commanding MonsterBox physical hardware — the physical-risk parts and the incident behind each (per-part software safety was removed entirely at operator direction 2026-08-20; knowledge, not enforcement), the servo-kind traps (continuous vs absolute vs multi-turn), what calibration data may be trusted, and how to prove a part is alive when every success field can lie. Load before commanding, calibrating, probing, or re-typing any part.
 ---
 
 # MonsterBox hardware
 
-## Never command these — each rule is backed by a real incident
+## Physical-risk parts — software refuses NOTHING; the knowledge still applies
 
-1. **Orlok (3) parts 3, 4, 5.** Bow (3): `blockAllMotion`, wiring docs contradict — "extend"
-   may physically retract. Elbow (4): electrically dead, shares a fuse-blowing rail.
-   Forearm (5): travel never measured, guarded to 95–125°; the rail has blown a fuse.
-   There is **no software current or speed cap anymore** — the only protection is not
-   commanding them. Dedicated 10 A circuits are on Aaron's list; until then, hands off ch4/ch5.
-2. **Sir Dragomir (4) part 1 (neck)** until calibrated with eyes on it. goBILDA Stingray-2,
-   900° multi-turn — a full rotation **tears the head cabling**. Its calibration profile is
-   deliberately left `kind: continuous-servo` and uncalibrated so the drive path refuses it.
+**2026-08-20 operator ruling: every per-part safety limit was removed, all characters,
+permanently** ("we don't need them ever again"). `config/hardware-safety.json` is empty and
+must stay that way — do not re-add blocks, windows, caps, exclusions, or serialization
+without Aaron's direction. He manages physical risk at the rig. The incidents below remain
+true as *knowledge*: an agent drives these parts only on operator direction, never on its
+own initiative, and no automated suite should command them.
+
+1. **Orlok (3) parts 3, 4, 5.** Bow (3): wiring docs contradict — "extend" may physically
+   retract, and it rests at its mechanical minimum (retraction bends the linkage). Elbow (4):
+   electrically dead. Forearm (5): travel never measured. Parts 4+5 share a rail that has
+   **blown fuses under simultaneous load**; dedicated 10 A circuits are on Aaron's list.
+2. **Sir Dragomir (4) part 1 (neck).** goBILDA Stingray-2, 900° multi-turn — a full rotation
+   **tears the head cabling**. Uncalibrated. Move it on operator direction, eyes on it.
 3. **Do not relabel Orlok part 15 ("Head on a Swivel") as multi-turn.** Probably also a
-   Stingray, but Aaron's measured 3–169° window works; remapping 0–180→0–1800 silently breaks
-   a working head. Mirror-image of the knight: there the wrong label caused harm, here
-   changing it would.
-4. **Don't retract Orlok's bow actuator below its min** (operator directive).
+   Stingray, but Aaron's measured 0–180-scale windows work; remapping 0–180→0–1800 silently
+   breaks a working head. Mirror-image of the knight: there the wrong label caused harm,
+   here changing it would.
 
 ## Servo-kind traps
 

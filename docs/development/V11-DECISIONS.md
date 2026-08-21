@@ -40,6 +40,22 @@ Implementation agents read this before touching the affected areas.
    (fuse-rail sweeper), the Dragomir part-1 safety block, and killing the
    placeholder-overwrite writer that wiped Orlok part 15's calibration on 2026-08-20.
 
+## 2026-08-20 (late) — safety blocks removed
+
+7. **All motion-refusing safety removed for Mina, Orlok, and Sir Dragomir.** Aaron: "Safety
+   needs to be removed on Mina's parts and knights and orlock parts. None need them, and
+   it's holding up calibration with at least one part." Removed: every `blockAllMotion`,
+   angle window, and duration cap for characters 2, 3, 4 (including the Dragomir neck block
+   added earlier the same night). Minutes later he escalated: **"You can remove these for
+   all characters, we don't need them ever again"** — so the holdbacks went too
+   (`noRetractBelowMin`, `powerGroup` serialization, `excludeFromAutomatedTests`).
+   `config/hardware-safety.json` is now empty for every character, permanently; the
+   enforcement-code teardown (safetyLimits.js, Safety tab) remains the separately-planned
+   deferred job. The fuse-rail and neck-cabling incidents remain true as *knowledge* —
+   agents drive those parts only on operator direction and never re-add limits
+   unilaterally. This supersedes the "never command Orlok 3/4/5 / Dragomir 1" phrasing in
+   V11-HANDOFF §2 and earlier docs.
+
 ## Standing decisions that keep governing v11 (recorded elsewhere, listed for routing)
 
 - Mina's voice acceptance: **no Romanian accent, does whisper, no singing** — the live agent
