@@ -30,6 +30,39 @@ the ReSpeaker 4-mic array. The camera moved `/dev/video1 → /dev/video0` at 03:
 
 **Fix:** a **powered USB hub** for the camera and the mic array. The Pi's 5 V rail cannot carry both.
 
+**Software stopgap that WORKS but does not last.** A USB port reset recovers the camera — it is the
+software equivalent of unplugging and replugging it. Verified 2026-08-21: dead camera (snapshot
+HTTP 000, 0 bytes) restored to a valid 47 KB JPEG. Then it died again during the next test-suite run.
+So this buys minutes to hours, not a fix.
+
+```bash
+# 1. Find the camera's USB device node (it was 1-1.1, product "USB Camera", 0c45:6366)
+for d in /sys/bus/usb/devices/*/; do
+  [ -f "$d/product" ] && grep -qi "USB Camera" "$d/product" && echo "$d"
+done
+# 2. Toggle authorization = replug
+echo 0 | sudo tee /sys/bus/usb/devices/1-1.1/authorized
+sleep 3
+echo 1 | sudo tee /sys/bus/usb/devices/1-1.1/authorized
+sleep 6
+# 3. Restart the streamer and confirm a REAL frame (not just a 200)
+sudo systemctl restart mjpg-streamer
+curl -s -o /tmp/f.jpg -w '%{http_code} %{size_download}\n' 'http://localhost:8090/?action=snapshot'
+file /tmp/f.jpg     # must say "JPEG image data", and bytes must be > 1 KB
+```
+
+**This is deliberately NOT automated.** Auto-resetting USB on failure would keep the camera limping
+and hide an escalating hardware fault — and the counter has gone 155 -> 447 -> 831 -> 857 in one
+session. Note the device path is `1-1.1`; the ReSpeaker mic array is `1-1.2`, so toggling the camera
+does not disturb audio.
+
+**How to tell it is dead without guessing:** `GET /setup/calibration/api/webcam/health` now reports
+`mjpgStreamer.running` as "frames are actually flowing" plus a `notStreamingReason`. The old field
+returned `true` whenever mjpg-streamer's web server answered, which it does happily with a dead
+input plugin — so the dashboard showed a healthy camera that was delivering nothing. The journal
+signature to confirm it is: `libv4l2: error turning on stream: Protocol error` /
+`Can't enable video in first time`.
+
 **Note:** `data/character-3/parts.json` still records `devicePath: /dev/video1, deviceId: 1` while the
 camera is now at `video0`. Harmless today only because `scripts/mjpg-launcher.sh` resolves via
 `/dev/v4l/by-id/`. Do not "fix" it by hardcoding a bare device node.

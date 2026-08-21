@@ -306,28 +306,70 @@ export const setControls = async (req, res) => {
 };
 
 // Health check for mjpg-streamer service
-async function checkMjpgStreamerHealth() {
-  try {
+/**
+ * Is the camera actually delivering frames?
+ *
+ * This used to GET mjpg-streamer's ROOT url and return true for any response. That
+ * is the static index page served by output_http.so, which keeps answering happily
+ * when the INPUT plugin is dead — so the health field read `running: true` while the
+ * camera delivered nothing at all. Observed on 2026-08-21 with the journal showing
+ * "libv4l2: error turning on stream: Protocol error / Can't enable video in first
+ * time": device node present, v4l2-ctl able to read the format, port 8090 listening,
+ * output plugin serving, and zero frames. A health check that reports healthy while
+ * the camera is dead is worse than no health check.
+ *
+ * So probe the SNAPSHOT endpoint, which cannot answer without a real frame, and
+ * report the two facts separately. The snapshot HANGS rather than erroring when the
+ * input plugin is down, so the timeout is load-bearing, not belt-and-braces.
+ *
+ * @returns {Promise<{streaming:boolean, httpResponding:boolean, reason:string|null}>}
+ */
+async function probeMjpgStreamer() {
+  const withTimeout = async (url, ms) => {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => {
-      abortController.abort();
-    }, 3000); // Reduced timeout to 3 seconds
-
-    const response = await fetch(MJPG_STREAMER_URL, {
-      method: 'GET',
-      signal: abortController.signal
-    });
-
-    clearTimeout(timeoutId);
-    // mjpg-streamer is running if we get any response (even 400/500)
-    return response.status !== 0;
-  } catch (error) {
-    // Only log non-timeout/abort errors to reduce noise
-    if (error.name !== 'TimeoutError' && error.name !== 'AbortError') {
-      console.warn('mjpg-streamer health check failed:', error.message);
+    const timeoutId = setTimeout(() => abortController.abort(), ms);
+    try {
+      return await fetch(url, { method: 'GET', signal: abortController.signal });
+    } finally {
+      clearTimeout(timeoutId);
     }
-    return false;
+  };
+
+  let httpResponding = false;
+  try {
+    const res = await withTimeout(MJPG_STREAMER_URL, 3000);
+    httpResponding = res.status !== 0;
+  } catch (_) {
+    return { streaming: false, httpResponding: false, reason: 'no HTTP response on port 8090' };
   }
+
+  try {
+    const snap = await withTimeout(`${MJPG_STREAMER_URL}/?action=snapshot`, 4000);
+    if (!snap.ok) {
+      return { streaming: false, httpResponding, reason: `snapshot returned HTTP ${snap.status}` };
+    }
+    const buf = Buffer.from(await snap.arrayBuffer());
+    if (buf.length < 1024) {
+      return { streaming: false, httpResponding, reason: `snapshot was only ${buf.length} bytes — not a real frame` };
+    }
+    return { streaming: true, httpResponding, reason: null };
+  } catch (error) {
+    const aborted = error.name === 'AbortError' || error.name === 'TimeoutError';
+    return {
+      streaming: false,
+      httpResponding,
+      // This is the signature of a dead input plugin: the web server answers, the
+      // snapshot never does. Almost always a USB/power fault on this fleet.
+      reason: aborted
+        ? 'HTTP is up but the snapshot never returned — input plugin is not capturing (check USB power)'
+        : `snapshot failed: ${error.message}`
+    };
+  }
+}
+
+async function checkMjpgStreamerHealth() {
+  const probe = await probeMjpgStreamer();
+  return probe.streaming;
 }
 
 /**
@@ -458,8 +500,8 @@ export function readActiveStreamGeometry() {
 
 export const getHealthStatus = async (req, res) => {
   try {
-    const [isRunning, devices] = await Promise.all([
-      checkMjpgStreamerHealth(),
+    const [probe, devices] = await Promise.all([
+      probeMjpgStreamer(),
       listVideoDevices()
     ]);
 
@@ -468,7 +510,12 @@ export const getHealthStatus = async (req, res) => {
     res.json({
       success: true,
       mjpgStreamer: {
-        running: isRunning,
+        // `running` now means FRAMES ARE FLOWING, not "the web server answered".
+        // output_http.so keeps serving its index page with a dead input plugin, so
+        // the old meaning reported a healthy camera that was delivering nothing.
+        running: probe.streaming,
+        httpResponding: probe.httpResponding,
+        notStreamingReason: probe.reason,
         url: MJPG_STREAMER_URL,
         // Was ALWAYS null: it searched scanVideoUsage(), which walks /proc/PID/fd and
         // cannot see a root-owned process from this unprivileged app. Ask systemd.
