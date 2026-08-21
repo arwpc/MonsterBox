@@ -195,8 +195,13 @@ try {
 // pure risk with no upside: channels owned by parts the operator has declared
 // physically broken, and channels being driven with no part mapped to them at all.
 try {
-    const { releaseStalledChannels } = await import('./services/hardwareService/stallGuard.js');
+    const { releaseStalledChannels, startPeriodicStallSweep } = await import('./services/hardwareService/stallGuard.js');
     await releaseStalledChannels(config.selectedCharacter, 'startup');
+    // Backstop: a full test-suite run was observed leaving a broken part's channel
+    // energized through a path that produced no log line and was never identified.
+    // Only broken and unmapped channels are ever released, so this cannot interrupt
+    // real motion. See stallGuard.startPeriodicStallSweep.
+    startPeriodicStallSweep(config.selectedCharacter);
 } catch (e) {
     if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Stall guard (startup):', e.message);
 }
@@ -1060,7 +1065,8 @@ async function gracefulShutdown(signal) {
     // long as the service is down — a stall survives the restart that was supposed
     // to fix it. Only broken-part and orphaned channels are released; see stallGuard.
     try {
-        const { releaseStalledChannels } = await import('./services/hardwareService/stallGuard.js');
+        const { releaseStalledChannels, stopPeriodicStallSweep } = await import('./services/hardwareService/stallGuard.js');
+        stopPeriodicStallSweep();
         await releaseStalledChannels(config.selectedCharacter, 'shutdown');
     } catch (e) {
         if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Stall guard (shutdown):', (e && e.message) || e);

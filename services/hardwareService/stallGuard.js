@@ -129,4 +129,50 @@ export async function releaseStalledChannels(characterId, phase = 'manual', opts
     return result;
 }
 
-export default { releaseStalledChannels };
+let _sweepTimer = null;
+
+/**
+ * Sweep for stalled channels on an interval.
+ *
+ * WHY A TIMER, when startup and shutdown already sweep.
+ *
+ * On 2026-08-21 a full `npm run test:system` run left a physically broken part's
+ * channel energized at 1445.6us even after every known Node-side path had been
+ * guarded (the part-test route now selects a healthy servo, batchMoveServos drops
+ * broken parts, and scene/pose/head-tracking all skip them). The write produced NO
+ * log line at all — no "Servo route" entry, and no drop recorded by any guard — so
+ * the writer was never identified. Bisecting by test area did not reproduce it;
+ * only the full suite did.
+ *
+ * This sweep deliberately does not depend on knowing the writer. It is safe by
+ * construction rather than by analysis: the only channels it can ever release are
+ * ones owned by a part declared broken in config/physical-faults.json, or ones
+ * driven with no part mapped at all. Neither can be *legitimately* held, so
+ * releasing them on a timer cannot interrupt real motion — while leaving a broken
+ * servo energized is exactly the stall that opens fuses.
+ *
+ * If the writer is later found and fixed, this stays as a backstop rather than
+ * becoming redundant: the same shape of bug has recurred in this codebase before.
+ *
+ * @returns {NodeJS.Timeout|null} the timer, so shutdown can clear it
+ */
+export function startPeriodicStallSweep(characterId, intervalMs = 300000) {
+    if (_sweepTimer) return _sweepTimer;
+    _sweepTimer = setInterval(() => {
+        releaseStalledChannels(characterId, 'periodic').catch(err => {
+            console.warn(`⚠️  Periodic stall sweep failed: ${err.message}`);
+        });
+    }, intervalMs);
+    // Never hold the event loop open for this.
+    if (_sweepTimer.unref) _sweepTimer.unref();
+    return _sweepTimer;
+}
+
+export function stopPeriodicStallSweep() {
+    if (_sweepTimer) {
+        clearInterval(_sweepTimer);
+        _sweepTimer = null;
+    }
+}
+
+export default { releaseStalledChannels, startPeriodicStallSweep, stopPeriodicStallSweep };

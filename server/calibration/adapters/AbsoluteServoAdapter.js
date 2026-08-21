@@ -10,11 +10,16 @@ function positionUnknownError() {
 }
 
 export class AbsoluteServoAdapter {
-  constructor(partId, usMin = 500, usMax = 2500, invert = false, initialAngle = null) {
+  constructor(partId, usMin = 500, usMax = 2500, invert = false, initialAngle = null, bounds = null) {
     this.partId = partId;
     this.usMin = usMin;
     this.usMax = usMax;
     this.invert = invert;
+    // The calibrated window, needed ONLY to mirror an inverted servo the same way
+    // the runtime does. See angleToUs(). Null means "no measured window", which
+    // reproduces the historical full-span mirror exactly.
+    this.boundsMin = (bounds && typeof bounds.minAngle === 'number') ? bounds.minAngle : null;
+    this.boundsMax = (bounds && typeof bounds.maxAngle === 'number') ? bounds.maxAngle : null;
     // These servos give no feedback, so position is only ever what the caller
     // last recorded. It used to default to 90°, and a relative nudge from that
     // invented number is an arbitrary jump: a jaw physically at 131.5° took a
@@ -38,11 +43,31 @@ export class AbsoluteServoAdapter {
 
   getCapabilities() { return { kind: 'absolute-servo', usMin: this.usMin, usMax: this.usMax, invert: this.invert }; }
 
-  /** Convert angle (0-180) to PWM microseconds */
+  /**
+   * Convert angle (0-180) to PWM microseconds.
+   *
+   * INVERT MUST MATCH THE RUNTIME. This used to mirror across the full 0-180 span
+   * (`1 - angle/180`) while hardwareService.controlPart mirrors within the
+   * calibrated window (`minAngle + maxAngle - angle`). Two different formulas for
+   * one physical fact, so the same commanded angle landed in two different places:
+   * on a live fleet jaw with invert=true and a measured window of 97-151, asking
+   * for 97 produced 1422 us here and 2178 us at show time — 756 us apart. Worse,
+   * 1422 us is 83 degrees, BELOW that servo's own calibrated minimum, so the
+   * calibration page drove an inverted servo outside the window it was calibrating.
+   *
+   * With no measured window this falls back to (0 + 180 - angle), which is
+   * arithmetically identical to the old `1 - angle/180`, so uncalibrated parts
+   * behave exactly as before.
+   */
   angleToUs(angle) {
-    const p = Math.max(0, Math.min(1, angle / 180));
-    const effP = this.invert ? (1 - p) : p;
-    return this.usMin + effP * (this.usMax - this.usMin);
+    let effAngle = angle;
+    if (this.invert) {
+      const minA = this.boundsMin != null ? this.boundsMin : 0;
+      const maxA = this.boundsMax != null ? this.boundsMax : 180;
+      effAngle = minA + maxA - angle;
+    }
+    const p = Math.max(0, Math.min(1, effAngle / 180));
+    return this.usMin + p * (this.usMax - this.usMin);
   }
 
   // Legacy alias

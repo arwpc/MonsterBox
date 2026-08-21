@@ -16,7 +16,7 @@ import { runPy, runWrapper } from './exec.js';
 import servoService from './servo.js';
 import stepperService from './stepper.js';
 import { getCalibrationStore, isPlaceholderProfile } from '../../server/calibration/store.js';
-import { getPartSafety, applySafetyLimits, runInPowerGroup } from './safetyLimits.js';
+import { getPartSafety, applySafetyLimits, runInPowerGroup, getPhysicalFault } from './safetyLimits.js';
 import servoDaemonClient from './servoDaemonClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1953,6 +1953,38 @@ export async function setPower(state) {
  */
 export async function batchMoveServos(commands, options = {}) {
     if (!commands || commands.length === 0) return { success: true, results: [] };
+
+    // Drop physically broken parts HERE, at the chokepoint, not at each caller.
+    //
+    // This is the daemon-facing path: it writes PCA9685 channels through
+    // servoDaemonClient, which bypasses controlPart entirely — including
+    // controlPart's logging, which is why a broken part driven through here left no
+    // "Servo route ch=N" line in the log and looked like nothing had happened.
+    // Guarding the callers individually was not enough: poseEngine was filtered but
+    // transitionEngine (one full batch per animation frame) and any future caller
+    // were not. Every batch caller is autonomous — poses, transitions, idle motion —
+    // so none of them should ever choose a part the operator has declared damaged.
+    // A direct operator command still goes through controlPart and is NOT filtered.
+    if (options.allowBrokenParts !== true) {
+        const cfgForFaults = await readConfig();
+        const charForFaults = options.characterId != null ? options.characterId : (cfgForFaults && cfgForFaults.selectedCharacter);
+        const kept = [];
+        for (const cmd of commands) {
+            let fault = { broken: false };
+            try {
+                fault = await getPhysicalFault(charForFaults, cmd.partId);
+            } catch (err) {
+                console.warn(`⚠️  physical-fault lookup failed for part ${cmd.partId}: ${err.message}`);
+            }
+            if (fault.broken) {
+                console.warn(`⛔ batchMoveServos: dropping part ${cmd.partId} — declared physically broken (${fault.reason})`);
+            } else {
+                kept.push(cmd);
+            }
+        }
+        if (kept.length === 0) return { success: true, results: [], skippedAllBroken: true };
+        commands = kept;
+    }
 
     // Same rule as controlPart: the caller's character wins over the mutable
     // selectedCharacter on disk, because part IDs are only unique within a character.

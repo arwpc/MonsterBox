@@ -480,18 +480,42 @@ async function getCalibrationForPart(part, characterId) {
       }
     }
     if (isPlaceholder) {
-      const fromMarkers = getCalibrationFromMarkers(part);
-      if (fromMarkers.calibrated) return fromMarkers;
-      // No markers either — fall back to the placeholder rather than 0/180 defaults.
-      // store.get() hands the placeholder span over under `placeholderBounds`
-      // precisely so this deliberate last resort has to name what it is using.
-      const { minAngle, maxAngle } = profile.placeholderBounds || {};
-      if (typeof minAngle === 'number' && typeof maxAngle === 'number') {
-        return { calibrated: true, minAngle, maxAngle };
-      }
+      // MARKERS ARE NO LONGER A GUARDRAIL SOURCE (retired 2026-08-21).
+      //
+      // They used to be the fallback here, and that was a live hazard: the marker
+      // EDITOR does not exist. Every id its code targets (setMinBtn, minValue,
+      // customMarkers, newMarkerName, addMarkerBtn) is absent from every view, so
+      // the whole subsystem no-ops and no page anywhere displays or edits the
+      // numbers. One part on this fleet still carries markers Min 63 / Max 131
+      // against a measured window of 33-98 — values this file's own comment called
+      // "past the mechanical stops". Deleting a profile to re-calibrate silently
+      // promoted those numbers to the live guardrail, and the next jaw-synced line
+      // ground the jaw into its stop.
+      //
+      // Refusing is the same doctrine the rest of the system already applies:
+      // calibratedBounds() withholds a placeholder span, and head tracking logs
+      // "no usable calibrated window — refusing to drive it". An uncalibrated jaw
+      // must not be driven from numbers nobody can see or correct.
+      logRetiredMarkers(part);
     }
-  } catch (e) { /* fall through to markers */ }
-  return getCalibrationFromMarkers(part);
+  } catch (e) {
+    console.warn(`⚠️  Jaw calibration lookup failed for part ${part && part.id}: ${e.message} — refusing to drive it`);
+    return { calibrated: false, minAngle: null, maxAngle: null };
+  }
+  logRetiredMarkers(part);
+  return { calibrated: false, minAngle: null, maxAngle: null };
+}
+
+/**
+ * Name the legacy markers we are declining to use, so a refusal is never silent.
+ * Advisory logging only — it authorizes nothing.
+ */
+function logRetiredMarkers(part) {
+  const cal = getCalibrationFromMarkers(part);
+  if (!cal.calibrated) return;
+  console.warn(`⚠️  Part ${part.id} ("${part.name}") has no real calibration. Legacy markers `
+    + `Min ${cal.minAngle} / Max ${cal.maxAngle} were found but are NOT used as guardrails — they are `
+    + `uneditable in the UI and have been wrong past mechanical stops before. Calibrate the part instead.`);
 }
 
 /**

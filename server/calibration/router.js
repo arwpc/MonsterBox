@@ -813,7 +813,9 @@ function getOrCreateAdapter(partId, profile) {
 
   let adapter;
   if (cap.kind === 'absolute-servo') {
-    adapter = new AbsoluteServoAdapter(partId, cap.usMin || 500, cap.usMax || 2500, cap.invert || false, initialAngle);
+    // profile.bounds is passed so an inverted servo is mirrored the SAME way the
+    // runtime mirrors it (within the calibrated window, not across 0-180).
+    adapter = new AbsoluteServoAdapter(partId, cap.usMin || 500, cap.usMax || 2500, cap.invert || false, initialAngle, profile.bounds);
   } else if (cap.kind === 'openloop-linear' && profile.motion && profile.motion.type === 'time-at-speed') {
     adapter = new OpenLoopLinearAdapter(partId, profile.motion, cap.invert || false, initialP);
   } else if (cap.kind === 'continuous-servo') {
