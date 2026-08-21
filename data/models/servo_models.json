@@ -15,7 +15,7 @@
       "controlType": [
         "PWM"
       ],
-      "torque": "40kg·cm (7.4V)",
+      "torque": "40kg\u00b7cm (7.4V)",
       "voltage": "4.8-7.4V",
       "speed": "~0.15s/60deg"
     }
@@ -36,7 +36,7 @@
       "controlType": [
         "PWM"
       ],
-      "torque": "~2.0-2.2kg·cm",
+      "torque": "~2.0-2.2kg\u00b7cm",
       "voltage": "4.8-6.0V",
       "speed": "~0.10s/60deg"
     }
@@ -72,11 +72,11 @@
       "servoType": "standard"
     },
     "meta": {
-      "notes": "Waterproof 25kg·cm digital servo with 25T horn, 180deg travel. PWM 500-2500us.",
+      "notes": "Waterproof 25kg\u00b7cm digital servo with 25T horn, 180deg travel. PWM 500-2500us.",
       "controlType": [
         "PWM"
       ],
-      "torque": "25kg·cm",
+      "torque": "25kg\u00b7cm",
       "voltage": "4.8-7.4V"
     }
   },
@@ -92,20 +92,20 @@
       "servoType": "continuous"
     },
     "meta": {
-      "notes": "Continuous rotation variant of the Miuzei 25kg servo. 1500us=stop; <1500us=CW; >1500us=CCW. IMPORTANT: Cannot hold angular position — only speed/direction control. Do NOT assign to head tracking pan servo or angle-based poses. Use rotate_continuous_pca commands only.",
+      "notes": "Continuous rotation variant of the Miuzei 25kg servo. 1500us=stop; <1500us=CW; >1500us=CCW. IMPORTANT: Cannot hold angular position \u2014 only speed/direction control. Do NOT assign to head tracking pan servo or angle-based poses. Use rotate_continuous_pca commands only.",
       "controlType": [
         "PWM"
       ],
-      "torque": "25kg·cm",
+      "torque": "25kg\u00b7cm",
       "voltage": "4.8-7.4V",
-      "gotchas": "Cannot hold position. Angle commands (move_to_pca) are meaningless — the servo interprets pulse width as speed/direction, not angle. Must use rotate_continuous_pca with direction + speed + duration."
+      "gotchas": "Cannot hold position. Angle commands (move_to_pca) are meaningless \u2014 the servo interprets pulse width as speed/direction, not angle. Must use rotate_continuous_pca with direction + speed + duration."
     }
   },
   {
     "id": "servo_gobilda_stingray2",
     "name": "goBILDA Stingray-2 Servo Gearbox",
     "manufacturer": "goBILDA",
-    "description": "goBILDA Stingray-2 with 5-Turn Torque Servo, 900° rotation, 700 oz-in torque",
+    "description": "goBILDA Stingray-2 with 5-Turn Torque Servo, 900\u00b0 rotation, 700 oz-in torque",
     "defaults": {
       "minPulse": 500,
       "maxPulse": 2500,
@@ -114,20 +114,21 @@
       "servoType": "multi-turn"
     },
     "meta": {
-      "notes": "goBILDA Stingray-2 Servo Gearbox with 2:1 gear ratio. 900° rotation (2.5 turns). Used for 'Head on a Swivel' and similar applications.",
+      "notes": "goBILDA Stingray-2 Servo Gearbox (GB-3215-0001-0002), 2:1 gear ratio. 900deg rotation confirmed against the manufacturer 2026-08-21. IMPORTANT: 900deg of travel is mapped onto the 0-180 calibration scale, so ONE degree in the calibration UI is FIVE degrees of real output movement. Sold in Feedback and Continuous modes -- confirm which variant is installed before driving, because a continuous unit turns an angle into a spin.",
       "controlType": [
         "PWM"
       ],
-      "torque": "700 oz-in (49 kg·cm)",
-      "speed": "0.33s/60° @ 6V (30 RPM)",
-      "voltage": "4.8-6V",
-      "rotation": "900°",
-      "gearRatio": "2:1"
+      "torque": "700 oz-in (49 kg\u00b7cm)",
+      "speed": "0.33-0.34 sec/60deg, 30 RPM @ 7.4V",
+      "voltage": "4.8-8.4V",
+      "rotation": "900\u00b0",
+      "gearRatio": "2:1",
+      "torqueByVoltage": "480 oz-in @4.8V / 600 oz-in @6.0V / 700 oz-in @7.4V"
     }
   },
   {
     "id": "servo_rds51150sg_150kg",
-    "name": "RDS51150SG 150kg Robot Servo (270°)",
+    "name": "RDS51150SG 150kg Robot Servo (270\u00b0)",
     "manufacturer": "RDS",
     "defaults": {
       "minPulse": 500,
@@ -137,15 +138,15 @@
       "servoType": "standard"
     },
     "meta": {
-      "notes": "High-torque 150kg robot servo. PWM 500-2500us, 270deg travel. Steel gears, double bearing, 18T spline, 357:1 gear ratio. 3-pole motor.",
+      "notes": "High-torque 150kg digital servo, PWM 500-2500us, IP66, double bearing, 357:1 gears, 163g, 65x30x48mm. Sold in 180deg AND 270deg variants -- the variant determines the calibration scale, so confirm which is installed. VOLTAGE VERIFIED against the manufacturer 2026-08-21: operating range is 9-12.6V. It is a 12V part. Do NOT feed it 24V.",
       "controlType": [
         "PWM"
       ],
-      "torque": "150kg·cm (10V) / 165kg·cm (12V) / 173kg·cm (12.6V)",
+      "torque": "150kg\u00b7cm (10V) / 165kg\u00b7cm (12V) / 173kg\u00b7cm (12.6V)",
       "voltage": "9-12.6V",
-      "speed": "0.24s/60° (10V) / 0.21s/60° (12V) / 0.19s/60° (12.6V)",
+      "speed": "0.24s/60\u00b0 (10V) / 0.21s/60\u00b0 (12V) / 0.19s/60\u00b0 (12.6V)",
       "stallCurrent": "7.4A (10V) / 8.0A (12V) / 8.3A (12.6V)",
-      "deadBand": "3μs",
+      "deadBand": "3\u03bcs",
       "frequency": "50-330Hz",
       "weight": "163g",
       "size": "65x30x48mm"
