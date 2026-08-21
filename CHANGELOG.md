@@ -2,6 +2,39 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased] - 2026-08-20/21 — Recovery night: nothing was lost, and two speakers were never broken
+
+A session opened on "hours of work were lost" and closed with every byte accounted for.
+The v10.x commit train was already safe on origin; the genuinely uncommitted remainder
+(the /mega-session launcher, /test-browser rewrite, ElevenLabs agent standing tasks) was
+rescued off Mina's SD card and landed on main, alongside the three skills it referenced
+but never got to write (`monsterbox-fleet`, `monsterbox-hardware`, `monsterbox-testing`).
+Full forensics: `docs/handoff/2026-08-20-recovery-realignment.md`.
+
+- **Mina was inaudible and Orlok "very very quiet" — one cause.** The reSpeaker XVF3800
+  ships its mono DAC path (`'PCM',1`) at **−20.00 dB**. Raised to 0 dB and persisted on
+  both nodes; proven by ear-check (Mina's own mic transcribed her test line word-perfect).
+  Mixer normalization for the six arrays still to install is queued for the provisioning
+  script. Also cleared: a 40-minute wedged audio sink on Orlok (cause unknown, tracked).
+- **Every per-part hardware safety limit retired, fleet-wide, permanently** (operator
+  ruling, verbatim in `docs/development/V11-DECISIONS.md` #7). `hardware-safety.json`
+  ships empty; a unit test now guards the empty state. The fuse-rail and neck-cabling
+  incidents survive as documentation, not enforcement.
+- **The calibration-profile DELETE was character-unscoped and silent** — the same bug
+  class clear-all was already fixed for, found while investigating a lost head-servo
+  window (which turned out to be an interrupted operator re-measure, not software). Both
+  delete paths now scope by character and warn to `.err` with the bounds they destroy.
+- **Wave-0 safety data fixes:** Orlok scene 106 (one click drove both fuse-rail parts)
+  deleted; Orlok part 14 (a PIR sensor carrying a servo calibration) fixed.
+- **v11 planned from verified ground truth:** eight read-only research agents audited
+  every lost-session workstream against current code (`docs/evidence/v11-research/`),
+  several stale claims refuted, and the collision-ordered execution plan written
+  (`docs/development/V11-EXECUTION-PLAN.md`). Poses/scenes rebuild deferred out of v11
+  at operator direction.
+- **Orlok's voice config had been clobbered again** (writer identified: interactive saves
+  on /ai-settings/tts posting page defaults); canonical restored, removal of the dead
+  sliders is Wave 1 of the plan.
+
 ## [10.4.0] - 2026-08-19 — What the machine tells you is what the machine did
 
 Almost everything here is the same fault in different clothing: the software reported

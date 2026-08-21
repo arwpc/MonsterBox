@@ -3,8 +3,9 @@
 MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 - PipeWire + WirePlumber audio (multiple speakers/microphones, per-stream routing)
 - MJPEG webcam streaming via mjpg-streamer (port 8090)
-- Real hardware control for servos, motors, linear actuators, lights, sensors, steppers,
-  with per-part safety limits (`config/hardware-safety.json`) enforced on every command
+- Real hardware control for servos, motors, linear actuators, lights, sensors, steppers.
+  (Per-part safety limits were retired at operator direction 2026-08-20 —
+  `config/hardware-safety.json` ships empty; the operator manages physical risk at the rig)
 - A persistent servo daemon (`python_wrappers/servo_daemon.py`) that owns the I²C bus, so
   multiple servos move **together** instead of glitching each other
 - A conversation-driven gesture engine (`services/gestureEngineService.js`) — composite,
