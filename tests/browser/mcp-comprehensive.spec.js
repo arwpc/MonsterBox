@@ -82,7 +82,7 @@ test.describe('Phase 10: Error & Edge Cases', () => {
 test.describe('Phase 8: Other Pages', () => {
   test('goblin management loads', async ({ page }) => {
     trackErrors(page, 'goblin');
-    await page.goto(`${BASE}/goblin-management`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/goblin-management`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
     // Check for key elements
     const content = await page.content();
@@ -91,19 +91,19 @@ test.describe('Phase 8: Other Pages', () => {
 
   test('orchestration page loads', async ({ page }) => {
     trackErrors(page, 'orchestration');
-    await page.goto(`${BASE}/orchestration`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/orchestration`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('live dashboard loads', async ({ page }) => {
     trackErrors(page, 'live');
-    await page.goto(`${BASE}/live`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/live`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('first-run page loads with character cards', async ({ page }) => {
     trackErrors(page, 'first-run');
-    await page.goto(`${BASE}/first-run`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/first-run`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 });
@@ -114,7 +114,7 @@ test.describe('Phase 8: Other Pages', () => {
 test.describe('Phase 7: AI Settings', () => {
   test('main AI settings page loads with status cards', async ({ page }) => {
     trackErrors(page, 'ai-settings');
-    await page.goto(`${BASE}/ai-settings`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/ai-settings`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
     // Look for status or connection info
     const content = await page.content();
@@ -123,13 +123,13 @@ test.describe('Phase 7: AI Settings', () => {
 
   test('STT settings page loads', async ({ page }) => {
     trackErrors(page, 'ai-settings-stt');
-    await page.goto(`${BASE}/ai-settings/stt`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/ai-settings/stt`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('TTS settings page loads', async ({ page }) => {
     trackErrors(page, 'ai-settings-tts');
-    await page.goto(`${BASE}/ai-settings/tts`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/ai-settings/tts`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 });
@@ -140,7 +140,7 @@ test.describe('Phase 7: AI Settings', () => {
 test.describe('Phase 6: Video Library', () => {
   test('video library loads', async ({ page }) => {
     trackErrors(page, 'video-library');
-    await page.goto(`${BASE}/video-library`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/video-library`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 });
@@ -151,7 +151,7 @@ test.describe('Phase 6: Video Library', () => {
 test.describe('Phase 5: Audio Library', () => {
   test('audio library loads and has controls', async ({ page }) => {
     trackErrors(page, 'audio-library');
-    await page.goto(`${BASE}/audio-library`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/audio-library`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
 
     // Check for search/filter controls
@@ -188,7 +188,7 @@ test.describe('Phase 5: Audio Library', () => {
 test.describe('Phase 4: Setup Pages', () => {
   test('4a: Setup index loads with cards', async ({ page }) => {
     trackErrors(page, 'setup');
-    await page.goto(`${BASE}/setup`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/setup`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
     // Verify setup cards/links are present
     const links = await page.locator('a[href*="/setup/"]').count();
@@ -197,13 +197,13 @@ test.describe('Phase 4: Setup Pages', () => {
 
   test('4b: Character management loads', async ({ page }) => {
     trackErrors(page, 'setup-characters');
-    await page.goto(`${BASE}/setup/characters`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/setup/characters`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('4c: Calibration page loads', async ({ page }) => {
     trackErrors(page, 'setup-calibration');
-    await page.goto(`${BASE}/setup/calibration`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/setup/calibration`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 
@@ -215,7 +215,7 @@ test.describe('Phase 4: Setup Pages', () => {
 
   test('4e: Jaw animation setup loads', async ({ page }) => {
     trackErrors(page, 'setup-jaw');
-    await page.goto(`${BASE}/setup/jaw-animation`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/setup/jaw-animation`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 
@@ -227,7 +227,7 @@ test.describe('Phase 4: Setup Pages', () => {
 
   test('4g: System configuration loads', async ({ page }) => {
     trackErrors(page, 'setup-system');
-    await page.goto(`${BASE}/setup/system`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/setup/system`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
   });
 });
@@ -238,7 +238,7 @@ test.describe('Phase 4: Setup Pages', () => {
 test.describe('Phase 3: Pose Editor', () => {
   test('pose editor loads with form fields', async ({ page }) => {
     trackErrors(page, 'pose-editor');
-    await page.goto(`${BASE}/poses/editor`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/poses/editor`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
 
     // Check form fields exist
@@ -287,7 +287,7 @@ test.describe('Phase 3: Pose Editor', () => {
 test.describe('Phase 2: Animation Studio', () => {
   test('animation studio loads with all panels', async ({ page }) => {
     trackErrors(page, 'animation-studio');
-    await page.goto(`${BASE}/scenes`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/scenes`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
 
     // Check toolbar buttons
@@ -331,7 +331,7 @@ test.describe('Phase 2: Animation Studio', () => {
 test.describe('Phase 1: Dashboard', () => {
   test('dashboard loads with all Scare Console panels', async ({ page }) => {
     trackErrors(page, 'dashboard');
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
 
     // v10 panel set. 'poses' is no longer a panel of its own — it is a tab of
@@ -351,7 +351,7 @@ test.describe('Phase 1: Dashboard', () => {
 
   test('console panel controls work', async ({ page }) => {
     trackErrors(page, 'dashboard-console');
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
 
     // Expand the Console accordion panel before checking controls
     const consoleAccBtn = page.locator('[data-bs-target="#collapseConsole"]');
@@ -386,7 +386,7 @@ test.describe('Phase 1: Dashboard', () => {
 
   test('monster features toggles work', async ({ page }) => {
     trackErrors(page, 'dashboard-monster-features');
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
 
     for (const id of ['#jawToggle', '#parrotToggle', '#headTrackToggle', '#speakerMuteToggle']) {
       const toggle = page.locator(id);
@@ -406,7 +406,7 @@ test.describe('Phase 1: Dashboard', () => {
 
   test('character selector works', async ({ page }) => {
     trackErrors(page, 'dashboard-character');
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
 
     const charSelect = page.locator('#character-select');
     if (await charSelect.count() > 0) {
@@ -435,7 +435,7 @@ test.describe('Phase 1: Dashboard', () => {
 
   test('scenes deck has content', async ({ page }) => {
     trackErrors(page, 'dashboard-scenes');
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
 
     // v10: scenes render as one-tap tiles on the deck. (#scenesContainer still
     // exists but only as a hidden compat target for dashboard.js — counting it
@@ -464,7 +464,7 @@ test.describe('Phase 1: Dashboard', () => {
 
   test('chat panel works', async ({ page }) => {
     trackErrors(page, 'dashboard-chat');
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
 
     const chatInput = page.locator('#chatInput');
     if (await chatInput.count() > 0) {
@@ -488,7 +488,7 @@ test.describe('Phase 1: Dashboard', () => {
 
   test('manual controls panel works', async ({ page }) => {
     trackErrors(page, 'dashboard-manual-controls');
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
 
     // Expand the Manual Controls accordion panel before checking controls
     const manualAccBtn = page.locator('[data-bs-target="#collapseManual"]');
@@ -522,7 +522,7 @@ test.describe('Phase 1: Dashboard', () => {
 test.describe('Phase 9: Cross-character testing', () => {
   test('switching characters changes data on key pages', async ({ page }) => {
     trackErrors(page, 'cross-character');
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
 
     const charSelect = page.locator('#character-select');
     if (await charSelect.count() === 0) {
@@ -546,22 +546,22 @@ test.describe('Phase 9: Cross-character testing', () => {
     await page.waitForTimeout(2000);
 
     // Test scenes page with second character
-    await page.goto(`${BASE}/scenes`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/scenes`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
     console.log(`  Cross-character: scenes page loaded for character ${secondVal}`);
 
     // Test poses editor with second character
-    await page.goto(`${BASE}/poses/editor`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/poses/editor`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
     console.log(`  Cross-character: poses editor loaded for character ${secondVal}`);
 
     // Test calibration with second character
-    await page.goto(`${BASE}/setup/calibration`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/setup/calibration`, { waitUntil: 'load' });
     await expect(page.locator('body')).toBeVisible();
     console.log(`  Cross-character: calibration loaded for character ${secondVal}`);
 
     // Switch back
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
     const charSelectAgain = page.locator('#character-select');
     if (await charSelectAgain.count() > 0) {
       await charSelectAgain.selectOption(firstVal);

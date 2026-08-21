@@ -130,7 +130,26 @@ async function getAvailableServos(characterId) {
     const servos = parts.filter(p => p.type === 'servo');
     const results = [];
 
+    // Head tracking picks a pan servo and then drives it unattended for the whole
+    // show. Offering a servo the operator has told us is physically broken invites
+    // exactly that: one fleet node was offering its electrically dead elbow and its
+    // damaged forearm — both on a fused rail that has repeatedly blown — as pan-servo
+    // candidates. Advisory only, and not a motion refusal: a direct part test or a
+    // calibration nudge still drives a broken part so a repair can be verified.
+    const { getPhysicalFault } = await import('./hardwareService/safetyLimits.js');
+
     for (const servo of servos) {
+      let fault = { broken: false };
+      try {
+        fault = await getPhysicalFault(characterId, servo.id);
+      } catch (err) {
+        console.warn(`⚠️  physical-fault lookup failed for servo ${servo.id}: ${err.message}`);
+      }
+      if (fault.broken) {
+        console.warn(`⛔ Head tracking: servo ${servo.id} ("${servo.name}") withheld as a pan candidate — declared physically broken (${fault.reason})`);
+        continue;
+      }
+
       let minAngle = null;
       let maxAngle = null;
       let calibrated = false;

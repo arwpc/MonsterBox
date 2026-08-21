@@ -248,6 +248,23 @@
             if (inst) inst.dispose();
         }
 
+        // Disposing the INSTANCES is not enough. Bootstrap renders a shown tooltip
+        // as a div appended to <body>, not inside the row. Clicking Play re-renders
+        // the row (the icon and title change to "Stop playback") while that tooltip
+        // is still shown, so the div is orphaned: its owner element is gone, no
+        // mouseleave will ever reach it, and it keeps floating over the table
+        // swallowing pointer events on whatever is underneath. That is a real,
+        // reproducible dead zone — clicking Play made the neighbouring favourite
+        // button unclickable, which the browser suite caught as
+        // '<div class="tooltip-inner">Play on character speaker</div> ... intercepts
+        // pointer events'. Sweep any tooltip whose owner has left the DOM.
+        var strays = document.querySelectorAll('body > .tooltip');
+        for (var s = 0; s < strays.length; s++) {
+            var strayId = strays[s].getAttribute('id');
+            var owner = strayId ? document.querySelector('[aria-describedby="' + strayId + '"]') : null;
+            if (!owner) strays[s].parentNode.removeChild(strays[s]);
+        }
+
         if (!audioFiles || audioFiles.length === 0) {
             if (table) table.classList.add('aud-hidden');
             if (emptyState) emptyState.classList.remove('aud-hidden');
@@ -304,6 +321,33 @@
             if (existingAlt) existingAlt.dispose();
             new bootstrap.Tooltip(altEls[j]);
         }
+        installTooltipDismissOnce();
+    }
+
+    // A Bootstrap tooltip only hides on mouseleave/blur. The pointer naturally
+    // RESTS on a row action after clicking it, so the tooltip stays shown — and in
+    // this dense action row it resolves to placement "right", directly over the
+    // next cell, where it swallows pointer events. Clicking Play therefore made the
+    // adjacent favourite control unclickable until the pointer moved away: a real
+    // dead zone, not a test artifact. The browser suite reported it as
+    // '<div class="tooltip-inner">Play on character speaker</div> ... intercepts
+    // pointer events'.
+    //
+    // Hiding a tooltip once its own control has been clicked is also what an
+    // operator expects: the hint has done its job. Delegated and installed once, so
+    // it survives every re-render without stacking listeners.
+    var tooltipDismissInstalled = false;
+    function installTooltipDismissOnce() {
+        if (tooltipDismissInstalled) return;
+        tooltipDismissInstalled = true;
+        document.addEventListener('click', function (ev) {
+            var el = ev.target && ev.target.closest
+                ? ev.target.closest('[data-bs-toggle="tooltip"],[data-bs-tooltip="tooltip"]')
+                : null;
+            if (!el) return;
+            var inst = bootstrap.Tooltip.getInstance(el);
+            if (inst) inst.hide();
+        }, true);
     }
 
     function attachRowListeners() {

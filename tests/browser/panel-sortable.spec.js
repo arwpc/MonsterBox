@@ -31,7 +31,11 @@ test.describe('Dashboard Accordion', () => {
 
     test('should load accordion container', async () => {
         tracker.clear();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        // The dashboard holds an EventSource, a WebSocket and 1s/1.5s/3s polls,
+        // so 'networkidle' is unreachable there by design — tolerate the timeout
+        // instead of failing the test on it. Same pattern as actual-usage-testing.spec.js.
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         const accordion = page.locator('#dashboardAccordion');
         await expect(accordion).toBeVisible();
@@ -45,7 +49,11 @@ test.describe('Dashboard Accordion', () => {
 
     test('should have accordion buttons for each panel', async () => {
         tracker.clear();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        // The dashboard holds an EventSource, a WebSocket and 1s/1.5s/3s polls,
+        // so 'networkidle' is unreachable there by design — tolerate the timeout
+        // instead of failing the test on it. Same pattern as actual-usage-testing.spec.js.
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Check that accordion buttons exist for key drawers (v10 drawer set)
         const expectedTargets = ['#collapseManual', '#collapseAudioBridge', '#collapseConsole'];
@@ -60,7 +68,11 @@ test.describe('Dashboard Accordion', () => {
 
     test('should expand and collapse an accordion panel', async () => {
         tracker.clear();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        // The dashboard holds an EventSource, a WebSocket and 1s/1.5s/3s polls,
+        // so 'networkidle' is unreachable there by design — tolerate the timeout
+        // instead of failing the test on it. Same pattern as actual-usage-testing.spec.js.
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Manual Controls stands in for the Conversation drawer, which left the
         // accordion for the AI deck tab in v10.
@@ -91,7 +103,11 @@ test.describe('Dashboard Accordion', () => {
 
     test('should show content when accordion panel is expanded', async () => {
         tracker.clear();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        // The dashboard holds an EventSource, a WebSocket and 1s/1.5s/3s polls,
+        // so 'networkidle' is unreachable there by design — tolerate the timeout
+        // instead of failing the test on it. Same pattern as actual-usage-testing.spec.js.
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Expand the Manual Controls drawer
         await page.locator('[data-bs-target="#collapseManual"]').click();
@@ -105,7 +121,11 @@ test.describe('Dashboard Accordion', () => {
 
     test('should only have one accordion panel open at a time', async () => {
         tracker.clear();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        // The dashboard holds an EventSource, a WebSocket and 1s/1.5s/3s polls,
+        // so 'networkidle' is unreachable there by design — tolerate the timeout
+        // instead of failing the test on it. Same pattern as actual-usage-testing.spec.js.
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Open Manual Controls
         await page.locator('[data-bs-target="#collapseManual"]').click();
@@ -127,7 +147,11 @@ test.describe('Dashboard Accordion', () => {
     // the dashboard without opening anything.
     test('should show the one-tap deck without expanding a drawer', async () => {
         tracker.clear();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        // The dashboard holds an EventSource, a WebSocket and 1s/1.5s/3s polls,
+        // so 'networkidle' is unreachable there by design — tolerate the timeout
+        // instead of failing the test on it. Same pattern as actual-usage-testing.spec.js.
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         const grid = page.locator('#scDeckGrid');
         await expect(grid).toBeVisible();
@@ -141,7 +165,11 @@ test.describe('Dashboard Accordion', () => {
 
     test('should switch the deck between scenes and poses', async () => {
         tracker.clear();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        // The dashboard holds an EventSource, a WebSocket and 1s/1.5s/3s polls,
+        // so 'networkidle' is unreachable there by design — tolerate the timeout
+        // instead of failing the test on it. Same pattern as actual-usage-testing.spec.js.
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         const grid = page.locator('#scDeckGrid');
         const scenesTab = page.locator('.sc-tab[data-deck="scenes"]');
@@ -184,7 +212,11 @@ test.describe('Dashboard Accordion - AI Settings', () => {
 
     test('should have panel elements on AI Settings', async () => {
         tracker.clear();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        // The dashboard holds an EventSource, a WebSocket and 1s/1.5s/3s polls,
+        // so 'networkidle' is unreachable there by design — tolerate the timeout
+        // instead of failing the test on it. Same pattern as actual-usage-testing.spec.js.
+        await page.waitForLoadState('networkidle').catch(() => {});
         await page.waitForTimeout(1000);
 
         // AI Settings page should have panel elements with data-panel-id
