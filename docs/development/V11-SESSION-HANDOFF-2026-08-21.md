@@ -1,7 +1,7 @@
 # v11.0 Production-Readiness — Session Handoff
 
 **Written:** 2026-08-21, ~10:00Z
-**Repo state:** `48fd5e33` on `main`, pushed. Gate green (6/6) on every commit.
+**Repo state:** `3df27187` on `main`, pushed. Gate green (6/6) on every commit.
 **Version:** `package.json` is still `10.4.0`. Bump to `11.0.0` only at the release tag.
 **Working tree:** clean apart from node-local files that must NOT be committed (see §6).
 
@@ -100,6 +100,26 @@ These came out of the work rather than the audit, and matter more than most of t
   2026-08-19) — the live store held a `0–180` placeholder, so head tracking refused 239 times. Now
   `calibrated: true`, `canEnable: true`, offering only servos 10 and 15. **Node-local, deliberately
   uncommitted.** Wants physical confirmation (§5-F).
+- **The test suite was silencing the WHOLE FLEET, permanently** (`3df27187`). A post-commit log
+  review flagged "speaker mute flag is ON — the show plays silence" after I had already cleared it;
+  all three live animatronics were muted. Not the obvious endpoint: bisecting every system test file
+  pinned `orchestration.test.js`, and the path is `POST /emergency-stop`, which disarms each node with
+  `disarm.mute(true)` because muting is part of a panic stop. That behaviour is correct; firing a real
+  fleet panic stop from a test and walking away was not. Made permanent by two things: the flag
+  persists to `data/speaker-state.json` on purpose (so a restart cannot un-mute the house overnight),
+  and it is a fan-out, so one local run silenced Mina and Dragomir too. Fixed with file-scoped
+  capture/restore hooks, an explicit 60 s timeout (a fan-out waits out EHOSTUNREACH from the storage
+  nodes, so at mocha's 2 s default the restore hook itself timed out — that was a failed attempt),
+  and `setSpeakerMuted()` now returns a serialized promise the route awaits instead of firing and
+  forgetting. **Two earlier attempts at this failed and are recorded in the commit** so the next
+  session does not repeat them.
+- **A part save no longer destroys config written by other tabs** (`c2895210`, major
+  `edit-save-wipes-config`). The PUT used a shallow spread, so the Edit-Part form's per-type whitelist
+  (7 keys for a servo, 5 for a webcam) replaced the whole config — wiping the Advanced tab's
+  motionTracking/headTracking tuning AND its pan-servo assignment, the Model/Overrides values, and a
+  webcam's controls and modelId. Correcting an fps field silently discarded all of it and returned
+  "saved successfully". Now deep-merged. Verified live with an exact backup, then restored
+  byte-for-byte (sha256 confirmed) so the check left no trace in operator data.
 - **Orlok part 5 modelId** corrected from a 40 kg `ds3240mg` to the 150 kg part, which silenced a
   false `mixes incompatible voltage classes` warning that had fired on every boot
   (`⚠ servoChannels: warning` → `✓ servoChannels: ok`). **Node-local, uncommitted.**
@@ -128,7 +148,6 @@ first**) · `UP-10` 50 MB body limit · `UP-11` `ExecStart=npm start` keeps a 60
 ### Calibration UI — majors
 | ID | Title |
 |---|---|
-| `edit-save-wipes-config` | Edit-tab Save rebuilds `config` from scratch and PUTs wholesale, **erasing keys written by other tabs** (motion/head-tracking tuning, model overrides) |
 | `mic-sliders-dead-route` | Mic Sensitivity is a total no-op; Gain never persists. Both POST to `GET /setup/calibration/api/parts/:id` — a route that does not exist |
 | `continuous-jog-saturates-success` | Continuous-servo CW/CCW jog silently stops moving hardware at the estimated-position rail while reporting success |
 | `overrides-cannot-be-removed` | Blank fields are skipped, "Revert to Model" is a server-side no-op, and the Effective panel updates optimistically even when the save FAILED |
@@ -145,6 +164,10 @@ missed — the Markers `setMinBtn`/`setMaxBtn` writing `config.markers`) · `tes
 `orphan-save-pulse-fabricates-presets` *(unjudged)* · `stale-profile-wrong-kind` (cosmetic)
 
 ### Found in passing, not in the audit list
+- **The suite resets this node's sink volume** from the ear-verified canonical 1.3 to 0.65. Restored
+  by hand this session. `config/animatronics.json` carries the canonical value and `server.js` reapplies
+  it at startup, so a restart heals it — but a suite run followed by a show does not. Worth the same
+  capture/restore treatment the mute flag just got.
 - **Orlok's speaker `audioDeviceId` drifted** from the explicit XVF3800 sink to `"default"`, and
   mic/speaker grew `sampleRate`/`gain`/`bass`/`treble`. Settings-clobber class. Left uncommitted.
 - **`/api/system/volume` lies**: reports `100%` while `wpctl` shows the sink at **1.30**. Touching the
@@ -241,7 +264,7 @@ funnel through it — nothing can bypass it. `MB_SERVO_TRACE=1` leaves the trace
 
 ```
 gate            6/6 green
-unit            472 passing (18 new this session)
+unit            481 passing (27 new this session)
 system          366 passing
 hardware         44 passing
 browser         532 of 533 (the 1 is the USB camera dropping off the bus)
@@ -249,6 +272,8 @@ service         active, 0 restarts, no throttling
 fleet           .120 / .130 / .140 all HTTP 200
 held channels   ch0 (head) + ch3 (jaw) only — no broken part energized
 show-stoppers   4 of 4 closed (3 calibration + UP-2); UP-1 refuted as unreachable
+fleet mute      UNMUTED on all three live nodes, and a full suite run now leaves it that way
+sink volume     restored to the canonical 1.3 (the suite resets it to 0.65 — see UP-note below)
 ```
 
 ---
