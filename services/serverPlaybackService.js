@@ -196,9 +196,27 @@ class ServerPlaybackService {
     }
   }
 
+  /**
+   * Set the mute flag and persist it.
+   *
+   * Returns a promise, and callers MUST await it. This used to fire the persist and
+   * forget, which made the on-disk flag a race: two rapid toggles (mute then unmute
+   * — exactly what the dashboard toggle and the API test both do) issue two atomic
+   * writes with no ordering guarantee, so the LOSING write could land last and the
+   * node would boot muted. Because the flag is deliberately persisted so a restart
+   * cannot un-mute the house overnight, a lost update here is not cosmetic: the show
+   * plays silence, survives every restart, and the only symptom is nothing coming
+   * out of the speakers.
+   *
+   * Writes are serialized on a single chain so the last caller always wins.
+   */
   setSpeakerMuted(muted) {
     this._speakerMuted = !!muted;
-    this._persistMuteState(this._speakerMuted);
+    const next = this._speakerMuted;
+    this._mutePersistChain = Promise.resolve(this._mutePersistChain)
+      .catch(() => {})
+      .then(() => this._persistMuteState(next));
+    return this._mutePersistChain;
   }
 
   isSpeakerMuted() {

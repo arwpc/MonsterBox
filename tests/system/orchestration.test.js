@@ -15,6 +15,50 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3100';
 
 describe('Orchestration API (Fleet Command Center)', () => {
 
+  // FLEET-WIDE SIDE EFFECTS: capture and restore the speaker mute for the WHOLE
+  // file, not just one block. Two different endpoints in here silence every
+  // reachable animatronic:
+  //
+  //   * POST /superpower/mute — the obvious one.
+  //   * POST /emergency-stop  — the non-obvious one, and the actual culprit.
+  //     services/orchestrationService.js disarms each node with `disarm.mute(true)`
+  //     because muting the speaker is part of a panic stop. That behaviour is
+  //     CORRECT and must not change; the test firing a real fleet panic stop and
+  //     walking away is what was wrong.
+  //
+  // The mute flag persists to data/speaker-state.json on purpose, so a restart
+  // cannot un-mute the house overnight. That makes an unrestored mute permanent:
+  // on 2026-08-21 all three live animatronics were found silent, and the cause was
+  // this file, not an operator and not a fault. The only symptom is nothing coming
+  // out of the speakers.
+  let originalMuted = false;
+
+  before(async function () {
+    this.timeout(20000);
+    const res = await request(BASE_URL).get('/conversation/api/speaker-mute');
+    originalMuted = !!(res.body && res.body.muted === true);
+  });
+
+  after(async function () {
+    // A fleet fan-out waits out EHOSTUNREACH from the animatronics in storage,
+    // which takes several seconds — well past mocha's 2s default. Without an
+    // explicit timeout the restore hook itself timed out and the fleet stayed muted,
+    // which is exactly the failure this hook exists to prevent.
+    this.timeout(60000);
+    // This node first: fast, cannot fail on an unreachable peer, and it is the node
+    // whose persisted flag survives into every later restart here.
+    await request(BASE_URL)
+      .post('/conversation/api/speaker-mute')
+      .send({ muted: originalMuted });
+    // Then the peers, best effort — a node in storage must not fail the suite.
+    try {
+      await request(BASE_URL)
+        .post('/api/orchestration/superpower/mute')
+        .send({ enabled: originalMuted });
+    } catch (_) { /* peers restored on their next reachable run */ }
+  });
+
+
   // ── Status & Health ──────────────────────────────────────────────
   describe('GET /api/orchestration/status', () => {
     it('returns status + online/total counts for all configured animatronics', async () => {
@@ -176,6 +220,18 @@ describe('Orchestration API (Fleet Command Center)', () => {
 
   // ── Fleet superpowers ────────────────────────────────────────────
   describe('POST /api/orchestration/superpower/:feature', () => {
+    // These are FLEET FAN-OUTS: each POST reaches every reachable animatronic, not
+    // just this node. `mute` maps to POST /conversation/api/speaker-mute, whose flag
+    // is deliberately PERSISTED to data/speaker-state.json so a restart cannot
+    // un-mute the house overnight. Enabling it here and walking away therefore
+    // silenced every live character on the network, permanently, across every later
+    // restart — with no symptom except nothing coming out of the speakers.
+    //
+    // That is exactly what happened on 2026-08-21: three animatronics were found
+    // muted, and the cause was this loop, not an operator and not a fault.
+    //
+    // The fan-out assertion is worth keeping, so capture the real state first and
+    // put it back afterwards rather than dropping `mute` from the list.
     ['lurk', 'jaw', 'head', 'motion', 'mute', 'idle'].forEach((feature) => {
       it(`toggles ${feature} across the fleet (test mode)`, async () => {
         const res = await request(BASE_URL).post(`/api/orchestration/superpower/${feature}`)

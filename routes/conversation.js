@@ -684,10 +684,21 @@ router.get('/api/listen-in-url', async (req, res) => {
 
 // POST /conversation/api/speaker-mute { muted: true/false }
 // Toggle global speaker mute
-router.post('/api/speaker-mute', express.json(), (req, res) => {
+router.post('/api/speaker-mute', express.json(), async (req, res) => {
   const muted = !!(req.body && req.body.muted);
-  serverPlaybackService.setSpeakerMuted(muted);
-  res.json({ success: true, muted });
+  // Await the persist before answering. Replying early made the response a promise
+  // the caller could not rely on: a client that toggles twice quickly (or a test
+  // that mutes then unmutes) got two 200s while the two disk writes raced, and the
+  // losing one could land last — leaving the node muted across every later restart.
+  try {
+    await serverPlaybackService.setSpeakerMuted(muted);
+  } catch (err) {
+    // The in-memory flag is authoritative for this process, so the mute itself took
+    // effect; say so rather than implying the persisted state is also correct.
+    console.error('Speaker mute persisted state failed to write:', err);
+    return res.json({ success: true, muted, persisted: false, error: String(err && err.message || err) });
+  }
+  res.json({ success: true, muted, persisted: true });
 });
 
 // GET /conversation/api/speaker-mute
