@@ -141,37 +141,6 @@
     "created": "2026-01-06T22:42:08.489Z"
   },
   {
-    "id": 106,
-    "name": "Full Servo Test - All 4 Servos",
-    "steps": [
-      {
-        "type": "servo",
-        "partId": "10",
-        "angle": 45,
-        "duration": 1000
-      },
-      {
-        "type": "servo",
-        "partId": "11",
-        "angle": 90,
-        "duration": 1000
-      },
-      {
-        "type": "servo",
-        "partId": "5",
-        "angle": 90,
-        "duration": 1000
-      },
-      {
-        "type": "servo",
-        "partId": "4",
-        "angle": 90,
-        "duration": 1000
-      }
-    ],
-    "created": "2026-01-06T22:44:19.602Z"
-  },
-  {
     "id": 107,
     "name": "Left Arm & Goblin Video Test",
     "steps": [

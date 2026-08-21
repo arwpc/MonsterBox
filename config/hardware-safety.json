@@ -83,7 +83,14 @@
     },
     "4": {
       "_comment": "Sir Dragomir — recorded fully operational 2026-04-18 (jaw ch0, magic box ch8, head ch4 continuous). That predates v9.0 and has NOT been re-verified, so no limits are asserted here yet. Add measured windows during the v9.1 hardware pass.",
-      "parts": {}
+      "parts": {
+        "1": {
+          "blockAllMotion": true,
+          "blockReason": "Neck is a goBILDA Stingray-2 900-degree multi-turn servo and has NEVER been calibrated. A full rotation physically tears the head cabling (V11-HANDOFF §2.2). It was previously mislabelled continuous and accumulated 99 spin commands before the 543deb46 relabel. TO RE-ENABLE: remove this blockAllMotion pair ONLY during a supervised calibration session with eyes on the neck, after measuring a cable-safe window.",
+          "maxDurationMs": 3000,
+          "notes": "Neck, PCA9685 ch4 (docs said ch0/ch1 at various times; ch4 is measured truth). Multi-turn: an angle command maps onto up to 2.5 rotations, so even a modest-looking angle can wrap the cabling. No angle window is set because none has ever been measured; blockAllMotion is the only honest guard until the supervised session."
+        }
+      }
     }
   }
 }
