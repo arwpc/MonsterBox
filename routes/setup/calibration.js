@@ -574,10 +574,31 @@ router.put('/api/parts/:id', express.json(), async (req, res) => {
             });
         }
 
-        // Update part with new data
+        // Update part with new data.
+        //
+        // `config` is MERGED, not replaced. A shallow spread of `updates` used to
+        // overwrite the whole config object, and the Edit-Part form sends only a
+        // per-type whitelist (7 keys for a servo, 5 for a webcam). So every config
+        // key written by a DIFFERENT surface was destroyed by an unrelated save:
+        // the Advanced tab's motionTracking/headTracking tuning and pan-servo
+        // assignment, and the Model/Overrides tab's values, all vanished the next
+        // time someone corrected an fps field and pressed Save. The operator got a
+        // "saved successfully" toast for silently discarding their own calibration
+        // work — on the page they use to do that work.
+        //
+        // Merging means a PUT can no longer REMOVE a config key implicitly, which is
+        // correct: this form has no delete affordance (blank fields are skipped), so
+        // an absent key has always meant "not edited", never "delete this". A caller
+        // that genuinely wants to clear a value sends it explicitly as null.
+        const mergedConfig = (updates && updates.config && typeof updates.config === 'object'
+            && !Array.isArray(updates.config))
+            ? deepMerge(parts[partIndex].config || {}, updates.config)
+            : (updates ? updates.config : undefined);
+
         parts[partIndex] = {
             ...parts[partIndex],
             ...updates,
+            ...(mergedConfig !== undefined ? { config: mergedConfig } : {}),
             id, // Ensure ID doesn't change
             updated: new Date().toISOString()
         };
