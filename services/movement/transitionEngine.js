@@ -430,6 +430,37 @@ async function transitionServos(characterId, parts, options = {}) {
         return [];
     }
 
+    // Drop physically broken parts at the movement chokepoint.
+    //
+    // Every caller here is autonomous — the idle loop, gestures, pose transitions —
+    // and none of them should ever choose hardware the operator has declared
+    // damaged. idleLoopService in particular never consulted the fault list at all,
+    // so it could feed a damaged part straight in.
+    //
+    // Filtering in batchMoveServos was not sufficient: the fallback below calls
+    // controlPart directly, per part, when the batch path is unavailable or throws.
+    // That fallback bypassed the batch filter entirely, which is how a damaged
+    // part's channel kept ending up energized with no trace in the log.
+    if (options.allowBrokenParts !== true) {
+        try {
+            const { getPhysicalFault } = await import('../hardwareService/safetyLimits.js');
+            const kept = [];
+            for (const part of parts) {
+                const fault = await getPhysicalFault(characterId, part.partId);
+                if (fault.broken) {
+                    console.warn(`⛔ TransitionEngine: dropping part ${part.partId} — declared physically broken (${fault.reason})`);
+                } else {
+                    kept.push(part);
+                }
+            }
+            if (kept.length === 0) return [];
+            parts = kept;
+        } catch (err) {
+            // A lookup failure must not silently widen what we are willing to drive.
+            console.warn(`⚠️  TransitionEngine: physical-fault lookup failed (${err.message}) — proceeding with the requested parts`);
+        }
+    }
+
     // Check abort signal before starting
     throwIfAborted(signal);
 
@@ -547,8 +578,18 @@ async function transitionServos(characterId, parts, options = {}) {
         const fromAngle = part.currentValue ?? targetAngle;
         const toAngle = targetAngle;
 
+        // characterId MUST be passed. Part ids are only unique WITHIN a character,
+        // so an unscoped call resolves against the node's mutable selectedCharacter
+        // — the defect class that has already driven the wrong PCA9685 channel on
+        // this fleet. This call site was missing it entirely.
+        //
+        // The error is still not fatal (a dropped frame mid-transition should not
+        // abort the move) but it is no longer swallowed in silence.
         const onStep = hwService ? (angle) => {
-            hwService.controlPart(partId, 'moveToAngle', { angleDeg: angle }).catch(() => {});
+            hwService.controlPart(partId, 'moveToAngle', { angleDeg: angle }, { characterId })
+                .catch(err => {
+                    console.warn(`[TransitionEngine] step failed for part ${partId} @ ${angle}°: ${err && err.message}`);
+                });
         } : null;
 
         return transitionServo(partId, fromAngle, toAngle, durationMs, easing, onStep, {

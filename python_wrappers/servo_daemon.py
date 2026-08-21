@@ -150,10 +150,71 @@ def _ensure(address):
     _log(f"chip 0x{address:02x} {state}")
 
 
+_broken_cache = {'at': 0.0, 'channels': {}}
+BROKEN_REFRESH_S = 30.0
+
+
+def _broken_channels():
+    """{channel: reason} for parts declared physically broken, cached briefly.
+
+    Cheap and fail-open on error: a daemon that cannot read the fault list must not
+    stop driving healthy hardware mid-show.
+    """
+    now = time.time()
+    if (now - _broken_cache['at']) < BROKEN_REFRESH_S:
+        return _broken_cache['channels']
+    channels = {}
+    try:
+        import mb_safety
+        channels = mb_safety.broken_channels(mb_safety.resolve_character_id())
+    except Exception as exc:
+        _log(f"could not read physical-faults ({exc}) — not denying any channel")
+    _broken_cache['at'] = now
+    _broken_cache['channels'] = channels
+    return channels
+
+
 def _write(address, channel, off):
-    """One guarded channel write. Releases the channel if it cannot be trusted."""
+    """One guarded channel write. Releases the channel if it cannot be trusted.
+
+    This daemon is the only PERSISTENT holder of /dev/i2c-1, so every lasting
+    channel state on the chip passes through here. Set MB_SERVO_TRACE=1 to log each
+    write. That exists because a channel belonging to a physically damaged part kept
+    ending up energized during a full test-suite run with no corresponding entry in
+    the Node-side log — the Node layer logs its own intent, not what actually
+    reached the chip, so attribution needs a probe at this boundary.
+    """
+    # LAST LINE OF DEFENCE: never energize a channel owned by a physically broken
+    # part. Releasing one (off == 0) is always allowed.
+    #
+    # The Node layer already refuses these in scene playback, poses, batch moves,
+    # transitions, head-tracking selection and automated test target selection. This
+    # check exists because on 2026-08-21 a full test-suite run STILL energized a
+    # damaged part's channel, and the Node-side logs showed no such command — the
+    # Node layer logs its intent, not what reaches the chip. A trace at this
+    # boundary proved the daemon really did receive channel 4 twice. Rather than keep
+    # hunting the caller, the deny lives where every caller must pass: this is the
+    # only persistent owner of /dev/i2c-1, and the stdin jaw protocol, the unix
+    # socket, and one-shot CLI invocations all funnel through here.
+    #
+    # Consistent with the daemon's stated contract — "can only ever narrow, never
+    # widen" — exactly like the unconditional 0-180 clamp above it.
+    #
+    # To drive a part that is listed: clear its entry in config/physical-faults.json.
+    # That is deliberately an explicit, one-line operator action, not a flag a
+    # background job can set.
+    if off:
+        denied = _broken_channels().get(int(channel))
+        if denied:
+            _log(f"REFUSED ch{channel} off={off} — {denied}. "
+                 f"Clear it in config/physical-faults.json once repaired.")
+            return
+
     try:
         _ensure(address)
+        if os.environ.get('MB_SERVO_TRACE') == '1':
+            _log(f"TRACE write ch{channel} off={off} "
+                 f"({off / 4096.0 * 20000.0:.1f}us) addr=0x{address:02x}")
         write_channel(_get_bus(), address, channel, 0, off)
         _last_off[(address, channel)] = off
     except OSError as exc:

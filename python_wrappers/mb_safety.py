@@ -54,6 +54,7 @@ from mb_response import (
 APP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SAFETY_CONFIG_PATH = os.path.join(APP_ROOT, 'config', 'hardware-safety.json')
 APP_CONFIG_PATH = os.path.join(APP_ROOT, 'config', 'app-config.json')
+PHYSICAL_FAULTS_PATH = os.path.join(APP_ROOT, 'config', 'physical-faults.json')
 DATA_ROOT = os.path.join(APP_ROOT, 'data')
 
 # Mirrors RETRACT_DIRECTIONS in services/hardwareService/safetyLimits.js.
@@ -124,6 +125,45 @@ def _part_channel(part):
 def _part_controller(part):
     cfg = part.get('config') or {}
     return str(cfg.get('controllerType') or part.get('controllerType') or '').lower()
+
+
+def broken_part_ids(character_id):
+    """Part ids the operator has declared PHYSICALLY BROKEN for this character.
+
+    Mirrors getPhysicalFault() in services/hardwareService/safetyLimits.js. This is
+    NOT the retired per-part safety-limit system (config/hardware-safety.json, empty
+    by permanent operator ruling) — it is an inventory of damaged hardware.
+    """
+    cfg = _load_json(PHYSICAL_FAULTS_PATH, {}) or {}
+    chars = cfg.get('characters') or {}
+    entry = chars.get(str(character_id)) or {}
+    parts = entry.get('parts') or {}
+    return {str(pid) for pid, meta in parts.items()
+            if isinstance(meta, dict) and meta.get('status') == 'broken'}
+
+
+def broken_channels(character_id, address=None):
+    """PCA9685 channels owned by a physically broken part.
+
+    Returned as {channel: reason} so a refusal can say WHY. Used by the servo
+    daemon as a last line of defence: it is the single transport every caller
+    passes through, so a channel denied here cannot be energized by any code path,
+    including ones that bypass the Node-side guards entirely.
+    """
+    broken = broken_part_ids(character_id)
+    if not broken:
+        return {}
+    out = {}
+    for part in load_parts(character_id):
+        if str(part.get('id')) not in broken:
+            continue
+        if _part_controller(part) not in ('pca9685', ''):
+            continue
+        channel = _part_channel(part)
+        if channel is None:
+            continue
+        out[channel] = f"part {part.get('id')} ({part.get('name')}) is declared physically broken"
+    return out
 
 
 def find_part_by_channel(character_id, channel, address=None):
