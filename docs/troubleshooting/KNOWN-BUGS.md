@@ -532,6 +532,13 @@ exist yet.
   than "a file got clobbered". The test now snapshots and restores; verified on all
   three nodes (config intact after the save test). `scripts/log-review.mjs` flags this
   class as tts-config drift vs the committed canonical.
+  **Recurred on Orlok, found 2026-08-20:** `data/character-3/ai-config/tts-config.json`
+  drifted to stability 0.6 / similarity 0.4 / `eleven_flash_v2_5` (canonical: 0.25 /
+  0.6 / `eleven_v3`). Canonical restored from HEAD + service restarted the same night,
+  but the WRITER was not identified — the 2026-08-17 fix covered `ai-audio.test.js`,
+  so something else also writes this file. Hunt the writer before trusting the file
+  again (mega-session work item 1 covers this; suspect other suites or a save path
+  that posts page defaults).
 - ~~**`monsterbox-boot-check` could never pass**~~ — **fixed 2026-08-17**, twice over:
   a root-owned log file killed it at its first `tee` under `set -e`, and beneath that
   its readiness probes hit `http://localhost:3000` — plain HTTP against an HTTPS
