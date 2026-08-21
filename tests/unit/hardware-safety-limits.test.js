@@ -11,6 +11,7 @@
  */
 
 import { expect } from 'chai';
+import { readFile } from 'fs/promises';
 import {
   applySafetyLimits,
   getPartSafety,
@@ -286,13 +287,22 @@ describe('Hardware safety limits', function () {
   });
 
   describe('configured limits for the shipped fleet', function () {
-    it('loads the fused-rail group for both of its member parts', async function () {
-      const elbow = await getPartSafety(3, 4, null);
-      const forearm = await getPartSafety(3, 5, null);
-      expect(elbow.powerGroup).to.be.a('string');
-      expect(forearm.powerGroup).to.equal(elbow.powerGroup);
-      expect(elbow.powerGroupConfig.serialize).to.equal(true);
-      expect(elbow.maxDurationMs).to.be.a('number');
+    // 2026-08-20 operator ruling: every per-part limit was removed, all characters,
+    // permanently ("we don't need them ever again"). The shipped config is EMPTY by
+    // design — this test now guards that state so a well-meaning session cannot
+    // silently re-add limits the operator retired.
+    it('ships no per-part limits for any character', async function () {
+      const raw = JSON.parse(await readFile(new URL('../../config/hardware-safety.json', import.meta.url), 'utf-8'));
+      expect(raw.characters).to.deep.equal({});
+    });
+
+    it('returns empty limits for formerly-blocked parts', async function () {
+      for (const [charId, partId] of [[3, 4], [3, 5], [3, 3], [4, 1]]) {
+        const limits = await getPartSafety(charId, partId, null);
+        expect(limits.maxDurationMs).to.equal(undefined);
+        expect(limits.powerGroup).to.equal(null);
+        expect(limits.noRetractBelowMin).to.equal(false);
+      }
     });
 
     it('returns empty limits for a part with no configuration', async function () {
