@@ -31,15 +31,58 @@ const __dirname = path.dirname(__filename);
 
 const SAFETY_CONFIG_PATH = path.resolve(__dirname, '../../config/hardware-safety.json');
 
+// Physically broken hardware. Deliberately NOT part of the limit system above:
+// nothing in the request path consults it and it never refuses an operator command.
+// It exists so code that picks a part on its own initiative (a test suite, a
+// diagnostic sweep) does not select a damaged one. See the file's own _readme.
+const PHYSICAL_FAULTS_PATH = path.resolve(__dirname, '../../config/physical-faults.json');
+
 // The config is read on the hot path of every hardware command. Cache it — this
 // runs off an SD card and scene playback issues hundreds of commands a minute.
 let _configCache = null;
 let _configCacheAt = 0;
 const CONFIG_TTL_MS = 30_000;
 
+let _faultsCache = null;
+let _faultsCacheAt = 0;
+
 export function invalidateSafetyConfigCache() {
     _configCache = null;
     _configCacheAt = 0;
+    _faultsCache = null;
+    _faultsCacheAt = 0;
+}
+
+async function loadPhysicalFaults() {
+    const now = Date.now();
+    if (_faultsCache && (now - _faultsCacheAt) < CONFIG_TTL_MS) return _faultsCache;
+    try {
+        const raw = await fs.readFile(PHYSICAL_FAULTS_PATH, 'utf8');
+        _faultsCache = JSON.parse(raw || '{}');
+    } catch (e) {
+        if (!e || e.code !== 'ENOENT') {
+            console.warn(`⚠️  physical-faults.json unreadable (${e.message}) — automated suites will treat all hardware as healthy`);
+        }
+        _faultsCache = {};
+    }
+    _faultsCacheAt = now;
+    return _faultsCache;
+}
+
+/**
+ * Is this part recorded as physically broken right now?
+ *
+ * Advisory only. The operator may still drive a broken part deliberately; this
+ * just stops automated callers from choosing one.
+ *
+ * @returns {Promise<{broken: boolean, reason: string|null}>}
+ */
+export async function getPhysicalFault(characterId, partId) {
+    const cfg = await loadPhysicalFaults();
+    const charCfg = (cfg.characters && cfg.characters[String(characterId)]) || {};
+    const entry = (charCfg.parts && charCfg.parts[String(partId)]) || null;
+    if (!entry || entry.status !== 'broken') return { broken: false, reason: null };
+    return { broken: true, reason: entry.reason || 'declared physically broken' };
 }
 
 async function loadSafetyConfig() {
@@ -120,6 +163,15 @@ export async function getPartSafety(characterId, partId, profile = null) {
  * @returns {Promise<boolean>}
  */
 export async function isTestSafePart(characterId, partId, profile = null) {
+    // config/hardware-safety.json is empty by operator ruling (2026-08-20), so the
+    // three flags below are all false for every part and this used to degrade to
+    // "everything is test-safe" — which made callers pick parts[0], which on the
+    // affected node was a dead elbow on a fused rail. The physical-fault inventory is what actually
+    // carries that knowledge now, and it is checked FIRST so an emptied safety
+    // config can never again turn this helper into a pass-through.
+    const fault = await getPhysicalFault(characterId, partId);
+    if (fault.broken) return false;
+
     const safety = await getPartSafety(characterId, partId, profile);
     return !safety.excludeFromAutomatedTests && !safety.blockAllMotion && !safety.powerGroup;
 }
@@ -285,6 +337,7 @@ export function resetPowerGroups() {
 export default {
     getPartSafety,
     isTestSafePart,
+    getPhysicalFault,
     applySafetyLimits,
     runInPowerGroup,
     invalidateSafetyConfigCache,

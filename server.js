@@ -179,6 +179,28 @@ try {
     if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Startup health check:', e.message);
 }
 
+// Clear stalled PWM at startup.
+//
+// The PCA9685 keeps its own LEDn registers, so a channel left energized outlives
+// the process that commanded it — it survives an app restart AND a reboot. Nothing
+// in this codebase ever released a channel automatically, which is how a servo
+// commanded to a position it cannot physically reach ends up buzzing against a
+// stop all night: locked up, drawing stall current, until the fuse opens. On
+// 2026-08-21 one node's electrically dead elbow was found holding 1308.6us on the
+// fused rail that keeps blowing, and a peer's ch0 was holding 2089.8us near its
+// travel extreme.
+//
+// This deliberately does NOT release every servo. A blanket release would drop
+// every rig limp on each restart. It clears only the two cases where holding is
+// pure risk with no upside: channels owned by parts the operator has declared
+// physically broken, and channels being driven with no part mapped to them at all.
+try {
+    const { releaseStalledChannels } = await import('./services/hardwareService/stallGuard.js');
+    await releaseStalledChannels(config.selectedCharacter, 'startup');
+} catch (e) {
+    if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Stall guard (startup):', e.message);
+}
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : (config.port || 3000);
 
 // Initialize app.locals.config so the very first request gets the startup character
@@ -1031,6 +1053,17 @@ async function gracefulShutdown(signal) {
         console.log('  ✓ Actuator positions persisted');
     } catch (e) {
         console.warn('Actuator position save error:', (e && e.message) || e);
+    }
+
+    // Clear stalled PWM before we go away. The PCA9685 keeps emitting whatever it
+    // was last told, so a channel left energized here keeps drawing current for as
+    // long as the service is down — a stall survives the restart that was supposed
+    // to fix it. Only broken-part and orphaned channels are released; see stallGuard.
+    try {
+        const { releaseStalledChannels } = await import('./services/hardwareService/stallGuard.js');
+        await releaseStalledChannels(config.selectedCharacter, 'shutdown');
+    } catch (e) {
+        if (e.code !== 'ERR_MODULE_NOT_FOUND') console.warn('Stall guard (shutdown):', (e && e.message) || e);
     }
 
     // Remove PID lock file

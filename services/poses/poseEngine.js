@@ -69,10 +69,35 @@ export async function executePose({ characterId, poseId, pose: providedPose, opt
             }
         }
 
+        // Drop parts the operator has declared physically broken. A pose is a
+        // composite, so the alternative is refusing the whole pose because one
+        // damaged part is in it. Direct single-part commands are unaffected —
+        // those still drive a broken part so a repair can be verified. Pass
+        // options.allowBrokenParts to override deliberately.
+        let poseParts = pose.parts;
+        if (options.allowBrokenParts !== true) {
+            const { getPhysicalFault } = await import('../hardwareService/safetyLimits.js');
+            const keep = [];
+            for (const part of poseParts) {
+                let fault = { broken: false };
+                try {
+                    fault = await getPhysicalFault(characterId, part.partId);
+                } catch (err) {
+                    console.warn(`⚠️  physical-fault lookup failed for part ${part.partId}: ${err.message}`);
+                }
+                if (fault.broken) {
+                    console.warn(`⛔ Pose "${pose.name}": skipping part ${part.partId} — declared physically broken (${fault.reason})`);
+                } else {
+                    keep.push(part);
+                }
+            }
+            poseParts = keep;
+        }
+
         // Separate servo parts (for batching) from non-servo parts
         const servoParts = [];
         const otherParts = [];
-        for (const part of pose.parts) {
+        for (const part of poseParts) {
             const t = (part.type || '').replace(/_/g, '-');
             if (t === 'servo' && part.target && part.target.angleDeg != null) {
                 servoParts.push(part);

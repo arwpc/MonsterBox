@@ -833,6 +833,32 @@ export async function executeStep(step, characterId, emit, options) {
     emit && emit({ type: 'step', status: 'complete', stepType: t, dryRun: true });
     return { success: true, dryRun: true };
   }
+  // Scene playback drives hardware with nobody watching — a queue loop, the idle
+  // loop, a scheduled show. If the operator has told us a part is physically
+  // broken, an unattended scene must not keep slamming it. One node's show scene
+  // commanded a damaged bow actuator for 5 s twice per play, and its damaged left
+  // arm had been driven 111 times — the most likely reason that fused rail keeps
+  // opening.
+  //
+  // This is NOT the retired per-part safety-limit system: it refuses no operator
+  // command. A direct part test, a calibration nudge or a manual goto still drives
+  // a broken part, because the operator may be verifying a repair. Only autonomous
+  // playback skips, and it says so loudly so the skip is never silent.
+  if (step && step.partId != null) {
+    try {
+      const { getPhysicalFault } = await import('../hardwareService/safetyLimits.js');
+      const fault = await getPhysicalFault(characterId, step.partId);
+      if (fault.broken) {
+        console.warn(`⛔ Scene step skipped: character ${characterId} part ${step.partId} is declared physically broken — ${fault.reason}. Clear it in config/physical-faults.json once repaired.`);
+        emit && emit({ type: 'step', status: 'skipped', stepType: t, partId: step.partId, reason: fault.reason });
+        return { success: true, skipped: true, reason: fault.reason, partId: step.partId };
+      }
+    } catch (e) {
+      // Never let the fault lookup itself break playback.
+      console.warn(`⚠️  physical-fault lookup failed for part ${step.partId}: ${e.message}`);
+    }
+  }
+
   switch (t) {
     case 'pose':
       return executePoseStep(step, characterId, emit);

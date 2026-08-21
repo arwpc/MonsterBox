@@ -1,0 +1,50 @@
+{
+  "_readme": [
+    "PHYSICALLY BROKEN HARDWARE — an inventory of rigs that are damaged right now.",
+    "",
+    "THIS IS NOT THE RETIRED SAFETY-LIMIT SYSTEM. Do not confuse the two.",
+    "config/hardware-safety.json was emptied on 2026-08-20 by operator ruling ('You can remove these",
+    "for all characters, we don't need them ever again') and that ruling stands: software refuses no",
+    "operator command, clamps no angle, caps no duration and serializes no rail.",
+    "",
+    "This file does something narrower and different. It records which parts are PHYSICALLY DAMAGED,",
+    "so that code choosing a part ON ITS OWN INITIATIVE — an automated test suite, a diagnostic",
+    "script, a fleet sweep — does not pick a broken one. The operator may still drive anything listed",
+    "here, deliberately, from the UI or the API. Nothing in the runtime request path reads this file.",
+    "",
+    "Why it exists: tests/system/parts-api.test.js was written to skip these parts and selected them",
+    "through safetyLimits.isTestSafePart(). When hardware-safety.json was emptied, that helper began",
+    "returning true for every part, so the loop picked servos[0] — Orlok's dead Elbow on the fused",
+    "rail that has repeatedly blown. The guard inverted into selecting the worst possible part, and",
+    "npm run test:system physically drove the Elbow and the Bow actuator on 2026-08-21.",
+    "",
+    "Remove an entry when the operator repairs the hardware, not to make a test pass."
+  ],
+  "characters": {
+    "3": {
+      "_note": "Orlok is the only physically damaged rig as of 2026-08-21 (operator, verbatim: 'only orlock is physically hacked with bad back left arm forearm and elbow').",
+      "parts": {
+        "2": {
+          "status": "broken",
+          "reason": "Left Arm of Manipulation — operator reports the left arm is physically damaged.",
+          "since": "2026-08-21"
+        },
+        "3": {
+          "status": "broken",
+          "reason": "Bow At The Waist — operator reports the back is physically damaged. Also has a self-contradicting BTS7960 wiring record: the part description says RPWM=21/LPWM=19 while the data fields say rpwmPin:19/lpwmPin:21, and that swap inverts direction, so 'extend' may physically retract.",
+          "since": "2026-08-21"
+        },
+        "4": {
+          "status": "broken",
+          "reason": "Elbow — electrically dead, and shares a fused rail with part 5 that has repeatedly blown. Was found on 2026-08-21 still energized at 1308.6us after a test run, which is a stall-current path.",
+          "since": "2026-08-21"
+        },
+        "5": {
+          "status": "broken",
+          "reason": "Forearm Rotation — operator reports the forearm is physically damaged. Travel was never measured. Shares the fused rail with part 4.",
+          "since": "2026-08-21"
+        }
+      }
+    }
+  }
+}
