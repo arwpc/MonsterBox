@@ -1429,6 +1429,31 @@ Plus one that was not flake at all:
 
 ## Recently Fixed (for reference)
 
+### 2026-08-20 late session (audio output, both XVF3800 nodes)
+
+- ~~**Mina inaudible / Orlok "very very quiet" — one cause, two presentations.**~~ — **fixed
+  2026-08-20, proven by ear-check on both nodes.** The reSpeaker XVF3800 ships with its mono
+  DAC path (`amixer` control `'PCM',1`) at **40/60 = −20.00 dB** while the stereo `'PCM',0`
+  sits at 0 dB. Every software layer checked out (sink volume canonical, unmuted, streams
+  exiting cleanly), which is why the V11-HANDOFF §11 investigation concluded "signal reaches
+  the array, no sound in the room" and suspected Mina's powered subwoofer. It was the mixer.
+  Set to 60/0 dB + `alsactl store` on Mina and Orlok; ear-check transcripts after the fix:
+  Mina word-perfect ("Mina here, testing my voice at the new volume…"), Orlok transcribed
+  with minor mishears. **Provisioning implication (OPEN): six more XVF3800s are planned —
+  mixer normalization (`'PCM',1` → 0 dB) must land in the audio provisioning path
+  (`scripts/apply-audio-nosuspend.sh` or install.sh) or every new array arrives 20 dB quiet.**
+  Note: Mina's canonical 1.0 sink volume was set while the DAC was −20 dB; re-tune by ear.
+
+- 🟡 **Orlok's audio sink WEDGED for ~40 min (2026-08-20 22:26–23:05) — cause unknown,
+  cleared, watching.** A `pw-play` hung from 22:26 (survived SIGTERM), app playback returned
+  `playback_timeout` on a 4-second line, capture children overran their deadlines, and even a
+  direct `pw-play Front_Center.wav` timed out — the sink itself was stuck, not the app. The
+  no-suspend rule WAS active (`/etc/wireplumber/main.lua.d/51-monsterbox-nosuspend.lua`), so
+  sink-suspend is not the explanation. `systemctl --user restart pipewire pipewire-pulse
+  wireplumber` + a service restart cleared it; ear-check green afterward. Started ~2 min
+  after a `monsterbox.service` restart — if it recurs after a restart, suspect a race between
+  the service's audio clients and the USB sink coming back.
+
 ### v9.1.0 / v9.2.0 (2026-08-16 — Halloween session)
 
 - ~~**Four of six characters spoke in the WRONG voice on the say/scene path.**~~ — fixed
