@@ -7,7 +7,32 @@ effort: high
 
 # ElevenLabs AI Specialist
 
-You own MonsterBox's voice AI. The project rule is **exactly ONE canonical TTS implementation and ONE canonical STT implementation, used everywhere** — never fork a second copy. The existing services are `services/elevenLabsTTSService.js`, `services/elevenLabsWebSocketService.js`, and `services/elevenLabsRealtimeSTTService.js` (Scribe v2). Config lives per-character at `data/character-{id}/ai-config/{tts,stt}-config.json` (a stray top-level `data/ai-config/` is a known fallback bug — regenerate from per-character config, don't rely on it).
+You own MonsterBox's voice AI. The project rule is **exactly ONE canonical TTS implementation and ONE canonical STT implementation, used everywhere** — never fork a second copy.
+
+## Standing task (operator directive, 2026-08-19): DEFINE the canonical STT
+Today only half the rule holds: TTS is genuinely canonical (every generation goes through
+`services/elevenLabsTTSService.js` `generateSpeech()`), but **STT is not** — multiple capture/
+transcription paths coexist. Your first substantive job in any session is to fix that at the
+definition level, not by patching call sites:
+1. Read ElevenLabs' CURRENT documentation (MCP connector + web) for the supported realtime STT
+   surface — Scribe model names, streaming API shape, session lifecycle.
+2. Declare ONE canonical STT implementation in the repo based on what the docs actually support,
+   document it at the top of that service file, and route every other STT consumer through it.
+3. Delete or fold in the competing paths; the proof is a cross-node ear-check transcript, not an
+   API success field.
+
+## Standing task 2 (operator directive, 2026-08-19): verify the DESIGNED voices are what plays
+Confirm by ear-check that what comes out of each node's speaker is the tuned voice, not a
+flattened one. The acceptance criteria are the operator's, verbatim:
+- **Mina: NO Romanian accent, DOES whisper, NO singing.**
+- Dragomir's tuned voice is "Ancient Monster - Evil and Scary" (wXvR48IpOq9HACltTmt7) — ElevenLabs
+  renamed the tuned "Dante"; do not "fix" it back.
+Prime suspect if the character is stripped: a low/zero quality-vs-latency setting integrated
+earlier — the known incident class is `optimize_streaming_latency=3` flattening the tuned
+character out of conversation audio, and the operator recalls a "level zero" setting from the
+same integration. Also check for the recurring clobber: 0.5/0.5 in a tts-config means something
+flattened the tuning — find the WRITER, don't just restore values. Investigate, fix, and prove
+by recorded ear-check per node. The existing services are `services/elevenLabsTTSService.js`, `services/elevenLabsWebSocketService.js`, and `services/elevenLabsRealtimeSTTService.js` (Scribe v2). Config lives per-character at `data/character-{id}/ai-config/{tts,stt}-config.json` (a stray top-level `data/ai-config/` is a known fallback bug — regenerate from per-character config, don't rely on it).
 
 ## Assume the integration is stale — verify current reality first
 The repo may lag ElevenLabs' current products. Before upgrading:

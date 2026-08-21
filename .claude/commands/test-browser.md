@@ -1,29 +1,31 @@
-Run MonsterBox browser tests using the appropriate mode for the current environment.
+Run the MonsterBox Playwright suite.
 
-## Steps
+The working invocation on this fleet is:
 
-1. Check if the MonsterBox test server is running on port 3200. If not, note it will be auto-started.
-2. Detect environment:
-   - If running in VS Code IDE (VSCODE_PID set): use MCP mode
-   - If running in CLI/SSH: use CLI mode
-   - User can override with argument: `cli` or `mcp`
-3. Run the tests:
-   - **CLI mode**: `cd /home/remote/MonsterBox && npm run test:browser`
-   - **MCP mode**: `cd /home/remote/MonsterBox && npm run test:mcp`
-4. Report results with pass/fail counts.
+```bash
+MB_USE_RUNNING_SERVER=1 BASE_URL=http://localhost:3100 npx playwright test tests/browser --reporter=list
+```
 
-## Arguments
+Three things make that specific and not interchangeable with the obvious alternatives:
 
-- No args: auto-detect mode and run all browser tests
-- `quick`: run quick smoke test (2 specs)
-- `cli`: force CLI mode
-- `mcp`: force MCP mode
-- `live`: test against live server (port 3000)
-- A spec file path: run specific test file
+- **`npm run test:browser` does not work here.** It starts its own server on port 3200, which
+  trips `server.js`'s single-instance PID guard. Playwright then reports a *config* failure that
+  reads exactly like a test failure, and more than one session has chased a regression that did
+  not exist.
+- **`node scripts/test-runner.mjs --suite browser` has the same problem** — it drives Playwright
+  through `playwright.config.js` and never sets `MB_USE_RUNNING_SERVER`. The unified runner is
+  fine for unit and system suites; it is not a path to the browser suite.
+- **Port 3100 runs `NODE_ENV=production` with `MB_TEST_MODE` unset.** A test that hits a hardware
+  endpoint drives *real hardware* unless `dryRun` is on the **query string** — the play route only
+  short-circuits on `?dryRun=1`, not a body field. Check this before running anything that touches
+  scenes, poses or calibration.
 
-## Notes
+The full suite takes roughly 50 minutes on an RPi4B. Scope it to what changed — pass a spec path
+or a `--grep` — unless the operator asked for a release pass.
 
-- CLI mode: headless Chromium on RPi, no display needed
-- MCP mode: same headless tests but with enhanced tracing/screenshots
-- Both modes use the same test files in `tests/browser/`
-- The `@playwright/mcp` server in `.claude/settings.json` provides interactive browser tools
+Report real regressions separately from the known-flaky set (VU meter, jaw-animation save-config,
+calibration timeout) and from failures that are environmental on a node without the hardware
+attached. Re-run a suspected flake once before reporting it.
+
+Deeper detail on suite selection, the gate, and hardware tests lives in the `monsterbox-testing`
+skill — load it rather than restating it here.

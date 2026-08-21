@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "name": "Groundbreaker Insult Loop",
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "speed": 100,
+        "duration": 2000,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "You want some of this? I'll tear you apart and bury you in pieces!"
+      },
+      {
+        "type": "wait",
+        "duration": 30000
+      }
+    ],
+    "created": "2025-10-24T02:45:00.000Z"
+  }
+]

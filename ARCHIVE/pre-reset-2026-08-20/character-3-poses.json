@@ -1,0 +1,1038 @@
+{
+  "characterId": 3,
+  "poses": [
+    {
+      "id": 1,
+      "name": "Neutral Standing",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "home"
+      ],
+      "weight": 15,
+      "holdVariance": 1000,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        },
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 90
+          }
+        },
+        {
+          "partId": 8,
+          "type": "light",
+          "target": {
+            "action": "turnOff",
+            "state": "off",
+            "brightness": 100,
+            "duration": 0
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z",
+      "notes": "Canonical safe home. Head baseline 99, elbow mid 90, lamp dark. Safe to snap to from any state — deliberately does NOT command the open-loop right-arm actuator, whose absolute position is unknown. Forearm (part 5) removed: no calibrated bounds and it shares a fuse with the elbow."
+    },
+    {
+      "id": 2,
+      "name": "Glance Left",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 10,
+      "holdVariance": 800,
+      "transitionProfile": "ease_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 65
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z",
+      "transitionDurationMs": 900,
+      "jitterDeg": 2
+    },
+    {
+      "id": 3,
+      "name": "Glance Right",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 10,
+      "holdVariance": 800,
+      "transitionProfile": "ease_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 118
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z",
+      "notes": "Head clamped 135 -> 118: part 15 has no real calibrated bounds (auto 0-180), so nothing downstream would have stopped 135.",
+      "transitionDurationMs": 900,
+      "jitterDeg": 2
+    },
+    {
+      "id": 4,
+      "name": "Arm Raise Slight",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "arm"
+      ],
+      "weight": 8,
+      "holdVariance": 600,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 80
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z",
+      "notes": "Elbow clamped 70 -> 80 (narrow trusted band). Untagged from idle: the elbow sits on the previously-blown arm fuse and must not be driven on every random idle pick."
+    },
+    {
+      "id": 5,
+      "name": "Forearm Twist",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 8,
+      "holdVariance": 500,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 92
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z",
+      "notes": "Forearm (part 5) removed — no bounds established anywhere and it shares the arm fuse. Survives as a head micro-drift so scenes/idle referencing pose 5 keep working. Restore the forearm here once part 5 is calibrated.",
+      "transitionDurationMs": 2000,
+      "jitterDeg": 2
+    },
+    {
+      "id": 6,
+      "name": "Menacing Lean",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "menace"
+      ],
+      "weight": 6,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 80
+          }
+        },
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 82
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z",
+      "notes": "Elbow clamped 60 -> 82, forearm removed. Untagged from idle (fused elbow)."
+    },
+    {
+      "id": 7,
+      "name": "Slow Scan",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 7,
+      "holdVariance": 1500,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 64
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z",
+      "notes": "Head clamped 45 -> 64. Elbow dropped so the idle loop stays head-only.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 2.5
+    },
+    {
+      "id": 8,
+      "name": "Hand Glow",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "light"
+      ],
+      "weight": 5,
+      "holdVariance": 2000,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 8,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 2500
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 110
+          }
+        }
+      ],
+      "created": "2026-03-27T00:00:00.000Z",
+      "notes": "Elbow dropped. Lamp shortened 4000 -> 2500 ms: light_control.py sleeps for the duration, so the pose call blocks that long. Untagged from idle because the idle loop routes through transitionServos, which silently drops non-servo parts — a light in an idle pose never fires."
+    },
+    {
+      "id": 9,
+      "name": "Idle Drift Left",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 12,
+      "holdVariance": 900,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 92
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Barely-there weight shift off baseline.",
+      "transitionDurationMs": 2500,
+      "jitterDeg": 2
+    },
+    {
+      "id": 10,
+      "name": "Idle Drift Right",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 12,
+      "holdVariance": 900,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 106
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Mirror of pose 9.",
+      "transitionDurationMs": 2500,
+      "jitterDeg": 2
+    },
+    {
+      "id": 11,
+      "name": "Idle Settle Center",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 14,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Returns to baseline; the loop's resting beat.",
+      "transitionDurationMs": 2000,
+      "jitterDeg": 1.5
+    },
+    {
+      "id": 12,
+      "name": "Idle Watch Left",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 8,
+      "holdVariance": 1400,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 76
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Wider, slower look left — reads as listening.",
+      "transitionDurationMs": 2200,
+      "jitterDeg": 2
+    },
+    {
+      "id": 13,
+      "name": "Idle Watch Right",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 8,
+      "holdVariance": 1400,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 112
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Mirror of pose 12.",
+      "transitionDurationMs": 2200,
+      "jitterDeg": 2
+    },
+    {
+      "id": 14,
+      "name": "Idle Micro Twitch",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 6,
+      "holdVariance": 300,
+      "transitionProfile": "ease_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 96
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Fast 3-degree tic off baseline; the \"not quite dead\" beat.",
+      "transitionDurationMs": 500,
+      "jitterDeg": 2.5
+    },
+    {
+      "id": 15,
+      "name": "Idle Long Stare Left",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 4,
+      "holdVariance": 2200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 62
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Held stare at the left edge of the safe band.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 2
+    },
+    {
+      "id": 16,
+      "name": "Idle Long Stare Right",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "micro"
+      ],
+      "weight": 4,
+      "holdVariance": 2200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 118
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Held stare at the right edge of the safe band.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 2
+    },
+    {
+      "id": 17,
+      "name": "Slow Turn — Seek Left",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "head"
+      ],
+      "weight": 1,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 64
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Deliberate slow sweep to the left extreme — the \"did you hear that\" beat.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 1.5
+    },
+    {
+      "id": 18,
+      "name": "Slow Turn — Seek Right",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "head"
+      ],
+      "weight": 1,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 116
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Mirror of pose 17.",
+      "transitionDurationMs": 4000,
+      "jitterDeg": 1.5
+    },
+    {
+      "id": 19,
+      "name": "Snap to Center",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "head"
+      ],
+      "weight": 1,
+      "holdVariance": 200,
+      "transitionProfile": "ease_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Hard linear snap back to baseline — the head-turn punchline after a slow seek.",
+      "transitionDurationMs": 400
+    },
+    {
+      "id": 20,
+      "name": "Menacing Lean Deep",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "menace"
+      ],
+      "weight": 1,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 78
+          }
+        },
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 95
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Head cocked left with the elbow raised mid-band — a heavier version of pose 6."
+    },
+    {
+      "id": 21,
+      "name": "Arm Raise Full",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "arm"
+      ],
+      "weight": 1,
+      "holdVariance": 800,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        },
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 110
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Top of the trusted elbow band — the highest arm position authored this round."
+    },
+    {
+      "id": 22,
+      "name": "Arm Lower",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "arm"
+      ],
+      "weight": 1,
+      "holdVariance": 800,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        },
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 80
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Bottom of the trusted elbow band; pairs with pose 21 to make a full arm cycle."
+    },
+    {
+      "id": 23,
+      "name": "Elbow Home",
+      "category": "fragment",
+      "tags": [
+        "fragment",
+        "reset",
+        "arm"
+      ],
+      "weight": 1,
+      "holdVariance": 300,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 90
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Single-part elbow reset to mid-band. Call after any arm gesture to leave the fused rail at rest."
+    },
+    {
+      "id": 24,
+      "name": "Right Arm Reach",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "arm"
+      ],
+      "weight": 1,
+      "holdVariance": 400,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "linear_actuator",
+          "target": {
+            "direction": "extend",
+            "speed": 45,
+            "durationMs": 500,
+            "duration": 500
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 104
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Short 500 ms extend at 45%. Never combined with the elbow — the actuator draw is unmeasured. Always follow with pose 25 so the open-loop actuator does not walk to its end stop."
+    },
+    {
+      "id": 25,
+      "name": "Right Arm Withdraw",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "arm"
+      ],
+      "weight": 1,
+      "holdVariance": 400,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "linear_actuator",
+          "target": {
+            "direction": "retract",
+            "speed": 45,
+            "durationMs": 500,
+            "duration": 500
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Exact inverse of pose 24 (same 500 ms / 45%) so the pair is position-neutral."
+    },
+    {
+      "id": 26,
+      "name": "Startle Recoil",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "scare"
+      ],
+      "weight": 1,
+      "holdVariance": 200,
+      "transitionProfile": "linear",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 108
+          }
+        },
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 105
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Fast linear head snap right with the arm thrown up — the jump-scare hit."
+    },
+    {
+      "id": 27,
+      "name": "Hand of Azura On",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "light"
+      ],
+      "weight": 1,
+      "holdVariance": 200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 8,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 0
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Latches the relay on indefinitely (duration 0 = non-blocking). Pair with pose 28."
+    },
+    {
+      "id": 28,
+      "name": "Hand of Azura Off",
+      "category": "fragment",
+      "tags": [
+        "fragment",
+        "reset",
+        "light"
+      ],
+      "weight": 1,
+      "holdVariance": 200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 8,
+          "type": "light",
+          "target": {
+            "action": "turnOff",
+            "state": "off",
+            "brightness": 100,
+            "duration": 0
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Explicit lamp-off. The only guaranteed way back from pose 27."
+    },
+    {
+      "id": 29,
+      "name": "Lamp Accent Flash",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "light"
+      ],
+      "weight": 1,
+      "holdVariance": 200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 8,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 900
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Self-extinguishing 900 ms pulse. Blocks the pose call for 900 ms by design."
+    },
+    {
+      "id": 30,
+      "name": "Lurking Glow",
+      "category": "gesture",
+      "tags": [
+        "gesture",
+        "light",
+        "menace"
+      ],
+      "weight": 1,
+      "holdVariance": 1500,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 70
+          }
+        },
+        {
+          "partId": 8,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 0
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Head turned away with the hand latched on — the standing \"waiting in the dark\" look. Clear with pose 28.",
+      "transitionDurationMs": 3500,
+      "jitterDeg": 1.5
+    },
+    {
+      "id": 31,
+      "name": "Fragment — Notice and Turn",
+      "category": "fragment",
+      "tags": [
+        "fragment",
+        "scene",
+        "head"
+      ],
+      "weight": 1,
+      "holdVariance": 600,
+      "transitionProfile": "ease_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 116
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Opening beat: the character registers a guest and turns toward them. Head only, so it composes with anything.",
+      "transitionDurationMs": 1200,
+      "jitterDeg": 1.5
+    },
+    {
+      "id": 32,
+      "name": "Fragment — Rise and Point",
+      "category": "fragment",
+      "tags": [
+        "fragment",
+        "scene",
+        "arm"
+      ],
+      "weight": 1,
+      "holdVariance": 600,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        },
+        {
+          "partId": 4,
+          "type": "servo",
+          "target": {
+            "angleDeg": 108
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Middle beat: arm comes up while the head faces front. Follow with pose 23 to rest the fused rail."
+    },
+    {
+      "id": 33,
+      "name": "Fragment — Reach for the Guest",
+      "category": "fragment",
+      "tags": [
+        "fragment",
+        "scene",
+        "arm"
+      ],
+      "weight": 1,
+      "holdVariance": 600,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "linear_actuator",
+          "target": {
+            "direction": "extend",
+            "speed": 50,
+            "durationMs": 550,
+            "duration": 550
+          }
+        },
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 110
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Climax beat: short actuator reach toward the guest. Must be balanced by pose 34."
+    },
+    {
+      "id": 34,
+      "name": "Fragment — Recede to Shadow",
+      "category": "fragment",
+      "tags": [
+        "fragment",
+        "scene",
+        "reset"
+      ],
+      "weight": 1,
+      "holdVariance": 800,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        },
+        {
+          "partId": 8,
+          "type": "light",
+          "target": {
+            "action": "turnOff",
+            "state": "off",
+            "brightness": 100,
+            "duration": 0
+          }
+        },
+        {
+          "partId": 1,
+          "type": "linear_actuator",
+          "target": {
+            "direction": "retract",
+            "speed": 50,
+            "durationMs": 550,
+            "duration": 550
+          }
+        }
+      ],
+      "created": "2026-08-15T23:42:37.323Z",
+      "notes": "Closing beat and scene reset: head to baseline, lamp dark, and a 550 ms retract that exactly undoes pose 33. Deliberately omits the elbow — use pose 23 for that."
+    },
+    {
+      "id": 35,
+      "name": "Neutral Home (Head)",
+      "category": "idle",
+      "description": "Head centred at rest. The elbow-free home position — pose 1 is blocked while part 4 is quarantined, and the idle loop needs a neutral it can actually reach.",
+      "concurrent": true,
+      "tags": [
+        "idle",
+        "home",
+        "reset"
+      ],
+      "weight": 14,
+      "holdVariance": 800,
+      "transitionDurationMs": 2500,
+      "transitionProfile": "ease_in_out",
+      "jitterDeg": 1.5,
+      "parts": [
+        {
+          "partId": 15,
+          "type": "servo",
+          "target": {
+            "angleDeg": 99
+          }
+        }
+      ],
+      "notes": "Authored v9.2.0. Uses only part 15 (head), confirmed working; 99 deg is inside the measured 60-120 window."
+    }
+  ],
+  "templates": {
+    "elbow": {
+      "description": "Elbow (part 4) presets — trusted band only. Part 4 shares a fuse with part 5; 45-135 in calibration is test residue, not a measured range.",
+      "options": [
+        {
+          "name": "Low",
+          "angleDeg": 80
+        },
+        {
+          "name": "Mid",
+          "angleDeg": 90
+        },
+        {
+          "name": "Raised",
+          "angleDeg": 100
+        },
+        {
+          "name": "High",
+          "angleDeg": 110
+        }
+      ]
+    },
+    "head": {
+      "description": "Head motions",
+      "options": [
+        {
+          "name": "Stop",
+          "action": "stop"
+        },
+        {
+          "name": "Wiggle",
+          "action": "random"
+        },
+        {
+          "name": "Rotate 360",
+          "action": "rotate_360"
+        }
+      ]
+    }
+  }
+}

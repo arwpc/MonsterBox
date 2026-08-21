@@ -1,0 +1,51 @@
+{
+  "ranAt": "2026-08-20T03:47:29.746Z",
+  "conductor": "mina",
+  "rows": [
+    {
+      "id": 2,
+      "name": "Mina",
+      "hostname": "mina",
+      "ip": "192.168.8.140",
+      "sink": "46. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 1.30]",
+      "sinkVolume": 1.3,
+      "phrase": "I have waited in these walls since fourteen sixty two for Thomas to come home.",
+      "sayOk": false,
+      "sayError": "500 {\"success\":false,\"error\":\"Failed to make animatronic speak\",\"message\":\"timeout of 30000ms exceeded\"}",
+      "voiceUsed": null,
+      "voiceFallback": false,
+      "mics": [
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:3,0",
+          "floorDb": -57.7,
+          "castP90Db": -56.8,
+          "castPeakDb": -44.5,
+          "riseDb": 0.9,
+          "floorFlat": false,
+          "transcript": "[pause]",
+          "recall": 0
+        },
+        {
+          "label": "USB Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -40.4,
+          "castP90Db": -39.7,
+          "castPeakDb": -27.4,
+          "riseDb": 0.7,
+          "floorFlat": true,
+          "transcript": "[pause]",
+          "recall": 0
+        }
+      ],
+      "bestMic": "reSpeaker XVF3800 4-Mic Array",
+      "floorDb": -57.7,
+      "castDb": -56.8,
+      "riseDb": 0.9,
+      "recall": 0,
+      "transcript": "[pause]",
+      "verdict": "SILENT",
+      "diagnosis": "the say/TTS call itself failed; USB Camera shows a dead-flat floor (jack likely empty)"
+    }
+  ]
+}

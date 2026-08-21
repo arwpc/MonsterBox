@@ -1,0 +1,293 @@
+[
+  {
+    "id": 109,
+    "name": "A Blessing",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 10000,
+        "concurrent": false
+      },
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Hello Polly!! Welcome to Warner Castle!!!",
+        "concurrent": false
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "3",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 5000,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "Enjoy your stay",
+        "concurrent": false
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 75,
+        "duration": 12000,
+        "concurrent": false
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "3",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 5000,
+        "concurrent": false
+      },
+      {
+        "type": "askAI",
+        "question": "us who we are",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-02-20T23:53:16.344Z",
+    "updated": "2026-02-21T00:00:45.885Z"
+  },
+  {
+    "id": 110,
+    "name": "Kiley's Jump",
+    "steps": [
+      {
+        "type": "audio",
+        "volume": 80,
+        "audioId": "04 - Windstorm & Thunder.mp3",
+        "concurrent": true
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 10000,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "Kiley is the Koolest and Nugget is Queen Skribidi! ",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-02-28T00:50:32.759Z",
+    "updated": "2026-02-28T00:51:46.259Z"
+  },
+  {
+    "id": 102,
+    "name": "Linear Actuator Test",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "3",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
+      }
+    ],
+    "created": "2026-01-06T22:38:49.729Z"
+  },
+  {
+    "id": 103,
+    "name": "Audio & Light Test",
+    "steps": [
+      {
+        "type": "audio",
+        "audioId": "07 - The Coffin.mp3"
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      }
+    ],
+    "created": "2026-01-06T22:39:44.966Z"
+  },
+  {
+    "id": 104,
+    "name": "AI Voice Test - Say This & Ask AI",
+    "steps": [
+      {
+        "type": "sayThis",
+        "text": "Welcome to Warner Castle, mortal! I am Count Orlok, and tonight your soul belongs to me!"
+      },
+      {
+        "type": "askAI",
+        "question": "What is your favorite way to terrorize visitors on Halloween night?"
+      }
+    ],
+    "created": "2026-01-06T22:42:08.489Z"
+  },
+  {
+    "id": 106,
+    "name": "Full Servo Test - All 4 Servos",
+    "steps": [
+      {
+        "type": "servo",
+        "partId": "10",
+        "angle": 45,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "11",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "5",
+        "angle": 90,
+        "duration": 1000
+      },
+      {
+        "type": "servo",
+        "partId": "4",
+        "angle": 90,
+        "duration": 1000
+      }
+    ],
+    "created": "2026-01-06T22:44:19.602Z"
+  },
+  {
+    "id": 107,
+    "name": "Left Arm & Goblin Video Test",
+    "steps": [
+      {
+        "type": "linear-actuator",
+        "partId": "2",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 3000
+      },
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-192-168-8-14"
+      }
+    ],
+    "created": "2026-01-06T22:45:29.187Z"
+  },
+  {
+    "id": 108,
+    "name": "Pose Test",
+    "steps": [
+      {
+        "type": "pose",
+        "poseId": "1"
+      }
+    ],
+    "created": "2026-01-06T22:46:04.563Z"
+  },
+  {
+    "id": 111,
+    "name": "Arc 1",
+    "steps": [
+      {
+        "type": "audio",
+        "volume": 80,
+        "audioId": "04 - Windstorm & Thunder.mp3",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "15",
+        "angle": 90,
+        "duration": 1000,
+        "usePreset": true,
+        "concurrent": true,
+        "presetName": "__MAX__"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 75,
+        "duration": 13000,
+        "concurrent": false
+      },
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "I am Orlok of the Carpathians - Ruler of Walechia. Feel my wrath, Turk!",
+        "concurrent": false
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "concurrent": false
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "concurrent": false
+      },
+      {
+        "type": "audio",
+        "volume": 80,
+        "audioId": "06 - Snarling Werewolves.mp3",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Release the wolves! Go my Pets, do your Worst!",
+        "concurrent": false
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 75,
+        "duration": 13000,
+        "concurrent": true
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "off",
+        "brightness": 100,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "15",
+        "angle": 90,
+        "duration": 1000,
+        "usePreset": true,
+        "concurrent": true,
+        "presetName": "__MIN__"
+      }
+    ],
+    "created": "2026-03-22T19:32:32.024Z",
+    "updated": "2026-03-22T19:37:51.642Z"
+  }
+]
