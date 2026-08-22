@@ -701,7 +701,11 @@ Environment=XDG_RUNTIME_DIR=/run/user/$(id -u $ACTUAL_USER)
 #   /api/system endpoints. Without it those calls are refused from off-box.
 #Environment=MONSTERBOX_SSH_PASSWORD=change-me
 #Environment=MB_ADMIN_TOKEN=change-me
-ExecStart=/usr/bin/npm start
+# node directly, not 'npm start' (v11 audit UP-11): the npm wrapper kept a
+# ~60 MB process resident all show and added a signal-forwarding hop in front
+# of the app's SIGTERM handler — the same wrapper indirection that left an
+# orphaned node behind CI's stop step. The path is baked at install time.
+ExecStart=$(command -v node) $REPO_DIR/server.js
 Restart=always
 RestartSec=10
 StartLimitBurst=5

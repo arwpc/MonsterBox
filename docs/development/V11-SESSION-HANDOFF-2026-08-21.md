@@ -383,8 +383,9 @@ workflow journal; the substance of each verdict is restated in the fixing commit
 ### Still open (not this session's scope)
 - ~~UP-7, UP-8, UP-10, UP-12~~ — **closed later this session** (`ea84d84`, `82afb22`: servo
   per-move logs behind MB_DEBUG_SERVO, crontab backups pruned to 10, JSON body cap 10 MB with
-  honest 4xx statuses, expectedOffline goblins skip the reconnect loop). UP-11 (npm wrapper in
-  ExecStart, cosmetic) remains.
+  honest 4xx statuses, expectedOffline goblins skip the reconnect loop). UP-11: fresh installs
+  now exec node directly (install.sh unit template); live nodes keep their existing unit —
+  applying it there is optional and NOT worth a bench step before Halloween.
 - ~~`safety-tab-dead` (F4) and `simple-cal-ghost-editor` (F5)~~ — **closed later this session**
   under the foreman's button-up order: Safety tab deleted with its browser assertions replaced
   by a stays-deleted guard; the Simple Calibration ghost card, its sc_* JS, and the three
