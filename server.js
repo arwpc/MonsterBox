@@ -288,12 +288,18 @@ try {
     app.locals.subsystemHealth.failing['_validator'] = ['all'];
 }
 
-// Ensure real hardware is enabled in production even if MB_TEST_MODE is set by accident
+// Ensure real hardware is enabled in production even if MB_TEST_MODE is set by accident.
+// EXCEPT under CI=true: that is the explicit "no hardware exists here" signal the
+// exec layer's simulation keys on (services/hardwareService/exec.js), and forcing
+// MONSTERBOX_HARDWARE_AVAILABLE=1 here defeated it — CI's system tests then drove
+// real python wrappers on a runner with no I2C bus and failed on 'No module named
+// smbus'. A show node never runs with CI=true, so the Pi protection is untouched.
 try {
     const isTestEnv = (process.env.NODE_ENV === 'test') || (PORT === 3123);
+    const inCI = String(process.env.CI || '') === 'true';
     const mbTestMode = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
     const hwAvail = (process.env.MONSTERBOX_HARDWARE_AVAILABLE === '1');
-    if (mbTestMode && !isTestEnv && !hwAvail) {
+    if (mbTestMode && !isTestEnv && !inCI && !hwAvail) {
         process.env.MONSTERBOX_HARDWARE_AVAILABLE = '1';
         console.warn('⚠️  MB_TEST_MODE detected on a production port; enabling MONSTERBOX_HARDWARE_AVAILABLE=1 so hardware control is real.');
     }
