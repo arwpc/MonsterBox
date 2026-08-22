@@ -692,8 +692,12 @@ const HARDWARE_CONTROLLERS = {
 
                     if (address != null) args.push(String(address));
 
-                    // Helpful debug
-                    console.log(`🦷 Servo route: type=${servoType} (norm=${normType}), ctl=pca9685, ch=${channel}, addr=${address != null ? address : '0x40'}, angle=${angleDeg}`);
+                    // Per-move logging is opt-in: the idle loop and head tracking emit
+                    // this all night, and the trio of per-command lines was 53% of the
+                    // whole log — steady SD wear that buried real failures (UP-7).
+                    if (process.env.MB_DEBUG_SERVO === '1') {
+                        console.log(`🦷 Servo route: type=${servoType} (norm=${normType}), ctl=pca9685, ch=${channel}, addr=${address != null ? address : '0x40'}, angle=${angleDeg}`);
+                    }
 
                     // Standard positioning goes through the shared servo daemon when it
                     // is up. This is the path the idle loop and head tracking hammer, and
@@ -1874,10 +1878,14 @@ export async function controlPart(partId, action, params = {}, options = {}) {
             }
         }
 
-        console.log(`🔧 Calling ${action} on ${type} controller with params:`, { speed: actionParams.speed, duration: actionParams.duration, direction: actionParams.direction });
+        // Servo moves are the high-frequency path (idle loop + head tracking, all
+        // night) — their per-command lines are opt-in via MB_DEBUG_SERVO (UP-7).
+        // Other part types command rarely, so their lines stay: sparse and useful.
+        const logThisCommand = type !== 'servo' || process.env.MB_DEBUG_SERVO === '1';
+        if (logThisCommand) console.log(`🔧 Calling ${action} on ${type} controller with params:`, { speed: actionParams.speed, duration: actionParams.duration, direction: actionParams.direction });
         // Parts sharing a fused rail are serialized so they are never energized together.
         const result = await runInPowerGroup(characterId, safety, () => actionFunction.call(controller, actionParams));
-        console.log(`🔧 Controller ${action} completed`);
+        if (logThisCommand) console.log(`🔧 Controller ${action} completed`);
 
         // Fold in anything the wrapper narrowed on its own so the operator sees
         // every clamp, not just the ones this layer made.

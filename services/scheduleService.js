@@ -95,10 +95,21 @@ export async function readCrontabText() {
     }
 }
 
-async function backupCrontab(text) {
+export async function backupCrontab(text) {
     const target = path.join(os.tmpdir(), `monsterbox-crontab-${Date.now()}.bak`);
     try {
         await fsp.writeFile(target, text, 'utf8');
+        // Keep only the newest backups. /tmp is on the SD card on these nodes
+        // and nothing ever deleted these — 140 had accumulated (UP-8).
+        try {
+            const KEEP = 10;
+            const entries = (await fsp.readdir(os.tmpdir()))
+                .filter(name => /^monsterbox-crontab-\d+\.bak$/.test(name))
+                .sort(); // timestamped names sort oldest-first
+            for (const name of entries.slice(0, Math.max(0, entries.length - KEEP))) {
+                await fsp.rm(path.join(os.tmpdir(), name), { force: true });
+            }
+        } catch (_) { /* pruning is best-effort; the new backup is what matters */ }
         return target;
     } catch (error) {
         console.error('[schedule] Could not write crontab backup:', error.message);
