@@ -1,5 +1,11 @@
 # v11.0 Production-Readiness — Session Handoff
 
+> **2026-08-22 UPDATE (cloud session): every OPEN software finding below is now CLOSED.**
+> See §10 at the end of this document for what changed, what is UNVERIFIED pending the
+> bridge, and what remains. §4's OPEN lists and §7's next steps are of historical value
+> only. The hardware checklist (§5 / OPERATOR-TODO §A–G) is unchanged and still gates
+> the v11.0.0 tag.
+
 **Written:** 2026-08-21, ~10:00Z
 **Repo state:** `d53c97db` on `main`, pushed. Gate green (6/6) on every commit.
 **Version:** `package.json` is still `10.4.0`. Bump to `11.0.0` only at the release tag.
@@ -318,3 +324,67 @@ changes verifiable by reading, by unit tests, and by the gate.
 **So:** the cloud successor should write the fix, prove what it can with unit tests and the gate, and
 explicitly hand the hardware verification back — labelled as unverified until run on the bridge.
 Do not report a hardware-dependent fix as proven from the cloud.
+
+---
+
+## 10. 2026-08-22 cloud session — every OPEN software finding closed
+
+Worked in a cloud container (no PCA9685, no camera, no audio, no fleet SSH). Commits
+`67e951bf..459b911d`, pushed to `main` (and mirrored on
+`claude/monsterbox-v11-production-5gntng`). Gate green CI-style (6/6 in ~7 s) and the FULL
+unit suite green in-container: **510 passing / 0 failing / 21 pending** (Pi baseline was 481;
++29 new tests this session, and the container's 45 environmental failures were root-caused
+and eliminated — see the CI item).
+
+### Closed this session
+| Item | Commit | Cloud-proven by |
+|---|---|---|
+| UP-6 atomic JSON writers (+ ai-config per-file save lock) | `67e951bf` | `tests/unit/atomic-json-writers.test.js`, extended `ai-config-store.test.js` |
+| UP-4 perf-history SD writes (~427 MB/day → ~hourly atomic flush) | `67e951bf` | same file, UP-4 block |
+| UP-5 liveness watchdog (systemd timer, NOT WatchdogSec) | `fe7f84c0` | `tests/unit/liveness-watchdog.test.js` (stubbed curl/systemctl) |
+| F7 mic-sliders-dead-route (+ boot re-apply of gain; Sensitivity slider removed as a ghost) | `0a1b5a20` | `tests/unit/calibration-single-part-api.test.js` |
+| F9 overrides removable (null=delete, honest Effective panel) + F10 ghost pulse fields removed | `e559ac02` | `tests/unit/override-removal.test.js` |
+| F8 continuous-jog saturation refusal | `d45121a5` | `tests/unit/continuous-jog-saturation.test.js` |
+| F11 Calibrated stamp on the main page | `b3d34527` | `tests/unit/calibrated-stamp-main-page.test.js` |
+| Fleet sink-volume capture/restore + on-demand canonical restore endpoints | `ac5268a4` | `tests/unit/canonical-sink-volume.test.js` |
+| F12–F16 calibration minors (honest test buttons, lastCalibratedAt semantics, ?characterId redirect + markers-GET scoping, preset p-field + heal, orphaned standard_servo endpoints retired) | `a2d40303` | unit suite + gate |
+| CI red on every push — root-caused (no server at gate time → hundreds of timeout failures) and fixed | `459b911d` | gate + full unit suite green CI-style in-container; **runner outcome pending** |
+
+All seven unjudged findings were re-verified by adversarial agents before any fix
+(F10 CONFIRMED, F11 MODIFIED, F12/F13/F14/F16 CONFIRMED, F15 MODIFIED — full verdicts in the
+workflow journal; the substance of each verdict is restated in the fixing commit).
+
+### UNVERIFIED from the cloud — first bridge session should prove
+1. **Watchdog on a real node**: run `sudo bash scripts/install-monsterbox-watchdog.sh`
+   (OPERATOR-TODO §G has the proof step). Deploy first — the deploy does not touch /etc.
+2. **Mic-gain boot re-apply** (`server.js` applyPersistedMicGain) — needs PipeWire.
+3. **Canonical volume restore against real wpctl**: `POST /api/system/volume/canonical` on a
+   node, then `wpctl get-volume @DEFAULT_AUDIO_SINK@` should read that node's
+   `config/animatronics.json` sinkVolume. Then a full `test:system` run followed by the same
+   check — the suite must now leave the fleet at canon (this was the 0.65 reset).
+4. **`npm run test:system` / browser suite re-baseline on the Pi** (expect the orchestration
+   file to pass fully there; in the cloud 7 of its tests fail on environment).
+5. **CI runner outcome** for `459b911d` — first green run expected; if it still fails, the
+   remaining failure list will finally be SHORT and real.
+6. Calibration UI touch-check by hand: overrides blank-to-remove, Revert, Calibrated stamp
+   switch, jog saturation message, mic gain save — all changed surfaces on `/setup/calibration`.
+
+### Traps added/confirmed this session
+- The unit suite ASSUMES a live server on :3100. In any environment where none runs, start
+  one first (`MB_TEST_MODE=1 npm start`) or you will chase 45 phantom timeout failures — that
+  exact mirage is what kept CI red since before 2026-08-21.
+- `audit:independence` is line-anchored; editing any file with an allowlisted reference means
+  re-anchoring `tests/baseline/character-independence-allowlist.json` (happened again: 93→94).
+- The gesture real-data canary skips off-node by design now (node-local calibration windows).
+  Do not "fix" the skip; the Pi's pre-push gate is where it enforces.
+
+### Still open (not this session's scope)
+- UP-7 (per-servo-move log volume), UP-8 (/tmp on SD, crontab backup accumulation),
+  UP-10 (50 MB body limit), UP-11/UP-12 (cosmetic) — all small, all cloud-fixable.
+- `safety-tab-dead` (F4) and `simple-cal-ghost-editor` (F5): both verifier-downgraded minors,
+  both UI-surface deletions. F4's fix must remove the Safety-tab browser assertions in
+  `tests/browser/webcam-calibration.spec.js` in the same change; F5 removes the card plus the
+  three `/api/simple` routes. Left for a session that can run the browser suite.
+- Scene 107's goblin step (`goblinId` vs required `videoId`), calibration_profiles
+  cross-contamination between nodes, `/api/system/volume` GET rounding down >100% canons.
+- Everything in §5 / OPERATOR-TODO §A–G. **Do not tag v11.0.0 before those are closed or waived.**

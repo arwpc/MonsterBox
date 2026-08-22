@@ -2,6 +2,50 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased] - 2026-08-22 — The cloud shift: every open software finding closed, and CI turns green
+
+A cloud session (no hardware, no fleet) that worked the v11 audit's remaining OPEN list to
+zero. Everything here is proven by unit tests and the gate in a hardware-less container;
+items needing the real node are labelled UNVERIFIED in their commits and queued for the
+bridge. Hardware checklist unchanged: `docs/hardware/OPERATOR-TODO.md` §A–F (plus new §G).
+
+- **UP-6/UP-4 — the SD card stops being sanded down.** Every operator-critical JSON writer
+  (scene analytics, the fleet registry, voice identity, goblin data, node pins, system
+  templates) now goes through atomic temp+rename writes — a power cut mid-write can no
+  longer torch a file whose read path falls back to "empty" silently. The single largest
+  wear source, `performance-history.json` (~1.5 MB rewritten every 5 minutes ≈ 427 MB/day),
+  now lives in RAM and flushes atomically hourly and on shutdown. Scene execution makes one
+  combined analytics write instead of two. AI-config saves are also serialized per file, so
+  two concurrent partial saves can't clobber each other's keys.
+- **UP-5 — a wedged-but-active app finally gets restarted.** New root systemd timer curls
+  `/health` once a minute and restarts `monsterbox.service` after 3 consecutive failures;
+  never resurrects a service the operator stopped; counter lives on tmpfs. Decision logic
+  unit-tested with stubbed curl/systemctl. Live nodes enable it with one command
+  (OPERATOR-TODO §G); fresh installs get it from `install.sh`.
+- **All five open calibration majors closed** (each re-verified against current code first):
+  mic gain persists AND is re-applied at boot (the route it saved through never existed —
+  the Sensitivity slider, read by nothing, is removed rather than faked); overrides are
+  removable (blank = remove, Revert actually reverts, the Effective panel can no longer
+  show a failed save as applied); a continuous-servo jog pinned at its position-estimate
+  rail says so instead of faking success; the four ghost pulse/rotation override fields are
+  gone; the Calibrated trust stamp now lives on the page operators actually use.
+- **All five calibration minors closed** (F12–F16): hardware test buttons report real
+  outcomes; `lastCalibratedAt` means calibrated, not touched; `?characterId` deep links
+  redirect instead of lying while the last route asymmetries are aligned; presets write the
+  field the executor reads (old drift heals on next save); the orphaned standard-servo
+  move/save-pulse endpoints — one of which fabricated 0°/90°/180° presets — are retired.
+- **The suite can no longer leave the fleet at 65% volume** (same class as the fleet-mute
+  bug, same treatment): each node's ear-verified canonical `sinkVolume` is now restorable
+  on demand (`POST /api/system/volume/canonical`, fleet-wide via orchestration), and the
+  orchestration suite's restore hook puts the fleet back after every run. The canon can
+  exceed 100% (one node's is 1.3), so the old volume API could never have restored it.
+- **CI was red on every push — root-caused and fixed.** The gate's unit suite assumes the
+  node's always-on :3100 listener; on GitHub runners no server existed, so hundreds of
+  tests waited out timeouts (5+ minutes of pure waiting vs 6 seconds with a server). CI now
+  starts the test-mode server before the gate, gate timeouts scale by env without loosening
+  checks, and the gesture real-data canary skips loudly off-node (its calibration windows
+  are node-local; it still runs on every push via the animatronics' own pre-push gate).
+
 ## [Unreleased] - 2026-08-20/21 — Recovery night: nothing was lost, and two speakers were never broken
 
 A session opened on "hours of work were lost" and closed with every byte accounted for.
