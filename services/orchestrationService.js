@@ -797,6 +797,28 @@ class OrchestrationService {
     }
 
     /**
+     * Restore every node's OWN ear-verified canonical speaker level
+     * (config/animatronics.json sinkVolume, applied node-side). The canon can
+     * exceed the 0-100% contract of setMasterVolume (one node's canon is 1.3), so this
+     * is the only fleet-wide way to undo a master-volume fan-out — which is
+     * exactly what a test suite once left behind at 65% on all three live
+     * nodes. A node with no recorded canon skips itself.
+     */
+    async restoreCanonicalVolume(ids = null) {
+        const targets = this.getControllableAnimatronics(ids);
+        const results = await Promise.allSettled(targets.map(async (node) => {
+            try {
+                const data = await this.httpNode(node, { method: 'post', path: '/api/system/volume/canonical', timeout: 8000 });
+                return { animatronic: node.name, id: node.id, success: data?.success !== false, result: data };
+            } catch (error) {
+                return { animatronic: node.name, id: node.id, success: false, error: error.message };
+            }
+        }));
+        const summary = this._summarize(results);
+        return { success: summary.successful > 0, ...summary };
+    }
+
+    /**
      * Aggregated per-node health: version + CPU/RSS/uptime + servo/idle telemetry,
      * pulled in parallel from each node's existing health endpoints. Never throws;
      * unreachable nodes report online:false. Powers the command-center health cards.

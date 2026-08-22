@@ -197,6 +197,52 @@ async function stopPerformanceCollector() {
     }
 }
 
+// ─── Canonical sink volume ─────────────────────────────────────────────────────
+
+/**
+ * Re-apply THIS node's ear-verified canonical speaker level from
+ * config/animatronics.json (sinkVolume, a linear wpctl value that may exceed
+ * 1.0 — one live node's canon is 1.3, unreachable through the 0-100% volume API).
+ *
+ * Exists because the level keeps getting reset by things that are not the
+ * operator: reboots, the fleet master-volume fan-out, and test suites. The
+ * startup path retries around the PipeWire boot race; this function is the
+ * on-demand single attempt behind POST /api/system/volume/canonical, so a
+ * suite (or an operator) can put the level back without restarting services.
+ *
+ * A node with no recorded canon is left alone ({ skipped: true }) — applying
+ * a guessed level is worse than none.
+ *
+ * `opts.registryPath`, `opts.hostname`, `opts.execImpl` are dependency
+ * injection for tests ONLY — a real caller passes nothing, so production
+ * always reads the real registry, the real hostname, and real wpctl.
+ */
+async function applyCanonicalSinkVolume(opts) {
+    var options = opts || {};
+    var registryPath = options.registryPath
+        || path.resolve(__dirname, '..', 'config', 'animatronics.json');
+    var hostname = options.hostname || os.hostname();
+    var run = options.execImpl || execFileAsync;
+
+    var mine = null;
+    try {
+        var registry = JSON.parse(await fs.readFile(registryPath, 'utf8'));
+        mine = (registry.animatronics || []).find(function (a) { return a.hostname === hostname; });
+    } catch (_) {
+        return { success: true, skipped: true, reason: 'no animatronics registry' };
+    }
+    if (!mine || mine.sinkVolume == null) {
+        return { success: true, skipped: true, reason: 'no canonical sinkVolume recorded for this node' };
+    }
+    try {
+        await run('wpctl', ['set-volume', '@DEFAULT_AUDIO_SINK@', String(mine.sinkVolume)], { timeout: 5000 });
+        console.log('🔊 Sink volume restored to canonical ' + mine.sinkVolume + ' (config/animatronics.json)');
+        return { success: true, sinkVolume: mine.sinkVolume };
+    } catch (err) {
+        return { success: false, sinkVolume: mine.sinkVolume, error: err.message };
+    }
+}
+
 // ─── Logs ──────────────────────────────────────────────────────────────────────
 
 function getAvailableServices() {
@@ -699,6 +745,7 @@ export default {
     _resetPerfHistoryCacheForTests,
     startPerformanceCollector,
     stopPerformanceCollector,
+    applyCanonicalSinkVolume,
     getAvailableServices,
     getServiceLogs,
     getConsoleOutput,

@@ -315,6 +315,29 @@ router.put('/volume', express.json(), async (req, res) => {
 });
 
 /**
+ * POST /api/system/volume/canonical - Re-apply THIS node's ear-verified
+ * canonical speaker level from config/animatronics.json (sinkVolume).
+ *
+ * The canon can exceed 1.0 (one live node's is 1.3 = 130%), so it is unreachable
+ * through PUT /volume's 0-100% contract — this endpoint is the only way to
+ * put the level back without restarting the service. Used by test-suite
+ * restore hooks (the suite used to leave the whole fleet at 65%) and safe
+ * for operators any time the level has drifted.
+ */
+router.post('/volume/canonical', async (req, res) => {
+    try {
+        if (process.env.MB_TEST_MODE === '1') {
+            return res.json({ success: true, testMode: true, skipped: true, reason: 'test mode' });
+        }
+        const result = await systemService.applyCanonicalSinkVolume();
+        res.status(result.success ? 200 : 500).json(result);
+    } catch (error) {
+        console.error('Error restoring canonical volume:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
  * GET /api/system/presets - Performance presets for RPi models
  */
 router.get('/presets', (req, res) => {

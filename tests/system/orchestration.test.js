@@ -56,6 +56,19 @@ describe('Orchestration API (Fleet Command Center)', () => {
         .post('/api/orchestration/superpower/mute')
         .send({ enabled: originalMuted });
     } catch (_) { /* peers restored on their next reachable run */ }
+
+    // SAME defect class as the mute: PUT /api/orchestration/volume below fans
+    // out to every reachable node, and against the production listener it
+    // REALLY reset the whole fleet from its ear-verified levels to 65% on
+    // every run (one node's canon is 1.3 — not even expressible through the
+    // 0-100% API). Restore each node's OWN canonical sinkVolume from
+    // config/animatronics.json: this node first, then the peers best-effort.
+    try {
+      await request(BASE_URL).post('/api/system/volume/canonical');
+    } catch (_) { /* no canon recorded, or wpctl absent off-node */ }
+    try {
+      await request(BASE_URL).post('/api/orchestration/volume/restore-canonical');
+    } catch (_) { /* peers restored at their next service start */ }
   });
 
 
@@ -278,6 +291,10 @@ describe('Orchestration API (Fleet Command Center)', () => {
       const res = await request(BASE_URL).put('/api/orchestration/volume').send({ volume: 65 }).expect(200);
       expect(res.body).to.have.property('success', true);
       expect(res.body).to.have.property('volume', 65);
+    });
+    it('POST /volume/restore-canonical puts every node back on its own canon', async () => {
+      const res = await request(BASE_URL).post('/api/orchestration/volume/restore-canonical').expect(200);
+      expect(res.body).to.have.property('success', true);
     });
   });
 

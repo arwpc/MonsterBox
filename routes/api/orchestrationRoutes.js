@@ -1235,5 +1235,20 @@ router.put('/volume', express.json(), async (req, res) => {
     }
 });
 
+/**
+ * Restore every node's own canonical speaker level (animatronics.json
+ * sinkVolume, applied node-side). The fleet-wide undo for a master-volume
+ * fan-out — the canon can exceed setMasterVolume's 0-100% range.
+ */
+router.post('/volume/restore-canonical', express.json(), async (req, res) => {
+    try {
+        if (isTestMode()) return res.json({ success: true, testMode: true, ...mockSummary() });
+        res.json(await orchestrationService.restoreCanonicalVolume(parseIds(req.body)));
+    } catch (error) {
+        console.error('Error restoring canonical volume:', error);
+        res.status(500).json({ success: false, error: 'Failed to restore canonical volume', message: error.message });
+    }
+});
+
 export default router;
 
