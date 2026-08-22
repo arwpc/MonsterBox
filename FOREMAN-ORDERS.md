@@ -66,6 +66,24 @@ prefer fewer things that genuinely work.
 Push constantly with `git push --no-verify`. Do not create branches. No AskUserQuestion, no
 trigger or scheduling tools. Keep the background wake armed and re-read this file.
 
+## PROGRESS while awaiting the three bench verdicts (monsterbox-6b, 2026-08-22)
+
+The while-you-wait list is done — with these, **every software finding from the v11 audit
+(UP-1..UP-12, F1..F17) is accounted for**:
+
+- **F4 + F5 closed** (`212da76`): the dead Safety tab is deleted and its browser assertion
+  REPLACED with a stays-deleted guard; the Simple Calibration ghost card, its sc_* JS, and the
+  three /api/simple routes are retired. Rendered page verified clean of every dead-control id;
+  gate + legacy-calibration checker green; unit 517/0. The full browser-suite pass on the Pi
+  (BENCH-CHECKLIST §F) is the remaining proof.
+- **UP-11 closed for fresh installs** (`5744de6`): the unit template execs node directly —
+  the npm wrapper cost ~60 MB and a signal hop, the same indirection that orphaned node behind
+  CI's stop step. Live nodes keep their unit; not worth a bench step before Halloween.
+
+Still waiting on: **K1** (jaw turn/no-turn after the two curls), **Mina** (get_throttled +
+this-boot over-current count), **O1** (bow jogs ×3 over 30+ min). Wake armed; I re-read this
+file on each wake and will act on raw output the moment it lands.
+
 ## Consumed orders
 
 - **2026-08-22 — Option B, then hand off.** Superseded; delivered anyway (UP-10, UP-12,
