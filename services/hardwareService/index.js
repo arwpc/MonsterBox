@@ -2087,9 +2087,26 @@ export async function batchMoveServos(commands, options = {}) {
             console.warn(`🛡️  Safety limits applied to part ${cmd.partId} (${part.name}): ${limited.adjustments.join('; ')}`);
         }
 
+        // A multi-turn part NEVER rides the batch path: the servo daemon and
+        // batch_pca both speak the STANDARD 0-180 → pulse mapping, so a
+        // real-degree command (450° on the knight's 900° head) would clamp to
+        // 180 and write full-scale pulse — maximum travel into the head
+        // cabling, reported as success. The only correct seam is the per-part
+        // moveToAngle controller, which converts real degrees to the
+        // multi-turn wrapper scale. Costs that one part its sub-ms batch sync;
+        // correctness wins.
+        const svType = String(partCfg.servoType || '').toLowerCase();
+        const isMultiTurn = ['multi-turn', 'multi_turn', 'multi', 'positional', 'position', 'feedback'].includes(svType)
+            || Number(partCfg.rotationRangeDeg) > 0;
+        if (isPCA && isMultiTurn) {
+            fallbackCmds.push(Object.assign({}, cmd, { angleDeg: limited.params.angleDeg }));
+            continue;
+        }
+
         if (isPCA && partCfg.channel != null) {
             let angle = limited.params.angleDeg;
-            // Apply invert if needed
+            // Apply invert if needed (standard servos only by here — multi-turn
+            // parts left for the per-part path above, which mirrors range-aware)
             if (profile && profile.capability && profile.capability.invert) {
                 const minA = profile.bounds?.minAngle ?? 0;
                 const maxA = profile.bounds?.maxAngle ?? 180;

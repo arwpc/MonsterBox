@@ -171,18 +171,34 @@ const standardServoCalibration = {
     async savePosition(partId, partName, posName, description, channel, data, characterId) {
         const name = String(posName || '').trim();
         if (!name) throw new Error('Position name is required');
+        // The part's real rotation range, from its own config: a profile born
+        // here via blankProfile() carries no maxAngleDeg, and normalizing a
+        // 450° position over 180 wrote p=1.0 — replayed by the scene executor
+        // as FULL travel instead of the saved angle.
+        let declaredRange = 0;
+        try {
+            const parts = await loadCharacterParts(characterId);
+            const part = parts.find(x => String(x.id) === String(partId));
+            declaredRange = Number(part && part.config && part.config.rotationRangeDeg) || 0;
+        } catch (_) { /* fall through — profile capability may still carry it */ }
         const profile = await mutateProfile(partId, characterId, 'absolute-servo', (p) => {
             const presets = presetsOf(p).slice();
             const entry = { name, description: description || '' };
+            // Keep the profile's declared range in step with the part config —
+            // a blankProfile() creation has no part context to stamp it from.
+            if (declaredRange > 0 && p.capability && p.capability.maxAngleDeg == null && declaredRange !== 180) {
+                p.capability.maxAngleDeg = declaredRange;
+            }
             const angle = data && data.angle != null ? Number(data.angle) : null;
             if (angle != null && Number.isFinite(angle)) {
                 entry.angle = angle;
                 // Presets are read back by the scene executor, which accepts either an
                 // angle or a normalized p. Write both so neither path guesses. p is
                 // normalized over the part's REAL span (multi-turn parts declare
-                // capability.maxAngleDeg), never a hardcoded 180.
+                // capability.maxAngleDeg / config.rotationRangeDeg), never a hardcoded 180.
                 const fullSpanDeg = (p.capability && Number(p.capability.maxAngleDeg) > 0)
-                    ? Number(p.capability.maxAngleDeg) : 180;
+                    ? Number(p.capability.maxAngleDeg)
+                    : (declaredRange > 0 ? declaredRange : 180);
                 entry.p = Math.max(0, Math.min(1, angle / fullSpanDeg));
             }
             if (data && data.speed != null) entry.speed = Number(data.speed);
@@ -916,8 +932,14 @@ router.post('/api/parts/:id/markers', express.json(), async (req, res) => {
             if (!Number.isFinite(num)) {
                 return res.status(400).json({ success: false, error: 'Marker value must be a finite number' });
             }
-            if (parts[idx].type === 'servo' && (num < 0 || num > 180)) {
-                return res.status(400).json({ success: false, error: 'Servo marker must be within 0-180°' });
+            // Validate against the part's REAL rotation range — 180 unless it
+            // declares a multi-turn span (the knight's 900° head). A hard 180
+            // here made Min/Max markers unrecordable for exactly the part whose
+            // guardrails need them most.
+            const markerSpanMax = Number(parts[idx].config && parts[idx].config.rotationRangeDeg) > 0
+                ? Number(parts[idx].config.rotationRangeDeg) : 180;
+            if (parts[idx].type === 'servo' && (num < 0 || num > markerSpanMax)) {
+                return res.status(400).json({ success: false, error: `Servo marker must be within 0-${markerSpanMax}°` });
             }
             if (parts[idx].type === 'servo' && (name.trim() === 'Min' || name.trim() === 'Max')) {
                 const sibling = markers.find(m => m.name === (name.trim() === 'Min' ? 'Max' : 'Min'));

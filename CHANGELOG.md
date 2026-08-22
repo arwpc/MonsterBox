@@ -51,6 +51,17 @@ bridge. Hardware checklist unchanged: `docs/hardware/OPERATOR-TODO.md` §A–F (
   the jaw, part 2 — the old note's part 1 was an error). New `docs/hardware/BENCH-CHECKLIST.md`
   is the repeatable prove-all-three procedure: per-node proof standards, the Knight/Orlok/Mina
   open-item closures, fleet checks, sign-off table.
+- **Adversarial review of the real-degree change caught the one path that would still
+  have hurt the head — the pose/idle batch seam.** `batchMoveServos` (poses, eased
+  transitions, gestures, idle motion) was servoType-blind: it drove every PCA servo
+  through the servo daemon / `batch_pca`, whose STANDARD 0-180 mapping clamps a real
+  450° command to 180 and writes full-scale pulse — ~855 real degrees into the head
+  cabling, reported as success. Multi-turn parts now route around the batch path to the
+  per-part converting seam (unit-tested through the simulated exec). Also from review:
+  the profile-range reconcile refuses to re-scope a MEASURED window (units belong to the
+  measurement; only re-measuring may change them), Min/Max markers accept the part's real
+  range instead of refusing >180 for exactly the part whose guardrails need them, and
+  preset saves resolve the real span even on a profile born outside the unified store.
 - **The knight's 900° head becomes calibratable — real degrees end to end.** Bench verdict
   (2026-08-22): nothing on Sir Dragomir is electrically dead — jaw drives on ch1, magic box
   works, and the head servo is alive on ch4. What made the head "occasionally rotate all the

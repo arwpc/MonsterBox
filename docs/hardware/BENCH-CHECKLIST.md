@@ -120,8 +120,18 @@ ssh remote@$IP 'wpctl get-volume @DEFAULT_AUDIO_SINK@'
   real degrees, and the wrapper conversion happens once, verified by unit test
   (real 450° → `move_to_pca_multi <ch> 900`). Procedure, in order, EYES ON THE CABLING
   THE WHOLE TIME:
-  1. Deploy the fix to the node (`npm run deploy:all` from Orlok, or on the Knight:
-     `cd /home/remote/MonsterBox && git pull && sudo systemctl restart monsterbox`).
+  1. Get the code onto the node. The doctrine is rsync deploy (`npm run deploy:all`)
+     from a checkout that is already current. A bare `git pull` ON a node will abort
+     against its local edits to tracked data files (parts.json is node-local BY DESIGN)
+     — when deploying isn't available, take CODE paths only, never `data/`:
+     ```bash
+     cd /home/remote/MonsterBox
+     git fetch origin main
+     git checkout origin/main -- server services routes views public python_wrappers \
+       scripts tests config/physical-faults.json config/animatronics.json install.sh package.json
+     sudo systemctl restart monsterbox.service
+     grep -c "maxAngleDeg" server/calibration/router.js   # ≥1 proves the fix landed (HEAD won't move)
+     ```
   2. Declare the real range on the node's own part config (parts.json never deploys):
      ```bash
      curl -sk -X POST "https://192.168.8.130:3000/setup/calibration/api/parts/1/overrides" \
@@ -144,6 +154,11 @@ ssh remote@$IP 'wpctl get-volume @DEFAULT_AUDIO_SINK@'
   PASS: the head jogs in small, predictable real-degree steps, reaches both window ends
   without cable strain, refuses to move past them without `calibrationOverride`, and the
   panel shows the measured window with no "(unmeasured)" suffix.
+  Two cautions that came out of the adversarial code review (both fixed, both worth
+  knowing): any preset, pose, or scene step authored for part 1 BEFORE v10.4.0 is in
+  stale units — delete rather than trust it (none are known to exist); and the manual
+  Move control on the calibration page sends `calibrationOverride` with a default of
+  mid-travel (450) — type your target before pressing Move, never press it blind.
 - **K4. New XVF3800 mic + speaker (installed 2026-08-22, same array model as Orlok's) —
   audio bring-up.** The array ships its mono DAC at −20 dB and only PyAudio can capture
   from it; every trap has a known fix:
