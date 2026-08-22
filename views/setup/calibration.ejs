@@ -856,7 +856,7 @@
             <button type="button" class="mb-btn mb-btn-sm mb-btn-danger w-100" onclick="clearCalibration()" data-bs-toggle="tooltip" data-bs-placement="top" title="Remove min/max bounds and all presets for this part">
               <i class="bi bi-eraser"></i> Clear
             </button>
-            <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary w-100 mt-2" id="btnTestSweep" onclick="runSweepTest()" data-bs-toggle="tooltip" data-bs-placement="top" title="Move 3 times between min and max bounds at full speed to verify range of motion">
+            <button type="button" class="mb-btn mb-btn-sm mb-btn-secondary w-100 mt-2" id="btnTestSweep" onclick="runSweepTest()" data-bs-toggle="tooltip" data-bs-placement="top" title="Move 3 times between min and max bounds at full speed to verify range of motion. Each leg waits out the part's real travel time before the next command.">
               <i class="bi bi-arrows"></i> Sweep Test
             </button>
             <div class="mt-2" id="invertToggleContainer" style="display: none;">
@@ -1478,6 +1478,27 @@
     // For open-loop parts (linear actuators, continuous servos), homes to
     // a physical endstop before starting and between each cycle to prevent
     // accumulated positional drift.
+    //
+    // PACING: /goto acks when the command is ISSUED (the daemon ack is
+    // milliseconds), not when the servo ARRIVES. Un-paced, all six legs of
+    // this test fired in under a second: the servo just retargeted mid-flight,
+    // never visited either end, and the "range of motion" test verified
+    // nothing while flooding the command path (bench, 2026-08-22). Every
+    // absolute-servo leg now waits out an estimate of the real travel time
+    // before the next command goes out. Open-loop parts don't need the
+    // estimate — their adapters already block for the full drive duration —
+    // so they get a short settle only.
+    function sweepLegWaitMs(spanDeg, maxDeg) {
+      // A no-load hobby servo at full speed runs ~0.2 s per 60° (~3.3 ms/deg);
+      // 6 ms/deg stays slower than the servo, so the wait never undershoots.
+      // A geared multi-turn output (the 900° head) is slower still per output
+      // degree — it gets 15 ms/deg. Clamped so a huge window cannot stall one
+      // leg forever and a tiny window still clears command latency.
+      var msPerDeg = (Number(maxDeg) > 360) ? 15 : 6;
+      return Math.max(600, Math.min(20000, Math.round(spanDeg * msPerDeg + 400)));
+    }
+    function sweepSleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+
     async function runSweepTest() {
       var partId = window.selectedPartId;
       if (!partId) { showToast('No part selected', 'warning'); return; }
@@ -1560,10 +1581,12 @@
             });
             var homeData = await homeRes.json();
             updateCurrentPositionDisplay(homeData.currentP, homeData.currentAngle);
+            await sweepSleep(300);
           }
           if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm mb-live"></span> <span class="mb-live mb-now-pulse">Sweep ' + (i + 1) + '/' + SWEEPS + '...</span>';
 
-          // Go to min
+          // Go to min. First leg starts from wherever the part sits; the
+          // window span is the worst-case distance, so waiting it out is safe.
           var res1 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1571,6 +1594,7 @@
           });
           var d1 = await res1.json();
           updateCurrentPositionDisplay(d1.targetP, d1.targetAngle);
+          await sweepSleep(isServo ? sweepLegWaitMs(sweepMax - sweepMin, currentPartMaxAngleDeg) : 300);
 
           // Go to max
           var res2 = await fetch('/api/calibration/' + encodeURIComponent(partId) + '/goto', {
@@ -1580,6 +1604,7 @@
           });
           var d2 = await res2.json();
           updateCurrentPositionDisplay(d2.targetP, d2.targetAngle);
+          await sweepSleep(isServo ? sweepLegWaitMs(sweepMax - sweepMin, currentPartMaxAngleDeg) : 300);
         }
 
         // Return to midpoint after sweep
@@ -1592,6 +1617,9 @@
         });
         var d3 = await res3.json();
         updateCurrentPositionDisplay(d3.targetP, d3.targetAngle);
+        // Let the mid leg finish before the button re-arms, so "done" means
+        // the part has stopped moving, not just that the last command left.
+        await sweepSleep(isServo ? sweepLegWaitMs((sweepMax - sweepMin) / 2, currentPartMaxAngleDeg) : 300);
       } catch (err) {
         console.error('Sweep test error:', err);
         showToast('Sweep test failed: ' + err.message, 'error');
