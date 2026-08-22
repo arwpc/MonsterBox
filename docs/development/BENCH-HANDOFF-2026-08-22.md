@@ -104,3 +104,58 @@ pass lines in `docs/hardware/BENCH-CHECKLIST.md`.
   FRAMES (bytes + RMS). Failure reasons live in `/var/log/monsterbox.err`.
 - Code reaches nodes by rsync deploy (`npm run deploy:all`) or the code-paths-only git
   checkout used above — never a bare `git pull` on a node.
+
+## Ready-made prompt for the follow-up session (operator-requested)
+
+> Mission: harden Sir Dragomir (the Knight) once and for all — every hardware part's
+> declared type matches physical reality, and every page and drive path behaves per
+> that type. I am at the bench and can answer physical questions and press buttons;
+> you have LAN access and do the rest yourself over SSH and HTTP.
+>
+> Repo: github.com/arwpc/MonsterBox, branch main (also mirror pushes to
+> claude/monsterbox-v11-production-5gntng). Read these FIRST, in order:
+> 1. docs/development/BENCH-HANDOFF-2026-08-22.md — complete state of last night
+> 2. CLAUDE.md + the monsterbox-hardware and monsterbox-fleet skills
+> 3. docs/hardware/BENCH-CHECKLIST.md (K-section) and docs/character_sir_dragomir.md
+>
+> Ground truth from me, the operator (this map is law — do not reassign pins):
+> - Node: sirdragomir, 192.168.8.130, char 4. SSH: remote@192.168.8.130,
+>   lands in /home/remote, repo at /home/remote/MonsterBox.
+> - PCA9685 0x40: jaw = ch7 (standard 180°), head = ch11 (goBILDA Stingray-2,
+>   MULTI-TURN 900° real — never continuous), magic box = part 3 (VERIFY its real
+>   channel and its real kind with me by driving it: it may be a standard servo or
+>   a linear actuator — its config was last seen colliding on ch11).
+> - Start by running: bash scripts/bench/knight-finish.sh ON the node (idempotent;
+>   asserts the map, heals the head profile, prints status).
+>
+> The job, end to end:
+> 1. TYPE TRUTH: for each Knight part (jaw, head, magic box, camera, mic, speaker),
+>    confirm the physical kind with me, then make parts.json config (servoType /
+>    rotationRangeDeg / actuator fields), the calibration profile capability, and
+>    the model entry agree. Fix mismatches through the overrides API — never by
+>    committing node-local data files.
+> 2. SURFACE AUDIT: on the calibration page, pose editor, and scene/movement pages,
+>    verify each part renders the controls its type demands (standard servo:
+>    0-180 angle; multi-turn: real-degree range with its full span; continuous:
+>    CW/stop/CCW + speed/duration, never an angle slider; linear actuator:
+>    position 0-1 + extend/retract jog). Where a page shows the wrong control for
+>    a type, fix the code, add a regression test, push.
+> 3. CALIBRATE with me: head — first move eyes-on, nudge to safe ends, Set Min /
+>    Set Max with cable margin, flip Calibrated, then remove the char-4 part-1
+>    entry from config/physical-faults.json, commit, deploy. Box — resolve its
+>    channel/type, then Set Min (closed) / Set Max (open). Jaw — verify its window.
+> 4. PROVE IT: drive each part once through its RUNTIME path (a pose or scene
+>    step, not the calibration page) and I confirm motion by eye. Run
+>    npm run test:unit and the gate before every push; keep CI green.
+>
+> Binding rules: a success field is never proof — motion is proven by my eyes,
+> audio by ear-check, capture by frames; failure reasons are in
+> /var/log/monsterbox.err, not .log. RELEASE a channel (Release button or
+> POST /api/calibration/<partId>/release) before any servo lead is plugged or
+> unplugged. Code reaches the node by rsync deploy or code-paths-only git
+> checkout — never a bare git pull on a node. Never drive Orlok parts 3/4/5.
+> Ask me before any head move until its window is stamped Calibrated.
+>
+> Done means: every Knight part's type/config/profile/UI/drive-path agree, head
+> and box calibrated and stamped, faults entry removed, all fixes tested, pushed,
+> CI green, and BENCH-CHECKLIST + character sheet updated to match reality.
