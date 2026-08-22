@@ -374,8 +374,6 @@ the deleted `routes/setup/webcam.js` now live here under the `/api/webcam/*` pre
 | GET | /api/linear_actuator/:id/status |
 | POST | /api/linear_actuator/:id/reset |
 | GET | /standard_servo/:id |
-| POST | /api/standard_servo/:id/move |
-| POST | /api/standard_servo/:id/save-pulse |
 | POST | /api/standard_servo/:id/save-position |
 | GET | /api/standard_servo/:id/status |
 | GET | /api/standard_servo/:id/positions |

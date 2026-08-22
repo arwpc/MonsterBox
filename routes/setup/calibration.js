@@ -390,6 +390,20 @@ router.get('/', async (req, res) => {
         const ctx = await resolveCharacter(req);
         const currentCharacterId = ctx ? ctx.id : null;
 
+        // The page's client JS operates on the SELECTED character (its API
+        // calls carry no characterId), so a deep link like ?characterId=2 was
+        // a lie: the URL named one character while every control on the page
+        // showed and edited another (v11 audit F14). Until the page threads
+        // the id through every call, refuse to render under a URL that
+        // misstates what will be edited — redirect to the honest one.
+        try {
+            const cfg = await readConfig();
+            const selected = cfg && cfg.selectedCharacter != null ? String(cfg.selectedCharacter) : null;
+            if (req.query.characterId != null && String(req.query.characterId) !== selected) {
+                return res.redirect('/setup/calibration');
+            }
+        } catch (_) { /* fall through and render for the selected character */ }
+
         res.renderWithLayout('setup/calibration', {
             title: 'Setup Calibration - MonsterBox',
             page: 'setup-calibration',
@@ -929,13 +943,8 @@ router.post('/api/simple/:id/points', express.json(), async (req, res) => {
 /**
  * Helper function to get markers for a part (can be imported by other modules)
  */
-async function getMarkersForPart(partId) {
+async function getMarkersForPart(partId, characterId) {
     try {
-        let characterId = null;
-        try {
-            const config = await readConfig();
-            characterId = config.selectedCharacter;
-        } catch (_) { }
         const parts = await loadCharacterParts(characterId);
         const idx = parts.findIndex(p => String(p.id) === String(partId));
         if (idx === -1) return [];
@@ -949,7 +958,12 @@ async function getMarkersForPart(partId) {
 // Markers CRUD on parts.json (character-aware)
 router.get('/api/parts/:id/markers', async (req, res) => {
     try {
-        const markers = await getMarkersForPart(req.params.id);
+        // resolveCharacter like every sibling: this GET used to read the raw
+        // selectedCharacter while POST/DELETE resolved the request, so a
+        // ?characterId deep link read one character's markers and wrote
+        // another's (v11 audit F14 asymmetry).
+        const ctx = await resolveCharacter(req);
+        const markers = await getMarkersForPart(req.params.id, ctx ? ctx.id : null);
         res.json({ success: true, markers });
     } catch (e) {
         res.status(500).json({ success: false, error: 'Failed to get markers' });
@@ -1328,68 +1342,13 @@ router.get('/standard_servo/:id', (req, res) => {
     res.redirect(target);
 });
 
-// API: Move to absolute angle
-router.post('/api/standard_servo/:id/move', async (req, res) => {
-    try {
-        const partId = req.params.id;
-        const { angle, duration = 1000, characterId } = req.body;
-        const angleDeg = parseInt(angle, 10);
-        if (isNaN(angleDeg)) return res.status(400).json({ success: false, error: 'Invalid angle' });
-
-        const parts = await loadCharacterParts(characterId);
-        const part = parts.find(p => String(p.id) === String(partId));
-        if (!part || part.type !== 'servo' || String(part.config?.servoType || 'standard').toLowerCase() === 'continuous') {
-            if (String(process.env.MB_TEST_MODE || '') === '1') {
-                return res.json({ success: true, message: `Simulated move to ${angleDeg}° (standard servo missing in test mode)`, result: { success: true, simulated: true } });
-            }
-            return res.status(404).json({ success: false, error: 'Part not found or not a standard servo' });
-        }
-
-        const result = await hardwareService.controlPart(partId, 'moveToAngle', { angleDeg, duration: parseInt(duration, 10) });
-        res.json({ success: !!result.success, message: result.message || `Moved to ${angleDeg}°`, result });
-    } catch (error) {
-        console.error('Error moving standard servo:', error);
-        res.status(500).json({ success: false, error: 'Failed to move servo', message: error.message });
-    }
-});
-
-// API: Save pulse width (min/center/max)
-router.post('/api/standard_servo/:id/save-pulse', async (req, res) => {
-    try {
-        const partId = req.params.id;
-        const { pulseType, pulseUs } = req.body;
-        const ctx = await resolveCharacter(req);
-        const characterId = ctx ? ctx.id : null;
-        if (!['min', 'center', 'max'].includes(String(pulseType))) return res.status(400).json({ success: false, error: 'Invalid pulseType' });
-        const us = parseInt(pulseUs, 10);
-        if (isNaN(us)) return res.status(400).json({ success: false, error: 'Invalid pulseUs' });
-
-        const parts = await loadCharacterParts(characterId);
-        const part = parts.find(p => p.id === partId);
-        if (!part || part.type !== 'servo' || String(part.config?.servoType || 'standard').toLowerCase() === 'continuous') {
-            if (String(process.env.MB_TEST_MODE || '') === '1') {
-                return res.json({ success: true, message: `Simulated save of ${pulseType} pulse: ${us}µs (standard servo missing in test mode)`, calibration: { simulated: true } });
-            }
-            return res.status(404).json({ success: false, error: 'Part not found or not a standard servo' });
-        }
-
-        const calibrationData = await standardServoCalibration.savePulse(partId, part.name, pulseType, us, part.config.channel, characterId);
-        // Also ensure a named position exists for this pulse type
-        try {
-            var angleMap = { min: 0, center: 90, max: 180 };
-            var angleDeg = angleMap[String(pulseType)];
-            if (angleDeg != null) {
-                await standardServoCalibration.savePosition(partId, part.name, String(pulseType), `${pulseType} preset`, part.config.channel, { angle: angleDeg }, characterId);
-            }
-        } catch (e) {
-            console.warn('Standard save-pulse: could not auto-save position', e);
-        }
-        res.json({ success: true, message: `Saved ${pulseType} pulse: ${us}µs`, calibration: calibrationData });
-    } catch (error) {
-        console.error('Error saving standard pulse:', error);
-        res.status(500).json({ success: false, error: 'Failed to save pulse', message: error.message });
-    }
-});
+// RETIRED (v11 audit F16): POST /api/standard_servo/:id/move and
+// POST /api/standard_servo/:id/save-pulse. Both were orphans — their only
+// caller was the dead marker-button wiring removed from calibration.ejs —
+// and save-pulse FABRICATED presets as a side effect (min=0°/center=90°/
+// max=180°, angles nobody measured, which the scene executor would happily
+// replay). Pulse saves go through the unified calibration API; moves go
+// through /api/calibration/:id/goto, which clamps to the calibrated window.
 
 // API: Save named position (absolute angle)
 router.post('/api/standard_servo/:id/save-position', async (req, res) => {

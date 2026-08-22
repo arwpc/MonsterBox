@@ -1673,7 +1673,11 @@
         }
 
         const position = posData.currentP;
-        const presetData = { name, position };
+        // `p` is what the scene executor reads (it never reads `position`);
+        // `position` is kept for this page's own gotoPreset backcompat. A
+        // preset saved with only `position` resolved to targetP=undefined at
+        // show time — the drift class of v11 audit F15.
+        const presetData = { name, position, p: position };
         // For absolute servos, also store the angle
         if (posData.currentAngle != null) {
           presetData.angle = posData.currentAngle;
@@ -3126,7 +3130,12 @@
           fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'control', params: { direction: dir, speed: speed, duration: duration } })
-          }).then(function () { if (st) st.textContent = 'Done'; var d = (window && window.MB_TEST_MODE) ? 2000 : 800; setTimeout(function () { if (st) st.textContent = ''; }, d); })
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            // 'Done' used to be unconditional — a refused or failed command read
+            // exactly like a successful one (v11 audit F12).
+            if (st) st.textContent = data.success ? ('Done' + (data.simulated ? ' (simulated)' : '')) : ('Failed: ' + (data.error || 'unknown'));
+            var d = (window && window.MB_TEST_MODE) ? 2000 : 800; setTimeout(function () { if (st) st.textContent = ''; }, d);
+          })
             .catch(function () { if (st) st.textContent = 'Failed'; });
         });
         el.querySelector('#motStop').addEventListener('click', async function () {
@@ -3160,7 +3169,10 @@
           fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'moveSteps', params: { direction: dir, steps: steps, stepDelayUs: stepDelayUs } })
-          }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            if (st) st.textContent = data.success ? ('Done' + (data.simulated ? ' (simulated)' : '')) : ('Failed: ' + (data.error || 'unknown'));
+            setTimeout(function () { if (st) st.textContent = ''; }, 800);
+          })
             .catch(function () { if (st) st.textContent = 'Failed'; });
         });
         const stopBtn = el.querySelector('#stStop');
@@ -3181,7 +3193,10 @@
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Toggling…';
           fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'toggle' })
-          }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            if (st) st.textContent = data.success ? ('Done' + (data.simulated ? ' (simulated)' : '')) : ('Failed: ' + (data.error || 'unknown'));
+            setTimeout(function () { if (st) st.textContent = ''; }, 800);
+          })
             .catch(function () { if (st) st.textContent = 'Failed'; });
         });
       } else if (part.type === 'led') {
@@ -3194,7 +3209,10 @@
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Setting…';
           fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'setBrightness', params: { brightness: bri } })
-          }).then(function () { if (st) st.textContent = 'Done'; setTimeout(function () { if (st) st.textContent = ''; }, 800); })
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            if (st) st.textContent = data.success ? ('Done' + (data.simulated ? ' (simulated)' : '')) : ('Failed: ' + (data.error || 'unknown'));
+            setTimeout(function () { if (st) st.textContent = ''; }, 800);
+          })
             .catch(function () { if (st) st.textContent = 'Failed'; });
         });
       } else if (part.type === 'speaker') {
@@ -3903,65 +3921,11 @@
       }
     }
 
-    async function setMarkerFromCurrent(fieldId, name) {
-      if (!selected) return;
-
-      // The old type-specific /status endpoints never report currentAngle /
-      // currentPosition, so this used to silently save whatever stale number
-      // was in the text box. The calibration position store is the only
-      // source of truth for "current" — and if it doesn't know, we refuse
-      // rather than record a value the hardware never held.
-      let currentValue = null;
-      try {
-        const posResponse = await fetch(`/api/calibration/${encodeURIComponent(selected.id)}/position`).catch(() => null);
-        if (posResponse && posResponse.ok) {
-          const posData = await posResponse.json().catch(() => null);
-          if (posData && posData.success) {
-            if (posData.kind === 'absolute-servo') {
-              if (Number.isFinite(posData.currentAngle)) currentValue = posData.currentAngle;
-            } else if (Number.isFinite(posData.currentP)) {
-              currentValue = posData.currentP;
-            }
-          }
-        }
-      } catch (_) { /* treated as unknown position below */ }
-
-      if (!Number.isFinite(currentValue)) {
-        showToast(`Current position unknown — move the part first, then set ${name}`, 'error');
-        return;
-      }
-
-      // Reflect in field
-      const el = document.getElementById(fieldId);
-      if (el) el.value = currentValue;
-
-      // Save the marker
-      const body = { name, kind: 'absolute', value: currentValue, unit: unitFor(selected) };
-      const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-      }).catch(() => null);
-
-      if (response && response.ok) {
-        await loadMarkers();
-        showToast(`${name} marker set to ${currentValue}${unitFor(selected) ? ' ' + unitFor(selected) : ''}`, 'success');
-      } else {
-        showToast('Failed to save marker', 'error');
-      }
-    }
-    async function goToField(fieldId) {
-      if (!selected) return;
-      const el = document.getElementById(fieldId);
-      const num = el && el.value !== '' ? Number(el.value) : undefined;
-      if (selected.type === 'servo' && String(selected.config?.servoType || 'standard') !== 'continuous' && typeof num === 'number') {
-        await fetch(`/setup/calibration/api/standard_servo/${encodeURIComponent(selected.id)}/move`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ angle: Math.round(num) }) });
-      }
-    }
-    const setMinBtn = document.getElementById('setMinBtn'); if (setMinBtn) setMinBtn.addEventListener('click', () => setMarkerFromCurrent('minValue', 'Min'));
-    const setMidBtn = document.getElementById('setMidBtn'); if (setMidBtn) setMidBtn.addEventListener('click', () => setMarkerFromCurrent('midValue', 'Mid'));
-    const setMaxBtn = document.getElementById('setMaxBtn'); if (setMaxBtn) setMaxBtn.addEventListener('click', () => setMarkerFromCurrent('maxValue', 'Max'));
-    const goMinBtn = document.getElementById('goMinBtn'); if (goMinBtn) goMinBtn.addEventListener('click', () => goToField('minValue'));
-    const goMidBtn = document.getElementById('goMidBtn'); if (goMidBtn) goMidBtn.addEventListener('click', () => goToField('midValue'));
-    const goMaxBtn = document.getElementById('goMaxBtn'); if (goMaxBtn) goMaxBtn.addEventListener('click', () => goToField('maxValue'));
+    // RETIRED (v11 audit F16): setMarkerFromCurrent/goToField and the
+    // setMin/setMid/setMax/goMin/goMid/goMax listeners. The DOM ids they bound
+    // to exist in no markup — a complete marker editor that silently no-op'd —
+    // and goToField was the last caller of the orphaned
+    // /api/standard_servo/:id/move endpoint, retired with it.
 
     // Add marker button
     const addMarkerBtn = document.getElementById('addMarkerBtn');

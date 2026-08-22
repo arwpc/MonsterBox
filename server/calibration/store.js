@@ -234,9 +234,16 @@ export class JsonCalibrationStore {
         : (profile && profile.characterId != null ? profile.characterId : await selectedCharacterId());
       const all = await this.load();
       const key = cid != null ? scopedKey(cid, profile.partId) : String(profile.partId);
+      // updatedAt means "last written". lastCalibratedAt is NOT stamped here —
+      // upsert runs for preset adds, channel reconciles and auto-creates, so
+      // stamping it made "last calibrated" mean "last touched" and a
+      // never-measured part could show a today timestamp (v11 audit F13). The
+      // genuine measurement writers (set-min/set-max, bounds saves, the
+      // Calibrated stamp) set it explicitly; everything else carries the
+      // existing value through unchanged.
       all[key] = Object.assign({}, profile, {
         characterId: cid != null ? cid : (profile.characterId != null ? profile.characterId : undefined),
-        lastCalibratedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString()
       });
       await this.save(all);
     });
