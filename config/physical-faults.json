@@ -28,16 +28,6 @@
     "Remove an entry when the operator repairs the hardware, not to make a test pass."
   ],
   "characters": {
-    "4": {
-      "_note": "Sir Dragomir — head servo only. See docs/hardware/OPERATOR-TODO.md §C and docs/hardware/BENCH-CHECKLIST.md K1/K3.",
-      "parts": {
-        "1": {
-          "status": "broken",
-          "reason": "Head Servo (goBILDA Stingray-2, 900° multi-turn, PCA9685 ch4) — K1 RESOLVED 2026-08-22: channel and servo are ALIVE (operator drove it at the bench; nothing is electrically dead). What remains is UNCALIBRATED 900° travel that has already stressed the head cabling on a full rotation. The 0-180 scale bug is fixed in software (real-degree path, v10.4.0) but no cable-safe window has been measured yet. Remove this entry only after BENCH-CHECKLIST K3: supervised calibration done, window set, Calibrated stamp flipped. Advisory like every entry here — the operator may still drive it deliberately; automated pickers must not.",
-          "since": "2026-08-22"
-        }
-      }
-    },
     "3": {
       "_note": "Orlok is the only physically damaged rig as of 2026-08-21 (operator, verbatim: 'only orlock is physically hacked with bad back left arm forearm and elbow').",
       "parts": {

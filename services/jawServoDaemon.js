@@ -5,6 +5,7 @@
  */
 
 import { spawn } from 'child_process';
+import net from 'net';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createInterface } from 'readline';
@@ -14,6 +15,39 @@ const __dirname = path.dirname(__filename);
 
 const DAEMON_SCRIPT = path.resolve(__dirname, '..', 'python_wrappers', 'jaw_servo_daemon.py');
 const READY_TIMEOUT_MS = 5000;
+const SERVO_SOCKET_PATH = process.env.MB_SERVO_SOCKET || '/tmp/monsterbox-servo.sock';
+
+/**
+ * A servo daemon from a PREVIOUS deploy can outlive the service: it owns the
+ * unix socket, the freshly-spawned daemon "stands by" rather than steal the
+ * bus, and every caller keeps driving through the OLD code. That is exactly
+ * how a just-deployed node kept running a pre-deploy daemon at the bench
+ * (2026-08-22) — new behavior appeared only after a manual pkill. Evict any
+ * existing owner before spawning ours, so a service restart ALWAYS puts the
+ * on-disk code on the chip. The evicted daemon leaves servos holding their
+ * last pulse (its shutdown contract), so nothing moves during the handover.
+ */
+function evictStaleSocketOwner(timeoutMs = 2500) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = () => { if (!settled) { settled = true; resolve(); } };
+    let sock;
+    try {
+      sock = net.createConnection({ path: SERVO_SOCKET_PATH });
+    } catch (_) {
+      return done();
+    }
+    const timer = setTimeout(() => { try { sock.destroy(); } catch (_) {} done(); }, timeoutMs);
+    sock.once('error', () => { clearTimeout(timer); done(); }); // no owner — nothing to evict
+    sock.once('connect', () => {
+      console.warn('🦷 Evicting pre-existing servo daemon — a restart must never leave old code owning the socket');
+      try { sock.write(JSON.stringify({ cmd: 'shutdown' }) + '\n'); } catch (_) { /* it may already be dying */ }
+      // The old daemon unlinks the socket on its way out; give it a beat
+      // before our child races to bind it.
+      setTimeout(() => { try { sock.destroy(); } catch (_) {} clearTimeout(timer); done(); }, 700);
+    });
+  });
+}
 
 let daemonProcess = null;
 let readyPromise = null;
@@ -34,6 +68,10 @@ async function ensureRunning() {
   if (isTestMode()) return;
   if (daemonProcess && isReady) return;
   if (readyPromise) return readyPromise;
+
+  // Any socket owner at this point is not ours (we have no live child), so it
+  // is a leftover from a previous service life — old code. Kill it first.
+  await evictStaleSocketOwner();
 
   readyPromise = new Promise((resolve, reject) => {
     readyResolve = resolve;
@@ -182,5 +220,6 @@ export default {
   ensureRunning,
   sendAngle,
   shutdown,
-  isRunning
+  isRunning,
+  evictStaleSocketOwner
 };

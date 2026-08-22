@@ -109,6 +109,13 @@ if [ "$DRY_RUN" = "1" ]; then RSYNC_DRY="-n"; fi
 if [ "$DRY_RUN" != "1" ]; then
     echo "Stopping monsterbox.service on ${IP_ADDRESS} for the sync window..."
     ${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "sudo systemctl stop monsterbox || true"
+    # A servo daemon from the OLD build can outlive the service (it owns the
+    # unix socket; a fresh daemon then "stands by" and every caller keeps
+    # driving through pre-deploy code — bench, 2026-08-22). The server now
+    # evicts stale owners at startup too; this pkill is the deploy-side
+    # guarantee that the old version is DEAD before the new one starts.
+    # Killing it leaves servos holding their last pulse — nothing moves.
+    ${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "pkill -f servo_daemon || true"
 fi
 # rsync's exit status is checked explicitly rather than left to `set -e`.
 #
