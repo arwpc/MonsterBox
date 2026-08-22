@@ -737,6 +737,38 @@ const HARDWARE_CONTROLLERS = {
                         }
                     }
 
+                    // Multi-turn fast path: the daemon accepts a raw pulse, and the
+                    // pulse for a real-degree target is exact arithmetic (the same
+                    // 500-2500 µs the wrapper computes over the declared range).
+                    // One-shot servo_cli spawns a Python interpreter per command —
+                    // seconds each on a Pi 4, re-initialising the chip — which at
+                    // the calibration bench read as a lagging, backed-up, dead head.
+                    // The wrapper below stays as the fallback when the daemon is down.
+                    if (normType === 'feedback') {
+                        const mtRange = Number(rotationRangeDeg);
+                        if (Number.isFinite(mtRange) && mtRange > 0) {
+                            try {
+                                const realClamped = Math.max(0, Math.min(mtRange, Number(angleDeg)));
+                                const pulseUs = Math.round(500 + (realClamped / mtRange) * 2000);
+                                await servoDaemonClient.ensureDaemon();
+                                await servoDaemonClient.pulseOne(channel, pulseUs, { address });
+                                return {
+                                    success: true,
+                                    partType: 'servo',
+                                    channel,
+                                    angleDeg,
+                                    pulseUs,
+                                    servoType: normType,
+                                    controllerType: 'pca9685',
+                                    viaDaemon: true,
+                                    message: `PCA9685 ch${channel} multi-turn to ${angleDeg}° (${pulseUs}µs via daemon)`
+                                };
+                            } catch (daemonErr) {
+                                console.warn(`⚙️  Servo daemon unavailable for multi-turn ch${channel} (${daemonErr.message}) — falling back to servo_cli.py`);
+                            }
+                        }
+                    }
+
                     console.log(`🧭 Python call => servo_cli.py ${args.join(' ')}`);
 
                     const result = await runWrapper('servo_cli.py', args);

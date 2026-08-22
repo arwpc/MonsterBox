@@ -144,11 +144,13 @@ ssh remote@$IP 'wpctl get-volume @DEFAULT_AUDIO_SINK@'
      physically sits, so the first goto may travel up to the full distance to its target.
      Slack the head cabling by hand, pick a target near where the head currently points
      (mid-travel ≈ 450 if it looks centered), send the goto, hand on the power switch.
-  5. From there it is ordinary calibration IN REAL DEGREES: nudge (fine = 2° real,
-     med = 5°, coarse = 15° — deliberately small near cabling) to the safe
-     counter-clockwise limit → **Set Min**; nudge to the safe clockwise limit →
-     **Set Max**; keep BOTH limits well inside cable slack — the window is the cable
-     guard, so give it margin, not maximum travel.
+  5. From there it is ordinary calibration IN REAL DEGREES: nudge steps scale with
+     the range so each press clears the servo's deadband — on the 900° head
+     **fine = 10° real, med = 25°, coarse = 75°** (the same pulse step a standard
+     servo gets from 2/5/15). Nudge to the safe counter-clockwise limit →
+     **Set Min**; nudge to the safe clockwise limit → **Set Max**; keep BOTH limits
+     well inside cable slack — the window is the cable guard, so give it margin,
+     not maximum travel.
   6. Flip **"Calibrated (trusted by runtime)"**, then remove the char-4 part-1 entry from
      `config/physical-faults.json` in the repo, commit, deploy.
   PASS: the head jogs in small, predictable real-degree steps, reaches both window ends

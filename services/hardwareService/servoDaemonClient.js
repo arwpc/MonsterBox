@@ -237,6 +237,22 @@ async function moveOne(channel, angle, options = {}) {
 }
 
 /**
+ * Drive a single channel to an exact pulse width. The multi-turn path uses
+ * this: a real-degree target converts to µs by plain arithmetic (500-2500
+ * over the part's declared rotation range), so sending the pulse itself
+ * avoids re-encoding through the daemon's 0-180 angle scale entirely.
+ */
+async function pulseOne(channel, pulseUs, options = {}) {
+    const payload = { cmd: 'set_pulse', channel: Number(channel), pulse_us: Math.round(Number(pulseUs)) };
+    if (options.address != null) payload.address = Number(options.address);
+    const reply = await request(payload, options.timeoutMs || REQUEST_TIMEOUT_MS);
+    if (!reply || reply.status !== 'ok') {
+        throw new Error((reply && reply.message) || `servo daemon rejected pulse on channel ${channel}`);
+    }
+    return reply;
+}
+
+/**
  * Stop driving a channel. Used as the fail-safe when a command cannot be
  * trusted — a released channel holds nothing rather than holding garbage.
  */
@@ -263,6 +279,7 @@ export default {
     isAvailable,
     moveMany,
     moveOne,
+    pulseOne,
     release,
     request,
     resetAvailability,

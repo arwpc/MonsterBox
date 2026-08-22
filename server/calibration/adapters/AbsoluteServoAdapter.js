@@ -86,9 +86,14 @@ export class AbsoluteServoAdapter {
     // A relative move needs a real starting angle. Nudge is bounds-free by
     // design, so guessing the start makes the destination unbounded too.
     if (!this.positionKnown) throw positionUnknownError();
-    // Scales stay in REAL degrees at every range — on the 900° head a "fine"
-    // nudge is still 2 real degrees, deliberately small near its cabling.
-    const delta = NUDGE_SCALES[scale] || NUDGE_SCALES.med;
+    // Scales are tuned for a 180° servo. A multi-turn gearbox spans its whole
+    // travel over the same pulse range, so the same degrees are proportionally
+    // less pulse: a 2° "fine" on the 900° head is ~4 µs — inside the servo's
+    // deadband, and every nudge read as a dead part at the bench. Scale by
+    // span so each step keeps its pulse-step feel (900°: fine 10°, med 25°,
+    // coarse 75° REAL); the response message reports the real degrees moved.
+    const spanFactor = this.maxAngleDeg / 180;
+    const delta = (NUDGE_SCALES[scale] || NUDGE_SCALES.med) * spanFactor;
     const newAngle = dir === 'max'
       ? Math.min(this.maxAngleDeg, this.currentAngle + delta)
       : Math.max(0, this.currentAngle - delta);
