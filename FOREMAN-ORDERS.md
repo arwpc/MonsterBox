@@ -127,8 +127,10 @@ Then, on the two standing nodes:
 1. **K1 — Knight jaw verdict** (BENCH-CHECKLIST K1). The two curls, then jaw turn or
    no-turn. Pass = jaw moves on ch1. Either way, record the verdict — it decides whether
    the HEAD's ch4 is a dead channel or a dead/miswired servo. Do NOT drive part 1 (head).
-2. **K2 — head lockout proof** (BENCH-CHECKLIST K2). Pass = the drive path refuses the
-   uncalibrated 900° head with an error, no motion.
+2. **K2 — head stays hands-off** (BENCH-CHECKLIST K2). CORRECTED 2026-08-22: there is no
+   enforced refusal for direct API commands on part 1 — only poses/scenes/tracking refuse
+   it (no measured window), and a physical-faults entry now keeps automated pickers away.
+   A nudge/goto/test on part 1 WILL move it. The check is behavioral: command nothing.
 3. **O1 — Orlok bow ×3** (BENCH-CHECKLIST O1). Three Extend/Retract jog-raw attempts
    ≥15 min apart at `/setup/calibration` → Bow At The Waist. Pass = clean extend AND
    retract all three times. The wiring-swap suspicion (description says RPWM=21/LPWM=19;

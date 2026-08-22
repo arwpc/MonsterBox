@@ -111,14 +111,25 @@ ssh remote@$IP 'wpctl get-volume @DEFAULT_AUDIO_SINK@'
   curl -sk -X POST "https://192.168.8.130:3000/api/calibration/2/nudge" \
     -H 'Content-Type: application/json' -d '{"dir":"max","scale":"med"}'
   ```
-  Jaw turns → **ch1 + V+ good; the head servo (part 1, ch4) is the dead element** → add a
-  char-"4" entry for part "1" to `config/physical-faults.json` (copy the shape of the
-  existing char-"3" entries in that file), commit, and deploy so automated code stops
-  choosing it. Jaw does not turn → the ch1 channel/harness/power is the fault; meter V+ at
-  the ch1 header pin against ch0's (they should match).
+  If the nudge answers `Servo position is unknown — move to an absolute angle (goto) first`,
+  seed it once and re-nudge (90° is the jaw's documented neutral):
+  ```bash
+  curl -sk -X POST "https://192.168.8.130:3000/api/calibration/2/goto" \
+    -H 'Content-Type: application/json' -d '{"angle":90}'
+  ```
+  Jaw turns → **ch1 + V+ good; the head servo (part 1, ch4) is the dead element**. The
+  char-"4" part-"1" entry in `config/physical-faults.json` is already committed (2026-08-22)
+  — update its `reason` to the proven verdict and deploy. Jaw does not turn → the ch1
+  channel/harness/power is the fault; meter V+ at the ch1 header pin against ch0's (they
+  should match).
 - **K2. Do NOT drive or calibrate the head (part 1)** until its 0–180-vs-900° scale bug is
   fixed — one UI degree is five real degrees; a sweep can wrap the head cabling
-  (OPERATOR-TODO §C, second half).
+  (OPERATOR-TODO §C, second half). **Know exactly what the "lockout" covers (verified in
+  code 2026-08-22):** poses, scenes, and head tracking refuse the part (no measured
+  calibration window), and the `physical-faults.json` entry keeps automated suites from
+  picking it — but **direct API commands are NOT refused**: a calibration nudge/goto or
+  `POST /api/parts/1/test` WILL drive the head. There is no safe software probe for this
+  item; the check is behavioral — nothing and no one commands part 1.
 
 ### O — Orlok
 

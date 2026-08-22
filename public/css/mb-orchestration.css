@@ -118,6 +118,13 @@
   font-weight: var(--mb-weight-bold);
 }
 
+/* Node-card names open that node's own dashboard on double-click; user-select
+   off so the double-click doesn't leave the name text highlighted. */
+.fcc-name-link {
+  cursor: pointer;
+  user-select: none;
+}
+
 .fcc-card-body {
   display: flex;
   flex-direction: column;

@@ -96,6 +96,22 @@ test.describe('Fleet Command Center', () => {
         await expect(page.locator('#targetSummary')).toHaveText('All');
     });
 
+    test("double-clicking a node name opens that node's dashboard in a new tab", async () => {
+        await page.waitForSelector('.fcc-card .fcc-name-link', { timeout: 15000 });
+        // Stub window.open: the fleet IPs are not reachable from CI, so capture
+        // the URL the handler builds instead of letting a dead tab open.
+        await page.evaluate(() => {
+            window.__opened = [];
+            window.open = (url, target) => { window.__opened.push({ url, target }); return null; };
+        });
+        await page.locator('.fcc-card .fcc-name-link').first().dblclick();
+        const opened = await page.evaluate(() => window.__opened);
+        expect(opened.length).toBe(1);
+        // The node's own dashboard root, over HTTPS, at its registry ip:port.
+        expect(opened[0].url).toMatch(/^https:\/\/\d+\.\d+\.\d+\.\d+:\d+\/$/);
+        expect(opened[0].target).toBe('_blank');
+    });
+
     test('has no console/page errors on load', async () => {
         tracker.clear();
         await page.waitForTimeout(3000);

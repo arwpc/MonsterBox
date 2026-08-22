@@ -51,6 +51,13 @@ bridge. Hardware checklist unchanged: `docs/hardware/OPERATOR-TODO.md` §A–F (
   the jaw, part 2 — the old note's part 1 was an error). New `docs/hardware/BENCH-CHECKLIST.md`
   is the repeatable prove-all-three procedure: per-node proof standards, the Knight/Orlok/Mina
   open-item closures, fleet checks, sign-off table.
+- **Fleet Command Center: double-click a node's name to open that node's own dashboard**
+  in a new tab (`https://<ip>:<port>/`, IP resolved live from discovery state). Covered by a
+  new browser test. Also: `config/physical-faults.json` gains Sir Dragomir's head servo
+  (char 4, part 1 — dead-channel suspect + 900° scale hazard) so automated pickers never
+  choose it, and the Dragomir docs now state precisely which paths refuse the head (poses/
+  scenes/tracking, for lack of a measured window) and which do NOT (direct calibration/API
+  commands — all per-part enforcement was removed by the 2026-08-20 ruling).
 - **Deploy no longer clobbers each node's live mute state.** The final-round bench-checklist
   review caught that `data/speaker-state.json` was missing from the rsync `--delete`
   exclusions in `scripts/deploy-to-animatronic.sh` — every `npm run deploy:all` was

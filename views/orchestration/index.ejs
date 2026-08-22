@@ -276,6 +276,19 @@
         '<input type="checkbox" data-role="target" aria-label="Target ' + esc(node.name) + '"></label>';
     card.appendChild(head);
 
+    // Double-click the node's name → that node's own dashboard in a new tab.
+    // The IP is resolved at click time from state, not from this closure: mDNS
+    // discovery can overlay a fresh IP onto a card built while the node was
+    // still offline, and the closure would hold the stale null.
+    const nameEl = head.querySelector('.fcc-card-name');
+    nameEl.classList.add('fcc-name-link');
+    nameEl.title = node.name + " — double-click to open this node's dashboard";
+    nameEl.addEventListener('dblclick', function () {
+      const live = state.nodes.get(String(node.id)) || node;
+      if (!live.ip) { log(live.name + ': no IP known yet — cannot open its dashboard', 'warn'); return; }
+      window.open('https://' + live.ip + ':' + (live.port || 3000) + '/', '_blank', 'noopener');
+    });
+
     // webcam
     const cam = el('div', 'fcc-cam-wrap');
     // No loading="lazy" here: this is an endless multipart MJPEG response, and a

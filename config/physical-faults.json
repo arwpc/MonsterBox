@@ -21,6 +21,16 @@
     "Remove an entry when the operator repairs the hardware, not to make a test pass."
   ],
   "characters": {
+    "4": {
+      "_note": "Sir Dragomir — head servo only. See docs/hardware/OPERATOR-TODO.md §C and docs/hardware/BENCH-CHECKLIST.md K1/K2.",
+      "parts": {
+        "1": {
+          "status": "broken",
+          "reason": "Head Servo (goBILDA Stingray-2, 900° multi-turn, PCA9685 ch4) — dead-channel suspect (K1 verdict pending), and its calibration profile still maps it as 0-180 over the same pulse span, so one commanded degree is five real degrees of rotation: an automated sweep can wrap the head cabling. Advisory like every entry here — the operator may still drive it deliberately; automated pickers must not.",
+          "since": "2026-08-22"
+        }
+      }
+    },
     "3": {
       "_note": "Orlok is the only physically damaged rig as of 2026-08-21 (operator, verbatim: 'only orlock is physically hacked with bad back left arm forearm and elbow').",
       "parts": {
