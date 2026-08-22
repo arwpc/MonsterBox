@@ -894,6 +894,17 @@
                 <span class="mb-text-sm">Invert Servo Direction</span>
               </label>
             </div>
+            <!-- Calibrated trust stamp (v11 audit F11). This is the ONLY control
+                 that retires a measured window; it used to live solely on the
+                 legacy unified page nothing links to, so the page operators
+                 actually use could display "(unmeasured)" but never change it. -->
+            <div class="mt-2" id="calibratedStampContainer" style="display: none;">
+              <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Mark this part Calibrated. Runtime consumers (scenes, poses, jaw, head) only trust a stamped window; clearing the stamp keeps the numbers but stops anything trusting them.">
+                <input type="checkbox" id="calibratedToggle" onchange="toggleCalibratedStamp(this.checked)">
+                <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+                <span class="mb-text-sm">Calibrated (trusted by runtime)</span>
+              </label>
+            </div>
           </div>
 
           <!-- Position Presets -->
@@ -1198,9 +1209,17 @@
             ? 'Disabled: this part has no measured window. Measure Min and Max with the jog controls first.'
             : 'Move 3 times between min and max bounds at full speed to verify range of motion';
         }
+        // Calibrated trust stamp mirrors the same flags the '(unmeasured)'
+        // suffix reads, so the display and the control can never disagree (F11).
+        var stampContainer = document.getElementById('calibratedStampContainer');
+        var stampToggle = document.getElementById('calibratedToggle');
+        if (stampContainer) stampContainer.style.display = 'block';
+        if (stampToggle) stampToggle.checked = !unmeasured;
       } else {
         if (minDisplay) minDisplay.textContent = '\u2014';
         if (maxDisplay) maxDisplay.textContent = '\u2014';
+        var stampContainerNone = document.getElementById('calibratedStampContainer');
+        if (stampContainerNone) stampContainerNone.style.display = 'none';
       }
 
       // Update invert toggle — show for servos only
@@ -1447,6 +1466,39 @@
       }
     }
     window.toggleInvert = toggleInvert;
+
+    // Calibrated trust stamp (F11). The server is the authority: on refusal
+    // (zero-span window) or error the checkbox snaps back rather than showing
+    // a state the data does not support. Stamping false retires the window —
+    // calibratedBounds() then withholds it from every runtime consumer.
+    async function toggleCalibratedStamp(checked) {
+      var partId = window.selectedPartId;
+      var toggle = document.getElementById('calibratedToggle');
+      if (!partId) return;
+      try {
+        var res = await fetch('/api/calibration/' + partId + '/calibrated', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ calibrated: checked })
+        });
+        var data = await res.json();
+        if (!data.success) {
+          if (toggle) toggle.checked = !checked;
+          showToast('Calibrated stamp failed: ' + (data.error || 'Unknown error'), 'error');
+          return;
+        }
+        showToast(data.warning || (checked
+          ? 'Stamped Calibrated — runtime will trust this window'
+          : 'Calibrated stamp cleared — runtime will withhold this window'),
+          data.warning ? 'warning' : 'success');
+        await loadUnifiedCalibration(partId, window.selectedPart);
+      } catch (err) {
+        console.error('Calibrated stamp error:', err);
+        if (toggle) toggle.checked = !checked;
+        showToast('Calibrated stamp error: ' + err.message, 'error');
+      }
+    }
+    window.toggleCalibratedStamp = toggleCalibratedStamp;
 
     // Sweep test: move from min to max 3 times at 100% speed.
     // For open-loop parts (linear actuators, continuous servos), homes to
