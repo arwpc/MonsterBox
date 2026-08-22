@@ -3143,7 +3143,9 @@
       } else if (part.type === 'microphone') {
         // Full microphone controls with speech detection testing
         var micDevId = (part.config && (part.config.deviceId || part.config.device || 'default')) || 'default';
-        var micSens = (part.config && part.config.sensitivity != null) ? part.config.sensitivity : 1;
+        // No Sensitivity slider: config.sensitivity is read by nothing at
+        // runtime, so a control for it would persist a number with zero effect —
+        // the same dead-control class as the deleted Safety tab (v11 audit F7).
         var micGainPct = (part.config && part.config.inputGainPercent != null) ? part.config.inputGainPercent : 100;
         el.innerHTML = '<div class="mb-2">' +
           '<div class="d-flex justify-content-between align-items-center mb-2">' +
@@ -3154,10 +3156,6 @@
           '<div class="vu-label"><span id="calMicVu-' + part.id + '-level-text">0%</span></div>' +
           '</div></div></div>' +
           '<div class="row g-3">' +
-          '<div class="col-md-6">' +
-          '<label class="form-label small">Sensitivity <span class="mb-badge" id="calMicSens-' + part.id + '-val">' + micSens + '</span></label>' +
-          '<input type="range" min="0.1" max="3.0" step="0.1" class="mb-range" title="Adjust microphone sensitivity" id="calMicSens-' + part.id + '" value="' + micSens + '">' +
-          '</div>' +
           '<div class="col-md-6">' +
           '<label class="form-label small">Input Gain <span class="mb-badge" id="calMicGain-' + part.id + '-val">' + micGainPct + '%</span></label>' +
           '<input type="range" min="0" max="200" step="1" class="mb-range" title="Adjust microphone input gain" id="calMicGain-' + part.id + '" value="' + micGainPct + '">' +
@@ -3233,31 +3231,10 @@
           window._calMicVuIntervals.push(vuInterval);
         })(part.id, micDevId);
 
-        // Sensitivity slider
-        (function (pid) {
-          var sensEl = document.getElementById('calMicSens-' + pid);
-          var sensValEl = document.getElementById('calMicSens-' + pid + '-val');
-          if (sensEl) {
-            sensEl.addEventListener('input', function () { if (sensValEl) sensValEl.textContent = sensEl.value; });
-            sensEl.addEventListener('change', function () {
-              var sensitivity = parseFloat(sensEl.value);
-              fetch('/setup/calibration/api/parts/' + pid).then(function (r) { return r.json(); }).then(function (data) {
-                if (!data.success) return;
-                var p = data.part;
-                var cfg = Object.assign({}, p.config || {}, { sensitivity: sensitivity });
-                return fetch('/setup/calibration/api/parts/' + pid, {
-                  method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ config: cfg })
-                });
-              }).then(function (r) { return r ? r.json() : null; }).then(function (j) {
-                var st = document.getElementById('ctrlStatus');
-                if (st) { st.textContent = (j && j.success) ? 'Sensitivity saved' : 'Save failed'; setTimeout(function () { if (st) st.textContent = ''; }, 1500); }
-              }).catch(function () {});
-            });
-          }
-        })(part.id);
-
-        // Gain slider
+        // Gain slider: applies live via PipeWire, then persists to the part
+        // config. Persistence failures surface in the status line — this used
+        // to GET a route that did not exist and swallow the 404, so "saved"
+        // gains vanished on every reboot (v11 audit F7).
         (function (pid, devId) {
           var gainEl = document.getElementById('calMicGain-' + pid);
           var gainValEl = document.getElementById('calMicGain-' + pid + '-val');
@@ -3269,21 +3246,33 @@
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ deviceId: devId, gainPercent: gainPercent })
               }).then(function (r) { return r.json(); }).then(function (data) {
-                if (data.success) {
-                  // Persist to part config
-                  fetch('/setup/calibration/api/parts/' + pid).then(function (r) { return r.json(); }).then(function (pd) {
-                    if (pd.success) {
-                      var cfg = Object.assign({}, pd.part.config || {}, { inputGainPercent: gainPercent });
-                      fetch('/setup/calibration/api/parts/' + pid, {
-                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ config: cfg })
-                      });
-                    }
-                  });
-                }
                 var st = document.getElementById('ctrlStatus');
-                if (st) { st.textContent = data.success ? 'Gain applied (' + gainPercent + '%)' : 'Failed'; setTimeout(function () { if (st) st.textContent = ''; }, 1500); }
-              }).catch(function () {});
+                if (!data.success) {
+                  if (st) { st.textContent = 'Failed'; setTimeout(function () { if (st) st.textContent = ''; }, 1500); }
+                  return;
+                }
+                // Persist to part config so the gain survives a reboot
+                // (server.js re-applies it at startup).
+                fetch('/setup/calibration/api/parts/' + pid).then(function (r) { return r.json(); }).then(function (pd) {
+                  if (!pd.success) throw new Error(pd.error || 'load failed');
+                  return fetch('/setup/calibration/api/parts/' + pid, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config: { inputGainPercent: gainPercent } })
+                  }).then(function (r) { return r.json(); });
+                }).then(function (j) {
+                  if (st) {
+                    st.textContent = (j && j.success)
+                      ? 'Gain applied (' + gainPercent + '%) and saved'
+                      : 'Gain applied (' + gainPercent + '%) but NOT saved';
+                    setTimeout(function () { if (st) st.textContent = ''; }, 2500);
+                  }
+                }).catch(function () {
+                  if (st) { st.textContent = 'Gain applied (' + gainPercent + '%) but NOT saved'; setTimeout(function () { if (st) st.textContent = ''; }, 2500); }
+                });
+              }).catch(function () {
+                var st = document.getElementById('ctrlStatus');
+                if (st) { st.textContent = 'Failed'; setTimeout(function () { if (st) st.textContent = ''; }, 1500); }
+              });
             });
           }
         })(part.id, micDevId);
@@ -6350,15 +6339,18 @@
           if (resultBadge) { resultBadge.textContent = matchPct + '% match'; resultBadge.className = 'mb-badge mb-badge-success'; }
           if (resultText) resultText.textContent = 'Detected: "' + text + '"\nGain saved to ' + currentGain + '%.';
 
-          // Persist gain to part config
-          fetch('/setup/calibration/api/parts/' + partId).then(function (r) { return r.json(); }).then(function (pd) {
-            if (pd.success) {
-              var cfg = Object.assign({}, pd.part.config || {}, { inputGainPercent: currentGain });
-              fetch('/setup/calibration/api/parts/' + partId, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ config: cfg })
-              });
+          // Persist gain to part config (the PUT deep-merges, so only the
+          // changed key is sent). Surface a failed save instead of letting the
+          // auto-tuned gain silently evaporate at the next reboot (F7).
+          fetch('/setup/calibration/api/parts/' + partId, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ config: { inputGainPercent: currentGain } })
+          }).then(function (r) { return r.json(); }).then(function (j) {
+            if (!(j && j.success) && resultText) {
+              resultText.textContent += '\nWARNING: gain could not be saved to the part config.';
             }
+          }).catch(function () {
+            if (resultText) resultText.textContent += '\nWARNING: gain could not be saved to the part config.';
           });
         } else {
           if (resultText) resultText.textContent = 'Round ' + round + ' (' + currentGain + '%): Heard "' + text + '" (' + matchPct + '% match). Increasing...';

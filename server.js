@@ -165,6 +165,45 @@ if (hostnameCharId !== null && hostnameCharId !== config.selectedCharacter) {
     attempt(6);
 })();
 
+// Restore the microphone input gain the operator calibrated. Source (capture)
+// volume is the same node-local PipeWire state as the sink volume above: a
+// reboot resets it, the calibration page persists the chosen gain to the mic
+// part's config.inputGainPercent, and this is the only place that turns the
+// persisted number back into live state (v11 audit F7 — the gain used to
+// "work until the next reboot, then revert").
+(async function applyPersistedMicGain() {
+    let mics = [];
+    try {
+        const charId = config.selectedCharacter;
+        if (charId == null || !/^\d+$/.test(String(charId))) return;
+        const partsRaw = await fs.readFile(path.join(__dirname, 'data', `character-${charId}`, 'parts.json'), 'utf8');
+        mics = JSON.parse(partsRaw).filter(p => p && p.type === 'microphone'
+            && p.enabled !== false
+            && p.config && typeof p.config.inputGainPercent === 'number'
+            && (p.config.deviceId || p.config.device));
+    } catch (_) { /* no parts file or no calibrated mic — nothing to apply */ }
+    if (!mics.length) return;
+    const attempt = (triesLeft) => {
+        Promise.all(mics.map(m => pipewireService.setSourceVolume(
+            String(m.config.deviceId || m.config.device),
+            Math.max(0, Math.min(200, m.config.inputGainPercent)) / 100
+        ).then(r => ({ m, r })).catch(err => ({ m, r: { success: false, error: err && err.message } }))))
+            .then(results => {
+                results.filter(x => x.r && x.r.success).forEach(x =>
+                    console.log(`🎙️ Mic input gain restored to ${x.m.config.inputGainPercent}% (${x.m.name})`));
+                const failed = results.filter(x => !(x.r && x.r.success));
+                if (!failed.length) return;
+                if (triesLeft > 0) {
+                    setTimeout(() => attempt(triesLeft - 1), 10000); // PipeWire boot race, same as above
+                } else {
+                    failed.forEach(x =>
+                        console.warn(`Could not restore mic input gain for ${x.m.name}: ${(x.r && x.r.error) || 'unknown'}`));
+                }
+            });
+    };
+    attempt(6);
+})();
+
 // Startup health check runs AFTER the hostname→character correction above, and
 // must stay after it: the servoChannels audit shells out to servo_cli.py, which
 // resolves the character from app-config.json on disk. When a stale

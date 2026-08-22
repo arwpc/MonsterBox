@@ -555,6 +555,28 @@ router.post('/api/parts', express.json(), async (req, res) => {
     }
 });
 
+// Get a single part — character-aware sibling of the list route above.
+//
+// The microphone Gain slider and the STT auto-tune panel persist through a
+// GET-then-PUT of this exact URL. The route never existed: the 404 came back
+// as HTML, r.json() threw, and the trailing empty .catch() swallowed it — so
+// the sliders "saved" nothing, silently, on every use (v11 audit F7).
+router.get('/api/parts/:id', async (req, res) => {
+    try {
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
+        const parts = await loadCharacterParts(characterId);
+        const part = parts.find(p => String(p.id) === String(req.params.id));
+        if (!part) {
+            return res.status(404).json({ success: false, error: 'Part not found' });
+        }
+        res.json({ success: true, part });
+    } catch (error) {
+        console.error('Error loading part:', error);
+        res.status(500).json({ success: false, error: 'Failed to load part' });
+    }
+});
+
 // Update existing part - character-aware version
 router.put('/api/parts/:id', express.json(), async (req, res) => {
     try {
