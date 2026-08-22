@@ -676,17 +676,21 @@ router.delete('/api/parts/:id', async (req, res) => {
     }
 });
 
-// Assign/update model for a part
+// Assign/update model for a part — character-aware like its siblings (it used
+// to run on the global loadParts/saveParts while every sibling resolved the
+// character, one of the F14 asymmetries).
 router.post('/api/parts/:id/model', express.json(), async (req, res) => {
     try {
         const { id } = req.params;
         const { modelId } = req.body || {};
         if (!modelId) return res.status(400).json({ success: false, error: 'modelId required' });
-        const parts = await loadParts();
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
+        const parts = await loadCharacterParts(characterId);
         const idx = parts.findIndex(p => String(p.id) === String(id));
         if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
         parts[idx] = { ...parts[idx], modelId: String(modelId), updated: new Date().toISOString() };
-        await saveParts(parts);
+        await saveCharacterParts(characterId, parts);
         res.json({ success: true, message: 'Model assigned', part: { id: String(parts[idx].id), modelId: parts[idx].modelId } });
     } catch (err) {
         console.error('Assign model failed:', err);
@@ -694,7 +698,14 @@ router.post('/api/parts/:id/model', express.json(), async (req, res) => {
     }
 });
 
-// Update part overrides (stored in part.config)
+// Update part overrides (stored in part.config).
+//
+// Contract (v11 audit F9): a key posted with value null is REMOVED from the
+// config, releasing that field back to its model default. A merge alone can
+// never delete a key, so a mistaken override — channel: 5 on the wrong part,
+// the exact key behind past wrong-channel incidents — was permanent: the
+// client skipped blanked fields and "Revert to Model" posted {}, a server-side
+// no-op that still reported success.
 router.post('/api/parts/:id/overrides', express.json(), async (req, res) => {
     try {
         const { id } = req.params;
@@ -702,13 +713,19 @@ router.post('/api/parts/:id/overrides', express.json(), async (req, res) => {
         if (!overrides || typeof overrides !== 'object') {
             return res.status(400).json({ success: false, error: 'overrides object required' });
         }
-        const parts = await loadParts();
+        const ctx = await resolveCharacter(req);
+        const characterId = ctx ? ctx.id : null;
+        const parts = await loadCharacterParts(characterId);
         const idx = parts.findIndex(p => String(p.id) === String(id));
         if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
-        const prev = parts[idx].config || {};
-        parts[idx].config = { ...prev, ...overrides };
+        const next = { ...(parts[idx].config || {}) };
+        for (const [key, value] of Object.entries(overrides)) {
+            if (value === null) delete next[key];
+            else next[key] = value;
+        }
+        parts[idx].config = next;
         parts[idx].updated = new Date().toISOString();
-        await saveParts(parts);
+        await saveCharacterParts(characterId, parts);
         res.json({ success: true, message: 'Overrides saved', config: parts[idx].config });
     } catch (err) {
         console.error('Save overrides failed:', err);

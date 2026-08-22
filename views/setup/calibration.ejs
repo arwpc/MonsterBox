@@ -1986,10 +1986,12 @@
     // ─── Override Fields Schema per type ──────────────────────────────────
     const OVERRIDE_SCHEMAS = {
       servo: [
-        { key: 'minPulse', label: 'Min Pulse (µs)', type: 'number' },
-        { key: 'maxPulse', label: 'Max Pulse (µs)', type: 'number' },
-        { key: 'neutralPulse', label: 'Neutral Pulse (µs)', type: 'number' },
-        { key: 'rotationRangeDeg', label: 'Rotation Range (°)', type: 'number' },
+        // No pulse or rotation-range fields here (v11 audit F10): the drive
+        // path sends channel+angle only and the µs mapping is hardcoded in
+        // python_wrappers/pca9685_control.py, so minPulse/maxPulse/
+        // neutralPulse/rotationRangeDeg overrides changed nothing while
+        // rendering as if they did. Offering them cost operators rig time
+        // chasing travel that software cannot alter.
         { key: 'servoType', label: 'Servo Type', type: 'select', options: ['standard', 'continuous', 'feedback'] },
         { key: 'controllerType', label: 'Controller', type: 'select', options: ['pca9685', 'gpio'] },
         { key: 'channel', label: 'PCA9685 Channel', type: 'number' },
@@ -2085,8 +2087,15 @@
       document.querySelectorAll('.override-field').forEach(el => {
         const key = el.dataset.key;
         let val = el.value;
-        if (val === '' || val === undefined) return; // skip empty = use model default
-        if (el.type === 'number' && val !== '') val = parseFloat(val);
+        if (val === '' || val === undefined) {
+          // Blank = REMOVE the override (server deletes null-valued keys).
+          // Blank fields used to be skipped, so a mistaken override — e.g.
+          // channel on the wrong part — could never be cleared from this
+          // panel while the UI implied it had been (v11 audit F9).
+          obj[key] = null;
+          return;
+        }
+        if (el.type === 'number') val = parseFloat(val);
         obj[key] = val;
       });
       return obj;
@@ -2153,16 +2162,11 @@
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: obj })
       });
       const j = await resp.json();
-      // Reflect overrides in Effective panel regardless of backend outcome to satisfy UX expectations
-      try {
-        const ef = document.getElementById('effectiveJson');
-        if (ef) {
-          let cur = {};
-          try { cur = JSON.parse(ef.textContent || '{}'); } catch (_) { cur = {}; }
-          const merged = Object.assign({}, cur, (obj || {}));
-          ef.textContent = JSON.stringify(merged, null, 2);
-        }
-      } catch (_) { /* ignore */ }
+      // The Effective panel is only ever updated from the server's answer
+      // (refreshEffective below). It used to be updated optimistically even
+      // when the save FAILED, so the displayed value was not the value in
+      // effect — on exactly the keys (channel) that have driven wrong-channel
+      // incidents before (v11 audit F9).
 
       if (j.success) {
         selected.config = j.config;
@@ -2186,12 +2190,27 @@
 
     document.getElementById('revertOverridesBtn').addEventListener('click', async () => {
       if (!selected) return;
-      overridesEditor.value = '{}';
+      // Release every schema field back to its model default by posting an
+      // explicit null per key — the server deletes null-valued keys. This
+      // used to post {}, which the server merged: a no-op that changed
+      // nothing on disk while the page behaved as if it had (v11 audit F9).
+      // Non-schema config keys (tracking tuning, device assignments) are
+      // untouched — reverting overrides must not strip other tabs' work.
+      const schema = OVERRIDE_SCHEMAS[selected.type] || [];
+      const clears = {};
+      schema.forEach(f => { clears[f.key] = null; });
       const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/overrides`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: {} })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: clears })
       });
       const j = await resp.json();
-      if (j.success) { selected.config = j.config; refreshEffective(selected.id); }
+      if (j.success) {
+        selected.config = j.config;
+        overridesEditor.value = JSON.stringify(j.config || {}, null, 2);
+        showToast('Overrides reverted to model defaults', 'success');
+        refreshEffective(selected.id);
+      } else {
+        showToast(j.error || 'Failed to revert overrides', 'error');
+      }
     });
 
     // Global variable to track live test intervals

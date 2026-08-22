@@ -96,55 +96,13 @@ export async function setPWM({ channel, pulseWidthUs, address, frequency }) {
     }
 }
 
-/**
- * Move servo to specific angle using PCA9685
- * @param {Object} params - Servo movement parameters
- * @param {number} params.channel - PCA9685 channel
- * @param {number} params.angleDeg - Target angle in degrees
- * @param {number} params.minPulse - Minimum pulse width in µs (default: 500)
- * @param {number} params.maxPulse - Maximum pulse width in µs (default: 2500)
- * @param {number} params.minAngle - Minimum angle in degrees (default: 0)
- * @param {number} params.maxAngle - Maximum angle in degrees (default: 180)
- * @param {number} params.address - I2C address (optional)
- * @returns {Promise<Object>} - Movement result
- */
-export async function moveServoToAngle({ 
-    channel, 
-    angleDeg, 
-    minPulse = 500, 
-    maxPulse = 2500, 
-    minAngle = 0, 
-    maxAngle = 180,
-    address 
-}) {
-    // Validate angle range
-    if (angleDeg < minAngle || angleDeg > maxAngle) {
-        throw new Error(`Angle ${angleDeg}° out of range (${minAngle}°-${maxAngle}°)`);
-    }
-    
-    // Convert angle to pulse width
-    const angleRange = maxAngle - minAngle;
-    const pulseRange = maxPulse - minPulse;
-    const normalizedAngle = (angleDeg - minAngle) / angleRange;
-    const pulseWidthUs = Math.round(minPulse + (normalizedAngle * pulseRange));
-    
-    try {
-        const result = await setPWM({ channel, pulseWidthUs, address });
-        
-        return {
-            ...result,
-            angleDeg: angleDeg,
-            pulseWidthUs: pulseWidthUs,
-            message: `Servo on channel ${channel} moved to ${angleDeg}°`
-        };
-    } catch (error) {
-        console.error('Error moving servo:', error);
-        return {
-            success: false,
-            error: error.message
-        };
-    }
-}
+// NOTE: there is deliberately no per-part pulse-mapping mover here. A
+// moveServoToAngle({minPulse, maxPulse, ...}) export used to live at this spot
+// with ZERO callers — it advertised per-part pulse mapping that no drive path
+// provides (the wire format is channel+angle; the µs window is hardcoded in
+// python_wrappers/pca9685_control.py). It was removed with the ghost pulse
+// override fields (v11 audit F10) so a future caller cannot re-open that trap
+// believing the mapping takes effect.
 
 /**
  * Control continuous servo rotation using PCA9685
@@ -284,7 +242,6 @@ export async function getChannelStatus({ channel, address } = {}) {
 export default {
     initializePCA9685,
     setPWM,
-    moveServoToAngle,
     controlContinuousServo,
     stopAllServos,
     getChannelStatus,
