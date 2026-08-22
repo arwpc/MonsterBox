@@ -10,6 +10,7 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { promisify } from 'util';
+import { writeJsonAtomic } from './atomicStore.js';
 
 const execAsync = promisify(exec);
 // execFile passes arguments as an argv array (no /bin/sh), so untrusted values
@@ -99,11 +100,41 @@ async function getPerformanceSnapshot() {
     };
 }
 
-async function getPerformanceHistory(period) {
+// The performance history lives in RAM and is flushed to the SD card once per
+// PERF_FLUSH_EVERY snapshots instead of on every snapshot. At the 5-minute
+// cadence the old rewrite-on-every-snapshot behavior rewrote the whole ~1.5 MB
+// file 288 times a day (~427 MB/day of SD wear — more than all logging
+// combined) and did it non-atomically, so a power cut mid-write truncated the
+// file. Now the file is written atomically about once an hour and on graceful
+// shutdown. A hard power cut can lose at most the last un-flushed hour of
+// samples — acceptable for monitoring data, and strictly better than losing
+// the entire file to a torn write.
+var perfHistoryCache = null;
+var perfUnflushedCount = 0;
+var PERF_FLUSH_EVERY = 12; // at the 5-minute cadence: one SD write per hour
+
+async function loadPerfHistory() {
+    if (perfHistoryCache) return perfHistoryCache;
     try {
         var raw = await fs.readFile(PERF_HISTORY_FILE, 'utf8');
-        var history = JSON.parse(raw);
-        if (!Array.isArray(history)) history = [];
+        var parsed = JSON.parse(raw);
+        perfHistoryCache = Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+        perfHistoryCache = [];
+    }
+    return perfHistoryCache;
+}
+
+async function flushPerformanceHistory() {
+    if (!perfHistoryCache || perfUnflushedCount === 0) return;
+    // Compact JSON (spaces: 0) — pretty-printing would double the file size.
+    await writeJsonAtomic(PERF_HISTORY_FILE, perfHistoryCache, { spaces: 0 });
+    perfUnflushedCount = 0;
+}
+
+async function getPerformanceHistory(period) {
+    try {
+        var history = await loadPerfHistory();
 
         var now = Date.now();
         var cutoff;
@@ -120,20 +151,18 @@ async function getPerformanceHistory(period) {
 async function recordPerformanceSnapshot() {
     try {
         var snapshot = await getPerformanceSnapshot();
-        var history = [];
-        try {
-            var raw = await fs.readFile(PERF_HISTORY_FILE, 'utf8');
-            history = JSON.parse(raw);
-            if (!Array.isArray(history)) history = [];
-        } catch (_) { /* file doesn't exist yet */ }
+        var history = await loadPerfHistory();
 
         history.push(snapshot);
 
         // Prune entries older than 1 month
         var cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
-        history = history.filter(function (entry) { return entry.timestamp >= cutoff; });
+        perfHistoryCache = history.filter(function (entry) { return entry.timestamp >= cutoff; });
 
-        await fs.writeFile(PERF_HISTORY_FILE, JSON.stringify(history), 'utf8');
+        perfUnflushedCount++;
+        if (perfUnflushedCount >= PERF_FLUSH_EVERY) {
+            await flushPerformanceHistory();
+        }
         return snapshot;
     } catch (err) {
         console.error('Failed to record performance snapshot:', err.message);
@@ -151,13 +180,19 @@ function startPerformanceCollector(intervalMs) {
     }, ms);
     // Record one immediately
     recordPerformanceSnapshot().catch(function () { });
-    console.log('📊 Performance collector started (interval: ' + (ms / 1000) + 's)');
+    console.log('📊 Performance collector started (interval: ' + (ms / 1000) + 's, SD flush every ' + PERF_FLUSH_EVERY + ' samples)');
 }
 
-function stopPerformanceCollector() {
+async function stopPerformanceCollector() {
     if (perfCollectorInterval) {
         clearInterval(perfCollectorInterval);
         perfCollectorInterval = null;
+        // Persist the un-flushed tail so a graceful shutdown loses nothing.
+        try {
+            await flushPerformanceHistory();
+        } catch (e) {
+            console.warn('Could not flush performance history on stop:', e.message);
+        }
         console.log('📊 Performance collector stopped');
     }
 }
@@ -457,7 +492,7 @@ async function saveTemplate(name, description) {
             created: new Date().toISOString(),
             settings: settings
         };
-        await fs.writeFile(path.join(TEMPLATES_DIR, id + '.json'), JSON.stringify(template, null, 2), 'utf8');
+        await writeJsonAtomic(path.join(TEMPLATES_DIR, id + '.json'), template);
         return { success: true, template: template };
     } catch (err) {
         return { success: false, error: err.message };
@@ -646,10 +681,22 @@ async function applyPerformancePreset(presetId) {
     return { success: true, preset: presetId, label: preset.label, results: results };
 }
 
+/**
+ * Test hook: drop the in-RAM history so the next call re-reads the file.
+ * Production code must never call this — the cache IS the live history between
+ * flushes, and dropping it discards un-flushed samples.
+ */
+function _resetPerfHistoryCacheForTests() {
+    perfHistoryCache = null;
+    perfUnflushedCount = 0;
+}
+
 export default {
     getPerformanceSnapshot,
     getPerformanceHistory,
     recordPerformanceSnapshot,
+    flushPerformanceHistory,
+    _resetPerfHistoryCacheForTests,
     startPerformanceCollector,
     stopPerformanceCollector,
     getAvailableServices,

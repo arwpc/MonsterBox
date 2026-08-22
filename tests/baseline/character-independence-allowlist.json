@@ -20,7 +20,7 @@
     {
       "pattern": "orlok-reference",
       "file": "services/characterService.js",
-      "line": 93,
+      "line": 94,
       "snippet": "{ id: 3, name: 'Orlok' },",
       "reason": "Character service may have default-fallback name references."
     },

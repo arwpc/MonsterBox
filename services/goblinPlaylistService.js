@@ -8,6 +8,7 @@ import path from 'path';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
 import goblinManagerService from './goblinManagerService.js';
+import { writeJsonAtomic } from './atomicStore.js';
 
 class GoblinPlaylistService {
     constructor() {
@@ -45,7 +46,7 @@ class GoblinPlaylistService {
 
     async savePlaylists() {
         try {
-            await fs.writeFile(this.playlistsFile, JSON.stringify(this.playlists, null, 2));
+            await writeJsonAtomic(this.playlistsFile, this.playlists);
             return true;
         } catch (error) {
             console.error('Error saving playlists:', error);

@@ -1000,7 +1000,8 @@ export async function executeScene(scene, characterId, emit, options) {
     // Log analytics (don't fail scene execution if analytics fails)
     if (!opts.dryRun && scene.id && characterId) {
       try {
-        await sceneAnalytics.logSceneExecution(scene.id, characterId, {
+        // One combined record = one SD write per execution, not two.
+        await sceneAnalytics.recordSceneExecution(scene.id, characterId, {
           startTime,
           endTime: new Date().toISOString(),
           duration: Date.now() - startTs,
@@ -1010,7 +1011,6 @@ export async function executeScene(scene, characterId, emit, options) {
           errors: stepErrors,
           performance: {}
         });
-        await sceneAnalytics.updateSceneUsageStats(scene.id, characterId);
       } catch (analyticsError) {
         console.error('Failed to log scene analytics:', analyticsError);
       }

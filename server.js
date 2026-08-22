@@ -1009,8 +1009,8 @@ async function gracefulShutdown(signal) {
     }
 
     try {
-        // Stop performance collector
-        systemService.stopPerformanceCollector();
+        // Stop performance collector (flushes the un-persisted history tail)
+        await systemService.stopPerformanceCollector();
     } catch (error) {
         console.warn('Performance collector cleanup error:', (error && error.message) || error);
     }

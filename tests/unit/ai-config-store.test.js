@@ -113,6 +113,28 @@ describe('AI config store — partial saves must not delete identity', function 
       else await fs.rm(sttPath, { force: true });
     }
   });
+
+  it('serializes concurrent partial saves so neither clobbers the other (UP-6)', async function () {
+    // Two panels saving at once used to race: both read the same base, and the
+    // second write dropped the first's keys — same clobber class the merge
+    // exists to prevent. mergeJson now holds a per-file lock across the whole
+    // read-modify-write.
+    await fs.writeFile(configPath, JSON.stringify({
+      model: 'eleven_v3', voice_id: 'VOICE_UNDER_TEST'
+    }, null, 2));
+
+    await Promise.all([
+      store.saveTTSConfig({ stability: 0.11 }),
+      store.saveTTSConfig({ similarity_boost: 0.22 }),
+      store.saveTTSConfig({ speed: 0.95 })
+    ]);
+
+    const after = JSON.parse(await fs.readFile(configPath, 'utf8'));
+    expect(after.voice_id).to.equal('VOICE_UNDER_TEST');
+    expect(after.stability, 'first concurrent save must survive').to.equal(0.11);
+    expect(after.similarity_boost, 'second concurrent save must survive').to.equal(0.22);
+    expect(after.speed, 'third concurrent save must survive').to.equal(0.95);
+  });
 });
 
 describe('AI config store — every character resolves to its own voice', function () {

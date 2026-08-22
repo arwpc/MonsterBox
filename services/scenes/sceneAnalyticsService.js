@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { writeJsonAtomic } from '../atomicStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,32 +19,51 @@ const serialize = (fn) => {
     return run;
 };
 
+const buildExecutionLog = (sceneId, characterId, executionData) => ({
+    id: generateLogId(),
+    sceneId: parseInt(sceneId),
+    characterId: parseInt(characterId),
+    timestamp: new Date().toISOString(),
+    startTime: executionData.startTime,
+    endTime: executionData.endTime,
+    duration: executionData.duration,
+    stepsExecuted: executionData.stepsExecuted,
+    totalSteps: executionData.totalSteps,
+    success: executionData.success,
+    errors: executionData.errors || [],
+    performance: executionData.performance || {}
+});
+
+const bumpUsageStats = (analytics, sceneId, characterId) => {
+    const sceneKey = `${characterId}_${sceneId}`;
+    if (!analytics.usage[sceneKey]) {
+        analytics.usage[sceneKey] = {
+            sceneId: parseInt(sceneId),
+            characterId: parseInt(characterId),
+            executionCount: 0,
+            lastExecuted: null,
+            totalDuration: 0,
+            averageDuration: 0
+        };
+    }
+    analytics.usage[sceneKey].executionCount++;
+    analytics.usage[sceneKey].lastExecuted = new Date().toISOString();
+    return analytics.usage[sceneKey];
+};
+
 // Scene execution analytics
 const logSceneExecution = async (sceneId, characterId, executionData) => serialize(async () => {
     try {
         const analytics = await getAnalytics();
-        const executionLog = {
-            id: generateLogId(),
-            sceneId: parseInt(sceneId),
-            characterId: parseInt(characterId),
-            timestamp: new Date().toISOString(),
-            startTime: executionData.startTime,
-            endTime: executionData.endTime,
-            duration: executionData.duration,
-            stepsExecuted: executionData.stepsExecuted,
-            totalSteps: executionData.totalSteps,
-            success: executionData.success,
-            errors: executionData.errors || [],
-            performance: executionData.performance || {}
-        };
-        
+        const executionLog = buildExecutionLog(sceneId, characterId, executionData);
+
         analytics.executions.push(executionLog);
-        
+
         // Keep only last 1000 execution logs
         if (analytics.executions.length > 1000) {
             analytics.executions = analytics.executions.slice(-1000);
         }
-        
+
         await saveAnalytics(analytics);
         console.log(`Scene execution logged: Scene ${sceneId}, Duration: ${executionData.duration}ms`);
 
@@ -54,30 +74,39 @@ const logSceneExecution = async (sceneId, characterId, executionData) => seriali
     }
 });
 
+// Combined per-execution record: the executor previously called
+// logSceneExecution and then updateSceneUsageStats, each a full
+// read-modify-write of this file — two whole-file SD writes per scene
+// execution. Recording both in one cycle halves that without changing
+// what is stored.
+const recordSceneExecution = async (sceneId, characterId, executionData) => serialize(async () => {
+    try {
+        const analytics = await getAnalytics();
+        const executionLog = buildExecutionLog(sceneId, characterId, executionData);
+        analytics.executions.push(executionLog);
+        if (analytics.executions.length > 1000) {
+            analytics.executions = analytics.executions.slice(-1000);
+        }
+        bumpUsageStats(analytics, sceneId, characterId);
+        await saveAnalytics(analytics);
+        console.log(`Scene execution logged: Scene ${sceneId}, Duration: ${executionData.duration}ms`);
+        return executionLog;
+    } catch (error) {
+        console.error('Error recording scene execution:', error);
+        throw error;
+    }
+});
+
 // Scene usage statistics
 const updateSceneUsageStats = async (sceneId, characterId) => serialize(async () => {
     try {
         const analytics = await getAnalytics();
-        const sceneKey = `${characterId}_${sceneId}`;
-        
-        if (!analytics.usage[sceneKey]) {
-            analytics.usage[sceneKey] = {
-                sceneId: parseInt(sceneId),
-                characterId: parseInt(characterId),
-                executionCount: 0,
-                lastExecuted: null,
-                totalDuration: 0,
-                averageDuration: 0
-            };
-        }
-        
-        analytics.usage[sceneKey].executionCount++;
-        analytics.usage[sceneKey].lastExecuted = new Date().toISOString();
-        
+        const stats = bumpUsageStats(analytics, sceneId, characterId);
+
         await saveAnalytics(analytics);
         // console.log(`Updated usage stats for scene ${sceneId}`);
 
-        return analytics.usage[sceneKey];
+        return stats;
     } catch (error) {
         console.error('Error updating scene usage stats:', error);
         throw error;
@@ -192,7 +221,10 @@ const getAnalytics = async () => {
 };
 
 const saveAnalytics = async (analytics) => {
-    await fs.writeFile(analyticsPath, JSON.stringify(analytics, null, 2));
+    // This file is rewritten on every scene execution; a power cut mid-write on
+    // the SD card must not leave torn JSON (getAnalytics would then throw on
+    // every later execution until someone deletes the file by hand).
+    await writeJsonAtomic(analyticsPath, analytics);
 };
 
 const generateLogId = () => {
@@ -243,6 +275,7 @@ const getCommonErrors = (executions) => {
 
 export {
     logSceneExecution,
+    recordSceneExecution,
     updateSceneUsageStats,
     getSceneAnalytics,
     getPopularScenes,
@@ -251,6 +284,7 @@ export {
 
 export default {
     logSceneExecution,
+    recordSceneExecution,
     updateSceneUsageStats,
     getSceneAnalytics,
     getPopularScenes,

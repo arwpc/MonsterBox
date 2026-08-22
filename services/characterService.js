@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from './configService.js';
+import { writeJsonAtomic } from './atomicStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -130,10 +131,11 @@ export async function loadCharacters() {
 
 export async function saveCharacters(characters) {
   const file = await resolveCharactersPath();
-  const json = JSON.stringify(characters, null, 2);
   // Ensure directory exists
   await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, json, 'utf8');
+  // characters.json is the fleet registry: torn JSON here (SD power loss
+  // mid-write) makes every character vanish on the next boot.
+  await writeJsonAtomic(file, characters);
 }
 
 export async function getCharacterById(id) {
@@ -178,7 +180,7 @@ export async function createCharacter(data) {
     audioConfig.created = new Date().toISOString();
     audioConfig.lastUpdated = new Date().toISOString();
     audioConfig.lastModified = new Date().toISOString();
-    await fs.writeFile(audioConfigPath, JSON.stringify(audioConfig, null, 2), 'utf8');
+    await writeJsonAtomic(audioConfigPath, audioConfig);
 
     // Update microphones.json with character ID
     const microphonesPath = path.join(characterDataDir, 'microphones.json');
@@ -190,7 +192,7 @@ export async function createCharacter(data) {
       microphones[0].name = `${newChar.name} Microphone`;
       microphones[0].created = new Date().toISOString();
       microphones[0].lastModified = new Date().toISOString();
-      await fs.writeFile(microphonesPath, JSON.stringify(microphones, null, 2), 'utf8');
+      await writeJsonAtomic(microphonesPath, microphones);
     }
   } catch (error) {
     console.warn('Warning: Could not update character-specific audio configuration:', error.message);

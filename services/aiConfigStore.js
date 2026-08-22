@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from './configService.js';
+import { writeJsonAtomic, withFileLock } from './atomicStore.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +34,11 @@ async function writeJson(file, data) {
   await ensureDir();
   const baseDir = await getAIConfigDir();
   const full = path.join(baseDir, file);
-  await fs.writeFile(full, JSON.stringify(data, null, 2), 'utf8');
+  // These files hold voice identity. A torn write on power loss would strip
+  // voice_id, and getTTSConfigForCharacter would then refuse to speak for that
+  // character until the file is repaired — atomic rename means the old config
+  // survives any interrupted save.
+  await writeJsonAtomic(full, data);
   return data;
 }
 
@@ -50,12 +55,19 @@ async function writeJson(file, data) {
  * A save must only ever change what the caller actually sent.
  */
 async function mergeJson(file, patch) {
-  const existing = (await readJson(file)) || {};
-  const merged = { ...existing };
-  for (const [k, v] of Object.entries(patch || {})) {
-    if (v !== undefined) merged[k] = v;
-  }
-  return writeJson(file, merged);
+  // The read-modify-write must be serialized per file: two concurrent partial
+  // saves (e.g. the settings page saving two panels at once) would otherwise
+  // each read the same base and the second write would drop the first's keys —
+  // the same clobber class the merge itself exists to prevent.
+  const baseDir = await getAIConfigDir();
+  return withFileLock(path.join(baseDir, file), async () => {
+    const existing = (await readJson(file)) || {};
+    const merged = { ...existing };
+    for (const [k, v] of Object.entries(patch || {})) {
+      if (v !== undefined) merged[k] = v;
+    }
+    return writeJson(file, merged);
+  });
 }
 
 export async function getSTTConfig() {

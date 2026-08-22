@@ -6,6 +6,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import goblinDeploymentService from './goblinDeploymentService.js';
+import { writeJsonAtomic } from './atomicStore.js';
 
 /**
  * fetch() with a real timeout. Native fetch silently ignores a `timeout`
@@ -79,7 +80,7 @@ class GoblinManagerService {
     async saveGoblins() {
         try {
             const goblinsArray = Array.from(this.goblins.values());
-            await fs.writeFile(this.goblinsFile, JSON.stringify(goblinsArray, null, 2));
+            await writeJsonAtomic(this.goblinsFile, goblinsArray);
             return true;
         } catch (error) {
             console.error('Error saving goblins:', error);

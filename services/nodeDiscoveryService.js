@@ -18,6 +18,7 @@ import { exec as _exec } from 'child_process';
 import { promisify } from 'util';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { writeJsonAtomic } from './atomicStore.js';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 
@@ -128,7 +129,7 @@ export class NodeDiscoveryService {
   async _persistManualPins() {
     try {
       await fs.mkdir(path.dirname(this.manualStore), { recursive: true });
-      await fs.writeFile(this.manualStore, JSON.stringify(Array.from(this.manual.values()), null, 2), 'utf8');
+      await writeJsonAtomic(this.manualStore, Array.from(this.manual.values()));
     } catch (err) {
       console.warn(`⚠️  Could not persist manual node pins: ${err.message}`);
     }
