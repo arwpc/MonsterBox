@@ -47,25 +47,12 @@ These are her standing hardware faults; the rebuild is the one time fixing them 
 1. **USB 5 V rail over-current** (OPERATOR-TODO §4) — her rail has tripped repeatedly.
    The 2026-08-20 plan: remove the USB hub, plug camera and XVF3800 straight into the Pi
    (or fit a POWERED hub). Whatever the wiring ends up as, note it in OPERATOR-TODO.
-2. **Neck ch8 + eye ch11 — treat as ONE shared V+/harness branch** (OPERATOR-TODO §E).
-   ch8 receives correct, changing PWM and does not move; her eye laser proves nothing
-   about V+ (it is a 3 V relay off the signal pin). With the harness exposed: meter V+
-   at the neck/eye branch **against the jaw's V+ pin** (the jaw is proven powered) —
-   pass = within ~0.2 V of it. If in doubt, move the known-good jaw servo PLUG to ch8,
-   then ch11, and drive each channel through the part that owns it (server running on
-   Mina; **neck = part 2, eye = part 3**):
-
-   ```bash
-   # jaw plug parked on ch8 → drive the NECK part:
-   curl -sk -X POST https://192.168.8.140:3000/api/calibration/2/nudge \
-     -H 'Content-Type: application/json' -d '{"dir":"max","scale":"med"}'
-   # jaw plug parked on ch11 → drive the EYE part:
-   curl -sk -X POST https://192.168.8.140:3000/api/calibration/3/nudge \
-     -H 'Content-Type: application/json' -d '{"dir":"max","scale":"med"}'
-   ```
-
-   Pass = the known-good servo physically turns on that channel (same method that
-   settled the Knight's channels). Put the jaw plug back on ch4 afterwards.
+2. **Neck/eye dead-channel question — CLOSED BY THE REWIRE (2026-08-22).** The operator
+   re-pinned the whole harness during the rebuild; the old "neck ch8 / eye ch11 shared
+   V+ branch" hypothesis (OPERATOR-TODO §E) described wiring that no longer exists. The
+   NEW map: **eye = ch3, neck = ch7, jaw = ch11, laser/LED = ch15** (part ids unchanged:
+   eye 3, neck 2, jaw 1, laser 10). Verification moves to acceptance: land the map
+   (§3a), then nudge each part and watch it move — no metering unless one still refuses.
 3. **Speaker `audioDeviceId` drift** — her node copy had drifted to `"default"` from the
    explicit XVF3800 sink (2026-08-21 finding). When restoring `parts.json`, set the
    speaker part's `audioDeviceId` back to the explicit sink name
@@ -93,6 +80,19 @@ These are her standing hardware faults; the rebuild is the one time fixing them 
    `amixer -c <card> sget 'PCM',1` showing `[100%]` / `[0.00dB]`.
 3. Restore the §1 backup to the same paths (repo data files, `/etc/monsterbox/env`,
    crontab). `chown -R remote:remote` the restored data files.
+
+   **3a. Land the 2026-08-22 channel rewire — the restored `parts.json` carries the OLD
+   channels** (jaw 4, neck 8, eye 11, laser 0), and driving those now moves nothing.
+   With the server up:
+   ```bash
+   B="https://192.168.8.140:3000/setup/calibration/api/parts"
+   curl -sk -X POST "$B/1/overrides"  -H 'Content-Type: application/json' -d '{"overrides":{"channel":11}}'  # Jaw
+   curl -sk -X POST "$B/2/overrides"  -H 'Content-Type: application/json' -d '{"overrides":{"channel":7}}'   # Neck
+   curl -sk -X POST "$B/3/overrides"  -H 'Content-Type: application/json' -d '{"overrides":{"channel":3}}'   # Eye
+   curl -sk -X POST "$B/10/overrides" -H 'Content-Type: application/json' -d '{"overrides":{"channel":15}}'  # Laser/LED
+   ```
+   Channels land immediately (the drive path reads parts.json fresh per command). Part
+   ids are unchanged, so the jaw's measured 22–91° window still applies to part 1.
 4. `sudo systemctl restart monsterbox.service`.
 
 ## 4. Post-rebuild acceptance — run BENCH-CHECKLIST with these Mina-specific additions

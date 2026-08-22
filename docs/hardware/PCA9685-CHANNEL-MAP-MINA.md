@@ -1,4 +1,26 @@
-# Mina — PCA9685 channel map, measured 2026-08-19
+# Mina — PCA9685 channel map
+
+## ⚡ CURRENT MAP — rewired by the operator during the rebuild, 2026-08-22
+
+The operator physically re-pinned Mina's harness. This supersedes everything below:
+
+| Part (id) | NEW channel | Old channel (pre-rebuild) |
+|---|---|---|
+| Eye (3) | **ch3** | 11 |
+| Neck (2) | **ch7** | 8 |
+| Jaw (1) | **ch11** | 4 |
+| Servo Channel Laser / LED (10) | **ch15** | 0 |
+
+Part ids are unchanged, so the jaw's measured 22–91° calibration window still
+belongs to part 1. Her node's `parts.json` (and any restored backup of it) still
+carries the OLD channels — landing the new map is a rebuild-acceptance step
+(`MINA-REBUILD.md` §3a: four override curls). The 2026-08-19 "only ch4 responds"
+verdict below described the OLD pin landing and is closed by the rewire; it is
+kept as the historical record and as the method for any future sweep.
+
+---
+
+## Historical: map as measured 2026-08-19 (pre-rebuild wiring)
 
 Answers the operator's live question: *"I think Mina has his servos on zero, four,
 nine, 11, but I may be wrong."*

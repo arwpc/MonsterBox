@@ -145,12 +145,14 @@ head has since rotated "all the way around and stressed the wires" more than onc
 bench. Before running BENCH-CHECKLIST K3, inspect the cable loom for chafe/stretch and
 re-slack it; after K3's window is set, confirm the loom stays relaxed at both window ends.
 
-## E. Mina's neck (ch8) and eye (ch11) — treat as ONE shared V+/harness branch
+## E. Mina's neck/eye channels — ✅ CLOSED BY THE REBUILD REWIRE (2026-08-22)
 
-Unchanged from 2026-08-19 and re-confirmed by register read 2026-08-21: ch8 receives correct,
-changing PWM (1445 µs) and does not move; ch11 receives nothing until commanded. Move the jaw servo
-`ch4 → ch8`, then `→ ch11`. Her eye laser proves nothing about V+ — it is a 3 V relay driven off the
-signal pin.
+The operator re-pinned Mina's harness during the rebuild; the old ch8/ch11 shared-branch
+hypothesis described wiring that no longer exists. **New map: eye = ch3, neck = ch7,
+jaw = ch11, laser/LED = ch15** (part ids unchanged). Remaining work is acceptance, not
+diagnosis: after restoring her backup, land the map (`MINA-REBUILD.md` §3a curls — the
+restored parts.json still says jaw 4 / neck 8 / eye 11 / laser 0), then nudge each part
+with eyes on it. Full history: `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`.
 
 ## F. Orlok's head window was restored from documentation — confirm it physically
 

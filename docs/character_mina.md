@@ -18,10 +18,10 @@ Mina is a coffin-themed vampire animatronic with a motorized door, jaw/neck/eye 
 
 | ID | Name | Type | Details |
 |----|------|------|---------|
-| 1 | Jaw | servo | PCA9685 channel 4, addr 0x40, model: Miuzei MG90S |
-| 2 | Neck | servo | PCA9685 channel 8, addr 0x40, model: Miuzei MG90S |
-| 3 | Eye | servo | PCA9685 channel 12, addr 0x40, model: Miuzei MG90S |
-| 10 | Servo Channel Laser | light | PCA9685 channel 0, addr 0x40 — eye laser toggle |
+| 1 | Jaw | servo | PCA9685 channel **11** (rewired 2026-08-22; was 4), addr 0x40, model: Miuzei MG90S |
+| 2 | Neck | servo | PCA9685 channel **7** (rewired 2026-08-22; was 8), addr 0x40, model: Miuzei MG90S |
+| 3 | Eye | servo | PCA9685 channel **3** (rewired 2026-08-22; was 11/12), addr 0x40, model: Miuzei MG90S |
+| 10 | Servo Channel Laser | light | PCA9685 channel **15** (rewired 2026-08-22; was 0), addr 0x40 — eye laser toggle |
 | 4 | Coffin Door | linear_actuator | MDD10A driver, GPIO 5 (dir) / 13 (pwm), 15s max, **invertDirection: true** |
 | 5 | Burning Rose | light | GPIO 16, model: generic 12V light |
 | 6 | Speaker | speaker | USB Audio Adapter (Unitek Y-247A), volume 85% |
@@ -35,12 +35,16 @@ Mina is a coffin-themed vampire animatronic with a motorized door, jaw/neck/eye 
 
 I2C at address `0x40` (64), 50 Hz:
 
+Rewired by the operator during the 2026-08-22 rebuild (full history:
+`docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`). The node's restored `parts.json`
+must be updated to this map at acceptance — `MINA-REBUILD.md` §3a has the curls.
+
 | Part | Channel | Type | Notes |
 |------|---------|------|-------|
-| Laser | 0 | Light (PWM toggle) | Eye laser on/off |
-| Jaw | 4 | Standard servo | Jaw animation sync |
-| Neck | 8 | Standard servo | Head tracking pan |
-| Eye | 12 | Standard servo | Eye movement |
+| Eye | 3 | Standard servo | Eye movement |
+| Neck | 7 | Standard servo | Head tracking pan |
+| Jaw | 11 | Standard servo | Jaw animation sync |
+| Laser | 15 | Light (PWM toggle) | Eye laser on/off |
 
 ## GPIO Assignments
 
@@ -53,8 +57,8 @@ I2C at address `0x40` (64), 50 Hz:
 
 ## Super Powers
 
-- **Jaw Animation** — Servo part 1 (ch4), angles 17°–153°, speech-synced with bandpass filter + AGC
-- **Head Tracking** — Pan servo part 2 (ch8), webcam part 7, 120° range, person detection mode
+- **Jaw Animation** — Servo part 1 (ch11 since the 2026-08-22 rewire), angles 17°–153°, speech-synced with bandpass filter + AGC
+- **Head Tracking** — Pan servo part 2 (ch7 since the 2026-08-22 rewire), webcam part 7, 120° range, person detection mode
 
 ## Scenes
 
