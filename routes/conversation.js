@@ -319,7 +319,11 @@ router.post('/api/head-tracking/target', express.json(), async (req, res) => {
         const clampedAngle = Math.max(center - range / 2, Math.min(center + range / 2, targetAngle));
 
         const { controlPart } = await import('../services/hardwareService/index.js');
-        controlPart(String(panServoId), 'moveToAngle', { angleDeg: clampedAngle }).catch(e => {
+        // Pin the hardware call to the character the config was read for — part
+        // ids are only unique within a character (same hwOpts pattern as
+        // controllers/motionTrackingController.js drive calls).
+        const hwOpts = characterId != null ? { characterId } : undefined;
+        controlPart(String(panServoId), 'moveToAngle', { angleDeg: clampedAngle }, hwOpts).catch(e => {
           console.warn('[ClickToTrack] Servo move failed:', e.message);
         });
         console.log(`🎯 Click-to-track: x=${parseFloat(x).toFixed(1)}% → servo ${panServoId} → ${clampedAngle.toFixed(1)}°`);

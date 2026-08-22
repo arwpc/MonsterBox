@@ -2052,7 +2052,11 @@
         // neutralPulse/rotationRangeDeg overrides changed nothing while
         // rendering as if they did. Offering them cost operators rig time
         // chasing travel that software cannot alter.
-        { key: 'servoType', label: 'Servo Type', type: 'select', options: ['standard', 'continuous', 'feedback'] },
+        // 'multi-turn' must stay listed: the knight's 900° head depends on
+        // servoType === 'multi-turn', and a select that cannot represent the
+        // value renders blank — which collectOverrideFields turns into null,
+        // the explicit DELETE signal, silently retyping the part on save.
+        { key: 'servoType', label: 'Servo Type', type: 'select', options: ['standard', 'continuous', 'multi-turn', 'feedback'] },
         { key: 'controllerType', label: 'Controller', type: 'select', options: ['pca9685', 'gpio'] },
         { key: 'channel', label: 'PCA9685 Channel', type: 'number' },
         { key: 'address', label: 'I2C Address', type: 'number' },
@@ -4252,6 +4256,7 @@
                   <select class="mb-select" id="addServoType" name="servoType" title="Select servo type">
                     <option value="standard">STANDARD - 0-180° positioning</option>
                     <option value="continuous">CONTINUOUS - continuous rotation</option>
+                    <option value="multi-turn">MULTI-TURN - geared multi-turn positioning (&gt;360°)</option>
                     <option value="feedback">FEEDBACK - position feedback servo</option>
                   </select>
                 </div>
@@ -5502,6 +5507,8 @@
                   <select class="mb-select" id="editServoType" title="Select servo type">
                     <option value="standard">Standard (0-180°)</option>
                     <option value="continuous">Continuous Rotation</option>
+                    <option value="multi-turn">Multi-Turn (geared, &gt;360°)</option>
+                    <option value="feedback">Feedback (positional)</option>
                   </select>
                 </div>
                 <div class="col-md-3">

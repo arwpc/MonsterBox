@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import { readConfig } from '../../services/configService.js';
 import { resolveCharacter } from '../../services/characterContext.js';
 import { getCalibrationStore, isPlaceholderProfile } from '../../server/calibration/store.js';
+import { validatePartConfigPatch } from '../../services/hardwareService/partConfigValidation.js';
 import actuatorPositionStore from '../../services/actuatorPositionStore.js';
 import { writeJsonAtomic } from '../../services/atomicStore.js';
 import webcamController from '../../controllers/webcamController.js';
@@ -617,6 +618,14 @@ router.put('/api/parts/:id', express.json(), async (req, res) => {
         const { id } = req.params;
         const updates = req.body;
 
+        // Same identity-key validation as the overrides route below: this PUT
+        // merges updates.config into parts.json verbatim, so a bad servoType,
+        // rotationRangeDeg, or channel would otherwise land unchecked.
+        const validation = validatePartConfigPatch(updates && updates.config);
+        if (!validation.ok) {
+            return res.status(400).json({ success: false, error: validation.error });
+        }
+
         const ctx = await resolveCharacter(req);
         const characterId = ctx ? ctx.id : null;
 
@@ -746,6 +755,15 @@ router.post('/api/parts/:id/overrides', express.json(), async (req, res) => {
         const { overrides } = req.body || {};
         if (!overrides || typeof overrides !== 'object') {
             return res.status(400).json({ success: false, error: 'overrides object required' });
+        }
+        // Identity keys (servoType / rotationRangeDeg / channel) are validated
+        // before anything lands in parts.json: a typo'd servoType silently
+        // retypes a multi-turn part, which changes how far the servo really
+        // travels per commanded degree. null stays the deliberate delete
+        // signal above and is always accepted.
+        const validation = validatePartConfigPatch(overrides);
+        if (!validation.ok) {
+            return res.status(400).json({ success: false, error: validation.error });
         }
         const ctx = await resolveCharacter(req);
         const characterId = ctx ? ctx.id : null;

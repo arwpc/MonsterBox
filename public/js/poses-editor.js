@@ -210,7 +210,16 @@
   function renderPartControls(part) {
     var html = '';
     if (part.type === 'servo') {
-      var min = 0, max = 180, val = 90;
+      // Multi-turn (geared) outputs travel in REAL degrees well past 180 —
+      // e.g. a 900° neck. /api/parts serves the raw parts.json entry, so the
+      // declared travel is already on the page in config.rotationRangeDeg.
+      var isMultiTurn = !!(part.config && (part.config.servoType === 'multi-turn' ||
+          (Number(part.config.rotationRangeDeg) > 0 && Number(part.config.rotationRangeDeg) !== 180)));
+      var fullRangeDeg = 180;
+      if (isMultiTurn && Number(part.config.rotationRangeDeg) > 0) {
+        fullRangeDeg = Number(part.config.rotationRangeDeg);
+      }
+      var min = 0, max = fullRangeDeg, val = Math.round(fullRangeDeg / 2);
       // Read calibration markers
       if (part.markers && part.markers.length) {
         part.markers.forEach(function(m) {
@@ -224,7 +233,14 @@
       var sSafety = safetyFor(part.id);
       if (sSafety) {
         if (sSafety.minAngle != null && sSafety.minAngle > min) min = sSafety.minAngle;
-        if (sSafety.maxAngle != null && sSafety.maxAngle < max) max = sSafety.maxAngle;
+        if (sSafety.maxAngle != null) {
+          // On a multi-turn output the calibrated window is in REAL degrees and
+          // can sit entirely above 180 (e.g. 300–600), so max must be able to
+          // RISE to the window as well as narrow inside it. Standard servos
+          // keep the old behavior exactly: the window only ever narrows.
+          if (isMultiTurn) max = sSafety.maxAngle;
+          else if (sSafety.maxAngle < max) max = sSafety.maxAngle;
+        }
         if (val < min || val > max) val = Math.round((min + max) / 2);
       }
       html += '<div class="d-flex align-items-center gap-2">';

@@ -49,11 +49,14 @@ const DEFAULT_CONFIG = {
   detectionMode: 'person'
 };
 
-// Resolve parts.json using selectedCharacter for correct character isolation
-async function getPartsFilePath() {
+// Resolve parts.json for correct character isolation. When the caller has a
+// pinned characterId it MUST pass it — the selectedCharacter fallback resolves
+// against this node's mutable selection, which can differ from the character
+// the caller's config was pinned to.
+async function getPartsFilePath(characterId) {
   const cfg = await readConfig();
   const appRoot = path.resolve(__dirname, '..');
-  const charId = cfg && cfg.selectedCharacter;
+  const charId = characterId != null ? characterId : (cfg && cfg.selectedCharacter);
   if (charId) {
     const charPath = path.resolve(appRoot, `data/character-${charId}`, 'parts.json');
     try {
@@ -610,19 +613,20 @@ async function loadHeadTrackingGuardrails(servoId, characterId) {
  * Detect servo type (standard vs continuous) from calibration profile or parts.json.
  * Returns 'continuous' or 'standard'.
  */
-async function detectServoType(servoId) {
+async function detectServoType(servoId, characterId) {
   try {
-    // Primary: calibration_profiles.json capability.kind
+    // Primary: calibration_profiles.json capability.kind — character-scoped,
+    // because part ids are only unique within a character.
     const calibrationStore = getCalibrationStore();
-    const profile = await calibrationStore.get(servoId);
+    const profile = await calibrationStore.get(servoId, characterId);
     if (profile && profile.capability && profile.capability.kind) {
       if (profile.capability.kind === 'continuous-servo') return 'continuous';
       if (profile.capability.kind === 'absolute-servo') return 'standard';
     }
 
-    // Fallback: parts.json config.servoType
+    // Fallback: parts.json config.servoType (the pinned character's file when known)
     try {
-      const partsPath = await getPartsFilePath();
+      const partsPath = await getPartsFilePath(characterId);
       const partsData = await fs.readFile(partsPath, 'utf8');
       const parts = JSON.parse(partsData);
       const part = parts.find(p => String(p.id) === String(servoId));
@@ -790,9 +794,13 @@ async function maybeDriveHead(webcamId, status) {
   state.lastTargetAt = now;
   state.scanDir = state.scanDir || 1;
 
-  // Detect servo type dynamically from calibration profile or parts.json
-  if (!state.servoType) {
-    state.servoType = await detectServoType(cfg.panServoId);
+  // Detect servo type dynamically from calibration profile or parts.json.
+  // The cached kind is keyed to the character it was detected for: state
+  // survives disable/re-enable, so a re-enable pinned to a different character
+  // must re-detect rather than reuse another character's servo kind.
+  if (!state.servoType || state.servoTypeCharacterId !== cfg.characterId) {
+    state.servoType = await detectServoType(cfg.panServoId, cfg.characterId);
+    state.servoTypeCharacterId = cfg.characterId;
     console.log('Detected servo type: ' + state.servoType + ' for servo ' + cfg.panServoId);
     headTrackingStates.set(webcamId, state);
   }

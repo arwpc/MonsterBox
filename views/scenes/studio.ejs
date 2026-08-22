@@ -965,8 +965,15 @@
     html += '<option value="true"' + (step.usePreset ? ' selected' : '') + '>Preset</option>';
     html += '</select></div>';
     if (!step.usePreset) {
+      // A multi-turn (geared) output declares its real travel in
+      // config.rotationRangeDeg (e.g. 900 for the knight's neck); the executor
+      // and hardware layer already take real degrees, so the input must not
+      // cap every servo at 180. Re-render on partId change keeps this current.
+      var selServo = servos.find(function(p) { return String(step.partId) === String(p.id); });
+      var servoMaxDeg = (selServo && selServo.config && Number(selServo.config.rotationRangeDeg) > 0)
+        ? Number(selServo.config.rotationRangeDeg) : 180;
       html += '<div class="col-6"><label class="mb-field-label">Angle</label>';
-      html += '<input type="number" title="Target angle in degrees" class="mb-input sf-input" data-idx="' + idx + '" data-field="angle" value="' + (step.angle != null ? step.angle : 90) + '" min="0" max="180"></div>';
+      html += '<input type="number" title="Target angle in degrees (0-' + servoMaxDeg + ')" class="mb-input sf-input" data-idx="' + idx + '" data-field="angle" value="' + (step.angle != null ? step.angle : 90) + '" min="0" max="' + servoMaxDeg + '"></div>';
       html += '<div class="col-6"><label class="mb-field-label">Duration (ms)</label>';
       html += '<input type="number" title="Movement duration in milliseconds" class="mb-input sf-input" data-idx="' + idx + '" data-field="duration" value="' + (step.duration || 1000) + '" min="0"></div>';
     } else {

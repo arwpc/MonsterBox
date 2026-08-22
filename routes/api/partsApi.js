@@ -18,6 +18,7 @@ const { controlPart, HARDWARE_CONTROLLERS } = hardwareService;
 import * as configService from '../../services/configService.js';
 import { resolveCharacter } from '../../services/characterContext.js';
 import { writeJsonAtomic } from '../../services/atomicStore.js';
+import { validatePartConfigPatch } from '../../services/hardwareService/partConfigValidation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -310,9 +311,9 @@ router.post('/:id/test', express.json(), async (req, res) => {
             // Enforce calibration bounds (non-fatal)
             try {
                 const store = getCalibrationStore();
-                const profile = await store.get(parseInt(part.id, 10));
+                const profile = await store.get(parseInt(part.id, 10), hw.characterId);
                 if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
-                    const posState = actuatorPositionStore.load(parseInt(part.id, 10));
+                    const posState = actuatorPositionStore.load(parseInt(part.id, 10), hw.characterId);
                     const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
                     const motion = profile.motion;
                     if (motion && motion.bins && motion.bins.length > 0) {
@@ -361,7 +362,7 @@ router.post('/:id/test', express.json(), async (req, res) => {
 
             // Persist updated position estimate
             if (projectedP != null) {
-                try { actuatorPositionStore.markStopped(parseInt(part.id, 10), projectedP); } catch (_) {}
+                try { actuatorPositionStore.markStopped(parseInt(part.id, 10), projectedP, hw.characterId); } catch (_) {}
             }
 
             return testResponse(res, result, part, `Actuator ${part.name} ${direction}`);
@@ -382,9 +383,9 @@ router.post('/:id/test', express.json(), async (req, res) => {
             // Enforce calibration bounds (non-fatal)
             try {
                 const store = getCalibrationStore();
-                const profile = await store.get(parseInt(part.id, 10));
+                const profile = await store.get(parseInt(part.id, 10), hw.characterId);
                 if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
-                    const posState = actuatorPositionStore.load(parseInt(part.id, 10));
+                    const posState = actuatorPositionStore.load(parseInt(part.id, 10), hw.characterId);
                     const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
                     const motion = profile.motion;
                     if (motion && motion.bins && motion.bins.length > 0) {
@@ -416,7 +417,7 @@ router.post('/:id/test', express.json(), async (req, res) => {
 
             // Persist updated position estimate
             if (projectedP != null) {
-                try { actuatorPositionStore.markStopped(parseInt(part.id, 10), projectedP); } catch (_) {}
+                try { actuatorPositionStore.markStopped(parseInt(part.id, 10), projectedP, hw.characterId); } catch (_) {}
             }
 
             return testResponse(res, result, part, `Motor ${part.name} ${direction}`);
@@ -443,6 +444,15 @@ router.post('/:id/test', express.json(), async (req, res) => {
  */
 router.put('/:id', express.json(), async (req, res) => {
     try {
+        // Identity keys in config (servoType / rotationRangeDeg / channel) are
+        // validated before the verbatim spread below lands them in parts.json —
+        // shared with the calibration-page writers so no route accepts a value
+        // another route would refuse.
+        const validation = validatePartConfigPatch(req.body && req.body.config);
+        if (!validation.ok) {
+            return res.status(400).json({ error: validation.error });
+        }
+
         const cfg = await configService.readConfig();
         const appRoot = path.resolve(__dirname, '../..');
         const charId = cfg && cfg.selectedCharacter;

@@ -336,7 +336,9 @@ describe('Head Animation API', () => {
         expect(servo).to.have.property('config');
         // servoType should be present in config
         if (servo.config && servo.config.servoType) {
-          expect(['standard', 'continuous', 'feedback']).to.include(servo.config.servoType);
+          // 'multi-turn' is a first-class type since e99841f (the knight's
+          // 900° head) — rejecting it failed this suite on Sir Dragomir.
+          expect(['standard', 'continuous', 'feedback', 'multi-turn']).to.include(servo.config.servoType);
         }
       });
     });

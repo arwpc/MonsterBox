@@ -664,9 +664,23 @@ const HARDWARE_CONTROLLERS = {
             try {
                 // Normalize servoType to robustly route commands
                 const st = String(servoType || '').toLowerCase();
-                const normType = (st === 'cont' || st === 'cr') ? 'continuous'
+                let normType = (st === 'cont' || st === 'cr') ? 'continuous'
                     : (st === 'positional' || st === 'position' || st === 'multi' || st === 'multi_turn' || st === 'multi-turn') ? 'feedback'
                         : (st || 'standard');
+                // servoType and rotationRangeDeg are two records of ONE physical
+                // fact, and they have drifted apart on a live node: an overrides
+                // save deleted 'multi-turn' while the profile machinery (which
+                // keys off rotationRangeDeg alone) still accepted 0-900 targets —
+                // a commanded 450 then rode the standard 0-180 path to real 900,
+                // maximum travel into the head cabling. The batch path already
+                // treats a declared range as multi-turn; this seam must agree.
+                // Continuous stays continuous: a range on a spinner is stale
+                // data, not a retype.
+                const declaredRange = Number(rotationRangeDeg);
+                if (normType !== 'continuous' && normType !== 'feedback'
+                    && Number.isFinite(declaredRange) && declaredRange > 0 && declaredRange !== 180) {
+                    normType = 'feedback';
+                }
 
                 if (controllerType === 'pca9685') {
                     let args, commandType;
@@ -2125,7 +2139,14 @@ export async function batchMoveServos(commands, options = {}) {
         const partType = (part.type || '').replace(/-/g, '_');
         if (!servoTypes.has(partType) && !servoTypes.has(part.type)) continue;
 
-        const partCfg = part.config || {};
+        // Effective config = model defaults under part config — the SAME merge
+        // order controlPart's single-part path uses (getModelDefaultsForPart at
+        // its moveToAngle dispatch). Reading part.config alone made the two
+        // seams disagree for a part whose servoType/rotationRangeDeg live only
+        // in its model entry: single commands took the multi-turn path while
+        // the batch slammed the same part through the 0-180 daemon mapping.
+        const modelDefaults = await getModelDefaultsForPart(part);
+        const partCfg = Object.assign({}, modelDefaults, part.config || {});
         const isPCA = partCfg.controllerType === 'pca9685' || part.usePCA9685 === true ||
                        part.controllerType === 'pca9685' || partCfg.address != null || partCfg.channel != null;
 
@@ -2160,7 +2181,14 @@ export async function batchMoveServos(commands, options = {}) {
         const svType = String(partCfg.servoType || '').toLowerCase();
         const isMultiTurn = ['multi-turn', 'multi_turn', 'multi', 'positional', 'position', 'feedback'].includes(svType)
             || Number(partCfg.rotationRangeDeg) > 0;
-        if (isPCA && isMultiTurn) {
+        // A continuous servo NEVER rides the batch path either: the daemon's
+        // set_angles writes a HELD positional pulse, which on a continuous
+        // servo is an indefinite spin at whatever speed that pulse maps to —
+        // there is no position to hold. The per-part moveToAngle controller
+        // converts the command to a bounded, timed rotation instead.
+        const isContinuous = ['continuous', 'cont', 'cr'].includes(svType)
+            || partType === 'continuous_servo';
+        if (isPCA && (isMultiTurn || isContinuous)) {
             fallbackCmds.push(Object.assign({}, cmd, { angleDeg: limited.params.angleDeg }));
             continue;
         }

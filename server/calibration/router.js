@@ -460,6 +460,12 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
     const guard = await checkSafety(req, partId, {});
     if (!guard.ok) return res.status(403).json(guard);
     const adapter = getOrCreateAdapter(partId, profile);
+    // Same character pin as jog-raw: the adapter's controlPart call must never
+    // resolve the part against the node's mutable selectedCharacter — part ids
+    // are only unique within a character, and the drive must agree with the
+    // character checkSafety just evaluated.
+    const nudgeCtx = await resolveCharacter(req);
+    const nudgeCharOpt = (nudgeCtx && nudgeCtx.id != null) ? { characterId: nudgeCtx.id } : {};
 
     // Support both old format (dir, scale) and new format (delta, speedPct, durationMs)
     if (req.body.dir && req.body.scale) {
@@ -469,7 +475,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         console.error(`Invalid nudge request for part ${partId}:`, { dir, scale, body: req.body });
         return res.status(400).json({ success: false, error: 'Invalid dir or scale' });
       }
-      await adapter.nudge(dir, scale, { calibrationOverride: true });
+      await adapter.nudge(dir, scale, { calibrationOverride: true, ...nudgeCharOpt });
 
       if (isAbsoluteServo(profile)) {
         // The adapter refuses the nudge outright when it has no starting angle,
@@ -509,7 +515,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         // silently re-clamped the "unclamped" nudge, and the operator was
         // stopped at the old ceiling while trying to measure past it.
         const newAngle = Math.max(0, Math.min(maxAngleOf(profile), currentAngle + delta));
-        const drivenAngle = await adapter.gotoAngle(newAngle, { speedPct, durationMs, calibrationOverride: true });
+        const drivenAngle = await adapter.gotoAngle(newAngle, { speedPct, durationMs, calibrationOverride: true, ...nudgeCharOpt });
         positionState.set(partId, { currentAngle: newAngle, currentP: angleToP(newAngle, maxAngleOf(profile)), lastUpdated: new Date().toISOString() });
         res.json({ success: true, message: `Nudged by ${delta}° — ${describeServoMove('now at', newAngle, drivenAngle, profile)}`, currentAngle: newAngle, drivenAngle, currentP: angleToP(newAngle, maxAngleOf(profile)) });
       } else {
@@ -537,7 +543,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
             error: `Estimated position is already at its ${rail} (${currentP.toFixed(2)}) — the tracker, not the hardware, is at the end of its range. Use raw jog to keep moving, or home to an endstop to reset the estimate.`
           });
         }
-        await adapter.gotoNormalized(newP, { speedPct, durationMs, calibrationOverride: true });
+        await adapter.gotoNormalized(newP, { speedPct, durationMs, calibrationOverride: true, ...nudgeCharOpt });
         persistPosition(partId, newP);
         const clamped = Math.abs(newP - rawP) > 1e-9;
         res.json({
@@ -633,9 +639,13 @@ router.post('/:partId/home', express.json(), async (req, res) => {
       return res.status(400).json({ success: false, error: 'Part type does not support homing' });
     }
     actuatorPositionStore.markMoving(partId, dir);
+    const homeCtx = await resolveCharacter(req);
     // Supervised calibration: homing must reach the physical endstop, so the
     // duration cap does not apply (quarantines and power groups still do).
-    await adapter.home(dir, speedPct, { calibrationOverride: true });
+    await adapter.home(dir, speedPct, {
+      calibrationOverride: true,
+      ...(homeCtx && homeCtx.id != null ? { characterId: homeCtx.id } : {})
+    });
     const currentP = adapter.currentP !== undefined ? adapter.currentP : (dir === 'retract' ? 0 : 1);
     // Homing gives us high-confidence position
     actuatorPositionStore.markHomed(partId, currentP);
@@ -703,6 +713,8 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
     const profile = await getOrAutoCreateProfile(partId);
     if (!profile) return res.status(404).json({ success: false, error: 'Profile not found' });
     const adapter = getOrCreateAdapter(partId, profile);
+    const gotoCtx = await resolveCharacter(req);
+    const gotoCharOpt = (gotoCtx && gotoCtx.id != null) ? { characterId: gotoCtx.id } : {};
 
     if (isAbsoluteServo(profile) && req.body.angle !== undefined) {
       const { angle, speedPct } = req.body;
@@ -730,7 +742,7 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       if (targetAngle !== angle) {
         console.warn(`🛡️  goto clamped part ${partId}: ${angle}° → ${targetAngle}° (calibrated bounds)`);
       }
-      const drivenAngle = await adapter.gotoAngle(targetAngle, { speedPct, calibrationOverride: calOverride });
+      const drivenAngle = await adapter.gotoAngle(targetAngle, { speedPct, calibrationOverride: calOverride, ...gotoCharOpt });
       positionState.set(partId, { currentAngle: targetAngle, currentP: angleToP(targetAngle, maxDeg), lastUpdated: new Date().toISOString() });
       res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle, profile), targetAngle, drivenAngle, targetP: angleToP(targetAngle, maxDeg), requestedAngle: angle, clamped: targetAngle !== angle });
     } else {
@@ -750,7 +762,7 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
         actuatorPositionStore.markMoving(partId, clampedP > (adapter.currentP || 0.5) ? 'extend' : 'retract');
       }
 
-      const drivenAngle = await adapter.gotoNormalized(clampedP, { speedPct });
+      const drivenAngle = await adapter.gotoNormalized(clampedP, { speedPct, ...gotoCharOpt });
 
       if (isAbsoluteServo(profile)) {
         const targetAngle = pToAngle(clampedP, maxAngleOf(profile));
