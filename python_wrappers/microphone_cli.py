@@ -118,6 +118,25 @@ def _record_wav(device_id, sample_rate, channels, duration):
     if pyaudio is None:
         _err("PyAudio not available")
         return 1
+
+    # Hard watchdog. A capture stream that never delivers frames leaves
+    # stream.read() blocked inside PortAudio's C call forever — that hung the
+    # operator's terminal at the bench, and hangs the app's child_process the
+    # same way. A SIGALRM Python handler cannot fire while the interpreter is
+    # stuck in C, but PortAudio releases the GIL during blocking I/O, so a
+    # daemon timer thread ALWAYS gets to run: it reports to stderr and
+    # force-exits. The caller judges on bytes (doctrine), so a killed capture
+    # reads as exactly what it is — zero frames.
+    import threading
+    watchdog_budget = float(duration) + 15.0
+    def _watchdog_fire():
+        _err("capture watchdog fired after %.0fs — the device delivered no frames; "
+             "killing the hung capture (this is the XVF3800 zero-frames trap, not a crash)" % watchdog_budget)
+        os._exit(3)
+    _watchdog = threading.Timer(watchdog_budget, _watchdog_fire)
+    _watchdog.daemon = True
+    _watchdog.start()
+
     pa = pyaudio.PyAudio()
     stream = None
     try:
@@ -186,6 +205,10 @@ def _record_wav(device_id, sample_rate, channels, duration):
             return 1
         return 0
     finally:
+        try:
+            _watchdog.cancel()
+        except Exception:
+            pass
         try:
             if stream is not None:
                 stream.stop_stream(); stream.close()
