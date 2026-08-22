@@ -154,6 +154,24 @@ _broken_cache = {'at': 0.0, 'channels': {}}
 BROKEN_REFRESH_S = 30.0
 
 
+class ChannelDenied(RuntimeError):
+    """A write was refused because the channel's part is declared physically broken.
+
+    Raised instead of silently dropping the write: every front end replies
+    through dispatch_line, and a caller that hears {'status':'ok'} for a pulse
+    that never left the chip reports phantom motion all the way up to the
+    operator — the bench saw "Moved to 60°" while zero pulses went out
+    (2026-08-22, the knight's magic box on a denied channel).
+    """
+
+    def __init__(self, channel, reason):
+        super().__init__(
+            f"REFUSED ch{channel} — {reason}. "
+            f"Clear it in config/physical-faults.json once repaired.")
+        self.channel = channel
+        self.denied = True
+
+
 def _broken_channels():
     """{channel: reason} for parts declared physically broken, cached briefly.
 
@@ -208,7 +226,10 @@ def _write(address, channel, off):
         if denied:
             _log(f"REFUSED ch{channel} off={off} — {denied}. "
                  f"Clear it in config/physical-faults.json once repaired.")
-            return
+            # The refusal must reach the caller, not just this log. Silently
+            # returning here made every front end answer {'status':'ok'} for a
+            # write that never happened.
+            raise ChannelDenied(channel, denied)
 
     try:
         _ensure(address)
@@ -306,8 +327,11 @@ def handle_command(cmd):
                     _write(address, channel, angle_to_off(angle))
                     results.append({'channel': channel, 'angle': angle, 'status': 'success'})
                 except Exception as exc:
-                    results.append({'channel': channel, 'angle': angle,
-                                    'status': 'error', 'error': str(exc)})
+                    entry = {'channel': channel, 'angle': angle,
+                             'status': 'error', 'error': str(exc)}
+                    if getattr(exc, 'denied', False):
+                        entry['denied'] = True
+                    results.append(entry)
         return {'status': 'ok', 'results': results}
 
     if action == 'set_pulse':
@@ -366,6 +390,8 @@ def dispatch_line(line):
     except Exception as exc:
         _stats['errors'] += 1
         reply = {'status': 'error', 'message': str(exc)}
+        if getattr(exc, 'denied', False):
+            reply['denied'] = True
 
     if 'id' in cmd:
         reply['id'] = cmd['id']

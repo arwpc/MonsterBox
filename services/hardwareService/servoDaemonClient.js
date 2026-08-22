@@ -219,7 +219,11 @@ async function moveMany(moves, options = {}) {
 
     const reply = await request(payload, options.timeoutMs || REQUEST_TIMEOUT_MS);
     if (!reply || reply.status !== 'ok') {
-        throw new Error((reply && reply.message) || 'servo daemon rejected batch');
+        const err = new Error((reply && reply.message) || 'servo daemon rejected batch');
+        // A physical-faults denial is a deliberate refusal, not an availability
+        // problem — callers must report it, never fall back and retry around it.
+        if (reply && reply.denied) err.denied = true;
+        throw err;
     }
     return reply.results || [];
 }
@@ -231,7 +235,9 @@ async function moveOne(channel, angle, options = {}) {
     const results = await moveMany([{ channel, angle, min: options.min, max: options.max }], options);
     const result = results[0];
     if (result && result.status === 'error') {
-        throw new Error(result.error || `servo daemon failed on channel ${channel}`);
+        const err = new Error(result.error || `servo daemon failed on channel ${channel}`);
+        if (result.denied) err.denied = true;
+        throw err;
     }
     return result;
 }
@@ -247,7 +253,9 @@ async function pulseOne(channel, pulseUs, options = {}) {
     if (options.address != null) payload.address = Number(options.address);
     const reply = await request(payload, options.timeoutMs || REQUEST_TIMEOUT_MS);
     if (!reply || reply.status !== 'ok') {
-        throw new Error((reply && reply.message) || `servo daemon rejected pulse on channel ${channel}`);
+        const err = new Error((reply && reply.message) || `servo daemon rejected pulse on channel ${channel}`);
+        if (reply && reply.denied) err.denied = true;
+        throw err;
     }
     return reply;
 }

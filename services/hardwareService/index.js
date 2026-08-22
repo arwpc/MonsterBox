@@ -733,6 +733,23 @@ const HARDWARE_CONTROLLERS = {
                                 message: `PCA9685 ch${channel} ${commandType} to ${angleDeg}°`
                             };
                         } catch (daemonErr) {
+                            // A physical-faults denial is deliberate: the daemon vetoed the
+                            // channel at the chip boundary. Falling back to a one-shot wrapper
+                            // would just be refused again (slower), and returning success here
+                            // told the operator "Moved to 60°" while zero pulses went out.
+                            if (daemonErr.denied) {
+                                return {
+                                    success: false,
+                                    partType: 'servo',
+                                    channel,
+                                    angleDeg,
+                                    servoType: normType,
+                                    controllerType: 'pca9685',
+                                    deniedByPhysicalFaults: true,
+                                    error: daemonErr.message,
+                                    message: daemonErr.message
+                                };
+                            }
                             console.warn(`⚙️  Servo daemon unavailable for ch${channel} (${daemonErr.message}) — falling back to servo_cli.py`);
                         }
                     }
@@ -764,6 +781,19 @@ const HARDWARE_CONTROLLERS = {
                                     message: `PCA9685 ch${channel} multi-turn to ${angleDeg}° (${pulseUs}µs via daemon)`
                                 };
                             } catch (daemonErr) {
+                                if (daemonErr.denied) {
+                                    return {
+                                        success: false,
+                                        partType: 'servo',
+                                        channel,
+                                        angleDeg,
+                                        servoType: normType,
+                                        controllerType: 'pca9685',
+                                        deniedByPhysicalFaults: true,
+                                        error: daemonErr.message,
+                                        message: daemonErr.message
+                                    };
+                                }
                                 console.warn(`⚙️  Servo daemon unavailable for multi-turn ch${channel} (${daemonErr.message}) — falling back to servo_cli.py`);
                             }
                         }
@@ -2246,12 +2276,23 @@ export async function batchMoveServos(commands, options = {}) {
             const out = await runInPowerGroup(characterId, p.safety, async () => {
                 try {
                     await servoDaemonClient.ensureDaemon();
-                    await servoDaemonClient.moveMany(
+                    const dres = await servoDaemonClient.moveMany(
                         [{ channel: p.channel, angle: p.angle, min: p.min, max: p.max }],
                         { address: p.address }
                     );
+                    // The daemon reports a physical-faults denial per-move inside an
+                    // ok-status batch. Treating that as 'daemon:ok' reported success
+                    // for a pulse that never left the chip.
+                    const r0 = dres && dres[0];
+                    if (r0 && r0.status === 'error') {
+                        const moveErr = new Error(r0.error || `servo daemon failed on channel ${p.channel}`);
+                        if (r0.denied) moveErr.denied = true;
+                        throw moveErr;
+                    }
                     return 'daemon:ok';
                 } catch (daemonErr) {
+                    // Deliberate refusal: report it, never spawn a fallback around it.
+                    if (daemonErr.denied) throw daemonErr;
                     console.warn(`⚙️  Servo daemon unavailable for part ${p.partId} (${daemonErr.message}) — falling back to servo_cli.py`);
                     return runWrapper('servo_cli.py', ['batch_pca', `${p.channel}:${p.angle}`]);
                 }
