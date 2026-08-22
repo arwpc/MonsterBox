@@ -306,8 +306,17 @@ try {
 } catch (_) { /* ignore */ }
 
 // Middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+//
+// Body limits (UP-10): 50mb meant a single LAN POST could buffer and parse
+// 50 MB of JSON on the event loop of a 4-core Pi mid-show. The largest
+// LEGITIMATE JSON body in the app is a base64 TTS clip posted to
+// /api/elevenlabs/play-audio (a few MB even for a long monologue); everything
+// else is KB-scale config/scene/pose data. Real file uploads (audio 50MB,
+// video 500MB, images 10MB) go through multer's multipart limits and are
+// unaffected by these caps. 10mb keeps generous audio headroom; forms are
+// tiny.
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 // Serve character/data assets for images and media
 app.use('/data', express.static(path.join(__dirname, 'data')));
@@ -722,7 +731,15 @@ if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
         try {
             // Record server error for structured monitoring
             recordServerError(err, req);
-            // Respect explicit statuses < 500 or JSON bodies that already indicate success/failure
+            // Respect explicit statuses < 500: a deliberate client error
+            // (oversized body: 413, malformed JSON: 400) is the CONTRACT under
+            // test, not an "unexpected 5xx" to downgrade. This comment always
+            // claimed that; the code never did it, so the body-limit 413 came
+            // back as a 200 and was untestable on the test listener.
+            const clientStatus = Number(err && (err.status || err.statusCode));
+            if (Number.isFinite(clientStatus) && clientStatus >= 400 && clientStatus < 500) {
+                return res.status(clientStatus).json({ success: false, error: (err && err.message) || 'Bad request' });
+            }
             const wantsJSON = (req.get('accept') || '').includes('application/json') || req.path.startsWith('/api/') || req.path.includes('/scenes/api');
             const payload = wantsJSON
                 ? { success: false, testMode: true, downgraded: true, error: (err && err.message) || 'Internal error (test mode)' }
@@ -742,6 +759,13 @@ app.use((err, req, res, next) => {
     console.error('Error:', err);
     // Record for structured monitoring
     try { recordServerError(err, req); } catch { }
+    // A deliberate client error carries its own status (body-parser sets 413
+    // for an oversized body, 400 for malformed JSON). Reporting those as 500
+    // told the caller the SERVER was broken when the request was.
+    const clientStatus = Number(err && (err.status || err.statusCode));
+    if (Number.isFinite(clientStatus) && clientStatus >= 400 && clientStatus < 500) {
+        return res.status(clientStatus).json({ success: false, error: err.message || 'Bad request' });
+    }
     res.status(500).json({
         error: 'Internal server error',
         message: err.message

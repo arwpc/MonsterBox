@@ -119,6 +119,11 @@ class GoblinManagerService {
                 lockedAt: null,
                 location: metadata.location || '',
                 description: metadata.description || '',
+                // Operator intent, not state: survives re-registration so a
+                // storage-shelf goblin that briefly comes up for maintenance
+                // doesn't silently rejoin the reconnect loop when it goes
+                // back in the box (UP-12).
+                ...(this.goblins.get(goblinId)?.expectedOffline === true ? { expectedOffline: true } : {}),
                 settings: {
                     audioEnabled: true,
                     videoEnabled: true,
@@ -495,9 +500,24 @@ class GoblinManagerService {
         }
     }
 
+    /**
+     * A goblin the operator has marked expected-offline (a unit on the storage
+     * shelf) must not be dialed while it is down: the reconnect loop otherwise
+     * retries it every 30s FOREVER — pure network and log churn against a box
+     * that is unplugged on purpose (v11 audit UP-12). The flag never blocks an
+     * ONLINE goblin: if the unit comes up and heartbeats in, it works normally.
+     * Settable without a new route via the existing settings API:
+     *   PUT /goblin-management/api/goblin/:id/settings { "expectedOffline": true }
+     * (honored from goblin.settings), or top-level on the registry record.
+     */
+    isExpectedOffline(goblin) {
+        return !!(goblin && (goblin.expectedOffline === true
+            || (goblin.settings && goblin.settings.expectedOffline === true)));
+    }
+
     async attemptReconnectAll() {
         const offlineGoblins = Array.from(this.goblins.values())
-            .filter(g => g.status === 'offline' && g.endpoint);
+            .filter(g => g.status === 'offline' && g.endpoint && !this.isExpectedOffline(g));
 
         if (offlineGoblins.length === 0) {
             return { success: true, attempted: 0, reconnected: 0 };
@@ -544,7 +564,7 @@ class GoblinManagerService {
 
                 // Mark as offline if no heartbeat for 2 minutes
                 if (goblin.status === 'online' && timeSinceLastSeen > 2 * 60 * 1000) {
-                    console.log(`💀 Goblin went offline: ${goblinId}`);
+                    console.log(`💀 Goblin went offline: ${goblinId}${this.isExpectedOffline(goblin) ? ' (expected — reconnect loop will not dial it)' : ''}`);
                     goblin.status = 'offline';
                     changed = true;
                 }
@@ -580,6 +600,7 @@ class GoblinManagerService {
             total: goblins.length,
             online: goblins.filter(g => g.status === 'online').length,
             offline: goblins.filter(g => g.status === 'offline').length,
+            expectedOffline: goblins.filter(g => this.isExpectedOffline(g)).length,
             locked: goblins.filter(g => g.lockedBy).length,
             available: goblins.filter(g => g.status === 'online' && !g.lockedBy).length,
             capabilities: {
