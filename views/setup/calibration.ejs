@@ -2914,6 +2914,7 @@
             '<div class="mb-input-group cal-angle-group"><input id="angNum" type="number" title="Enter servo angle in degrees" class="mb-input" value="' + svMid + '" step="1" min="0" max="' + svMaxDeg + '">' +
             '<span class="mb-input-addon">\u00B0</span></div>' +
             '<button id="goAng" class="mb-btn mb-btn-primary mb-btn-lg" title="Move servo to the set angle"><i class="bi bi-cursor"></i> Move</button>' +
+            '<button id="relCh" class="mb-btn mb-btn-ghost" title="Stop sending pulses \u2014 the servo goes limp (gearbox holds by friction). Use BEFORE plugging or unplugging a servo lead: a live channel slams a newly plugged servo to its stale pulse."><i class="bi bi-plug"></i> Release</button>' +
             (svMaxDeg !== 180 ? '<span class="mb-chip" title="This part\'s real rotation range">multi-turn: 0\u2013' + svMaxDeg + '\u00B0 REAL travel</span>' : '') +
             '</div>' +
             '<div id="ctrlStatus" class="mt-2 small text-info"></div>';
@@ -2968,6 +2969,27 @@
               console.log(`Error moving servo ${part.name}:`, e);
             }
 
+          });
+          el.querySelector('#relCh').addEventListener('click', async function() {
+            var st = document.getElementById('ctrlStatus');
+            if (st) st.textContent = 'Releasing ' + part.name + '…';
+            try {
+              var response = await fetch('/api/calibration/' + encodeURIComponent(part.id) + '/release', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+              });
+              var data = await response.json();
+              if (response.ok && data.success) {
+                if (st) st.textContent = data.message || (part.name + ' released — de-energized');
+                showToast(data.message || 'Channel released', 'success');
+              } else {
+                if (st) st.textContent = 'Release failed: ' + (data.error || 'unknown');
+                showToast('Release failed: ' + (data.error || 'unknown'), 'error');
+              }
+              setTimeout(function() { if (st) st.textContent = ''; }, 6000);
+            } catch (e) {
+              if (st) st.textContent = 'Release error';
+              console.log('Error releasing ' + part.name + ':', e);
+            }
           });
         }
       } else if (part.type === 'linear_actuator') {

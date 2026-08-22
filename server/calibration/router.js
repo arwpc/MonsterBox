@@ -7,6 +7,8 @@ import { getCalibrationStore, isDegenerateWindow, calibratedBounds, isCalibrated
 import { loadParts } from '../../controllers/partsController.js';
 import actuatorPositionStore from '../../services/actuatorPositionStore.js';
 import hardwareService from '../../services/hardwareService/index.js';
+import servoDaemonClient from '../../services/hardwareService/servoDaemonClient.js';
+import { runWrapper } from '../../services/hardwareService/exec.js';
 import { getPartSafety, applySafetyLimits } from '../../services/hardwareService/safetyLimits.js';
 import { resolveCharacter } from '../../services/characterContext.js';
 
@@ -732,6 +734,54 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
     }
     console.error(err);
     res.status(500).json({ success: false, error: 'Failed to move', message: String(err) });
+  }
+});
+
+// De-energize a part's PCA9685 channel: stop sending pulses so the servo goes
+// limp (a gearbox holds by friction). This is the operator's plug/unplug tool:
+// a channel HOLDS its last commanded pulse, so plugging a servo lead into a
+// live channel slams the servo to wherever that stale pulse points — measured
+// on the knight's head, which snapped to an unsafe spot the instant it was
+// reconnected and then sat there under power. Release first, plug second.
+// The position ESTIMATE is kept (nothing moves an unpowered gearbox); hold
+// torque is gone until the next move command re-energizes the channel.
+router.post('/:partId/release', express.json(), async (req, res) => {
+  try {
+    const partId = parseInt(req.params.partId, 10);
+    const parts = await loadParts();
+    const part = parts.find(p => String(p.id) === String(partId));
+    if (!part) return res.status(404).json({ success: false, error: 'Part not found' });
+    const cfg = part.config || {};
+    const chRaw = cfg.channel != null ? cfg.channel : part.channel;
+    const channel = Number(chRaw);
+    if (chRaw == null || !Number.isFinite(channel)) {
+      return res.status(400).json({ success: false, error: 'Part has no PCA9685 channel to release' });
+    }
+    const addrRaw = cfg.address != null ? cfg.address : 64;
+    const address = (typeof addrRaw === 'string' && String(addrRaw).startsWith('0x'))
+      ? parseInt(addrRaw, 16) : Number(addrRaw);
+
+    let via = 'daemon';
+    try {
+      await servoDaemonClient.ensureDaemon();
+      await servoDaemonClient.release(channel, { address });
+    } catch (daemonErr) {
+      via = 'servo_cli';
+      const out = await runWrapper('servo_cli.py', ['release', String(channel), String(address)]);
+      let ok = false;
+      try { ok = JSON.parse(out).status === 'success'; } catch (_) { ok = false; }
+      if (!ok) {
+        return res.status(500).json({ success: false, error: `Release failed on channel ${channel}: ${String(out).slice(0, 200)}` });
+      }
+    }
+    console.log(`🔌 Released PCA9685 ch${channel} (${part.name}) via ${via} — de-energized, safe to plug/unplug`);
+    res.json({
+      success: true, released: true, channel, via,
+      message: `Channel ${channel} released — ${part.name} is de-energized (holds by friction only). Safe to plug/unplug; the next move re-energizes it.`
+    });
+  } catch (err) {
+    console.error('Release failed:', err);
+    res.status(500).json({ success: false, error: 'Failed to release channel', message: String(err) });
   }
 });
 

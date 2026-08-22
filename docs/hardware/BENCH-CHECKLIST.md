@@ -144,6 +144,12 @@ ssh remote@$IP 'wpctl get-volume @DEFAULT_AUDIO_SINK@'
      physically sits, so the first goto may travel up to the full distance to its target.
      Slack the head cabling by hand, pick a target near where the head currently points
      (mid-travel ≈ 450 if it looks centered), send the goto, hand on the power switch.
+     **Plug/unplug rule (learned the hard way at this bench): a channel HOLDS its last
+     pulse, so plugging a servo lead into a live channel slams the servo to that stale
+     position and holds it there under power. Press the Release button on the part (or
+     `POST /api/calibration/<partId>/release`) BEFORE connecting or disconnecting any
+     servo lead — released, the servo goes limp and plugs in safely; the next move
+     re-energizes it.**
   5. From there it is ordinary calibration IN REAL DEGREES: nudge steps scale with
      the range so each press clears the servo's deadband — on the 900° head
      **fine = 10° real, med = 25°, coarse = 75°** (the same pulse step a standard

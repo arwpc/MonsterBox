@@ -47,6 +47,11 @@ own initiative, and no automated suite should command them.
   unique within a character; omitting it has driven the wrong PCA9685 channel.
 - `nudge` now seeds from the position store and **refuses when position is unknown** — that
   refusal replaced a 43° jump into an endstop. Don't weaken it.
+- **A PCA9685 channel holds its last pulse: plugging a servo lead into a live channel slams
+  the servo to that stale position and holds it powered** (the knight's head snapped to an
+  unsafe spot the instant it was reconnected, 2026-08-22). Release the channel first —
+  `POST /api/calibration/<partId>/release` or the calibration page's Release button — then
+  plug/unplug; the next move re-energizes it.
 
 ## Proving a part is alive
 
