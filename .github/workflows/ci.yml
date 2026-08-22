@@ -25,11 +25,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-      - name: Run pre-deploy gate
-        run: npm run gate
-      - name: Run unit tests
-        run: npm run test:unit
-      - name: Start server for system tests
+      # The server must be up BEFORE the gate: the unit suite the gate runs
+      # (test:smoke) contains server-hitting tests that assume the node's
+      # always-on :3100 listener. Without it every one of them waits out its
+      # own timeout and the gate dies at its wall-clock cap — CI was red on
+      # every push for exactly this, while the same gate passed on the Pi.
+      - name: Start server (gate + unit + system tests run against it)
         run: |
           npm start &
           echo $! > /tmp/monsterbox-server.pid
@@ -41,6 +42,12 @@ jobs:
             fi
             sleep 1
           done
+      - name: Run pre-deploy gate
+        # Runner wall-clock is not Pi wall-clock: the scale loosens only the
+        # step timeouts, never what the gate checks.
+        run: MB_GATE_TIMEOUT_SCALE=10 npm run gate
+      - name: Run unit tests
+        run: npm run test:unit
       - name: Run system tests
         run: npm run test:system
       - name: Stop server

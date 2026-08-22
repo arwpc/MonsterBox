@@ -30,6 +30,15 @@ if (process.env.MB_SKIP_GATE === '1') {
   process.exit(0);
 }
 
+// Per-step timeouts are tuned for the RPi4B, where the always-on :3100
+// listener answers the server-hitting unit tests instantly. Other
+// environments (CI runners, cloud containers) are slower or start the server
+// separately, so their wall-clock differs by an order of magnitude — the gate
+// then failed at exactly 60s while the tests themselves were fine.
+// MB_GATE_TIMEOUT_SCALE multiplies every step's cap without loosening what
+// the gate checks (a failing test still fails; only the clock scales).
+const TIMEOUT_SCALE = Math.max(1, Number(process.env.MB_GATE_TIMEOUT_SCALE) || 1);
+
 const STEPS = [
   { name: 'validate:schemas',     cmd: 'npm', args: ['run', '--silent', 'validate:schemas'], timeoutMs: 10_000 },
   { name: 'audit:resolver',       cmd: 'npm', args: ['run', '--silent', 'audit:resolver'],   timeoutMs: 10_000 },
@@ -37,7 +46,7 @@ const STEPS = [
   { name: 'audit:design-system',  cmd: 'npm', args: ['run', '--silent', 'audit:design-system'], timeoutMs: 20_000 },
   { name: 'test:smoke',           cmd: 'npm', args: ['run', '--silent', 'test:smoke'],       timeoutMs: 60_000 },
   { name: 'test:pact',            cmd: 'npm', args: ['run', '--silent', 'test:pact'],        timeoutMs: 30_000 },
-];
+].map(step => ({ ...step, timeoutMs: Math.round(step.timeoutMs * TIMEOUT_SCALE) }));
 
 function hasScript(name) {
   try {
