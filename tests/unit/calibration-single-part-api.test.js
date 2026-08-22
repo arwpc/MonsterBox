@@ -34,12 +34,23 @@ describe('Calibration single-part API (F7 mic-sliders-dead-route)', function () 
   let anyPartId = null;
 
   before(async function () {
-    // The route resolves the selected character; capture that character's
-    // parts.json so the PUT round-trip below leaves the node untouched.
+    // The route resolves the character from the RUNNING server's state, which
+    // can differ from the on-disk config (startup hostname correction,
+    // test-mode normalization). Ask the server which character it is on —
+    // capturing the wrong character's parts.json once leaked a test value
+    // into another character's real data.
     try {
-      const cfg = JSON.parse(await fs.readFile(path.join(APP_ROOT, 'config', 'app-config.json'), 'utf8'));
-      selectedCharacterId = cfg.selectedCharacter;
-    } catch (_) { /* fall through to skip */ }
+      const cur = await request(BASE_URL).get('/setup/characters/api/current');
+      if (cur.status === 200 && cur.body && cur.body.selectedCharacter != null) {
+        selectedCharacterId = cur.body.selectedCharacter;
+      }
+    } catch (_) { /* fall through */ }
+    if (selectedCharacterId == null) {
+      try {
+        const cfg = JSON.parse(await fs.readFile(path.join(APP_ROOT, 'config', 'app-config.json'), 'utf8'));
+        selectedCharacterId = cfg.selectedCharacter;
+      } catch (_) { /* fall through to skip */ }
+    }
     if (selectedCharacterId == null) this.skip();
 
     partsPath = path.join(APP_ROOT, 'data', `character-${selectedCharacterId}`, 'parts.json');

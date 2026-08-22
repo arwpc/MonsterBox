@@ -36,11 +36,22 @@ describe('Override removal (F9 overrides-cannot-be-removed)', function () {
   let partId = null;
 
   before(async function () {
+    // Ask the RUNNING server which character it resolves — its in-memory
+    // selection can differ from the on-disk config, and snapshotting the
+    // wrong character's parts.json means restoring the wrong file.
     let selectedCharacterId = null;
     try {
-      const cfg = JSON.parse(await fs.readFile(path.join(APP_ROOT, 'config', 'app-config.json'), 'utf8'));
-      selectedCharacterId = cfg.selectedCharacter;
-    } catch (_) { /* skip below */ }
+      const cur = await request(BASE_URL).get('/setup/characters/api/current');
+      if (cur.status === 200 && cur.body && cur.body.selectedCharacter != null) {
+        selectedCharacterId = cur.body.selectedCharacter;
+      }
+    } catch (_) { /* fall through */ }
+    if (selectedCharacterId == null) {
+      try {
+        const cfg = JSON.parse(await fs.readFile(path.join(APP_ROOT, 'config', 'app-config.json'), 'utf8'));
+        selectedCharacterId = cfg.selectedCharacter;
+      } catch (_) { /* skip below */ }
+    }
     if (selectedCharacterId == null) this.skip();
 
     partsPath = path.join(APP_ROOT, 'data', `character-${selectedCharacterId}`, 'parts.json');

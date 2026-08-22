@@ -349,6 +349,7 @@ and eliminated — see the CI item).
 | Fleet sink-volume capture/restore + on-demand canonical restore endpoints | `ac5268a4` | `tests/unit/canonical-sink-volume.test.js` |
 | F12–F16 calibration minors (honest test buttons, lastCalibratedAt semantics, ?characterId redirect + markers-GET scoping, preset p-field + heal, orphaned standard_servo endpoints retired) | `a2d40303` | unit suite + gate |
 | CI red on every push — root-caused (no server at gate time → hundreds of timeout failures) and fixed | `459b911d` | gate + full unit suite green CI-style in-container; **runner outcome pending** |
+| CI follow-through: with the server up, CI reached the system tests for the first time and failed 3 of 360 — server.js's force-hardware guard defeated the exec layer's CI simulation (2), and the STT dry-run test asserted a capture that needs a real key+mic (1). Guard stands down under CI=true; test skips on the deliberate `configured:false` answer | `dd4265c` | system 360/0, unit 511/0, gate 6/6, all CI-style in-container |
 
 All seven unjudged findings were re-verified by adversarial agents before any fix
 (F10 CONFIRMED, F11 MODIFIED, F12/F13/F14/F16 CONFIRMED, F15 MODIFIED — full verdicts in the
