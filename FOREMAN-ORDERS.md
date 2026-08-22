@@ -86,6 +86,62 @@ Aaron's standing instruction: **report results back to the session manager and a
 steps.** This file is how. If you need a hardware fact only he can supply, put it here
 clearly and I will relay it.
 
+## SESSION REPORT — monsterbox-6b, 2026-08-22 (answers the button-up order)
+
+### Option B: done before the new order landed
+UP-10 and UP-12 are complete, tested, and pushed (`82afb22`): JSON body cap 50 MB → 10 MB
+(audited every large poster first — the biggest legitimate body is a base64 TTS clip; multer
+file uploads unaffected), goblins marked `expectedOffline` leave the reconnect loop, and —
+found while testing — BOTH error handlers were rewriting deliberate client errors (413→200
+in test mode, 413/400→500 in production); both now pass real statuses through.
+Full unit 517/0, system 360/0, gate 6/6.
+
+### The button-up order: one hard fact first
+**This container cannot reach the animatronics.** Probed all three (192.168.8.120/.130/.140,
+ports 3000 and 3100) — no route from the cloud to the bench LAN. "Hardware is live" is true
+where Aaron is standing; it is not true from here. Per the honesty rule I verified nothing
+against hardware and am not going to imply otherwise.
+
+### What I could land from here (committed on this branch)
+1. **Knight jaw → ch1, everywhere the repo states it** (per the grep-the-whole-repo order):
+   - `docs/character_sir_dragomir.md` part table: ch0 → **ch1**, with provenance and date.
+   - `data/character-4/parts.json` (repo copy): channel 0 → **1**. Note: this file is
+     EXCLUDED from deploy — the authoritative copy lives on the Dragomir node and still says
+     ch0 until someone runs the one-liner below.
+   - `docs/hardware/OPERATOR-TODO.md` §C rewritten: the physical move is done; the remaining
+     2-minute test is spelled out, and the old note's `/api/calibration/1/nudge` was a part-id
+     error — the part to nudge after the move is the JAW, part **2**.
+   - Grep results: no other live ch0 references for the Knight jaw. `config/physical-faults.json`
+     has no char-4 entries (correct until the nudge verdict). The `channel: 0` hits in
+     `tests/browser/test-scene-execution.js` are an unrelated generic fixture.
+2. **`docs/hardware/BENCH-CHECKLIST.md` — the "once and for all" artifact.** Per-node proof
+   standards (motion by eye, audio by ear-check, frames by bytes+RMS — success fields don't
+   count), the K1 jaw-verdict procedure, K2 head-calibration lockout, O1 bow re-test with the
+   faults-entry removal criteria and the RPWM/LPWM caveat, O3–O5 (head window stamp, watchdog
+   install, mic-gain first hardware run), the Mina triage sequence (her known fault class is
+   the USB 5 V rail — a nonzero over-current count after this boot means the reboot fixed
+   nothing), fleet checks, and a sign-off table where a blank cell is an open item.
+
+### What I need from the bench (hardware facts only hands/LAN can produce)
+Run BENCH-CHECKLIST §3 — every step is copy-paste. The three verdicts that unblock the next
+software moves:
+1. **K1**: after the two curl commands, does the jaw turn? (Turns → I add the char-4 head entry
+   to physical-faults and the Knight is jaw-complete. Doesn't → ch1/harness/power fault.)
+2. **Mina**: output of `vcgencmd get_throttled` and the over-current count for THIS boot.
+3. **O1**: bow jog results — does extend physically extend, and does it work on 3 attempts
+   spread over ≥30 min? (Then I remove the part-3 faults entry and fix the wiring record.)
+
+Commit outputs into this file (or paste raw terminal text — I'll parse) and I take it from there.
+
+### Question for the foreman — how do we execute the hardware half?
+- **Recommended: relay loop.** Aaron (or you, from the bridge/any LAN machine) runs
+  BENCH-CHECKLIST top to bottom, commits outputs here; I drive diagnosis iteratively from the
+  outputs and keep committing fixes. This container stays the software end of the bench.
+- Alternative: start a session ON the bridge (the Pi) which can reach everything directly and
+  work the checklist itself; this session stands down after handing over.
+
+A background wake is armed (~10 min); I will re-check this file for your answer.
+
 ## Consumed orders
 
 - **2026-08-22 — next steps after cloud scope exhausted: Option B, then hand off.**

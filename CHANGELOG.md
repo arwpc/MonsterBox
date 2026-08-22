@@ -39,6 +39,18 @@ bridge. Hardware checklist unchanged: `docs/hardware/OPERATOR-TODO.md` §A–F (
   on demand (`POST /api/system/volume/canonical`, fleet-wide via orchestration), and the
   orchestration suite's restore hook puts the fleet back after every run. The canon can
   exceed 100% (one node's is 1.3), so the old volume API could never have restored it.
+- **UP-10/UP-12 (Option B follow-up):** the JSON body cap dropped 50 MB → 10 MB after auditing
+  every large poster (base64 TTS clips are the biggest legitimate body; multer file uploads
+  unaffected); both error handlers stopped rewriting deliberate client errors (413 came back
+  as 200 in test mode and as 500 in production); goblins marked `expectedOffline` leave the
+  30-second reconnect loop while shelved (flag survives re-registration, settable via the
+  existing settings API).
+- **Knight jaw → ch1 + bench checklist (button-up order):** the operator physically moved
+  Sir Dragomir's jaw servo to PCA channel 1 — recorded everywhere the repo states it, with the
+  node-side command and the jaw-nudge verdict procedure in OPERATOR-TODO §C (part to nudge is
+  the jaw, part 2 — the old note's part 1 was an error). New `docs/hardware/BENCH-CHECKLIST.md`
+  is the repeatable prove-all-three procedure: per-node proof standards, the Knight/Orlok/Mina
+  open-item closures, fleet checks, sign-off table.
 - **CI was red on every push — root-caused and fixed.** The gate's unit suite assumes the
   node's always-on :3100 listener; on GitHub runners no server existed, so hundreds of
   tests waited out timeouts (5+ minutes of pure waiting vs 6 seconds with a server). CI now

@@ -102,10 +102,23 @@ A 5 A fuse will open on a stall (8 A) as intended, and may also open on a legiti
   `move_to_pca_multi 88→92`, which is a **4 µs** change (the multi path uses a 0–1800 scale), below a
   typical 3 µs deadband. It commanded essentially nothing.
 
-**The 5-minute test (needs hands, unchanged):** move the jaw servo from **ch0 → ch1**, then
-`POST /api/calibration/1/nudge?characterId=4 {"dir":"max","scale":"med"}`. Turns → ch1 and V+ are
-fine and the head servo is dead. Doesn't turn → the fault is the ch1 channel / harness / power.
-Also meter V+ at the ch1 header pin against ch0's.
+**2026-08-22 update: Aaron has physically moved the jaw servo to ch1** and declared it a config
+change. The repo's config copy and docs now say ch1 (the node's own `parts.json` on Sir Dragomir
+must say ch1 too — command below). What remains is the 2-minute half of the test:
+
+```bash
+# On Sir Dragomir (or from any machine on the LAN):
+# 1. Make the node's own config match the physical move (jaw = part 2 → channel 1)
+curl -sk -X POST "https://192.168.8.130:3000/setup/calibration/api/parts/2/overrides" \
+  -H 'Content-Type: application/json' -d '{"overrides":{"channel":1}}'
+# 2. Nudge the jaw (part 2, now ch1) — the servo is known-good, so:
+curl -sk -X POST "https://192.168.8.130:3000/api/calibration/2/nudge" \
+  -H 'Content-Type: application/json' -d '{"dir":"max","scale":"med"}'
+# Turns → ch1 and V+ are fine, and the HEAD servo (ch4) is the dead element.
+# Doesn't turn → the fault is the ch1 channel / harness / power.
+```
+(The earlier note said `/api/calibration/1/nudge` — part 1 is the head; the part to nudge after
+the move is the JAW, part **2**.) Also meter V+ at the ch1 header pin against ch0's.
 
 **Second, independent problem on the same part — this one is software and is why it "cannot be
 calibrated":** the head is a goBILDA Stingray-2, `rotationRangeDeg: 900` (manufacturer-confirmed),

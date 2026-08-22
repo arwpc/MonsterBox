@@ -18,7 +18,7 @@ Sir Dragomir is a skull-based animatronic knight with head rotation, jaw servo, 
 | ID | Name | Type | Details |
 |----|------|------|---------|
 | 1 | Head Servo | servo | PCA9685 **ch4**, **multi-turn position** (900° / 2.5 turns), model: goBILDA Stingray-2 |
-| 2 | Jaw Servo | servo | PCA9685 **ch0**, standard (180°), model: Miuzei MG90S |
+| 2 | Jaw Servo | servo | PCA9685 **ch1** (operator moved it off ch0 at the bench, 2026-08-22 — ch0 suspected dead, pending the nudge test in docs/hardware/BENCH-CHECKLIST.md), standard (180°), model: Miuzei MG90S |
 | 3 | Magic Box Servo | servo | PCA9685 ch3, standard (180°), model: Miuzei 25kg |
 | 4 | Sir Dragomir Cam | webcam | /dev/video0 |
 | 5 | Webcam Microphone | microphone | Default audio input device |
