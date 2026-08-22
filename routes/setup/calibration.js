@@ -178,8 +178,12 @@ const standardServoCalibration = {
             if (angle != null && Number.isFinite(angle)) {
                 entry.angle = angle;
                 // Presets are read back by the scene executor, which accepts either an
-                // angle or a normalized p. Write both so neither path guesses.
-                entry.p = Math.max(0, Math.min(1, angle / 180));
+                // angle or a normalized p. Write both so neither path guesses. p is
+                // normalized over the part's REAL span (multi-turn parts declare
+                // capability.maxAngleDeg), never a hardcoded 180.
+                const fullSpanDeg = (p.capability && Number(p.capability.maxAngleDeg) > 0)
+                    ? Number(p.capability.maxAngleDeg) : 180;
+                entry.p = Math.max(0, Math.min(1, angle / fullSpanDeg));
             }
             if (data && data.speed != null) entry.speed = Number(data.speed);
             if (data && data.duration != null) entry.duration = Number(data.duration);

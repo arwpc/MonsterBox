@@ -17,8 +17,11 @@ export function clampP(p, bounds) {
  * current. Bounds are honoured independently, so a profile that defines only one
  * side still constrains that side.
  */
-export function clampAngle(angle, bounds) {
-  let v = Math.max(0, Math.min(180, angle));
+export function clampAngle(angle, bounds, maxDeg = 180) {
+  // maxDeg is the servo's REAL rotation range — 180 for a standard servo, the
+  // declared multi-turn range (e.g. 900) otherwise. Hard-coding 180 here
+  // silently pinned a multi-turn part at a fifth of its travel.
+  let v = Math.max(0, Math.min(maxDeg, angle));
   if (bounds && typeof bounds.minAngle === 'number') v = Math.max(bounds.minAngle, v);
   if (bounds && typeof bounds.maxAngle === 'number') v = Math.min(bounds.maxAngle, v);
   return v;

@@ -10,11 +10,19 @@ function positionUnknownError() {
 }
 
 export class AbsoluteServoAdapter {
-  constructor(partId, usMin = 500, usMax = 2500, invert = false, initialAngle = null, bounds = null) {
+  constructor(partId, usMin = 500, usMax = 2500, invert = false, initialAngle = null, bounds = null, maxAngleDeg = 180) {
     this.partId = partId;
     this.usMin = usMin;
     this.usMax = usMax;
     this.invert = invert;
+    // The servo's REAL rotation range in degrees. 180 for a standard servo; a
+    // multi-turn gearbox (the knight's 900° Stingray-2) spans its whole travel
+    // over the same pulse range, so every angle in this adapter is a real
+    // output degree of THIS part, not a fraction of a fixed 0-180 scale.
+    // Treating the Stingray as 0-180 made one UI degree five real degrees and
+    // let a single goto command hundreds of degrees of travel into the head
+    // cabling.
+    this.maxAngleDeg = (Number.isFinite(maxAngleDeg) && maxAngleDeg > 0) ? maxAngleDeg : 180;
     // The calibrated window, needed ONLY to mirror an inverted servo the same way
     // the runtime does. See angleToUs(). Null means "no measured window", which
     // reproduces the historical full-span mirror exactly.
@@ -27,7 +35,7 @@ export class AbsoluteServoAdapter {
     // because nudge is deliberately bounds-free. null means UNKNOWN, and
     // relative moves refuse rather than guess.
     this.currentAngle = Number.isFinite(initialAngle)
-      ? Math.max(0, Math.min(180, initialAngle))
+      ? Math.max(0, Math.min(this.maxAngleDeg, initialAngle))
       : null;
     // Angle actually written to the controller (differs from the request on
     // inverted servos); null until a move succeeds.
@@ -37,11 +45,11 @@ export class AbsoluteServoAdapter {
   get positionKnown() { return this.currentAngle !== null; }
 
   // Backward compat: currentP as computed property. null when position is unknown —
-  // 0.5 or 0 would be another invented position.
-  get currentP() { return this.currentAngle === null ? null : this.currentAngle / 180; }
-  set currentP(p) { this.currentAngle = Math.round(p * 180 * 10) / 10; }
+  // 0.5 or 0 would be another invented position. Normalized over the REAL range.
+  get currentP() { return this.currentAngle === null ? null : this.currentAngle / this.maxAngleDeg; }
+  set currentP(p) { this.currentAngle = Math.round(p * this.maxAngleDeg * 10) / 10; }
 
-  getCapabilities() { return { kind: 'absolute-servo', usMin: this.usMin, usMax: this.usMax, invert: this.invert }; }
+  getCapabilities() { return { kind: 'absolute-servo', usMin: this.usMin, usMax: this.usMax, invert: this.invert, maxAngleDeg: this.maxAngleDeg }; }
 
   /**
    * Convert angle (0-180) to PWM microseconds.
@@ -63,24 +71,26 @@ export class AbsoluteServoAdapter {
     let effAngle = angle;
     if (this.invert) {
       const minA = this.boundsMin != null ? this.boundsMin : 0;
-      const maxA = this.boundsMax != null ? this.boundsMax : 180;
+      const maxA = this.boundsMax != null ? this.boundsMax : this.maxAngleDeg;
       effAngle = minA + maxA - angle;
     }
-    const p = Math.max(0, Math.min(1, effAngle / 180));
+    const p = Math.max(0, Math.min(1, effAngle / this.maxAngleDeg));
     return this.usMin + p * (this.usMax - this.usMin);
   }
 
   // Legacy alias
-  pToUs(p) { return this.angleToUs(p * 180); }
+  pToUs(p) { return this.angleToUs(p * this.maxAngleDeg); }
 
   /** Nudge by old-style dir/scale (uses degree-based scales) */
   async nudge(dir, scale, opts) {
     // A relative move needs a real starting angle. Nudge is bounds-free by
     // design, so guessing the start makes the destination unbounded too.
     if (!this.positionKnown) throw positionUnknownError();
+    // Scales stay in REAL degrees at every range — on the 900° head a "fine"
+    // nudge is still 2 real degrees, deliberately small near its cabling.
     const delta = NUDGE_SCALES[scale] || NUDGE_SCALES.med;
     const newAngle = dir === 'max'
-      ? Math.min(180, this.currentAngle + delta)
+      ? Math.min(this.maxAngleDeg, this.currentAngle + delta)
       : Math.max(0, this.currentAngle - delta);
     await this.gotoAngle(newAngle, opts);
   }
@@ -92,9 +102,9 @@ export class AbsoluteServoAdapter {
     await this.gotoAngle(this.currentAngle);
   }
 
-  /** Move to an angle in degrees (0-180). Primary method for absolute servos. */
+  /** Move to an angle in real degrees (0..maxAngleDeg). Primary method for absolute servos. */
   async gotoAngle(angleDeg, opts) {
-    const clamped = Math.max(0, Math.min(180, angleDeg));
+    const clamped = Math.max(0, Math.min(this.maxAngleDeg, angleDeg));
     try {
       // Invert is applied system-wide in controlPart() via calibration profile
       const hwOptions = {};
@@ -136,7 +146,7 @@ export class AbsoluteServoAdapter {
 
   /** Backward compat: accept normalized 0-1, convert to angle internally */
   async gotoNormalized(p, opts) {
-    const angleDeg = Math.max(0, Math.min(1, p)) * 180;
+    const angleDeg = Math.max(0, Math.min(1, p)) * this.maxAngleDeg;
     return await this.gotoAngle(angleDeg, opts);
   }
 }

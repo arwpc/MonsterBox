@@ -51,6 +51,19 @@ bridge. Hardware checklist unchanged: `docs/hardware/OPERATOR-TODO.md` §A–F (
   the jaw, part 2 — the old note's part 1 was an error). New `docs/hardware/BENCH-CHECKLIST.md`
   is the repeatable prove-all-three procedure: per-node proof standards, the Knight/Orlok/Mina
   open-item closures, fleet checks, sign-off table.
+- **The knight's 900° head becomes calibratable — real degrees end to end.** Bench verdict
+  (2026-08-22): nothing on Sir Dragomir is electrically dead — jaw drives on ch1, magic box
+  works, and the head servo is alive on ch4. What made the head "occasionally rotate all the
+  way around" was software: the calibration surface spoke 0-180, the python wrapper a fixed
+  0-1800, and the servo's real 900° spanned the same pulse range — small commands landed
+  under the deadband while any large one commanded hundreds of real degrees in one hop. Now
+  a part declaring `config.rotationRangeDeg` gets `capability.maxAngleDeg`: the calibration
+  page renders its REAL span (0-900 slider, multi-turn chip), goto/nudge/bounds/position all
+  speak real degrees, a stale 0-180 profile is reconciled on next touch (the knight's exact
+  node state), and the one conversion to the wrapper scale lives in `hardwareService`
+  (real 450° → `move_to_pca_multi` arg 900 — unit-tested, 8 new tests). Standard servos are
+  byte-for-byte unchanged (no declared range = 180 everywhere, pinned by test). Supervised
+  window measurement is BENCH-CHECKLIST K3; his new XVF3800 mic + speaker bring-up is K4.
 - **Fleet Command Center: double-click a node's name to open that node's own dashboard**
   in a new tab (`https://<ip>:<port>/`, IP resolved live from discovery state). Covered by a
   new browser test. Also: `config/physical-faults.json` gains Sir Dragomir's head servo

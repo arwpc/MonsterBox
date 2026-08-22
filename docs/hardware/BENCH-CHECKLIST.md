@@ -102,34 +102,84 @@ ssh remote@$IP 'wpctl get-volume @DEFAULT_AUDIO_SINK@'
 
 ### K — Sir Dragomir (Knight)
 
-- **K1. Jaw is physically on ch1** (operator moved it 2026-08-22 as the swap-in-known-good
-  test: ch0 measured GOOD at +29 dB on 2026-08-19; the dead-channel suspect is the HEAD on
-  ch4). Land the config on the node and get the verdict:
-  ```bash
-  curl -sk -X POST "https://192.168.8.130:3000/setup/calibration/api/parts/2/overrides" \
-    -H 'Content-Type: application/json' -d '{"overrides":{"channel":1}}'
-  curl -sk -X POST "https://192.168.8.130:3000/api/calibration/2/nudge" \
-    -H 'Content-Type: application/json' -d '{"dir":"max","scale":"med"}'
-  ```
-  If the nudge answers `Servo position is unknown — move to an absolute angle (goto) first`,
-  seed it once and re-nudge (90° is the jaw's documented neutral):
-  ```bash
-  curl -sk -X POST "https://192.168.8.130:3000/api/calibration/2/goto" \
-    -H 'Content-Type: application/json' -d '{"angle":90}'
-  ```
-  Jaw turns → **ch1 + V+ good; the head servo (part 1, ch4) is the dead element**. The
-  char-"4" part-"1" entry in `config/physical-faults.json` is already committed (2026-08-22)
-  — update its `reason` to the proven verdict and deploy. Jaw does not turn → the ch1
-  channel/harness/power is the fault; meter V+ at the ch1 header pin against ch0's (they
-  should match).
-- **K2. Do NOT drive or calibrate the head (part 1)** until its 0–180-vs-900° scale bug is
-  fixed — one UI degree is five real degrees; a sweep can wrap the head cabling
-  (OPERATOR-TODO §C, second half). **Know exactly what the "lockout" covers (verified in
-  code 2026-08-22):** poses, scenes, and head tracking refuse the part (no measured
-  calibration window), and the `physical-faults.json` entry keeps automated suites from
-  picking it — but **direct API commands are NOT refused**: a calibration nudge/goto or
-  `POST /api/parts/1/test` WILL drive the head. There is no safe software probe for this
-  item; the check is behavioral — nothing and no one commands part 1.
+- **K1. ✅ RESOLVED 2026-08-22 (verdict from the bench): NOTHING is electrically dead.**
+  Jaw drives great on ch1, the magic box is great, and the head servo is ALIVE on ch4 —
+  the operator got it rotating. The 2026-08-19 "+0.4 dB / dead channel" reading is
+  closed as a probe artifact (the follow-up multi-scale probe commanded ~4 µs, below the
+  deadband). What made the head "occasionally rotate all the way around and stress the
+  wires" was the SOFTWARE scale bug, fixed in v10.4.0 — see K3.
+- **K2. The head (part 1) stays hands-off until K3 is complete.** The scale bug is fixed
+  in software, but no cable-safe window has been measured yet, and the paths that refuse
+  it are only the ones that require a measured window (poses, scenes, head tracking) plus
+  the `physical-faults.json` advisory that keeps automated pickers away. **Direct API
+  commands are NOT refused** — a nudge/goto/test on part 1 WILL drive the head. Only the
+  K3 procedure commands it, eyes on the cabling.
+- **K3. Calibrate the head — the real-degree path (NEW, requires the v10.4.0 deploy).**
+  The software now speaks the Stingray-2's REAL degrees (0–900) end to end: the
+  calibration page shows a 0–900 slider tagged "multi-turn: REAL travel", goto/nudge are
+  real degrees, and the wrapper conversion happens once, verified by unit test
+  (real 450° → `move_to_pca_multi <ch> 900`). Procedure, in order, EYES ON THE CABLING
+  THE WHOLE TIME:
+  1. Deploy the fix to the node (`npm run deploy:all` from Orlok, or on the Knight:
+     `cd /home/remote/MonsterBox && git pull && sudo systemctl restart monsterbox`).
+  2. Declare the real range on the node's own part config (parts.json never deploys):
+     ```bash
+     curl -sk -X POST "https://192.168.8.130:3000/setup/calibration/api/parts/1/overrides" \
+       -H 'Content-Type: application/json' -d '{"overrides":{"rotationRangeDeg":900,"servoType":"multi-turn"}}'
+     ```
+  3. Open `https://192.168.8.130:3000/setup/calibration`, select the Head Servo — the
+     control must now read **0–900** with the multi-turn chip. If it still shows 0–180,
+     the deploy or step 2 did not land; stop.
+  4. FIRST MOVE IS THE RISKY ONE — the software cannot know how many turns in the head
+     physically sits, so the first goto may travel up to the full distance to its target.
+     Slack the head cabling by hand, pick a target near where the head currently points
+     (mid-travel ≈ 450 if it looks centered), send the goto, hand on the power switch.
+  5. From there it is ordinary calibration IN REAL DEGREES: nudge (fine = 2° real,
+     med = 5°, coarse = 15° — deliberately small near cabling) to the safe
+     counter-clockwise limit → **Set Min**; nudge to the safe clockwise limit →
+     **Set Max**; keep BOTH limits well inside cable slack — the window is the cable
+     guard, so give it margin, not maximum travel.
+  6. Flip **"Calibrated (trusted by runtime)"**, then remove the char-4 part-1 entry from
+     `config/physical-faults.json` in the repo, commit, deploy.
+  PASS: the head jogs in small, predictable real-degree steps, reaches both window ends
+  without cable strain, refuses to move past them without `calibrationOverride`, and the
+  panel shows the measured window with no "(unmeasured)" suffix.
+- **K4. New XVF3800 mic + speaker (installed 2026-08-22, same array model as Orlok's) —
+  audio bring-up.** The array ships its mono DAC at −20 dB and only PyAudio can capture
+  from it; every trap has a known fix:
+  1. **Mixer normalization FIRST** (the "inaudible with every layer healthy" trap):
+     ```bash
+     ssh remote@192.168.8.130
+     for card in $(aplay -l | awk -F'[ :]' '/reSpeaker XVF3800/ {print $2}' | sort -u); do
+       amixer -c "$card" -q sset 'PCM',1 100% unmute; done
+     sudo alsactl store
+     bash /home/remote/MonsterBox/scripts/configure-wireplumber.sh remote   # no-suspend rule
+     ```
+     PASS: `amixer -c <card> sget 'PCM',1` shows `[100%] [0.00dB]`.
+  2. **Point the speaker part at the explicit sink** (read the exact name with
+     `wpctl status` — serial differs per unit), and the mic part at the array:
+     ```bash
+     curl -sk -X POST "https://192.168.8.130:3000/setup/calibration/api/parts/6/overrides" \
+       -H 'Content-Type: application/json' \
+       -d '{"overrides":{"audioDeviceId":"<exact sink name from wpctl status>"}}'
+     ```
+  3. **Capture proof — FRAMES, not device-open** (on the node):
+     ```bash
+     cd /home/remote/MonsterBox
+     python3 python_wrappers/microphone_cli.py record_wav default 16000 1 3 > /tmp/mic-test.wav
+     ls -la /tmp/mic-test.wav   # PASS ≈96 KB; ~44 bytes = header only = zero frames = FAIL
+     ```
+  4. **Speaker + ear-check**: `generate-and-play` a line (§2.3 curl with charId 4), then
+     from Orlok `npm run earcheck`. PASS: Sir Dragomir's line reads `VERDICT: AUDIBLE`.
+  5. **Re-tune the canon BY EAR**: his `sinkVolume: 0.55` in `config/animatronics.json`
+     was tuned for the OLD speaker. While a line plays:
+     `wpctl set-volume @DEFAULT_AUDIO_SINK@ <v>` until right, then write the new value
+     into the MAIN repo's `config/animatronics.json`, commit, `npm run deploy:all`.
+- **K5. New camera (installed 2026-08-22, picture confirmed by eye).** Proof beyond the
+  eyeball: MJPEG snapshot on the node —
+  `curl -s -o /tmp/f.jpg -w '%{http_code} %{size_download}\n' 'http://localhost:8090/?action=snapshot'`
+  PASS: `200` + tens of KB. Then confirm the Fleet Command Center card streams it
+  (`/api/orchestration/animatronic/4/webcam-stream`).
 
 ### O — Orlok
 

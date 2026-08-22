@@ -53,13 +53,19 @@ async function resolvePresetToAngle(partId, presetName, characterId) {
   }
   
   const isAbsServo = profile.capability && profile.capability.kind === 'absolute-servo';
+  // The servo's REAL rotation range — 180 unless the profile declares a
+  // multi-turn range (the knight's 900° head). Normalized p converts through
+  // THIS, never a hardcoded 180: p=0.5 on the head is 450 real degrees, and
+  // converting it as 90 would land the head at a fifth of the intended angle.
+  const fullSpanDeg = (profile.capability && Number(profile.capability.maxAngleDeg) > 0)
+    ? Number(profile.capability.maxAngleDeg) : 180;
 
   if (isAbsServo && (profile.bounds?.minAngle != null || profile.bounds?.maxAngle != null)) {
     // Absolute servo with angle-based bounds
     if (presetName === '__MIN__') {
       return profile.bounds.minAngle ?? 0;
     } else if (presetName === '__MAX__') {
-      return profile.bounds.maxAngle ?? 180;
+      return profile.bounds.maxAngle ?? fullSpanDeg;
     } else {
       const preset = profile.presets?.find(p => p.name === presetName);
       if (!preset) {
@@ -67,7 +73,7 @@ async function resolvePresetToAngle(partId, presetName, characterId) {
         return profile.bounds.minAngle ?? 0;
       }
       // Presets may store angle directly or normalized p
-      return preset.angle != null ? preset.angle : Math.round((preset.p ?? 0.5) * 180);
+      return preset.angle != null ? preset.angle : Math.round((preset.p ?? 0.5) * fullSpanDeg);
     }
   }
 
@@ -87,8 +93,8 @@ async function resolvePresetToAngle(partId, presetName, characterId) {
     }
   }
 
-  // Convert normalized position (0-1) to angle (0-180)
-  return Math.round(targetP * 180);
+  // Convert normalized position (0-1) to a REAL angle over the part's span
+  return Math.round(targetP * fullSpanDeg);
 }
 
 /**

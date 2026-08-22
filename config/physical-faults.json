@@ -22,11 +22,11 @@
   ],
   "characters": {
     "4": {
-      "_note": "Sir Dragomir — head servo only. See docs/hardware/OPERATOR-TODO.md §C and docs/hardware/BENCH-CHECKLIST.md K1/K2.",
+      "_note": "Sir Dragomir — head servo only. See docs/hardware/OPERATOR-TODO.md §C and docs/hardware/BENCH-CHECKLIST.md K1/K3.",
       "parts": {
         "1": {
           "status": "broken",
-          "reason": "Head Servo (goBILDA Stingray-2, 900° multi-turn, PCA9685 ch4) — dead-channel suspect (K1 verdict pending), and its calibration profile still maps it as 0-180 over the same pulse span, so one commanded degree is five real degrees of rotation: an automated sweep can wrap the head cabling. Advisory like every entry here — the operator may still drive it deliberately; automated pickers must not.",
+          "reason": "Head Servo (goBILDA Stingray-2, 900° multi-turn, PCA9685 ch4) — K1 RESOLVED 2026-08-22: channel and servo are ALIVE (operator drove it at the bench; nothing is electrically dead). What remains is UNCALIBRATED 900° travel that has already stressed the head cabling on a full rotation. The 0-180 scale bug is fixed in software (real-degree path, v10.4.0) but no cable-safe window has been measured yet. Remove this entry only after BENCH-CHECKLIST K3: supervised calibration done, window set, Calibrated stamp flipped. Advisory like every entry here — the operator may still drive it deliberately; automated pickers must not.",
           "since": "2026-08-22"
         }
       }

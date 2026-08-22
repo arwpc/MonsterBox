@@ -660,7 +660,7 @@ const HARDWARE_CONTROLLERS = {
 
     // 🦷 Servo - precise angle control: standard, continuous, feedback
     servo: {
-        async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address, servoType = 'standard' }) {
+        async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address, servoType = 'standard', rotationRangeDeg }) {
             try {
                 // Normalize servoType to robustly route commands
                 const st = String(servoType || '').toLowerCase();
@@ -681,8 +681,21 @@ const HARDWARE_CONTROLLERS = {
                         args = ['rotate_continuous_pca', String(channel), direction, String(speedInt), '1000'];
                         commandType = 'continuous rotation';
                     } else if (normType === 'feedback') {
-                        // Use multi-turn function for positional/feedback servos (supports 0-1800°)
-                        args = ['move_to_pca_multi', String(channel), String(angleDeg)];
+                        // move_to_pca_multi's angle argument is a FIXED 0-1800 scale mapped
+                        // linearly onto the full pulse span — it is NOT this part's real
+                        // degrees. A gearbox that spans its whole travel over that same
+                        // pulse range (the knight's 900° Stingray-2) declares its real
+                        // range in rotationRangeDeg, and the conversion happens HERE, at
+                        // the one seam between real degrees and the wrapper scale.
+                        // Without it, angleDeg was passed through raw: the knight's head
+                        // moved at half the commanded rate on a scale nobody was using,
+                        // and a goto from an unknown position could command hundreds of
+                        // real degrees of travel into the head cabling in one hop.
+                        const range = Number(rotationRangeDeg);
+                        const wrapperArg = (Number.isFinite(range) && range > 0)
+                            ? (Number(angleDeg) * (1800 / range))
+                            : Number(angleDeg); // no declared range: legacy raw 0-1800 passthrough
+                        args = ['move_to_pca_multi', String(channel), String(Math.round(wrapperArg * 10) / 10)];
                         commandType = 'multi-turn positioning';
                     } else {
                         // Standard servo - use regular PCA9685 function (0-180°)
@@ -1873,7 +1886,12 @@ export async function controlPart(partId, action, params = {}, options = {}) {
         if (type === 'servo' && action === 'moveToAngle' && actionParams.angleDeg != null) {
             if (calProfile && calProfile.capability && calProfile.capability.invert) {
                 const minA = calProfile.bounds?.minAngle ?? 0;
-                const maxA = calProfile.bounds?.maxAngle ?? 180;
+                // Without bounds, mirror across the servo's REAL span — 180 for a
+                // standard servo, the declared multi-turn range otherwise.
+                const fullSpan = Number(calProfile.capability.maxAngleDeg) > 0
+                    ? Number(calProfile.capability.maxAngleDeg)
+                    : (Number(actionParams.rotationRangeDeg) > 0 ? Number(actionParams.rotationRangeDeg) : 180);
+                const maxA = calProfile.bounds?.maxAngle ?? fullSpan;
                 actionParams.angleDeg = minA + maxA - actionParams.angleDeg;
             }
         }
