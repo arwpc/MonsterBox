@@ -53,9 +53,18 @@ jobs:
       - name: Stop server
         if: always()
         run: |
+          # The saved PID is the npm wrapper's; killing it does NOT reliably
+          # take the node child down (the job-cleanup log showed node alive as
+          # an orphan), and a surviving node makes the Playwright-spawned
+          # server exit on the single-instance guard: "MonsterBox already
+          # running". Kill the wrapper AND the node process, then give the
+          # graceful shutdown a moment to release the PID lock file.
           if [ -f /tmp/monsterbox-server.pid ]; then
             kill $(cat /tmp/monsterbox-server.pid) 2>/dev/null || true
             rm -f /tmp/monsterbox-server.pid
           fi
+          pkill -f "node server.js" 2>/dev/null || true
+          sleep 3
+          rm -f data/monsterbox.pid
       - name: Run browser tests
         run: npm run test:browser:quick
