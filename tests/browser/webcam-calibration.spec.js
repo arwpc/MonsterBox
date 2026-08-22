@@ -177,18 +177,18 @@ test.describe('Webcam in Calibration Page', () => {
     await expect(modelSelect).toBeVisible();
   });
 
-  // ── Safety Tab ───────────────────────────────────────────────────────
-  test('should show safety fields', async () => {
+  // ── Safety Tab: REMOVED (v11 audit F4) ───────────────────────────────
+  // The tab's inputs were never loaded, never saved, and read by nothing;
+  // per the 2026-08-20 operator ruling no current cap exists in software.
+  // The tab must NOT come back — a control that looks like protection but
+  // enforces nothing is worse than none.
+  test('the dead Safety tab stays deleted', async () => {
     const webcamItem = page.locator('#deviceList .list-group-item').filter({ hasText: /webcam/i }).first();
     await webcamItem.click();
     await page.waitForTimeout(500);
 
-    const safetyTab = page.locator('button[data-bs-target="#tabSafety"]');
-    await safetyTab.click();
-    await page.waitForTimeout(300);
-
-    const currentLimit = page.locator('#safetyCurrent');
-    await expect(currentLimit).toBeVisible();
+    await expect(page.locator('button[data-bs-target="#tabSafety"]')).toHaveCount(0);
+    await expect(page.locator('#safetyCurrent')).toHaveCount(0);
   });
 
   // ── Advanced Tab (Motion & Head Tracking) ────────────────────────────

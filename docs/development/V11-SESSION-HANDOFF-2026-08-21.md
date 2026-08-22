@@ -381,12 +381,16 @@ workflow journal; the substance of each verdict is restated in the fixing commit
   Do not "fix" the skip; the Pi's pre-push gate is where it enforces.
 
 ### Still open (not this session's scope)
-- UP-7 (per-servo-move log volume), UP-8 (/tmp on SD, crontab backup accumulation),
-  UP-10 (50 MB body limit), UP-11/UP-12 (cosmetic) — all small, all cloud-fixable.
-- `safety-tab-dead` (F4) and `simple-cal-ghost-editor` (F5): both verifier-downgraded minors,
-  both UI-surface deletions. F4's fix must remove the Safety-tab browser assertions in
-  `tests/browser/webcam-calibration.spec.js` in the same change; F5 removes the card plus the
-  three `/api/simple` routes. Left for a session that can run the browser suite.
+- ~~UP-7, UP-8, UP-10, UP-12~~ — **closed later this session** (`ea84d84`, `82afb22`: servo
+  per-move logs behind MB_DEBUG_SERVO, crontab backups pruned to 10, JSON body cap 10 MB with
+  honest 4xx statuses, expectedOffline goblins skip the reconnect loop). UP-11 (npm wrapper in
+  ExecStart, cosmetic) remains.
+- ~~`safety-tab-dead` (F4) and `simple-cal-ghost-editor` (F5)~~ — **closed later this session**
+  under the foreman's button-up order: Safety tab deleted with its browser assertions replaced
+  by a stays-deleted guard; the Simple Calibration ghost card, its sc_* JS, and the three
+  `/api/simple` routes retired. Rendered page verified clean of every dead-control id; gate and
+  the legacy-calibration checker green; the full browser-suite pass on the Pi is the remaining
+  proof (UNVERIFIED-browser-suite until then).
 - Scene 107's goblin step (`goblinId` vs required `videoId`), calibration_profiles
   cross-contamination between nodes, `/api/system/volume` GET rounding down >100% canons.
 - Everything in §5 / OPERATOR-TODO §A–G. **Do not tag v11.0.0 before those are closed or waived.**
