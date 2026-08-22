@@ -411,9 +411,32 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         const bounds = (measuredNudge && measuredNudge.minP != null && measuredNudge.maxP != null) ? measuredNudge : null;
         const rawP = currentP + delta;
         const newP = clampP(rawP, bounds);
+        if (delta !== 0 && Math.abs(newP - currentP) < 1e-9) {
+          // The ESTIMATED position is pinned at the end of its tracked range:
+          // the clamp swallowed the whole delta and the adapter would answer
+          // "Already at target" without commanding hardware. This used to
+          // report success, so five CW presses in a row read "cw complete"
+          // while the servo never moved — indistinguishable from a dead servo,
+          // and the physical part may be nowhere near its real end (F8). The
+          // rail is the TRACKER's, not the hardware's, so say what unblocks:
+          // jog-raw ignores the estimate; home re-seats it at a real endstop.
+          const rail = delta > 0 ? 'maximum' : 'minimum';
+          return res.status(409).json({
+            success: false,
+            saturated: true,
+            currentP,
+            error: `Estimated position is already at its ${rail} (${currentP.toFixed(2)}) — the tracker, not the hardware, is at the end of its range. Use raw jog to keep moving, or home to an endstop to reset the estimate.`
+          });
+        }
         await adapter.gotoNormalized(newP, { speedPct, durationMs, calibrationOverride: true });
         persistPosition(partId, newP);
-        res.json({ success: true, message: `Nudged by ${delta}`, currentP: newP });
+        const clamped = Math.abs(newP - rawP) > 1e-9;
+        res.json({
+          success: true,
+          message: clamped ? `Nudged by ${delta} — clamped at the end of the tracked range` : `Nudged by ${delta}`,
+          currentP: newP,
+          clamped
+        });
       }
     } else {
       console.error(`Invalid nudge request for part ${partId} - missing parameters:`, req.body);

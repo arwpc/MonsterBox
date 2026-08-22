@@ -2847,17 +2847,24 @@
               });
               const data = await response.json();
               if (response.ok && data.success) {
-                if (st) st.textContent = `${part.name} ${dir} complete`;
+                // A clamped jog still moved, but hit the end of the TRACKED
+                // range — say so instead of a bare "complete" (F8).
+                if (st) st.textContent = data.clamped
+                  ? `${part.name} ${dir} — reached end of tracked range`
+                  : `${part.name} ${dir} complete`;
                 console.log(`Successfully jogged continuous servo ${part.name} ${dir}`);
                 // Update position display
                 if (data.currentP != null) {
                   updateCurrentPositionDisplay(data.currentP);
                 }
               } else {
-                if (st) st.textContent = 'Jog failed';
-                console.log(`Failed to jog continuous servo ${part.name}:`, response.status);
+                // Surface the server's reason — a saturated position estimate
+                // used to read "complete" here, which looks exactly like a
+                // dead servo (F8).
+                if (st) st.textContent = (data && data.error) ? data.error : 'Jog failed';
+                console.log(`Failed to jog continuous servo ${part.name}:`, response.status, data && data.error);
               }
-              setTimeout(() => { if (st) st.textContent = ''; }, 2000);
+              setTimeout(() => { if (st) st.textContent = ''; }, data && data.saturated ? 6000 : 2000);
             } catch (e) {
               if (st) st.textContent = 'Jog error';
               console.log(`Error jogging continuous servo ${part.name}:`, e);
