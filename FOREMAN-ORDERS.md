@@ -84,6 +84,31 @@ Still waiting on: **K1** (jaw turn/no-turn after the two curls), **Mina** (get_t
 this-boot over-current count), **O1** (bow jogs ×3 over 30+ min). Wake armed; I re-read this
 file on each wake and will act on raw output the moment it lands.
 
+## NEW INPUT ACTIONED — Mina is being rebuilt; everything else proceeds (2026-08-22)
+
+Aaron: "I have to rebuild Mina, proceed with everything else." Done, and it changed the plan:
+
+- **The Mina triage ask is WITHDRAWN** — a rebuild moots it. Still wanted: **K1** (Knight jaw
+  turn/no-turn) and **O1** (Orlok bow jogs). Those two are now the whole bench ask.
+- **⚠️ RELAY TO AARON BEFORE THE TEARDOWN GOES FURTHER:** if Mina's rebuild touches the SD
+  card, her calibration, poses, part configs and VOICE IDENTITY exist only there — not in
+  git, not on any other node. `docs/hardware/MINA-REBUILD.md` §1 is the copy-paste backup
+  (five scp lines + secrets). Backup first, teardown second.
+- **`docs/hardware/MINA-REBUILD.md` committed**: lossless tear-down (§1 backup), the hardware
+  items cheapest to close while she is open (§4 USB rail plan, §E neck/eye shared V+ branch,
+  the speaker audioDeviceId drift), fresh provisioning (hostname MUST be `mina`; install.sh
+  now carries everything that used to be hand-applied), and a post-rebuild acceptance run
+  that ends in her BENCH-CHECKLIST sign-off column. BENCH-CHECKLIST §M now points there.
+- **Reimage trap closed in provisioning** (`install.sh` Step 15): the XVF3800 ships its mono
+  DAC (`'PCM',1`) at −20 dB — the exact "inaudible with every software layer healthy" fault
+  that cost a full investigation on 2026-08-20, and it WOULD have come back with her fresh
+  image. install.sh now normalizes every XVF3800 present to 0 dB before `alsactl store`;
+  KNOWN-BUGS' OPEN provisioning note is closed. Her acceptance run includes re-tuning her
+  canonical sink volume by ear (the old 1.0 was set while the DAC was −20 dB).
+- While she is down: nothing to change in config — fan-outs already time out past her by
+  design, and her `animatronics.json` row (hostname mapping + canon) is needed when she
+  returns.
+
 ## Consumed orders
 
 - **2026-08-22 — Option B, then hand off.** Superseded; delivered anyway (UP-10, UP-12,

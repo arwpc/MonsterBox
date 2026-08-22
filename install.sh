@@ -353,6 +353,21 @@ for control in PCM Master Headphone Speaker; do
     amixer -q sset $control 95% unmute 2>/dev/null || true
 done
 
+# reSpeaker XVF3800 mixer normalization (KNOWN-BUGS 2026-08-20): the array
+# ships with its mono DAC path ('PCM',1) at 40/60 = -20.00 dB while 'PCM',0
+# sits at 0 dB — so a freshly provisioned node is near-inaudible while every
+# software layer (sink volume, mute flag, stream exits) reads healthy. That
+# cost a full investigation on Mina and Orlok before the mixer was found.
+# Normalize every XVF3800 present so a reimaged or new array never arrives
+# 20 dB quiet again. (The generic loop above only touches the default card.)
+for card in $(aplay -l 2>/dev/null | awk -F'[ :]' '/reSpeaker XVF3800/ {print $2}' | sort -u); do
+    if amixer -c "$card" -q sset 'PCM',1 100% unmute 2>/dev/null; then
+        print_success "XVF3800 card $card: mono DAC ('PCM',1) normalized to 0 dB"
+    else
+        print_warning "XVF3800 card $card present but 'PCM',1 could not be set — the node may be 20 dB quiet (KNOWN-BUGS 2026-08-20)"
+    fi
+done
+
 # Save audio settings
 alsactl store || true
 

@@ -93,9 +93,15 @@ Fix a drifted volume with the node's own canon (no restart needed):
 - **O5. Mic input gain** — set Gain on the calibration page, `sudo systemctl restart monsterbox`,
   confirm `wpctl` shows the source volume restored (the F7 fix; first hardware run).
 
-### M — Mina ("still questionable")
+### M — Mina — UNDER REBUILD (operator decision, 2026-08-22)
 
-Reachable ≠ healthy. In order, capture output as you go:
+**Mina is being rebuilt. Do not run this section against her until the rebuild lands —
+run `docs/hardware/MINA-REBUILD.md` instead** (pre-teardown backup FIRST, hardware items
+to close while she is open, provisioning, and her acceptance run, which loops back to
+this checklist). Her sign-off column stays blank until the acceptance run passes.
+
+The triage below remains for reference / for the next time she is "reachable but
+questionable" without a rebuild. In order, capture output as you go:
 ```bash
 ssh remote@192.168.8.140 'vcgencmd get_throttled; journalctl -k -b | grep -c over-current; uptime'
 ssh remote@192.168.8.140 'sudo systemctl show monsterbox -p NRestarts,ActiveEnterTimestamp'

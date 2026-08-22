@@ -1439,9 +1439,10 @@ Plus one that was not flake at all:
   the array, no sound in the room" and suspected Mina's powered subwoofer. It was the mixer.
   Set to 60/0 dB + `alsactl store` on Mina and Orlok; ear-check transcripts after the fix:
   Mina word-perfect ("Mina here, testing my voice at the new volume…"), Orlok transcribed
-  with minor mishears. **Provisioning implication (OPEN): six more XVF3800s are planned —
-  mixer normalization (`'PCM',1` → 0 dB) must land in the audio provisioning path
-  (`scripts/apply-audio-nosuspend.sh` or install.sh) or every new array arrives 20 dB quiet.**
+  with minor mishears. **Provisioning implication — closed 2026-08-22:** install.sh Step 15
+  now normalizes `'PCM',1` → 0 dB on every XVF3800 card present (before `alsactl store`),
+  so a reimaged or newly provisioned array no longer arrives 20 dB quiet. Landed for Mina's
+  rebuild; first hardware run is her post-rebuild acceptance (docs/hardware/MINA-REBUILD.md).
   Note: Mina's canonical 1.0 sink volume was set while the DAC was −20 dB; re-tune by ear.
 
 - 🟡 **Orlok's audio sink WEDGED for ~40 min (2026-08-20 22:26–23:05) — cause unknown,
