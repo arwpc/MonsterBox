@@ -135,6 +135,27 @@ documented window was restored so head tracking would stop refusing (it now offe
 servos with real measured windows and reports `canEnable: true`). **Please confirm 3°–169° is still
 right at the rig** — it is doc-sourced, not re-measured.
 
+## G. Enable the liveness watchdog on each live node — one command (2026-08-22, UP-5)
+
+The app swallows uncaught exceptions by design and its systemd drop-in sets
+`Restart=on-failure`, so a process that wedges mid-show stays "active (running)" forever while
+every page times out — nobody restarts it but a human. New in the repo: a root systemd **timer**
+that curls `/health` once a minute and restarts `monsterbox.service` after 3 consecutive failures
+(never touching a service you stopped yourself). Fresh installs get it from `install.sh`; the
+three live nodes need it enabled once, after the next deploy:
+
+```bash
+ssh remote@<node>
+sudo bash /home/remote/MonsterBox/scripts/install-monsterbox-watchdog.sh
+# confirm:
+systemctl list-timers monsterbox-watchdog.timer --no-pager
+```
+
+The decision logic is unit-tested (`tests/unit/liveness-watchdog.test.js`), but the installed
+timer firing on a real node is **UNVERIFIED from the cloud** — after installing, prove it once:
+`sudo systemctl start monsterbox-watchdog.service` and check
+`journalctl -u monsterbox-watchdog.service -n 5` shows a clean (silent-success) run.
+
 ---
 
 # Earlier items (2026-08-19, v10.1.0 session) — still open unless noted

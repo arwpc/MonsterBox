@@ -1,0 +1,12 @@
+[Unit]
+Description=Run the MonsterBox liveness watchdog every minute
+
+[Timer]
+# Give the app a full boot before the first probe.
+OnBootSec=3min
+OnUnitActiveSec=60s
+AccuracySec=10s
+Unit=monsterbox-watchdog.service
+
+[Install]
+WantedBy=timers.target

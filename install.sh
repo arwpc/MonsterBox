@@ -548,8 +548,17 @@ if [ -f "$REPO_DIR/scripts/monsterbox-boot-check.service" ]; then
     systemctl enable monsterbox-boot-check.service 2>/dev/null || true
 fi
 
+# Liveness watchdog (UP-5) — the app swallows uncaught exceptions by design and
+# the priority drop-in sets Restart=on-failure, so a wedged-but-active process
+# is never recovered by systemd alone. A root timer curls /health once a minute
+# and restarts monsterbox.service after 3 consecutive failures.
+if [ -f "$REPO_DIR/scripts/install-monsterbox-watchdog.sh" ]; then
+    REPO_DIR="$REPO_DIR" bash "$REPO_DIR/scripts/install-monsterbox-watchdog.sh" \
+        || print_warning "Liveness watchdog install failed (non-fatal); run scripts/install-monsterbox-watchdog.sh by hand"
+fi
+
 systemctl daemon-reload 2>/dev/null || true
-print_success "Node OS baseline applied (avahi perms, journald 64M, logrotate, drop-ins, log ownership, secrets scaffold, boot-check)"
+print_success "Node OS baseline applied (avahi perms, journald 64M, logrotate, drop-ins, log ownership, secrets scaffold, boot-check, liveness watchdog)"
 
 # Install Playwright browsers for testing (optional, non-fatal)
 sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null && \

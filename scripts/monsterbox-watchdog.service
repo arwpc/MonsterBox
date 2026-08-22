@@ -1,0 +1,13 @@
+[Unit]
+Description=MonsterBox liveness watchdog (restarts a wedged-but-active app)
+Documentation=https://github.com/arwpc/MonsterBox
+# Only meaningful while the app is meant to be up; the script itself also
+# refuses to act on an inactive service.
+After=monsterbox.service
+
+[Service]
+Type=oneshot
+# Root on purpose: it must be able to `systemctl restart monsterbox.service`.
+ExecStart=/bin/bash /home/remote/MonsterBox/scripts/monsterbox-liveness-watchdog.sh
+StandardOutput=journal
+StandardError=journal
