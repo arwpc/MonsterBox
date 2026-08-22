@@ -113,7 +113,8 @@ Each character at `data/character-{id}/` contains:
 - `GET /api/orchestration/animatronic/:id/status` → single-node health
 - `POST /api/orchestration/superpower/:feature` → `{ enabled, ids? }` — fleet-wide toggle (feature: lurk|jaw|head|motion|mute|idle)
 - `POST /api/orchestration/stop-all-queue-loops` / `POST /api/orchestration/emergency-stop` → fleet transport + panic stop
-- `PUT /api/orchestration/volume` → `{ volume, ids? }` — master speaker volume across the fleet
+- `PUT /api/orchestration/volume` → `{ volume, ids? }` — master speaker volume across the fleet (0-100%; cannot express canons above 100%)
+- `POST /api/orchestration/volume/restore-canonical` → `{ ids? }` — every node re-applies its OWN ear-verified `sinkVolume` from config/animatronics.json (the fleet-wide undo for a master-volume fan-out; node-local form: `POST /api/system/volume/canonical`)
 - `GET /api/orchestration/animatronic/:id/webcam-stream` → same-origin MJPEG proxy (forwards upstream boundary; the Fleet Command Center streams remote webcams through this)
 
 ## Scene Step Types
