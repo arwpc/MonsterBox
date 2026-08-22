@@ -85,6 +85,19 @@ touches another animatronic's audio.
 Found on Orlok 2026-08-18 while chasing "the far-field mic hears nothing." The
 array is **not** deaf. The streaming recorders open it and then deliver nothing.
 
+**Trap zero, found on Sir Dragomir 2026-08-22: a leftover `/etc/asound.conf` (or
+`~/.asoundrc`) pinning `pcm.!default` at raw hardware (`type plug` /
+`slave.pcm "hw:N,0"`).** Such a file — typically written for a speaker that no
+longer exists — bypasses PipeWire entirely: the node's default source,
+`PULSE_SOURCE`, and `wpctl set-default` are all ignored, and a capture opened
+through raw `hw:` on this array delivers zero frames, so `stream.read()` blocks
+**forever with no error** (it hung the operator's terminal; it hangs the app's
+child_process identically — `record_wav` now carries a hard watchdog that kills
+itself after duration+15 s and names this trap on stderr). Check for the file
+FIRST on any node with hanging or silent capture; move it aside — the
+`pipewire-alsa` bridge provides `default` for both directions. `install.sh` now
+backs such a file up automatically at provisioning.
+
 **What the symptom looks like.** Conversation and STT are silent — no
 transcripts, no error on the page — while the array's own LED ring visibly
 points at whoever is speaking across the room, so the hardware is plainly

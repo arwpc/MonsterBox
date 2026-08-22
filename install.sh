@@ -368,6 +368,21 @@ for card in $(aplay -l 2>/dev/null | awk -F'[ :]' '/reSpeaker XVF3800/ {print $2
     fi
 done
 
+# A leftover /etc/asound.conf (or ~/.asoundrc) that pins pcm.!default straight
+# at hardware (type plug / slave.pcm "hw:N") bypasses PipeWire entirely: the
+# node's default source, PULSE_SOURCE, and wpctl set-default are all ignored,
+# and raw ALSA capture from an XVF3800 delivers ZERO frames — the capture
+# process blocks forever with no error (found on Sir Dragomir 2026-08-22: the
+# file predated the array and hung every recording). The pipewire-alsa bridge
+# installed above provides "default" for BOTH directions; a hw-pinning
+# override must not survive provisioning.
+for alsa_override in /etc/asound.conf "$USER_HOME/.asoundrc"; do
+    if [ -f "$alsa_override" ] && grep -qE 'slave\.pcm[[:space:]]*"?hw:' "$alsa_override" 2>/dev/null; then
+        mv "$alsa_override" "${alsa_override}.pre-pipewire.bak"
+        print_warning "$alsa_override pinned ALSA default to raw hardware — moved to ${alsa_override}.pre-pipewire.bak (PipeWire's bridge now provides default; capture from an XVF3800 through raw hw: hangs with zero frames)"
+    fi
+done
+
 # Save audio settings
 alsactl store || true
 
