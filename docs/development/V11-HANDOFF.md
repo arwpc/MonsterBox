@@ -143,7 +143,9 @@ All 16 commits are on `origin/main`. Full messages carry the reasoning; summary:
 ### 4.2 Documentation corrected
 
 - Sir Dragomir's head servo channel was recorded **three different ways**: ch0 in docs, ch1 in the
-  repo, **ch4** on the node. ch4 is truth. Jaw is ch0, not ch1.
+  repo, **ch4** on the node. ch4 is truth. Jaw is ch0, not ch1. *(Historical — superseded
+  2026-08-22: the operator physically moved the jaw to **ch1**; verdict procedure in
+  BENCH-CHECKLIST K1. The head remains ch4.)*
 - His "Continuous Servo Gotchas" section said the neck must never be used for head tracking or poses.
   With position control it can be both.
 - `OPERATOR-TODO.md` gained the USB over-current finding.

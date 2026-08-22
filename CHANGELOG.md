@@ -51,6 +51,14 @@ bridge. Hardware checklist unchanged: `docs/hardware/OPERATOR-TODO.md` §A–F (
   the jaw, part 2 — the old note's part 1 was an error). New `docs/hardware/BENCH-CHECKLIST.md`
   is the repeatable prove-all-three procedure: per-node proof standards, the Knight/Orlok/Mina
   open-item closures, fleet checks, sign-off table.
+- **Deploy no longer clobbers each node's live mute state.** The final-round bench-checklist
+  review caught that `data/speaker-state.json` was missing from the rsync `--delete`
+  exclusions in `scripts/deploy-to-animatronic.sh` — every `npm run deploy:all` was
+  overwriting the per-node mute flag with the deploying machine's copy. Excluded now, same
+  as the rest of the node-local state. The same review drove a precision rewrite of
+  BENCH-CHECKLIST and MINA-REBUILD (exact commands and pass values per step) and fixed the
+  Dragomir character sheet's inverted channel story (ch0 measured GOOD; the dead-channel
+  suspect is the HEAD on ch4) and its wrong hostname (`sirdragomir`, not `dragomir`).
 - **CI was red on every push — root-caused and fixed.** The gate's unit suite assumes the
   node's always-on :3100 listener; on GitHub runners no server existed, so hundreds of
   tests waited out timeouts (5+ minutes of pure waiting vs 6 seconds with a server). CI now

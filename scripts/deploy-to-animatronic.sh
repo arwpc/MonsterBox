@@ -139,6 +139,7 @@ ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'data/character-*/movement-config.json' \
     --exclude 'data/calibration_profiles.json' \
     --exclude 'data/actuator-positions.json' \
+    --exclude 'data/speaker-state.json' \
     --exclude 'data/monsterbox.pid' \
     --exclude 'data/manual-nodes.json' \
     --exclude 'data/startup-health.json' \

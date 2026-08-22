@@ -3,7 +3,7 @@
 Software cannot close any of these. Each one has been isolated to a physical cause with evidence,
 so none of them needs re-diagnosing from scratch.
 
-Last updated **2026-08-21** (v11.0 production-readiness audit).
+Last updated **2026-08-22** (v11.0 production-readiness audit + bench session; §C jaw moved to ch1, §G watchdog added).
 
 ---
 
@@ -207,9 +207,11 @@ dead servo, broken/unseated signal lead, missing V+, or a burned output driver.
 | Orlok (3) | 2 Left Arm of Manipulation | GPIO 18/13, MDD10A | GPIO pins claimed and driven; 3 commands incl. a 2.75 s drive all read **+6.4–6.7 dB**, identical to the idle control |
 
 **The 5-minute diagnostic for each (needs hands):** swap in a known-good servo.
-- Dragomir: move the **jaw servo from ch0 → ch1**, then `POST /api/calibration/1/nudge?characterId=4
-  {"dir":"max","scale":"med"}`. Turns → ch1 and V+ are fine, **the head servo is dead**. Doesn't turn →
-  the fault is the **ch1 channel / harness / power**. Also meter V+ at the ch1 header pin against ch0's.
+- Dragomir: **DONE 2026-08-22 (physical half)** — Aaron moved the jaw to ch1. What remains is the
+  nudge verdict: see **§C above / BENCH-CHECKLIST K1** for the exact commands. The part to nudge
+  is the JAW (part **2**) — an earlier version of this bullet said part 1, which is the 900°
+  multi-turn HEAD that must never be nudged while uncalibrated (its scale bug can wrap the
+  head cabling).
 - Mina: move the **jaw servo from ch4 → ch8**, cycle, then → **ch11**. Treat ch8 + ch11 as ONE suspected
   shared V+/harness branch rather than two coincidental dead servos.
 - Orlok: meter the MDD10A output at the GPIO18/13 channel during a jog and compare against the working

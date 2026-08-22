@@ -72,7 +72,7 @@ Aaron: "I have to rebuild Mina, proceed with everything else." Done, and it chan
 - **⚠️ RELAY TO AARON BEFORE THE TEARDOWN GOES FURTHER:** if Mina's rebuild touches the SD
   card, her calibration, poses, part configs and VOICE IDENTITY exist only there — not in
   git, not on any other node. `docs/hardware/MINA-REBUILD.md` §1 is the copy-paste backup
-  (five scp lines + secrets). Backup first, teardown second.
+  (six scp lines + secrets). Backup first, teardown second.
 - **`docs/hardware/MINA-REBUILD.md` committed**: lossless tear-down (§1 backup), the hardware
   items cheapest to close while she is open (§4 USB rail plan, §E neck/eye shared V+ branch,
   the speaker audioDeviceId drift), fresh provisioning (hostname MUST be `mina`; install.sh
@@ -87,6 +87,65 @@ Aaron: "I have to rebuild Mina, proceed with everything else." Done, and it chan
 - While she is down: nothing to change in config — fan-outs already time out past her by
   design, and her `animatronics.json` row (hostname mapping + canon) is needed when she
   returns.
+
+## FINAL ROUND COMPLETE (monsterbox-6b, 2026-08-22 overnight) — order delivered
+
+All five items of the "final round tonight" order are done:
+
+1. **Cold-state full re-run** — `node_modules` deleted, fresh `npm ci` (0 vulnerabilities),
+   fresh single server. Gate **6/6 in 7.2 s**, unit **517 passing / 0 failing**, system
+   **360 passing / 0 failing**. Green from a cold start, not a warm cache.
+2. **Knight jaw ch1 cross-doc sweep** — every document tells the same story now. Two real
+   errors found and fixed: `docs/character_sir_dragomir.md` had the channel narrative
+   INVERTED (ch0 measured GOOD at +29 dB on 08-19; the dead-channel suspect is the HEAD on
+   ch4 — the jaw move to ch1 is the swap-in-known-good test), and its hostname said
+   `dragomir` when the node is `sirdragomir` (a reimage would have booted him as the wrong
+   character). OPERATOR-TODO §2 also still told the operator to nudge part 1 — the
+   forbidden 900° head; replaced with a pointer to §C (jaw = part 2).
+3. **BENCH-CHECKLIST walked as the human who runs it** — a 3-lens review (bench-operator /
+   expected-observation / cross-doc) returned 41 findings; the checklist is rewritten so
+   every step names the exact command, the exact expected value, and what failure looks
+   like. One REAL CODE BUG fell out: `data/speaker-state.json` was missing from the deploy
+   exclusions, so every `npm run deploy:all` clobbered each node's live mute state —
+   fixed in `scripts/deploy-to-animatronic.sh`. MINA-REBUILD.md §§1–4 now carry exact
+   commands and pass lines throughout (backup scope, per-channel probe curls, clone +
+   install pass line, capture proof, by-ear volume re-tune mechanism).
+4. **The morning list** — below.
+5. Out of software work after this commit; not holding the container open.
+
+## ☀️ WHAT TO CHECK TOMORROW MORNING — in this order
+
+**MINA FIRST — her rebuild is ANNOUNCED but there is NO confirmation the backup ran.**
+Her calibration, poses, and voice identity exist only on her SD card. Before ANY SD/OS
+work: run `MINA-REBUILD.md` §1 (six scp lines + secrets). Pass = the backup dir shows
+`character-2/ai-config/tts-config.json` present and `calibration_profiles.json` non-empty.
+Everything else about Mina waits on the rebuild (§2–§4 of her runbook, then her §4
+sign-off column).
+
+Then, on the two standing nodes:
+
+1. **K1 — Knight jaw verdict** (BENCH-CHECKLIST K1). The two curls, then jaw turn or
+   no-turn. Pass = jaw moves on ch1. Either way, record the verdict — it decides whether
+   the HEAD's ch4 is a dead channel or a dead/miswired servo. Do NOT drive part 1 (head).
+2. **K2 — head lockout proof** (BENCH-CHECKLIST K2). Pass = the drive path refuses the
+   uncalibrated 900° head with an error, no motion.
+3. **O1 — Orlok bow ×3** (BENCH-CHECKLIST O1). Three Extend/Retract jog-raw attempts
+   ≥15 min apart at `/setup/calibration` → Bow At The Waist. Pass = clean extend AND
+   retract all three times. The wiring-swap suspicion (description says RPWM=21/LPWM=19;
+   node's parts.json says rpwmPin:19/lpwmPin:21) is written up in the checklist step.
+4. **O3 — calibration stamp honesty** (BENCH-CHECKLIST O3). Jog to 3°/169°, then flip the
+   "Calibrated (trusted by runtime)" switch. Pass = no "(unmeasured)" anywhere after.
+5. **O4 — watchdog silence** (BENCH-CHECKLIST O4). `journalctl | grep monsterbox-watchdog`
+   on each node. Pass = timer active and ZERO `[monsterbox-watchdog]` restart lines; any
+   line is a finding (the watchdog fired = the server was down).
+6. **O5 — mic gain persistence** (BENCH-CHECKLIST O5). Set Gain 70%, restart service.
+   Pass = restore line in the log and `wpctl get-volume @DEFAULT_AUDIO_SOURCE@` = 0.70.
+7. **§F — fleet + suites** (BENCH-CHECKLIST §F). `npm run check:discovery` (Mina
+   Unreachable is EXPECTED while she is down) and `npm run test:system` per node.
+   Pass = 0 failing (±the 3 documented intermittents, on re-run only).
+
+Everything above has its exact commands and pass lines in `docs/hardware/BENCH-CHECKLIST.md`
+— this list is the order to run them in.
 
 ## Consumed orders (earlier tonight)
 
