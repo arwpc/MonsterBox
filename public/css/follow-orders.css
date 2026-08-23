@@ -1,0 +1,57 @@
+/* Follow Orders setup page */
+.follow-orders-page .fo-section {
+  margin: 1.25rem 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--mb-border, #333);
+}
+.follow-orders-page .fo-section-title {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.follow-orders-page .fo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.follow-orders-page .mb-field { display: flex; flex-direction: column; gap: 0.15rem; min-width: 160px; }
+.follow-orders-page .fo-wide { flex: 1 1 100%; }
+.follow-orders-page .fo-narrow { max-width: 220px; }
+.follow-orders-page .fo-builder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.follow-orders-page .fo-builder .mb-input { flex: 1 1 200px; }
+.follow-orders-page .fo-list { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem; }
+.follow-orders-page .fo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--mb-surface-2, rgba(255,255,255,0.04));
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+.follow-orders-page .fo-history { max-height: 300px; overflow-y: auto; }
+.follow-orders-page .fo-result {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: var(--mb-surface-2, rgba(255,255,255,0.05));
+  border-radius: 4px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  max-height: 320px;
+}
+.follow-orders-page .fo-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}

@@ -1,0 +1,163 @@
+<% if (error) { %>
+  <div class="mb-alert mb-alert-warning" role="alert">
+    <i class="bi bi-exclamation-triangle"></i> <%= error %>
+  </div>
+<% } %>
+
+<% if (currentCharacter) { %>
+<div class="mb-card follow-orders-page" data-character-id="<%= currentCharacter %>">
+  <div class="mb-card-header">
+    <h2 class="mb-card-title"><i class="bi bi-ear"></i> Follow Orders — <%= currentCharacterName %></h2>
+    <p class="mb-text-sm mb-text-muted">
+      Spoken commands drive poses, gestures, and parts. Matching happens locally from
+      speech-to-text transcripts — the character's AI persona is never modified.
+    </p>
+  </div>
+
+  <div class="mb-card-body">
+    <div id="foStatusAlert" class="mb-alert mb-alert-info" style="display:none"></div>
+
+    <!-- Core switches -->
+    <section class="fo-section">
+      <h3 class="fo-section-title">Behavior</h3>
+      <div class="fo-grid">
+        <label class="mb-switch">
+          <input type="checkbox" id="foEnabled">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Enabled <span id="foListeningBadge" class="mb-badge mb-badge-success" style="display:none">LISTENING</span></span>
+        </label>
+        <label class="mb-switch">
+          <input type="checkbox" id="foRequireName">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Require address by name</span>
+        </label>
+        <label class="mb-switch">
+          <input type="checkbox" id="foAckSpeak">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Speak acknowledgments</span>
+        </label>
+      </div>
+      <div class="fo-grid">
+        <label class="mb-field">
+          <span class="mb-label">Min confidence (0-1)</span>
+          <input type="number" id="foMinConfidence" class="mb-input" min="0.1" max="1" step="0.05">
+        </label>
+        <label class="mb-field">
+          <span class="mb-label">Cooldown between orders (ms)</span>
+          <input type="number" id="foCooldownMs" class="mb-input" min="0" step="100">
+        </label>
+        <label class="mb-field">
+          <span class="mb-label">Default motion duration (ms)</span>
+          <input type="number" id="foDefaultDurationMs" class="mb-input" min="100" step="100">
+        </label>
+        <label class="mb-field">
+          <span class="mb-label">Max motion duration (ms)</span>
+          <input type="number" id="foMaxDurationMs" class="mb-input" min="100" step="100">
+        </label>
+      </div>
+      <div class="fo-grid">
+        <label class="mb-field fo-wide">
+          <span class="mb-label">Address aliases (comma-separated — include common mishearings of the name)</span>
+          <input type="text" id="foAddressAliases" class="mb-input" placeholder="e.g. or lock, count">
+        </label>
+        <label class="mb-field fo-wide">
+          <span class="mb-label">Acknowledgment phrases (one per line)</span>
+          <textarea id="foAckPhrases" class="mb-input" rows="2" placeholder="As you command."></textarea>
+        </label>
+        <label class="mb-field fo-wide">
+          <span class="mb-label">Refusal phrases (one per line; blank = built-in reasons)</span>
+          <textarea id="foRefusalPhrases" class="mb-input" rows="2"></textarea>
+        </label>
+      </div>
+      <div class="fo-grid">
+        <label class="mb-switch">
+          <input type="checkbox" id="foMatchPoses">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Match poses</span>
+        </label>
+        <label class="mb-switch">
+          <input type="checkbox" id="foMatchGestures">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Match gestures</span>
+        </label>
+        <label class="mb-switch">
+          <input type="checkbox" id="foMatchParts">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Match part names</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Custom commands -->
+    <section class="fo-section">
+      <h3 class="fo-section-title">Custom commands <span class="mb-text-sm mb-text-muted">(checked before poses/gestures/parts)</span></h3>
+      <div id="foCommandsList" class="fo-list"></div>
+      <div class="fo-builder">
+        <input type="text" id="foCmdPhrases" class="mb-input" placeholder='Phrases, comma-separated: open the box, open your magic box'>
+        <select id="foCmdKind" class="mb-input fo-narrow">
+          <option value="pose">Pose</option>
+          <option value="gesture">Gesture</option>
+          <option value="part">Part</option>
+          <option value="stop">Stop all</option>
+        </select>
+        <select id="foCmdTarget" class="mb-input"></select>
+        <select id="foCmdVerb" class="mb-input fo-narrow" style="display:none">
+          <option value="open">open / extend / raise</option>
+          <option value="close">close / retract / lower</option>
+          <option value="on">turn on</option>
+          <option value="off">turn off</option>
+          <option value="toggle">toggle</option>
+        </select>
+        <button id="foCmdAddBtn" class="mb-btn mb-btn-primary mb-btn-sm"><i class="bi bi-plus-lg"></i> Add</button>
+      </div>
+    </section>
+
+    <!-- Part aliases -->
+    <section class="fo-section">
+      <h3 class="fo-section-title">Part aliases <span class="mb-text-sm mb-text-muted">(what guests call a part)</span></h3>
+      <div id="foAliasList" class="fo-list"></div>
+      <div class="fo-builder">
+        <input type="text" id="foAliasText" class="mb-input" placeholder="Alias, e.g. coffin door">
+        <select id="foAliasPart" class="mb-input"></select>
+        <label class="mb-switch fo-narrow">
+          <input type="checkbox" id="foAliasInvert">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span class="mb-text-sm">Invert open/close</span>
+        </label>
+        <button id="foAliasAddBtn" class="mb-btn mb-btn-primary mb-btn-sm"><i class="bi bi-plus-lg"></i> Add</button>
+      </div>
+    </section>
+
+    <div class="fo-actions">
+      <button id="foSaveBtn" class="mb-btn mb-btn-primary"><i class="bi bi-save"></i> Save Config</button>
+      <span id="foSaveStatus" class="mb-text-sm mb-text-muted"></span>
+    </div>
+
+    <!-- Try a phrase -->
+    <section class="fo-section">
+      <h3 class="fo-section-title">Try a phrase <span class="mb-text-sm mb-text-muted">(dry run — matches against the SAVED config, never moves hardware)</span></h3>
+      <div class="fo-builder">
+        <input type="text" id="foTryText" class="mb-input" placeholder="raise your arm">
+        <button id="foTryBtn" class="mb-btn mb-btn-secondary mb-btn-sm"><i class="bi bi-search"></i> Match</button>
+        <button id="foTryExecBtn" class="mb-btn mb-btn-warning mb-btn-sm" title="Matches AND drives real hardware"><i class="bi bi-lightning"></i> Match + Execute</button>
+      </div>
+      <pre id="foTryResult" class="fo-result" style="display:none"></pre>
+    </section>
+
+    <!-- Order history -->
+    <section class="fo-section">
+      <h3 class="fo-section-title">Order history
+        <button id="foHistoryRefreshBtn" class="mb-btn mb-btn-secondary mb-btn-sm"><i class="bi bi-arrow-clockwise"></i></button>
+        <button id="foHistoryClearBtn" class="mb-btn mb-btn-secondary mb-btn-sm"><i class="bi bi-trash"></i> Clear</button>
+      </h3>
+      <div id="foHistoryList" class="fo-list fo-history"></div>
+    </section>
+  </div>
+</div>
+<% } else { %>
+  <div class="mb-alert mb-alert-info" role="alert">
+    <i class="bi bi-info-circle"></i> Select a character from the navigation menu to configure Follow Orders.
+  </div>
+<% } %>
+
+<script src="/js/follow-orders.js?v=<%= Date.now() %>"></script>

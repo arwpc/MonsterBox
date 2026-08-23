@@ -27,6 +27,7 @@ import setupModelsRoutes from './routes/setup/models.js';
 import setupPosesRoutes from './routes/setup/poses.js';
 import setupJawAnimationRoutes from './routes/setup/jaw-animation.js';
 import setupHeadAnimationRoutes from './routes/setup/head-animation.js';
+import setupFollowOrdersRoutes from './routes/setup/follow-orders.js';
 import setupSystemRoutes from './routes/setup/system.js';
 import calibrationApiRouter from './server/calibration/router.js';
 
@@ -516,6 +517,7 @@ app.use('/setup/audio', setupAudioRoutes);
 app.use('/setup/models', setupModelsRoutes);
 app.use('/setup/jaw-animation', setupJawAnimationRoutes);
 app.use('/setup/head-animation', setupHeadAnimationRoutes);
+app.use('/setup/follow-orders', setupFollowOrdersRoutes);
 app.use('/setup/super-powers', (req, res) => res.redirect(301, req.originalUrl.replace('/setup/super-powers', '/setup/jaw-animation')));
 app.use('/setup/system', setupSystemRoutes);
 app.use('/setup/poses', setupPosesRoutes);
