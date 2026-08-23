@@ -445,7 +445,15 @@ class MotionTracker:
                     self._reconnect_backoff = min(backoff_time * 2, 30.0)
             return None
         try:
-            chunk = self.stream_conn.read(32768)
+            # read1(), never read(n): the response is a BUFFERED reader, and
+            # read(n) blocks until a full n bytes arrive from the network.
+            # Combined with the drain loop below — whose raw-fd select fires
+            # as long as the live stream keeps sending, i.e. always — read(n)
+            # turned each "drain" into blocking reads up to the 4MB cap
+            # (~11 s at the stream's byte rate) and starved the tracker to
+            # <1 fps with boxes seconds behind. read1 returns whatever is
+            # already available without waiting for a full buffer.
+            chunk = self.stream_conn.read1(65536)
             if not chunk:
                 try:
                     self.stream_conn.close()
@@ -455,17 +463,19 @@ class MotionTracker:
                 return None
             self.frame_buffer += chunk
 
-            # DRAIN the socket. One 32 KB read per processing cycle consumes
-            # far less than the stream produces (~15 fps x ~40 KB), so frames
-            # queued in the KERNEL buffer and the "latest" frame this parser
-            # extracted was seconds old — the bench's 5-seconds-behind video.
-            # Freshness beats throughput: pull everything that is already
-            # waiting, bounded so one call can never spin forever.
+            # DRAIN what is already queued. One read per processing cycle
+            # consumes far less than the stream produces (~15 fps x ~40 KB),
+            # so frames queued in the KERNEL buffer and the "latest" frame
+            # this parser extracted was seconds old — the bench's
+            # 5-seconds-behind video. Freshness beats throughput: pull
+            # everything that is already waiting, and stop the moment the
+            # socket is quiet (zero-timeout select), bounded so one call can
+            # never spin forever.
             drained = 0
             try:
                 fd = self.stream_conn.fileno()
                 while drained < 4 * 1024 * 1024 and select.select([fd], [], [], 0)[0]:
-                    more = self.stream_conn.read(32768)
+                    more = self.stream_conn.read1(65536)
                     if not more:
                         break
                     self.frame_buffer += more

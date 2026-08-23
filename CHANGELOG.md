@@ -61,6 +61,14 @@ and the known-good state MINTED with a restore procedure
   shipped with maxAge:0 (now 5m; vendor CSS/JS no longer re-paid per navigation over
   software TLS), VU probes halved to 1 Hz. Recorded for later: console `tail` spawn per
   poll, telemetry flush stringify, webcamController sync execs, mjpegRelay scan memo.
+- **The tracker's frame reads no longer block for seconds (after-deploy fix).** The
+  drain-to-latest stream read used `read(n)` on the buffered HTTP response — which
+  blocks until a full n bytes arrive — while its raw-socket `select()` kept firing for
+  as long as the live stream kept sending (always), so each "drain" degenerated into
+  ~11 s of blocking reads up to the 4MB cap. Measured on the knight after deploy:
+  ONE frame processed in 28 seconds, boxes seconds behind. `read1()` returns whatever
+  is already buffered; loopback-proven at 15.3 fps extracted from a 15 fps stream with
+  a 68 ms worst-case call.
 - **OpenCV tracking: every confirmed reason the boxes vanish, fixed.** A second
   39-agent verified audit mapped the whole chain (boxes exist ONLY on the head-animation
   page + calibration advanced tab; they come from `motion_tracking_service.py` via the
