@@ -354,6 +354,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
      * @param {object} [httpsServer] - Optional HTTPS server to attach WSS to at /ai-chat
      */
     async startWebSocketServer(httpsServer) {
+        // Body awareness rides every conversation this server hosts.
+        this._initBodyStateBridge();
         return new Promise((resolve, reject) => {
             try {
                 // Primary WS server on dedicated port (HTTP clients)
@@ -799,6 +801,16 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     // Start server mic loop only after conversation is fully initialized
                     if (connection.micSource === 'server') {
                         try { this._startServerMicLoop(sessionId); } catch (_) { }
+                    }
+
+                    // Opening body context: tell the agent where its body
+                    // already is, so "is your arm up?" works even when the arm
+                    // was raised before this conversation began.
+                    if (connection.characterId != null) {
+                        import('./bodyStateService.js').then(m => {
+                            const summary = (m.default || m).summarize(connection.characterId);
+                            if (summary) this.sendContextualUpdate(connection.characterId, summary, 'body_state_summary');
+                        }).catch(() => { /* optional */ });
                     }
 
                     // Flush any pending text messages that arrived before conversation was ready
@@ -1610,6 +1622,72 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 }
             });
         } catch (_) { return wavBuf; }
+    }
+
+    /**
+     * Inject non-interrupting context into every live agent conversation for
+     * a character: `contextual_update` is a socket message, not a config
+     * override, so the locked agent configs don't gate it and no persona is
+     * edited. Per current ElevenLabs docs it never interrupts speech and is
+     * reflected on the agent's next turn; `context_id` makes newer state
+     * supersede older instead of piling up in the LLM context.
+     */
+    sendContextualUpdate(characterId, text, contextId = null) {
+        if (characterId == null || !text) return 0;
+        let sent = 0;
+        for (const [, connection] of this.activeConnections) {
+            if (Number(connection.characterId) !== Number(characterId)) continue;
+            const ws = connection.elevenLabsWs;
+            if (!ws || ws.readyState !== WebSocket.OPEN) continue;
+            try {
+                const payload = { type: 'contextual_update', text };
+                if (contextId) payload.context_id = contextId;
+                ws.send(JSON.stringify(payload));
+                sent += 1;
+            } catch (_) { /* a dying socket is not worth a log line here */ }
+        }
+        return sent;
+    }
+
+    /**
+     * Bridge body-state changes into live conversations. Debounced ~500 ms per
+     * character so a multi-part pose lands as one update, not eight; each
+     * part/pose keeps its own context_id so stale state supersedes cleanly.
+     */
+    _initBodyStateBridge() {
+        if (this._bodyStateBridgeUp) return;
+        this._bodyStateBridgeUp = true;
+        this._bodyStatePending = new Map(); // characterId -> { timer, partIds:Set, pose:boolean }
+        import('./bodyStateService.js').then(m => {
+            const bodyState = m.default || m;
+            bodyState.onChange(({ characterId, kind, partId }) => {
+                try {
+                    const key = String(characterId);
+                    let pending = this._bodyStatePending.get(key);
+                    if (!pending) {
+                        pending = { timer: null, partIds: new Set(), pose: false };
+                        this._bodyStatePending.set(key, pending);
+                    }
+                    if (kind === 'part' && partId != null) pending.partIds.add(partId);
+                    if (kind === 'pose') pending.pose = true;
+                    if (pending.timer) return;
+                    pending.timer = setTimeout(() => {
+                        this._bodyStatePending.delete(key);
+                        try {
+                            if (pending.pose) {
+                                const d = bodyState.describePose(characterId);
+                                if (d) this.sendContextualUpdate(characterId, d.text, d.contextId);
+                            }
+                            for (const pid of pending.partIds) {
+                                const d = bodyState.describeChange(characterId, pid);
+                                if (d) this.sendContextualUpdate(characterId, d.text, d.contextId);
+                            }
+                        } catch (_) { /* context is best-effort */ }
+                    }, 500);
+                } catch (_) { /* never break the motion path */ }
+            });
+            console.log('🧠 Body-state → contextual_update bridge armed');
+        }).catch(() => { /* body state unavailable — conversations work without it */ });
     }
 
     /**
