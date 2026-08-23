@@ -722,7 +722,10 @@
       if (!isOpenCVActive || !currentCharacterId) { stopPolling(); return; }
       if (pollBusy) return;
       pollStatus();
-    }, 100);
+      // 300ms, not 100: the overlay draws from ~10fps tracker output, so 10
+      // HTTPS req/s per open page bought nothing but CPU — on the Pi's own
+      // browser and on the server at once (2026-08-23 perf audit).
+    }, 300);
   }
 
   function stopPolling() {

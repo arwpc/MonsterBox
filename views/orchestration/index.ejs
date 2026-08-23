@@ -259,6 +259,20 @@
   // Cache-buster so a retry is a real new request, not a replay of the failed one.
   function startCam(img, id) { img.src = API + '/animatronic/' + id + '/webcam-stream?_=' + Date.now(); }
 
+  // A hidden Fleet Command Center tab held one full MJPEG stream PER NODE
+  // open forever (2026-08-23 perf audit). Pause every card's stream while
+  // hidden; resume each with a fresh connection when the tab returns.
+  document.addEventListener('visibilitychange', () => {
+    document.querySelectorAll('img[data-cam-paused], img[src*="/webcam-stream"]').forEach(img => {
+      if (document.hidden) {
+        if (img.src) { img.dataset.camPaused = img.src; img.removeAttribute('src'); }
+      } else if (img.dataset.camPaused) {
+        img.src = img.dataset.camPaused.replace(/([?&]_=)\d+/, '$1' + Date.now());
+        delete img.dataset.camPaused;
+      }
+    });
+  });
+
   function buildCard(node) {
     const col = el('div', 'col-sm-6 col-lg-4 col-xxl-3');
     col.id = cardId(node.id);

@@ -416,6 +416,9 @@
       });
     }
     async function pollActivity() {
+      // A background tab kept polling forever — additive per open dashboard
+      // (2026-08-23 perf audit); badges refresh on the first visible tick.
+      if (document.hidden) return;
       try {
         var r = await fetch('/conversation/api/lurk-mode/activity-status');
         var j = await r.json();
@@ -1278,6 +1281,20 @@
       status.style.cursor = '';
     }
 
+    // A hidden dashboard tab held its MJPEG stream open forever — one full
+    // camera stream per forgotten tab (2026-08-23 perf audit). Pause the
+    // <img> while hidden; resume with a fresh connection when visible.
+    document.addEventListener('visibilitychange', function () {
+      const img = $('webcamImg');
+      if (!img) return;
+      if (document.hidden) {
+        if (img.src) { img.dataset.pausedSrc = img.src; img.removeAttribute('src'); }
+      } else if (img.dataset.pausedSrc) {
+        img.src = img.dataset.pausedSrc.replace(/([?&]_=)\d+/, '$1' + Date.now());
+        delete img.dataset.pausedSrc;
+      }
+    });
+
     async function loadWebcam() {
       const img = $('webcamImg');
       const status = $('webcamStatus');
@@ -1362,6 +1379,7 @@
     }
 
     async function pollHeadTrackStatus() {
+      if (document.hidden) return; // same background-tab rule as pollActivity
       try {
         const r = await fetch('/conversation/api/head-tracking-status');
         const j = await r.json();

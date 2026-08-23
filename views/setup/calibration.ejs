@@ -2530,6 +2530,23 @@
       if (canvas) { canvas.style.display = 'none'; }
     }
 
+    // A hidden calibration tab held its MJPEG stream (and overlay) open
+    // forever — a full camera stream per forgotten tab (2026-08-23 perf
+    // audit). Pause while hidden, resume fresh when the tab returns.
+    var advStreamPausedByVisibility = false;
+    document.addEventListener('visibilitychange', function () {
+      var img = document.getElementById('advStreamImg');
+      if (document.hidden) {
+        if (img && img.src) {
+          advStreamPausedByVisibility = true;
+          stopAdvStream();
+        }
+      } else if (advStreamPausedByVisibility) {
+        advStreamPausedByVisibility = false;
+        startAdvStream();
+      }
+    });
+
     function setupAdvMotionOverlay() {
       var img = document.getElementById('advStreamImg');
       var canvas = document.getElementById('motionOverlay');
@@ -2694,7 +2711,9 @@
           })
           .catch(function () { })
           .then(function () { statusPollBusy = false; });
-      }, 100);
+        // 300ms, not 100 — see head-animation.js: the tracker emits ~10fps,
+        // so faster polling only burns browser + server CPU (perf audit).
+      }, 300);
     }
 
     function calSetHeadTrackingUI(enabled) {
@@ -3357,7 +3376,9 @@
               .catch(function () {})
               .then(function () { vuBusy = false; });
           }
-          vuInterval = setInterval(updateCalMicVU, 150);
+          // 500ms, not 150: each VU sample spawns a Python+ALSA process on the
+          // node (~30-70% of a core at the old rate — 2026-08-23 perf audit).
+          vuInterval = setInterval(updateCalMicVU, 500);
           // Store for cleanup
           if (!window._calMicVuIntervals) window._calMicVuIntervals = [];
           window._calMicVuIntervals.push(vuInterval);
