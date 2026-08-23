@@ -106,6 +106,11 @@ ssh remote@$IP 'wpctl get-volume @DEFAULT_AUDIO_SINK@'
 `docs/hardware/PCA9685-CHANNEL-MAP-DRAGOMIR.md`. Channel numbers quoted inside the K-items below
 are the history of how we got here, not the map.**
 
+**K2/K3 ✅ DONE 2026-08-23: full from-scratch calibration at the bench — head window 323–491
+real degrees (center 390), jaw 27–74, box 16–178 (inverted), all three stamped Calibrated,
+physical-faults entry removed. Known-good state minted with restore procedure:
+`docs/hardware/minted/sirdragomir-2026-08-23/`.**
+
 - **K1. ✅ RESOLVED 2026-08-22 (verdict from the bench): NOTHING is electrically dead.**
   Jaw drives great on ch1, the magic box is great, and the head servo is ALIVE on ch4 —
   the operator got it rotating. The 2026-08-19 "+0.4 dB / dead channel" reading is

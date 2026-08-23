@@ -34,11 +34,13 @@ PCA9685 I2C at address `0x40`, 50 Hz:
 see `docs/hardware/PCA9685-CHANNEL-MAP-DRAGOMIR.md` — that file supersedes any
 older channel numbers anywhere in the docs.**
 
-| Servo | Channel | Type | Notes |
-|-------|---------|------|-------|
-| Head Servo | **7** | **Multi-turn position** | 900° travel; holds position. ALIVE. The calibrated window is what protects the head cabling; the 2026-08-22 window was wiped during the channel churn — re-measure per BENCH-CHECKLIST K3 |
-| Jaw Servo | **3** | Standard | Mouth movement, jaw animation sync |
-| Magic Box Servo | **11** | Standard | Special effect mechanism — motion verified 2026-08-22 |
+| Servo | Channel | Type | Calibrated window | Notes |
+|-------|---------|------|-------------------|-------|
+| Head Servo | **7** | **Multi-turn position** | **323–491 real°** (center 390) | 900° travel; holds position. **CALIBRATED + stamped 2026-08-23** — the window is the cable guard, keep travel inside it |
+| Jaw Servo | **3** | Standard | **27–74** | Mouth movement, jaw animation sync. Calibrated + stamped 2026-08-23 |
+| Magic Box Servo | **11** | Standard, **inverted** | **16–178** (min=closed, max=open) | Calibrated + stamped 2026-08-23 |
+
+Minted known-good state + restore procedure: `docs/hardware/minted/sirdragomir-2026-08-23/`.
 
 ## Head Servo — multi-turn, NOT continuous rotation
 
@@ -67,8 +69,9 @@ wrapper arg 900; unit-tested). This is what made the head "occasionally rotate a
 around": most small commands landed under the deadband and did nothing, while any large one
 commanded hundreds of real degrees in a single hop.
 
-Still to do: **BENCH-CHECKLIST K3** — a supervised calibration to establish the cable-safe
-min/max in real degrees, with eyes on the part and slack in the loom.
+**K3 DONE (2026-08-23): supervised calibration complete — cable-safe window 323–491 real
+degrees, Calibrated stamp flipped, physical-faults entry removed.** The measured window is
+minted in `docs/hardware/minted/sirdragomir-2026-08-23/`.
 
 **What actually refuses it until then (verified in code):** only the paths that require a
 measured calibration window — poses, scenes, head tracking — refuse this part, because its
@@ -81,7 +84,8 @@ advisory** — since 2026-08-22 the servo daemon vetoes every channel a listed p
 claims, for every caller, and reports the refusal as an error. The head lockout is procedural —
 only K3 commands part 1, eyes on the cabling.
 
-**Default/center pose:** Jaw 90°, Magic Box 90° (the head has no safe center until calibrated).
+**Default/center pose:** Head 390° (its saved "center" preset), Jaw 50°, Magic Box 97° —
+all mid-window per the 2026-08-23 calibration.
 
 ## Configuration Files
 

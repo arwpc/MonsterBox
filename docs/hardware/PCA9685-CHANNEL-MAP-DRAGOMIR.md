@@ -7,11 +7,14 @@ they are superseded by this file).
 
 PCA9685 I2C `0x40`, 50 Hz:
 
-| Part id | Part | Channel | Kind |
-|---------|------|---------|------|
-| 2 | Jaw Servo (Miuzei MG90S) | **3** | standard servo, 0–180 |
-| 1 | Head Servo (goBILDA Stingray-2) | **7** | **multi-turn**, 900° real travel — never continuous |
-| 3 | Magic Box Servo (Miuzei 25kg) | **11** | standard servo, 0–180 |
+| Part id | Part | Channel | Kind | Calibrated window (2026-08-23) |
+|---------|------|---------|------|-------------------------------|
+| 2 | Jaw Servo (Miuzei MG90S) | **3** | standard servo, 0–180 | **27–74** |
+| 1 | Head Servo (goBILDA Stingray-2) | **7** | **multi-turn**, 900° real travel — never continuous | **323–491** real degrees (center 390) |
+| 3 | Magic Box Servo (Miuzei 25kg) | **11** | standard servo, 0–180, **inverted** | **16–178** (min=closed, max=open) |
+
+Full minted state (parts + profiles + restore procedure):
+`docs/hardware/minted/sirdragomir-2026-08-23/`.
 
 Asserted idempotently by `scripts/bench/knight-finish.sh`; enforced-by-record
 here. The history that made this file necessary, so nobody repeats it:
