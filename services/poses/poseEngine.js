@@ -160,6 +160,15 @@ export async function executePose({ characterId, poseId, pose: providedPose, opt
         // and name the parts that failed, while keeping `success` meaningful for
         // callers that only check the flag.
         const failedParts = results.filter(r => !r.success);
+
+        // Body awareness: the pose name is the best speakable description of
+        // where the body now is. Fire-and-forget — never blocks the result.
+        if (failedParts.length < results.length || results.length === 0) {
+            import('../bodyStateService.js')
+                .then(m => (m.default || m).recordPose(characterId, pose.name, { source: 'pose-engine' }))
+                .catch(() => { /* belief tracking is optional */ });
+        }
+
         return {
             success: failedParts.length === 0,
             partialFailure: failedParts.length > 0 && failedParts.length < results.length,

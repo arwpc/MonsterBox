@@ -20,6 +20,15 @@ async function hw() {
   return mod.default || mod;
 }
 
+// Body awareness: report what an order did, so the conversation layer can
+// tell the agent. Fire-and-forget — belief tracking never blocks motion.
+async function recordBody(fn) {
+  try {
+    const bodyState = await import('../bodyStateService.js').then(m => m.default || m);
+    fn(bodyState);
+  } catch (_) { /* body state unavailable — motion is unaffected */ }
+}
+
 async function physicalFault(characterId, partId) {
   try {
     const { getPhysicalFault } = await import('../hardwareService/safetyLimits.js');
@@ -258,21 +267,30 @@ export async function executeOrder(characterId, match, cfg = {}) {
             name: p.name || '',
             markers: Array.isArray(p.markers) ? p.markers : []
           };
-          return await executePartOrder(characterId, part, action.verb || 'open', cfg, {
+          const result = await executePartOrder(characterId, part, action.verb || 'open', cfg, {
             durationMs: action.durationMs, angle: action.angle, sound: action.sound
           });
+          if (result.success) {
+            recordBody(b => b.recordPartAction(characterId, part, { verb: action.verb || 'open', source: 'follow-orders' }));
+          }
+          return result;
         }
         return { success: false, refused: true, reason: 'unknown_command_kind', detail: action.kind };
       }
 
       case 'pose':
-        return await executePoseOrder(characterId, match.poseId);
+        return await executePoseOrder(characterId, match.poseId, match.poseName);
 
       case 'gesture':
         return await executeGestureOrder(characterId, match.gestureId);
 
-      case 'part':
-        return await executePartOrder(characterId, match.part, match.verb, cfg, {});
+      case 'part': {
+        const result = await executePartOrder(characterId, match.part, match.verb, cfg, {});
+        if (result.success) {
+          recordBody(b => b.recordPartAction(characterId, match.part, { verb: match.verb, source: 'follow-orders' }));
+        }
+        return result;
+      }
 
       default:
         return { success: false, refused: true, reason: 'unknown_match_kind', detail: match.kind };
@@ -283,16 +301,24 @@ export async function executeOrder(characterId, match, cfg = {}) {
   }
 }
 
-async function executePoseOrder(characterId, poseId) {
+async function executePoseOrder(characterId, poseId, poseName) {
   const { executePose } = await import('../poses/poseEngine.js');
   const result = await executePose({ characterId, poseId, options: {} });
-  return { success: result && result.success !== false, kind: 'pose', poseId, detail: result };
+  const success = result && result.success !== false;
+  if (success) {
+    recordBody(b => b.recordPose(characterId, poseName || `#${poseId}`, { source: 'follow-orders' }));
+  }
+  return { success, kind: 'pose', poseId, detail: result };
 }
 
 async function executeGestureOrder(characterId, gestureId) {
   const gestureEngine = await import('../gestureEngineService.js').then(m => m.default || m);
   const result = await gestureEngine.performGesture(characterId, gestureId);
-  return { success: !!(result && result.performed), kind: 'gesture', gestureId, detail: result };
+  const success = !!(result && result.performed);
+  if (success) {
+    recordBody(b => b.recordGesture(characterId, gestureId, { source: 'follow-orders' }));
+  }
+  return { success, kind: 'gesture', gestureId, detail: result };
 }
 
 export default { executeOrder, stopEverything, OWNER, ORDER_PRIORITY };

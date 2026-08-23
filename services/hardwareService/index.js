@@ -2003,6 +2003,18 @@ export async function controlPart(partId, action, params = {}, options = {}) {
             safetyAdjustments.push(...wrapperClamps);
         }
 
+        // Body awareness: record what this part was just commanded to do, so
+        // the conversation layer can tell the agent where its body is. Covers
+        // scene steps and manual controls; richer verb-level semantics come
+        // from the follow-orders executor. Fire-and-forget, never throws.
+        if (result && result.success !== false) {
+            import('../bodyStateService.js')
+                .then(m => (m.default || m).recordPartAction(characterId ?? undefined, {
+                    partId, partName: part.name, type
+                }, { action, params: actionParams, source: 'control-part' }))
+                .catch(() => { /* belief tracking is optional */ });
+        }
+
         return {
             ...result,
             partId: partId,

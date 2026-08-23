@@ -397,6 +397,10 @@ export async function performGesture(characterId, gestureId, opts = {}) {
         const ok = results.filter(r => r.ok).length;
         // One line per gesture — no per-tick logging, per the SD-card discipline.
         console.log(`[GestureEngine] ${gestureId} on character ${characterId}: ${ok}/${results.length} steps, ${claimed.size} part(s) claimed`);
+        // Body awareness: note the performed gesture. Fire-and-forget.
+        import('./bodyStateService.js')
+            .then(m => (m.default || m).recordGesture(characterId, gestureId, { source: 'gesture-engine' }))
+            .catch(() => { /* belief tracking is optional */ });
         return { performed: true, gestureId, stepsOk: ok, stepsTotal: results.length, claimed: [...claimed] };
     } catch (err) {
         console.warn(`[GestureEngine] ${gestureId} on character ${characterId} failed: ${err.message}`);

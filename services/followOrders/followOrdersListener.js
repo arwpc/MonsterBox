@@ -100,6 +100,11 @@ export async function handleTranscript(characterId, text, meta = {}) {
 
     state.lastOrderAt = now;
     console.log(`[FollowOrders] character ${characterId} obeying (${match.kind}): "${text}"`);
+    // Note the spoken order for body-awareness event framing before executing.
+    try {
+      const bodyState = await import('../bodyStateService.js').then(m => m.default || m);
+      bodyState.recordOrder(characterId, text);
+    } catch (_) { /* belief tracking never blocks obedience */ }
     const execution = await executeOrder(characterId, match, config);
     pushHistory(state, { source: meta.source || 'unknown', transcript: text, match, execution });
 
