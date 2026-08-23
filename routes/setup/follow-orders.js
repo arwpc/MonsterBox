@@ -1,6 +1,6 @@
 import express from 'express';
 import { loadCharacters } from '../../services/characterService.js';
-import * as configService from '../../services/configService.js';
+import { resolveCharacter } from '../../services/characterContext.js';
 import * as followOrdersService from '../../services/followOrders/followOrdersSuperPowerService.js';
 import { matchOrder } from '../../services/followOrders/orderMatcher.js';
 import followOrdersListener from '../../services/followOrders/followOrdersListener.js';
@@ -17,8 +17,8 @@ const router = express.Router();
 // ─── Super-power catalog participation ───────────────────────────────
 router.get('/api/list', async (req, res) => {
   try {
-    const config = await configService.readConfig();
-    const characterId = parseInt(config.selectedCharacter, 10) || null;
+    const ctx = await resolveCharacter(req);
+    const characterId = ctx ? ctx.id : null;
 
     const [foConfig, can] = await Promise.all([
       followOrdersService.readFollowOrdersConfig(characterId),
@@ -55,8 +55,8 @@ router.get('/api/list', async (req, res) => {
 // ─── Main page ───────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    const config = await configService.readConfig();
-    const currentCharacter = config.selectedCharacter;
+    const ctx = await resolveCharacter(req);
+    const currentCharacter = ctx ? ctx.id : null;
 
     if (!currentCharacter) {
       return res.renderWithLayout('setup/follow-orders', {
@@ -239,7 +239,8 @@ router.get('/api/history/:charId', async (req, res) => {
 
 router.delete('/api/history/:charId', async (req, res) => {
   try {
-    followOrdersListener.clearHistory(req.params.charId);
+    const { charId } = req.params;
+    followOrdersListener.clearHistory(charId);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
