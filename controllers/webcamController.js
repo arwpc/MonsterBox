@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 
 import { readConfig } from '../services/configService.js';
 import hardwareService from '../services/hardwareService/index.js';
+import { relayMjpegLatest } from '../services/mjpegRelay.js';
 import { writeJsonAtomic, withFileLock } from '../services/atomicStore.js';
 
 // mjpg-streamer service configuration
@@ -626,11 +627,8 @@ export const streamMJPEG = async (req, res) => {
         throw new Error(`mjpg-streamer returned ${streamResponse.status}: ${streamResponse.statusText}`);
       }
 
-      // Forward the content type from mjpg-streamer
-      const contentType = streamResponse.headers.get('content-type');
-      if (contentType) {
-        res.setHeader('Content-Type', contentType);
-      }
+      // The relay re-authors the multipart framing (its own boundary and part
+      // headers), so the upstream Content-Type is deliberately NOT forwarded.
 
       // Track active stream usage
       try {
@@ -658,7 +656,6 @@ export const streamMJPEG = async (req, res) => {
       req.on('close', cleanup);
       req.on('aborted', cleanup);
 
-      // Pipe using Node.js streams to minimize buffering/latency
       // node-fetch returns a Node.js stream directly, no conversion needed
       const nodeReadable = streamResponse.body;
 
@@ -672,9 +669,13 @@ export const streamMJPEG = async (req, res) => {
         cleanup();
       });
 
-      // Pipe to response
-      nodeReadable.pipe(res);
-      nodeReadable.on('end', () => cleanup());
+      // Latest-frame relay, NOT pipe(): a FIFO pipe preserves every stall as
+      // PERMANENT lag — MJPEG produces and plays at the same rate, so a backlog
+      // accumulated during one busy moment never drains, and the fleet's video
+      // ran seconds behind reality at full idle. The relay reads upstream at
+      // full speed and delivers only the newest frame the viewer can take.
+      // Operator ruling 2026-08-23: real-time beats complete — drop, never queue.
+      relayMjpegLatest(nodeReadable, res, { onClose: cleanup });
 
     } catch (fetchError) {
       console.error('mjpg-streamer fetch error:', fetchError);

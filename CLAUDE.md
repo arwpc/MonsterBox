@@ -115,7 +115,7 @@ Each character at `data/character-{id}/` contains:
 - `POST /api/orchestration/stop-all-queue-loops` / `POST /api/orchestration/emergency-stop` → fleet transport + panic stop
 - `PUT /api/orchestration/volume` → `{ volume, ids? }` — master speaker volume across the fleet (0-100%; cannot express canons above 100%)
 - `POST /api/orchestration/volume/restore-canonical` → `{ ids? }` — every node re-applies its OWN ear-verified `sinkVolume` from config/animatronics.json (the fleet-wide undo for a master-volume fan-out; node-local form: `POST /api/system/volume/canonical`)
-- `GET /api/orchestration/animatronic/:id/webcam-stream` → same-origin MJPEG proxy (forwards upstream boundary; the Fleet Command Center streams remote webcams through this)
+- `GET /api/orchestration/animatronic/:id/webcam-stream` → same-origin MJPEG proxy (latest-frame relay via `services/mjpegRelay.js` — drops stale frames rather than queue them, so video stays real-time under load; the Fleet Command Center streams remote webcams through this)
 
 ## Scene Step Types
 `servo`, `motor`, `linear-actuator`, `light/led`, `audio`, `sayThis`, `askAI`, `goblin-video`, `wait`, `sensor`, `pose`, `hardware`, `jaw-animation`, `head-tracking`

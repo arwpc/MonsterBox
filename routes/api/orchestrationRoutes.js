@@ -9,6 +9,7 @@ import https from 'https';
 import autoAIService from '../../services/autoAIService.js';
 import orchestrationService from '../../services/orchestrationService.js';
 import nodeDiscoveryService from '../../services/nodeDiscoveryService.js';
+import { relayMjpegLatest } from '../../services/mjpegRelay.js';
 
 // HTTPS agent for self-signed certificates on MonsterBox nodes
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -663,24 +664,20 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
             timeout: 0
         });
 
-        // Forward the upstream MJPEG Content-Type verbatim so the boundary token
-        // matches the bytes on the wire. mjpg-streamer uses boundary=boundarydonotcross;
-        // hardcoding boundary=frame here left the browser unable to segment frames,
-        // which is why remote webcams never rendered. Mirror webcamController.js.
-        res.setHeader('Content-Type', response.headers['content-type'] || 'multipart/x-mixed-replace; boundary=boundarydonotcross');
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
+        // Latest-frame relay, NOT pipe(): the fleet hop had the same FIFO
+        // disease as the node proxy — one stall anywhere queued frames that
+        // never drained, so Fleet Command Center video ran seconds behind
+        // reality forever after. The relay re-authors the multipart framing
+        // itself (boundary handling included — the old hardcoded-boundary bug
+        // cannot recur) and always delivers the newest frame the viewer can
+        // take. Mirror of controllers/webcamController.js.
         res.setHeader('Expires', '0');
+        relayMjpegLatest(response.data, res, {
+            onClose: () => { try { response.data.destroy(); } catch (_) { /* gone */ } }
+        });
 
-        // Pipe the stream
-        response.data.pipe(res);
-
-        // Handle errors
         response.data.on('error', (error) => {
             console.error(`Webcam stream error for ${animatronic.name}:`, error.message);
-            if (!res.headersSent) {
-                res.status(500).end();
-            }
         });
 
         req.on('close', () => {
