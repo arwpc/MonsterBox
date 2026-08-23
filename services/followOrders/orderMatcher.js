@@ -91,8 +91,8 @@ export function normalizeTranscript(text) {
 
 /**
  * Detect and strip the character's name (or an alias) anywhere in the phrase.
- * Scribe drops commas, and guests say both "Orlok, raise your arm" and
- * "raise your arm, Orlok" — position must not matter.
+ * Scribe drops commas, and guests put the name first or last ("<name>, raise
+ * your arm" / "raise your arm, <name>") — position must not matter.
  */
 export function stripAddress(normText, names) {
   let addressed = false;
@@ -144,7 +144,7 @@ function overlapScore(objectTokens, candidateTokens) {
 }
 
 /**
- * Part names carry character flavor ("Right Arm of Orlok"). Drop the
+ * Part names carry character flavor ("Right Arm of <name>"). Drop the
  * character's own name tokens before scoring so the spoken "right arm" lines
  * up with the configured name — but ONLY the character's name: "Hand of
  * Azura" keeps "azura", which is exactly what a guest will say.

@@ -967,6 +967,18 @@ async function onServerReady(protocol) {
         console.error(`❌ Failed to start Audio Health Monitor:`, error.message);
     }
 
+    // Arm the Follow Orders standalone listener when the super-power is
+    // already enabled for this node's character. The character id is passed in
+    // here — the listener never reads selectedCharacter itself.
+    if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
+        try {
+            const { initFollowOrders } = await import('./services/followOrders/followOrdersListener.js');
+            await initFollowOrders(config && config.selectedCharacter);
+        } catch (error) {
+            console.error(`❌ Failed to arm Follow Orders listener:`, error.message);
+        }
+    }
+
     // Zero-config node discovery (mDNS): advertise this node and browse for peers so
     // orchestration finds animatronics without hand-typed IPs. Degrades silently when
     // avahi is absent. See docs/development/NODE-DISCOVERY.md.

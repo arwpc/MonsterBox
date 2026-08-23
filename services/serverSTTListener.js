@@ -69,7 +69,7 @@ class ServerSTTListener {
   }
 
 
-  startSession({ deviceId = 'default', model = 'scribe_v2', language = 'auto' }) {
+  startSession({ deviceId = 'default', model = 'scribe_v2', language = 'auto', onUtterance = null }) {
     // Stop any existing sessions for this device to prevent conflicts
     for (const [sid, s] of this.sessions.entries()) {
       if (s.deviceId === deviceId && s.running) {
@@ -82,7 +82,10 @@ class ServerSTTListener {
     const state = {
       deviceId, model, language, running: true, transcript: '', lastError: null, timer: null,
       chunksCaptured: 0, chunksWithAudio: 0, chunksTranscribed: 0, lastChunkBytes: 0, startedAt: Date.now(), lastActivityAt: null,
-      vadEnabled: false, vadThreshold: 0.40, consecutiveErrors: 0, maxConsecutiveErrors: 10
+      vadEnabled: false, vadThreshold: 0.40, consecutiveErrors: 0, maxConsecutiveErrors: 10,
+      // Optional per-utterance observer (Follow Orders). Invoked with each
+      // committed piece of text; failures must never break the session.
+      onUtterance: typeof onUtterance === 'function' ? onUtterance : null
     };
 
     console.log(`🎤 Starting STT session ${sessionId} for device: ${deviceId}, model: ${model}, language: ${language}`);
@@ -156,6 +159,7 @@ class ServerSTTListener {
                   state.transcript += (state.transcript ? ' ' : '') + text;
                   state.chunksTranscribed += 1;
                   console.log(`✅ Session ${sessionId}: Transcribed "${text}" (chunk ${state.chunksTranscribed})`);
+                  if (state.onUtterance) { try { state.onUtterance(text); } catch (_) { /* observer must never break the session */ } }
                 }
                 state.lastError = null;
                 state.lastActivityAt = Date.now();
@@ -377,6 +381,7 @@ class ServerSTTListener {
               state.transcript += (state.transcript ? ' ' : '') + text;
               state.chunksTranscribed += 1;
               console.log(`✅ Session ${sessionId}: Transcribed utterance "${text}"`);
+              if (state.onUtterance) { try { state.onUtterance(text); } catch (_) { /* observer must never break the session */ } }
             }
             state.lastError = null;
             state.lastActivityAt = Date.now();

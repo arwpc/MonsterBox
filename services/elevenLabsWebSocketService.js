@@ -996,6 +996,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             connection.consecutiveErrors = 0; // Reset error counter on success
                             console.log(`✅ Session ${sessionId}: Transcribed "${userText}" (count=${connection.transcriptCount})`);
 
+                            // Follow Orders tap — the agent-ASR path, which is
+                            // the only transcript source on headless sessions.
+                            // The listener dedupes against the Scribe tap via
+                            // its cooldown window.
+                            this._followOrdersHook(connection.characterId, userText, { sessionId, source: 'agent_asr' });
+
                             // Start the turn clock at the guest's last voiced frame.
                             connection._turn = {
                                 speechEndMs: connection._lastVoiceAtMs || null,
@@ -1466,6 +1472,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 if (allow) {
                     console.log(`✅ [RT-STT] Accepted: "${data.text}"`);
+                    // Follow Orders tap: same filtered text the UI trusts.
+                    this._followOrdersHook(connection.characterId, data.text, { sessionId, source: 'scribe' });
                     // Primary transcript event for UI
                     this.sendToClient(sessionId, {
                         type: 'stt_committed',
@@ -1604,11 +1612,37 @@ class ElevenLabsWebSocketService extends EventEmitter {
         } catch (_) { return wavBuf; }
     }
 
+    /**
+     * Follow Orders tap. Lazy import (the executor's ack path imports back
+     * into this service) and fire-and-forget: a matcher fault must never
+     * break the conversation pipeline.
+     */
+    _followOrdersHook(characterId, text, meta) {
+        if (characterId == null || !text) return;
+        import('./followOrders/followOrdersListener.js')
+            .then(m => (m.default || m).handleTranscript(characterId, text, meta))
+            .catch(() => { /* listener unavailable — nothing to do */ });
+    }
+
+    _followOrdersMicSignal(characterId, event) {
+        if (characterId == null) return;
+        import('./followOrders/followOrdersListener.js')
+            .then(m => {
+                const listener = m.default || m;
+                if (event === 'start') listener.onConversationMicStart(characterId);
+                else listener.onConversationMicStop(characterId);
+            })
+            .catch(() => { /* noop */ });
+    }
+
     async _startServerMicLoop(sessionId) {
         const connection = this.activeConnections.get(sessionId);
         if (!connection) return;
         if (connection.serverMicActive) return;
         connection.serverMicActive = true;
+        // One capture process per device: the standalone Follow Orders
+        // listener yields the microphone while this session holds it.
+        this._followOrdersMicSignal(connection.characterId, 'start');
 
         // Handles ONE frame of microphone PCM16LE. Driven by the continuous capture
         // stream below rather than by a polling timer, so it now sees every frame
@@ -1845,7 +1879,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
     _stopServerMicLoop(sessionId, sendEos) {
         const connection = this.activeConnections.get(sessionId);
         if (!connection) return;
+        const wasActive = connection.serverMicActive;
         connection.serverMicActive = false;
+        // Symmetric with the start signal: only announce a real release, so
+        // the standalone Follow Orders listener's holder count stays honest.
+        if (wasActive) this._followOrdersMicSignal(connection.characterId, 'stop');
         if (connection.serverMicTimer) { try { clearTimeout(connection.serverMicTimer); } catch (_) { } connection.serverMicTimer = null; }
         // Kill the long-lived capture process, or it keeps holding the microphone
         // (and streaming into a dead session) after the agent is switched off.

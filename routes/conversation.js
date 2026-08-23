@@ -189,6 +189,57 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
   }
 });
 
+// GET /conversation/api/follow-orders — current state for the dashboard toggle + badge
+router.get('/api/follow-orders', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No selected character' });
+    const followOrdersService = await import('../services/followOrders/followOrdersSuperPowerService.js');
+    const listener = await import('../services/followOrders/followOrdersListener.js');
+    const config = await followOrdersService.readFollowOrdersConfig(characterId);
+    res.json({
+      success: true,
+      enabled: config.enabled,
+      requireAddressByName: config.requireAddressByName,
+      ackMode: config.ackMode,
+      listener: listener.getListenerStatus(characterId)
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/follow-orders { enabled }
+router.post('/api/follow-orders', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No selected character' });
+    const followOrdersService = await import('../services/followOrders/followOrdersSuperPowerService.js');
+    const listener = await import('../services/followOrders/followOrdersListener.js');
+    const enabled = !!(req.body && req.body.enabled);
+    const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
+
+    if (enabled && !inTest) {
+      // Same honesty rule as the jaw toggle: never latch "on" for a character
+      // that cannot perform — the fleet toggle summarizes from this response.
+      const can = await followOrdersService.canPerform(characterId);
+      if (!can.ok) return res.json({ success: false, error: can.reason });
+    }
+
+    const config = await followOrdersService.readFollowOrdersConfig(characterId);
+    await followOrdersService.writeFollowOrdersConfig(characterId, { ...config, enabled });
+
+    if (enabled) {
+      if (!inTest) await listener.startStandaloneListener(characterId);
+    } else {
+      await listener.stopStandaloneListener(characterId);
+    }
+    res.json({ success: true, enabled });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
 // Head Tracking status for current character's webcam.
 // The dashboard polls this at 1 Hz; the webcam id it re-discovers only
 // changes when parts are edited, so the parts.json read is memoized briefly —

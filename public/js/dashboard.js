@@ -630,6 +630,8 @@
       ui.headTrackToggle = $('headTrackToggle');
       ui.parrotToggle = $('parrotToggle');
       ui.idleToggle = $('idleToggle');
+      ui.followOrdersToggle = $('followOrdersToggle');
+      ui.followOrdersBadge = $('followOrdersBadge');
       ui.chatModeToggle = $('chatModeToggle');
       ui.chatInput = $('chatInput');
       ui.chatSendBtn = $('chatSendBtn');
@@ -644,6 +646,7 @@
       await loadJawSettings();
       await loadHeadTrackStatus();
       await loadMotionSensorStatus();
+      await loadFollowOrdersSettings();
       await loadLurkState();
       await loadScenes();
       await loadPoses();
@@ -685,6 +688,7 @@
       await loadWebcam();
       await loadJawSettings();
       await loadHeadTrackStatus();
+      await loadFollowOrdersSettings();
       await loadLurkCapabilities();
       await loadScenes();
       await loadPoses();
@@ -711,6 +715,7 @@
 
       ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
       ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
+      ui.followOrdersToggle && ui.followOrdersToggle.addEventListener('change', saveFollowOrdersSettings);
 
       ui.parrotToggle && ui.parrotToggle.addEventListener('change', function () {
         parrotEnabled = !!ui.parrotToggle.checked;
@@ -1550,6 +1555,48 @@
       } catch { }
     }
 
+    function updateFollowOrdersBadge(listener) {
+      if (!ui.followOrdersBadge) return;
+      const listening = listener && listener.listening && listener.listening !== 'off';
+      ui.followOrdersBadge.style.display = listening ? '' : 'none';
+      ui.followOrdersBadge.textContent = listener && listener.listening === 'conversation' ? 'IN CONVO' : 'ON AIR';
+    }
+
+    async function loadFollowOrdersSettings() {
+      if (!ui.followOrdersToggle) return;
+      try {
+        const r = await fetch('/conversation/api/follow-orders');
+        const j = await r.json();
+        if (j && j.success) {
+          ui.followOrdersToggle.checked = !!j.enabled;
+          updateFollowOrdersBadge(j.listener);
+        }
+      } catch { }
+    }
+
+    async function saveFollowOrdersSettings() {
+      const wanted = ui.followOrdersToggle.checked;
+      try {
+        const r = await fetch('/conversation/api/follow-orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: wanted })
+        });
+        const j = await r.json();
+        if (!j || !j.success) {
+          // Character can't perform (no mic / no controllable parts) — revert
+          // honestly instead of showing a green switch that does nothing.
+          ui.followOrdersToggle.checked = !wanted;
+          if (j && j.error) ui.followOrdersToggle.title = j.error;
+          updateFollowOrdersBadge(null);
+          return;
+        }
+        await loadFollowOrdersSettings();
+      } catch {
+        ui.followOrdersToggle.checked = !wanted;
+      }
+    }
+
     async function saveJawSettings() {
       try {
         await fetch('/conversation/api/jaw-settings', {
@@ -2365,7 +2412,7 @@
 
     // Turn off every toggle that could be animating/speaking.
     ['lurkToggle', 'chatAiOnToggle', 'jawToggle', 'headTrackToggle',
-     'parrotToggle', 'idleToggle', 'motionSensorToggle']
+     'parrotToggle', 'idleToggle', 'motionSensorToggle', 'followOrdersToggle']
       .forEach(function (id) {
         var el = $(id);
         if (el && el.checked) {

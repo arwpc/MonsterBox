@@ -136,6 +136,11 @@
             <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
             <span class="sc-chip-label"><i class="bi bi-volume-mute"></i><em>Mute</em></span>
           </label>
+          <label class="mb-switch sc-chip" data-bs-toggle="tooltip" data-bs-placement="top" title="Obey spoken commands — voice orders drive poses, gestures, and parts">
+            <input type="checkbox" id="followOrdersToggle" title="Toggle follow orders">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span class="sc-chip-label"><i class="bi bi-ear"></i><em>Orders</em> <span id="followOrdersBadge" class="mb-badge mb-badge-success" style="display:none">ON AIR</span></span>
+          </label>
           <button id="stopAllAudioBtn" class="mb-btn mb-btn-secondary mb-btn-sm sc-chip-btn"
                   data-bs-toggle="tooltip" data-bs-placement="top" title="Stop all audio playback and loops">
             <i class="bi bi-stop-circle"></i>
