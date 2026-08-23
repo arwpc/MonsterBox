@@ -2,6 +2,41 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [10.5.0] - 2026-08-23 — Follow Orders: the animatronics obey spoken commands
+
+Any character now obeys voice orders — "raise your arm", "open the box", "close
+your coffin door" — for every part type that moves or makes sound, plus named
+poses and gesture recipes. Full design: `docs/features/follow-orders.md`.
+
+- **New `followOrders` super power** (`data/character-{id}/super-powers.json`),
+  with a dedicated setup page at `/setup/follow-orders`: vocabulary builder
+  (custom commands, part aliases with open/close inversion), thresholds,
+  spoken-ack configuration, a dry-run "try a phrase" matcher, and an order
+  history window.
+- **Deterministic local matcher** — no LLM, no ElevenLabs persona/agent changes
+  (the gesture client-tool experiment proved ids leak into speech). Stop
+  phrases outrank everything; operator commands outrank fuzzy matching; then
+  poses, gesture intents, and part+verb with character-flavor stripping.
+  Ambiguity and verb/type mismatches refuse with reasons.
+- **Bounds-safe execution only**: broken parts skipped, operator-fenced parts
+  refused, uncalibrated servos refused, everything clamped and duration-capped,
+  never `calibrationOverride`. Servo claims at gesture-semantic priority.
+- **Listens standalone or mid-conversation**: its own STT session when idle,
+  yielding the microphone to live conversation sessions (one capture process
+  per device) and reading their transcripts instead.
+- **Body awareness**: the character knows what its body was last commanded to
+  do and hears about changes via ElevenLabs `contextual_update` (verified
+  current API — non-interrupting, persona untouched, `context_id` supersedes
+  stale state). Ordered to raise its arm, a character moves, knows the arm is
+  up, and reacts in character.
+- **Fleet + safety**: Orders toggle on the dashboard/Scare Console with an ON
+  AIR badge, fleet-wide toggle in the Command Center, and disarm wired into
+  fleet emergency-stop and node-local panic.
+- **Testing**: 32 matcher + 13 body-state unit tests, 21 system tests, fleet
+  fan-out coverage, and a cross-animatronic harness
+  (`scripts/follow-orders-crosstest.mjs`) where one animatronic orders another
+  through real air, with camera evidence for an AI judge.
+
 ## [Unreleased] - 2026-08-23 — The Knight hardened: type truth, honest failures, one camera consumer
 
 An overnight bench session with the operator at the rig. Sir Dragomir's channel map is

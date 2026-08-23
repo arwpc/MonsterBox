@@ -16,6 +16,27 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
+## What's New — v10.5.0 (August 2026) — Follow Orders: the animatronics obey spoken commands
+
+Tell any character to "raise your arm", "open the box", or "close your coffin door"
+and it obeys — voice orders drive every part type that moves or makes sound, plus
+named poses and gesture recipes, on every character. Full design:
+`docs/features/follow-orders.md`.
+
+- **Local, deterministic matching** of STT transcripts — no LLM in the loop and
+  zero ElevenLabs persona changes. Stop phrases outrank everything; the operator's
+  custom commands outrank fuzzy matching; ambiguity refuses with candidates.
+- **Bounds-safe execution only**: broken parts skipped, fenced parts refused,
+  everything clamped into calibrated windows and duration-capped.
+- **Dedicated setup page** at `/setup/follow-orders` (vocabulary builder, spoken
+  acks, dry-run phrase tester, order history), a dashboard Orders toggle with a
+  live ON AIR badge, a fleet-wide toggle, and disarm wired into emergency stop.
+- **Body awareness**: the character knows what its body was last commanded to do
+  (ElevenLabs `contextual_update` — non-interrupting, persona untouched), so it
+  moves, knows the arm is up, and has an opinion about being ordered around.
+- **Cross-animatronic proof**: `scripts/follow-orders-crosstest.mjs` has one
+  animatronic order another through real air, with camera evidence per trial.
+
 ## What's New — v10.4.0 (August 2026) — What the machine tells you is what the machine did
 
 Nearly every fix in this release is the same fault wearing different clothes: the
