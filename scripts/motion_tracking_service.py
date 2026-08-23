@@ -91,9 +91,12 @@ class MotionTracker:
         self.smoothed_y = 50.0
         self.position_smoothing = config.get('tracking_smoothing', 0.3)
 
-        # Target persistence — keep reporting last position briefly after lost
+        # Target persistence — keep reporting last position briefly after lost.
+        # Must comfortably outlast min_detect_gap_sec (idle-detection throttle),
+        # otherwise the reported box flickers at exactly the throttle boundary
+        # whenever the inter-frame tracker isn't carrying it.
+        self.persistence_sec = max(1.5, 3 * float(config.get('min_detect_gap_sec', 0.5)))
         self.target_lost_time = None
-        self.persistence_sec = 0.5  # report last pos for 0.5s after losing target
 
         # Multi-frame tracking state
         self.tracked_objects = []  # list of tracked contour objects
@@ -165,13 +168,14 @@ class MotionTracker:
         if self.hog_detector is None:
             return []
         try:
-            # Resize for faster processing on RPi (HOG is expensive). 320 px
-            # wide and a 1.1 pyramid step, down from 400/1.05: the 1.05 step
-            # alone nearly doubles the pyramid depth, and together the old
-            # values measured ~2 cores of a Pi 4B for detections a smoothed
-            # head-tracker cannot use. A person filling a quarter of the frame
-            # still detects reliably at 320.
-            hog_width = float(self.config.get('hog_width', 320))
+            # Resize for faster processing on RPi (HOG is expensive). 400 px
+            # wide with a 1.1 pyramid step: the 1.05 step was the dominant
+            # cost (it nearly doubles pyramid depth), so keeping 1.1 while
+            # restoring 400 px keeps roughly half the original HOG cost — and
+            # the idle-detection throttle (min_detect_gap_sec) already bounds
+            # how often this runs. 320 px raised the minimum detectable person
+            # size ~25% and lost distant/seated subjects at the bench.
+            hog_width = float(self.config.get('hog_width', 400))
             scale = 1.0
             proc_frame = frame
             h, w = frame.shape[:2]
@@ -248,11 +252,44 @@ class MotionTracker:
 
         return [tuple(int(v) for v in boxes[i]) for i in pick]
 
+    def _make_cv_tracker(self):
+        """Create an inter-frame tracker from whatever this OpenCV build offers.
+
+        KCF moved between cv2 and cv2.legacy across OpenCV versions, and some
+        builds ship without it entirely. Without a working tracker the service
+        silently degrades to detection-only (throttled to min_detect_gap_sec),
+        which reads as "jerky, laggy tracking" at the bench — so try every
+        known constructor and say which one won (or that none did).
+        """
+        candidates = [
+            ('KCF', lambda: cv2.TrackerKCF.create()),
+            ('legacy-KCF', lambda: cv2.legacy.TrackerKCF.create()),
+            ('CSRT', lambda: cv2.TrackerCSRT.create()),
+            ('legacy-CSRT', lambda: cv2.legacy.TrackerCSRT.create()),
+            ('legacy-MOSSE', lambda: cv2.legacy.TrackerMOSSE.create()),
+        ]
+        for name, make in candidates:
+            try:
+                tracker = make()
+            except Exception:
+                continue
+            if getattr(self, '_cv_tracker_kind', None) != name:
+                self._cv_tracker_kind = name
+                logger.info(f"Inter-frame tracker: {name}")
+            return tracker
+        if getattr(self, '_cv_tracker_kind', None) != 'none':
+            self._cv_tracker_kind = 'none'
+            logger.warning("No OpenCV object tracker available (KCF/CSRT/MOSSE all missing) — "
+                           "tracking degrades to throttled detection only")
+        return None
+
     def _init_cv_tracker(self, frame, bbox):
-        """Initialize an OpenCV object tracker (KCF) for smooth inter-frame tracking."""
+        """Initialize an OpenCV object tracker for smooth inter-frame tracking."""
         try:
-            # KCF is fast and good for RPi; CSRT is more accurate but slower
-            self.cv_tracker = cv2.TrackerKCF.create()
+            self.cv_tracker = self._make_cv_tracker()
+            if self.cv_tracker is None:
+                self.cv_tracker_ok = False
+                return
             ok = self.cv_tracker.init(frame, bbox)
             if ok:
                 self.cv_tracker_bbox = bbox
@@ -332,9 +369,14 @@ class MotionTracker:
                 history=history
             )
 
-            # If a stream URL is provided, prefer MJPEG HTTP stream
+            # If a stream URL is provided, prefer MJPEG HTTP stream.
+            # The connect result MUST be honored: returning True with a dead
+            # stream produced a tracker that reported active with fps 0 and no
+            # detections forever — indistinguishable from "OpenCV stopped".
             if self.stream_url:
-                self._connect_stream()
+                if not self._connect_stream():
+                    logger.error(f"Failed to connect to stream: {self.stream_url}")
+                    return False
                 logger.info(f"Motion tracker initialized for stream: {self.stream_url}")
                 return True
 
@@ -732,6 +774,12 @@ class MotionTracker:
             # Multi-frame tracking: match contours to tracked objects
             match_radius = max(frame_w, frame_h) * 0.20  # 20% of frame size
 
+            # A throttled frame that never looked (no full detection ran and
+            # no inter-frame tracker carried the target) must not age tracks
+            # toward deletion — otherwise track lifetime is bounded by the
+            # detect gap whenever the CV tracker is unavailable.
+            looked = run_full_detect or (use_tracker and self.cv_tracker_ok)
+
             # Match new detections to existing tracked objects (nearest center)
             for tobj in self.tracked_objects:
                 best_dist = match_radius
@@ -758,7 +806,7 @@ class MotionTracker:
                     tobj['area'] = det['area']
                     tobj['age'] += 1
                     tobj['lost_count'] = 0
-                else:
+                elif looked:
                     tobj['lost_count'] += 1
 
             # Create new tracked objects for unmatched detections

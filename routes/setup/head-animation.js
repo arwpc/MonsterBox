@@ -199,6 +199,10 @@ router.get('/api/head-tracking/:charId/status', async (req, res) => {
       fps: status.fps || 0,
       frameCount: status.frame_count || 0,
       headTrackingEnabled: htState.enabled || false,
+      // Forward the crash tombstone — without it a tracker that died reads
+      // identically to one that was never started.
+      exited: status.exited === true,
+      exitCode: status.exit_code !== undefined ? status.exit_code : null,
       timestamp: Date.now()
     });
   } catch (error) {
@@ -295,6 +299,9 @@ router.post('/api/head-tracking/:charId/enable-servo', async (req, res) => {
 
     enableHeadTrackingForWebcam(webcamId, {
       panServoId,
+      // Pin the character here, where it is known — the controller otherwise
+      // falls back to the node's mutable selectedCharacter.
+      characterId: charId,
       centerDeg: typeof centerDeg === 'number' ? centerDeg : config.centerDeg,
       rangeDeg: typeof rangeDeg === 'number' ? rangeDeg : config.rangeDeg,
       invertPan: invertPan !== undefined ? invertPan : config.invertPan,

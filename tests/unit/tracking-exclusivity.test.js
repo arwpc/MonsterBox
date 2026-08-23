@@ -18,15 +18,16 @@ describe('One camera consumer at a time (head vs motion tracking)', function () 
 
   const WEBCAM_ID = 'exclusivity-test-cam';
 
-  it('starting motion tracking SHUTS DOWN head tracking on the same webcam', async function () {
+  it('a motion-tracking start that FAILS leaves head tracking armed', async function () {
     const ctl = await import('../../controllers/motionTrackingController.js');
 
     ctl.enableHeadTrackingForWebcam(WEBCAM_ID, { panServoId: 987654 });
     expect(ctl.getHeadTrackingStateForWebcam(WEBCAM_ID).enabled, 'precondition: head tracking armed').to.equal(true);
 
-    // The fake webcam has no device, so the start 404s — but the ruling is
-    // about the button press: starting motion tracking shuts head tracking
-    // down FIRST, before any device lookup.
+    // Refinement of the one-consumer ruling (verified 2026-08-23): the
+    // shutdown fires when motion tracking actually TAKES the camera. A start
+    // that is about to 404 (no device) never takes it — killing head tracking
+    // on the way to failing left the whole pipeline disarmed for nothing.
     let statusCode = 200;
     let body = null;
     const res = {
@@ -35,11 +36,60 @@ describe('One camera consumer at a time (head vs motion tracking)', function () 
     };
     await ctl.startMotionTracking({ body: { webcamId: WEBCAM_ID } }, res);
 
-    expect(ctl.getHeadTrackingStateForWebcam(WEBCAM_ID).enabled,
-      'head tracking must be OFF the moment motion tracking is started').to.equal(false);
     expect(statusCode, 'no device on the synthetic webcam').to.equal(404);
+    expect(ctl.getHeadTrackingStateForWebcam(WEBCAM_ID).enabled,
+      'a failed start must NOT disarm head tracking').to.equal(true);
 
     ctl.disableHeadTrackingForWebcam(WEBCAM_ID); // cleanup (idempotent)
+  });
+
+  it('stopping motion tracking re-arms a head config it suspended', async function () {
+    const ctl = await import('../../controllers/motionTrackingController.js');
+
+    ctl.enableHeadTrackingForWebcam(WEBCAM_ID, { panServoId: 987654 });
+    // Simulate the exclusivity handover: startMotionTracking disables the
+    // config and tags it. getHeadTrackingStateForWebcam returns the live
+    // object, so the tag can be planted directly for this unit pin.
+    const cfg = ctl.getHeadTrackingStateForWebcam(WEBCAM_ID);
+    cfg.enabled = false;
+    cfg.suspendedByMotionStart = true;
+
+    let body = null;
+    const res = {
+      json: (b) => { body = b; },
+      status: (c) => ({ json: (b) => { body = b; } })
+    };
+    await ctl.stopMotionTracking({ body: { webcamId: WEBCAM_ID } }, res);
+
+    const after = ctl.getHeadTrackingStateForWebcam(WEBCAM_ID);
+    expect(after.enabled, 'suspended head tracking re-arms when motion tracking stops').to.equal(true);
+    expect(after.suspendedByMotionStart, 'suspension tag cleared').to.equal(undefined);
+    expect(body && body.headTrackingRearmed, 'response reports the re-arm').to.equal(true);
+
+    ctl.disableHeadTrackingForWebcam(WEBCAM_ID); // cleanup
+  });
+
+  it('an explicit head-tracking disable cancels a pending suspension', async function () {
+    const ctl = await import('../../controllers/motionTrackingController.js');
+
+    ctl.enableHeadTrackingForWebcam(WEBCAM_ID, { panServoId: 987654 });
+    const cfg = ctl.getHeadTrackingStateForWebcam(WEBCAM_ID);
+    cfg.enabled = false;
+    cfg.suspendedByMotionStart = true;
+
+    // The user turns head tracking off while motion tracking owns the camera:
+    // a later motion stop must NOT resurrect it.
+    ctl.disableHeadTrackingForWebcam(WEBCAM_ID);
+
+    let body = null;
+    const res = {
+      json: (b) => { body = b; },
+      status: (c) => ({ json: (b) => { body = b; } })
+    };
+    await ctl.stopMotionTracking({ body: { webcamId: WEBCAM_ID } }, res);
+
+    expect(ctl.getHeadTrackingStateForWebcam(WEBCAM_ID).enabled,
+      'explicitly disabled head tracking stays off').to.equal(false);
   });
 });
 

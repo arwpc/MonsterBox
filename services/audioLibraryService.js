@@ -276,6 +276,15 @@ class AudioLibraryService {
     async loadLibrary() {
         if (!this._initialized) await this._initPromise;
         try {
+            // mtime+size-validated parse cache: this ~100KB file was re-read
+            // and re-parsed from the SD card on every /audio-library/api/library
+            // request. Writers invalidate in saveLibrary().
+            const stat = await fs.stat(this.libraryPath);
+            if (this._libCache
+                && this._libCache.mtimeMs === stat.mtimeMs
+                && this._libCache.size === stat.size) {
+                return this._libCache.data;
+            }
             const data = await fs.readFile(this.libraryPath, 'utf8');
             try {
                 const library = JSON.parse(data);
@@ -287,6 +296,7 @@ class AudioLibraryService {
                 if (!library.audio) {
                     library.audio = [];
                 }
+                this._libCache = { mtimeMs: stat.mtimeMs, size: stat.size, data: library };
                 return library;
             } catch (parseError) {
                 console.error(`Error parsing audio library JSON at ${this.libraryPath}:`, parseError);
@@ -313,6 +323,9 @@ class AudioLibraryService {
         const tempPath = this.libraryPath + '.tmp';
         await fs.writeFile(tempPath, JSON.stringify(library, null, 2));
         await fs.rename(tempPath, this.libraryPath);
+        // Drop the parse cache so a same-millisecond rewrite can never serve
+        // the pre-save snapshot.
+        this._libCache = null;
     }
 
     /**

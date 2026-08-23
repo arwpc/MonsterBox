@@ -27,23 +27,32 @@ let perfCollectorInterval = null;
 
 // ─── Performance ───────────────────────────────────────────────────────────────
 
-async function getCpuPercent() {
-    try {
-        const { stdout } = await execAsync("top -bn1 | grep 'Cpu(s)' | awk '{print $2}'", { timeout: 5000 });
-        const val = parseFloat(stdout.trim());
-        return isFinite(val) ? val : 0;
-    } catch (_) {
-        // Fallback: compute from os.cpus()
-        const cpus = os.cpus();
-        let totalIdle = 0, totalTick = 0;
-        for (var i = 0; i < cpus.length; i++) {
-            var cpu = cpus[i];
-            var times = cpu.times;
-            totalTick += times.user + times.nice + times.sys + times.idle + times.irq;
-            totalIdle += times.idle;
-        }
-        return totalTick > 0 ? Math.round(((totalTick - totalIdle) / totalTick) * 100) : 0;
+// CPU usage as a delta over os.cpus() between calls. The old implementation
+// spawned a `top -bn1 | grep | awk` shell pipeline per request — 200-500ms of
+// CPU on a Pi that was already starved — and the old fallback used
+// since-boot cumulative times, which converge to a constant. The first call
+// has no baseline and returns the since-boot average; every later call
+// returns the busy fraction since the previous call.
+var _prevCpuTimes = null;
+
+function _cpuTimesTotals() {
+    const cpus = os.cpus();
+    let idle = 0, total = 0;
+    for (var i = 0; i < cpus.length; i++) {
+        var times = cpus[i].times;
+        total += times.user + times.nice + times.sys + times.idle + times.irq;
+        idle += times.idle;
     }
+    return { idle: idle, total: total };
+}
+
+async function getCpuPercent() {
+    const now = _cpuTimesTotals();
+    const base = _prevCpuTimes || { idle: 0, total: 0 };
+    _prevCpuTimes = now;
+    const dTotal = now.total - base.total;
+    const dIdle = now.idle - base.idle;
+    return dTotal > 0 ? Math.round(((dTotal - dIdle) / dTotal) * 100) : 0;
 }
 
 async function getTemperature() {

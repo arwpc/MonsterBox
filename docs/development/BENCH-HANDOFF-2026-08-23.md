@@ -200,3 +200,54 @@ See the operator's copy; canonical text lives with this handoff so any orchestra
 launch it: read this file top to bottom, then CLAUDE.md + monsterbox-hardware +
 monsterbox-fleet skills, then fix issue #1 (jaw+box) without touching the head, verify
 issue #2 (CI on b812137 / gate), run the runtime proof (#4), then Mina (#8).
+
+## Overnight addendum #2 (2026-08-23, while the operator slept)
+
+Operator's last words tonight: dashboard fix confirmed ("MUCH better!!! Fixed video
+across the entire system!"), head tracking "moves the servo" (wiring PROVEN by eye)
+but is "close but no cigar" — laggy person tracking in a well-lit garage, and the
+dream is a head that slowly, smoothly follows whoever it's talking to.
+
+Two verified audits ran (39 + 30 agents, adversarially verified: 26+24 confirmed
+findings, 11+0 refuted) and every confirmed code defect shipped in the final commit —
+see CHANGELOG 2026-08-23 entry for the full list. What matters at the bench:
+
+### Morning runbook — Sir Dragomir (in this order)
+
+1. **Deploy the overnight code** (on the node):
+   `cd /home/remote/MonsterBox && git fetch origin main && git checkout origin/main -- server.js routes controllers services server public scripts tests CHANGELOG.md && sudo systemctl restart monsterbox.service`
+   Then hard-refresh the browser (Ctrl+Shift+R).
+2. **Open /setup/head-animation and just watch.** With the saved OpenCV intent ON, the
+   page now AUTO-RESTARTS the tracker (toast: "Restarting OpenCV tracking"). Boxes
+   should return without touching anything. If instead a toast reports a crash, the
+   exit code is in the toast and the reason is in /var/log/monsterbox.err.
+3. **Fix the stale head window from the page** (root cause of "no cigar"): set
+   Center to **390**, Range to **150**, Save. (Until saved, the new code snaps the
+   stale 90°/120° window to the calibrated 323–491° automatically and says so once in
+   .err — tracking works either way, but save the real numbers.)
+4. **Pick the boxes you want**: Detection Mode `person` = full-body boxes;
+   `face`/`all` = the face/hand boxes you remember. Face mode is also the natural
+   "he watches you while he talks" mode at conversation distance.
+5. **The smooth-follow knobs** (all hot-update, no restart): Smoothing ~0.15–0.25
+   (LOWER = smoother/slower — it's the fraction of the remaining error applied per
+   step), Deadzone 5–8 so he doesn't micro-twitch. New defaults already restore HOG
+   reach (400px) and keep CPU bounded (10fps cap + 0.5s idle detect gap + nice 15).
+6. **Check which inter-frame tracker OpenCV offers** (tracking quality depends on it):
+   `grep -a "Inter-frame tracker\|No OpenCV object tracker" /var/log/monsterbox.err | tail -2`
+   after tracking starts. If it says none available, install opencv-contrib-python and
+   quality jumps: person boxes will glide instead of stepping at 2 Hz.
+7. **Load numbers while tracking runs** (paste if anything feels heavy):
+   `top -bn1 | head -20` and `curl -s http://localhost:3100/health -o /dev/null -w '%{time_total}\n'`
+   (run the curl ~10×: /health now sits ahead of all middleware, so its time IS the
+   event-loop health; >0.2s sustained means something else is eating the loop).
+
+### Also shipped tonight (server feels faster everywhere)
+Per-request SD reads memoized (global middleware, 1 Hz pollers, calibration store,
+audio library), `top` spawn per perf-poll replaced with os.cpus() delta, static assets
+cache for 5m, VU probes at 1 Hz. Deferred (recorded, small): console tail spawn per
+3s poll, telemetry flush stringify, webcamController sync execs, mjpegRelay scan memo.
+
+### Still open (unchanged)
+- Mina session (ready-made prompt above) — after Dragomir's morning runbook.
+- `dragomir-100` tag push from a credentialed machine.
+- Node.js CI workflow: 4 inherited ECONNREFUSED failures ("CI Test Suite" is authoritative).

@@ -82,15 +82,27 @@ export const startMotionTracking = async (req, res) => {
       });
     }
 
+    // Resolve the device FIRST: a start that is about to 404 must not have
+    // already killed head tracking on its way to failing.
+    const devicePath = await getWebcamDevicePath(webcamId);
+    if (!devicePath) {
+      return res.status(404).json({
+        success: false,
+        error: 'Webcam device not found'
+      });
+    }
+
     // ONE camera consumer at a time (operator ruling, 2026-08-23): starting
     // motion tracking SHUTS DOWN head tracking on this webcam, visibly,
     // instead of silently restarting the pipeline underneath it — that silent
     // clobber is what read as "OpenCV was working and just stopped" at the
-    // bench. The reverse handover lives in enableHeadTracking.
+    // bench. The reverse handover lives in enableHeadTracking. The suspended
+    // config is tagged so stopping motion tracking re-arms it.
     let headTrackingShutDown = false;
     const priorHeadCfg = headTrackingConfigs.get(webcamId);
     if (priorHeadCfg && priorHeadCfg.enabled) {
       disableHeadTrackingForWebcam(webcamId);
+      priorHeadCfg.suspendedByMotionStart = true;
       headTrackingShutDown = true;
       console.error(`🎥 Motion tracking started on webcam ${webcamId} — head tracking SHUT DOWN (one camera consumer at a time)`);
     }
@@ -103,15 +115,6 @@ export const startMotionTracking = async (req, res) => {
     // Merge params with defaults
     const config = { ...DEFAULT_CONFIG, ...params };
     trackingConfigs.set(webcamId, config);
-
-    // Get webcam device path
-    const devicePath = await getWebcamDevicePath(webcamId);
-    if (!devicePath) {
-      return res.status(404).json({
-        success: false,
-        error: 'Webcam device not found'
-      });
-    }
 
     // Start motion tracking process
     const tracker = await startMotionTrackingProcess(webcamId, devicePath, config);
@@ -163,10 +166,26 @@ export const stopMotionTracking = async (req, res) => {
 
     await stopMotionTrackingInternal(webcamId);
 
+    // If starting motion tracking suspended a head-tracking config (one
+    // camera consumer at a time), explicitly stopping motion tracking hands
+    // the camera back: re-arm the suspended config instead of losing it.
+    let headTrackingRearmed = false;
+    const suspendedCfg = headTrackingConfigs.get(webcamId);
+    if (suspendedCfg && suspendedCfg.suspendedByMotionStart) {
+      delete suspendedCfg.suspendedByMotionStart;
+      suspendedCfg.enabled = true;
+      headTrackingConfigs.set(webcamId, suspendedCfg);
+      headTrackingRearmed = true;
+      console.error(`🎥 Motion tracking stopped on webcam ${webcamId} — suspended head tracking RE-ARMED`);
+    }
+
     res.json({
       success: true,
-      message: 'Motion tracking stopped',
-      webcamId
+      message: headTrackingRearmed
+        ? 'Motion tracking stopped — suspended head tracking re-armed'
+        : 'Motion tracking stopped',
+      webcamId,
+      headTrackingRearmed
     });
 
   } catch (error) {
@@ -451,6 +470,11 @@ async function startMotionTrackingProcess(webcamId, devicePath, config) {
       const requested = tracker._mbRequestedStop === true;
       const isCurrent = activeTrackers.get(webcamId) === tracker;
       if (isCurrent) activeTrackers.delete(webcamId);
+      // Death BEFORE initialization fails the start call itself (the caller
+      // gets an error instead of a resolved tracker that is already a corpse).
+      if (!initialized) {
+        reject(new Error(`Motion tracking process exited during startup (code ${code})`));
+      }
       if (requested || !isCurrent) {
         if (isCurrent) trackingStatus.delete(webcamId);
         console.log(`Motion tracking process exited with code ${code}`);
@@ -701,6 +725,32 @@ function recordHeadDriveResult(state, webcamId, ok, detail) {
   }
 }
 
+/**
+ * Reconcile the configured drive window (centerDeg ± rangeDeg) with the
+ * measured calibration window. A configured window that does not touch the
+ * measured one is stale — saved before the servo was calibrated in real
+ * degrees (the knight's head: config center 90 vs a 323–491 window) — and
+ * clamping every command into a disjoint window pins the head at one endstop.
+ * In that case snap to the measured window instead of pinning.
+ * Exported for unit tests.
+ */
+export function effectiveDriveWindow(centerDeg, rangeDeg, guardrails) {
+  var range = (typeof rangeDeg === 'number' && rangeDeg > 0) ? rangeDeg : 60;
+  var center = (typeof centerDeg === 'number') ? centerDeg : 0;
+  var min = Math.max(center - range / 2, guardrails.minAngle);
+  var max = Math.min(center + range / 2, guardrails.maxAngle);
+  if (min > max) {
+    return {
+      center: (guardrails.minAngle + guardrails.maxAngle) / 2,
+      min: guardrails.minAngle,
+      max: guardrails.maxAngle,
+      range: (guardrails.maxAngle - guardrails.minAngle) / 2,
+      snapped: true
+    };
+  }
+  return { center: center, min: min, max: max, range: range, snapped: false };
+}
+
 async function maybeDriveHead(webcamId, status) {
   const cfg = headTrackingConfigs.get(webcamId);
   if (!cfg || !cfg.enabled) return;
@@ -796,18 +846,21 @@ async function maybeDriveHead(webcamId, status) {
       return;
     }
 
-    // Scanning sweep: slowly pan left-to-right
-    var range = (typeof cfg.rangeDeg === 'number' ? cfg.rangeDeg : 60);
-    var center = (typeof cfg.centerDeg === 'number' ? cfg.centerDeg : 90);
+    // Scanning sweep: slowly pan left-to-right within the reconciled window
+    // (a stale configured window snaps to the measured one instead of
+    // refusing the sweep entirely).
+    var scanWin = effectiveDriveWindow(cfg.centerDeg, cfg.rangeDeg, guardrails);
+    if (scanWin.snapped && !state.windowSnapWarned) {
+      state.windowSnapWarned = true;
+      console.error('Head tracking: configured window (center ' + cfg.centerDeg + '°, range ' + cfg.rangeDeg
+        + '°) does not touch the calibrated window [' + guardrails.minAngle + '..' + guardrails.maxAngle
+        + '°] — driving within the calibrated window instead. Re-save head tracking settings to clear this.');
+    }
     var scanSpeed = 0.5; // degrees per step
     var scanDir = state.scanDir || 1;
     var next = state.lastPanDeg + (scanSpeed * scanDir);
-
-    // Reverse at limits: the configured scan window intersected with the
-    // measured window, so a wide rangeDeg cannot push past calibration.
-    var minLimit = Math.max(center - (range / 2), guardrails.minAngle);
-    var maxLimit = Math.min(center + (range / 2), guardrails.maxAngle);
-    if (minLimit > maxLimit) return; // configured window entirely outside calibration
+    var minLimit = scanWin.min;
+    var maxLimit = scanWin.max;
     if (next >= maxLimit) { next = maxLimit; state.scanDir = -1; }
     if (next <= minLimit) { next = minLimit; state.scanDir = 1; }
 
@@ -848,8 +901,6 @@ async function maybeDriveHead(webcamId, status) {
   var err = x - 50; // -50..+50
   if (Math.abs(err) < dead) return; // within deadzone
 
-  var range = (typeof cfg.rangeDeg === 'number' ? cfg.rangeDeg : 60);
-  var center = (typeof cfg.centerDeg === 'number' ? cfg.centerDeg : 0);
   var invert = !!cfg.invertPan;
 
   if (cfg.panServoId != null) {
@@ -878,15 +929,11 @@ async function maybeDriveHead(webcamId, status) {
           recordHeadDriveResult(state, webcamId, false, e && e.message);
         });
     } else {
-      // Positional servo: move to specific angle with calibration guardrails
-      var target = center + ((err / 50) * range * (invert ? -1 : 1));
-
-      // Smooth toward target
-      var smooth = (typeof cfg.smoothing === 'number' ? cfg.smoothing : 0.3);
-      if (smooth < 0) smooth = 0; if (smooth > 1) smooth = 1;
-      var next = state.lastPanDeg + (target - state.lastPanDeg) * smooth;
-
-      // Load and apply calibration guardrails
+      // Positional servo: move to a target angle within the calibrated window.
+      // The target is computed AFTER the window is reconciled: computing it
+      // from a stale configured center first (e.g. 90° against a 323–491°
+      // window) made every command clamp to one endstop — the head "moved"
+      // once to 323° and pinned there.
       loadHeadTrackingGuardrails(cfg.panServoId, cfg.characterId).then(function (guardrails) {
         if (!guardrails) {
           // No measured window — refuse to drive (warned once by the loader).
@@ -894,9 +941,30 @@ async function maybeDriveHead(webcamId, status) {
           headTrackingStates.set(webcamId, state);
           return;
         }
+        var win = effectiveDriveWindow(cfg.centerDeg, cfg.rangeDeg, guardrails);
+        if (win.snapped && !state.windowSnapWarned) {
+          state.windowSnapWarned = true;
+          console.error('Head tracking: configured window (center ' + cfg.centerDeg + '°, range ' + cfg.rangeDeg
+            + '°) does not touch the calibrated window [' + guardrails.minAngle + '..' + guardrails.maxAngle
+            + '°] — driving within the calibrated window instead. Re-save head tracking settings to clear this.');
+        }
+        var target = win.center + ((err / 50) * win.range * (invert ? -1 : 1));
+
+        // Smooth toward target — this is the "slowly, smoothly follows" knob
+        var smooth = (typeof cfg.smoothing === 'number' ? cfg.smoothing : 0.3);
+        if (smooth < 0) smooth = 0; if (smooth > 1) smooth = 1;
+        // A fresh state starts lastPanDeg at 0; smoothing from 0 toward a
+        // 300+° window walks the head through angles it was never meant to
+        // visit. Seed from the window center instead.
+        if (!state.panSeeded) {
+          state.lastPanDeg = win.center;
+          state.panSeeded = true;
+        }
+        var next = state.lastPanDeg + (target - state.lastPanDeg) * smooth;
+
         // Clamp to calibration limits to prevent over-rotation
-        var minLimit = guardrails.minAngle;
-        var maxLimit = guardrails.maxAngle;
+        var minLimit = win.min;
+        var maxLimit = win.max;
         if (next > maxLimit) next = maxLimit;
         if (next < minLimit) next = minLimit;
 
@@ -982,6 +1050,7 @@ export const disableHeadTracking = async (req, res) => {
     if (!webcamId) return res.status(400).json({ success: false, error: 'webcamId is required' });
     const cfg = headTrackingConfigs.get(webcamId);
     if (cfg) cfg.enabled = false;
+    if (cfg && cfg.suspendedByMotionStart) delete cfg.suspendedByMotionStart;
     if (cfg && cfg.panServoId != null) {
       releaseServo(cfg.panServoId, headOwner(webcamId));
     }
@@ -1009,9 +1078,12 @@ export const getHeadTrackingStatus = async (req, res) => {
         ...config,
         tracking: {
           active: isActive,
-          hasTarget: !!(status.targetX != null || status.target_x != null),
-          targetX: status.targetX || status.target_x || null,
-          targetY: status.targetY || status.target_y || null,
+          // The tracker emits target_detected/target_position (snake_case
+          // arrays) — the old targetX/target_x fields never existed, so
+          // hasTarget was permanently false for every consumer.
+          hasTarget: !!status.target_detected,
+          targetX: Array.isArray(status.target_position) ? status.target_position[0] : null,
+          targetY: Array.isArray(status.target_position) ? status.target_position[1] : null,
           fps: status.fps || null,
           lastPanDeg: state.lastPanDeg || 0
         }
@@ -1148,6 +1220,11 @@ export function disableHeadTrackingForWebcam(webcamId) {
   if (!webcamId) throw new Error('webcamId is required');
   const cfg = headTrackingConfigs.get(webcamId);
   if (cfg) cfg.enabled = false;
+  // An explicit disable overrides any pending motion-start suspension —
+  // stopping motion tracking later must not resurrect what the user turned
+  // off. (startMotionTracking tags the suspension AFTER calling this, so the
+  // exclusivity handover itself is unaffected.)
+  if (cfg && cfg.suspendedByMotionStart) delete cfg.suspendedByMotionStart;
   if (cfg && cfg.panServoId != null) {
     releaseServo(cfg.panServoId, headOwner(webcamId));
   }

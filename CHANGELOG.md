@@ -47,6 +47,49 @@ and the known-good state MINTED with a restore procedure
   `background-position`), and the dashboard's own stylesheets carry no `backdrop-filter`
   at all — bars and stage overlays use near-opaque backgrounds instead of frosted glass.
   Pinned by `tests/unit/dashboard-paint-cost.test.js` so neither ingredient can return.
+- **The server stops paying a per-request SD-card tax.** The same HAR showed uniform
+  multi-second waits on trivially cheap endpoints — pure event-loop queueing plus real
+  per-request I/O found by a 30-agent verified audit (26 confirmed findings, 0 refuted):
+  the global middleware re-read+re-parsed `app-config.json` AND `characters.json` on
+  EVERY request (now a 2s memo; selectedCharacter stays authoritative from memory), the
+  1 Hz head-tracking-status poll re-read parts.json per tick (10s webcam-id memo), the
+  calibration store re-parsed its whole file per pose-health check AND per hardware
+  bounds check (mtime+size cache, dropped on save), the 105KB audio library re-parsed
+  per request (same cache pattern), `/api/system/performance` spawned a `top|grep|awk`
+  pipeline per request (now an os.cpus() delta), `/health` sat behind the static mounts
+  (now registered first — its latency now measures pure loop health), static assets
+  shipped with maxAge:0 (now 5m; vendor CSS/JS no longer re-paid per navigation over
+  software TLS), VU probes halved to 1 Hz. Recorded for later: console `tail` spawn per
+  poll, telemetry flush stringify, webcamController sync execs, mjpegRelay scan memo.
+- **OpenCV tracking: every confirmed reason the boxes vanish, fixed.** A second
+  39-agent verified audit mapped the whole chain (boxes exist ONLY on the head-animation
+  page + calibration advanced tab; they come from `motion_tracking_service.py` via the
+  status poll — never the dashboard). Confirmed and fixed: (1) nothing restarted the
+  tracker after a service restart while the page rendered its toggle ON over a boxless
+  video — the page now honors the saved intent and auto-restarts, reconciles after
+  bfcache restores, and resyncs (with the crash exit code) when the tracker dies or
+  another consumer takes the camera; (2) the tracker claimed initialized with a dead
+  stream (active:true/fps:0/no boxes forever) — a failed stream connect now fails the
+  start loudly, and a spawn that dies during startup rejects instead of resolving;
+  (3) the head-servo mapping computed targets from the SAVED center/range even when
+  that window lay entirely outside the calibrated one — the knight's stale center 90°
+  config clamped every command to the 323° endstop ("moves the servo, but no cigar");
+  drive windows are now reconciled (`effectiveDriveWindow`, unit-pinned) and a stale
+  window snaps to the calibrated one with a named .err line; smoothing now seeds from
+  the window center instead of 0°; (4) the perf-pass HOG shrink (400→320px) raised the
+  minimum detectable person ~25% — 400px is restored (the 1.1 pyramid step keeps most
+  of the CPU win, and the idle-detection throttle bounds the rate); box persistence now
+  outlasts the detect gap, throttled frames no longer age tracks toward deletion, and
+  the inter-frame tracker tries KCF/CSRT/MOSSE across OpenCV API generations instead of
+  silently degrading to 2 Hz jerky detection; (5) the one-camera-consumer handover no
+  longer fires for a start that is about to 404, re-arms the suspended head config when
+  motion tracking stops, and an explicit disable cancels a pending re-arm (all
+  unit-pinned); (6) lurk no longer swallows a tracker-start failure while claiming the
+  pan servo; (7) `getHeadTrackingStatus` read fields the tracker never emits, so
+  `hasTarget` was permanently false everywhere; (8) every head-tracking enable site now
+  pins its characterId instead of trusting the node's mutable selection. Face/hand
+  boxes require detection mode `face`/`all` — `person` (the saved mode) draws full-body
+  boxes only.
 
 ## [Unreleased] - 2026-08-22 — The cloud shift: every open software finding closed, and CI turns green
 

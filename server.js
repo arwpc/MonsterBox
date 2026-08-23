@@ -315,17 +315,10 @@ try {
 // video 500MB, images 10MB) go through multer's multipart limits and are
 // unaffected by these caps. 10mb keeps generous audio headroom; forms are
 // tiny.
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
-// Serve character/data assets for images and media
-app.use('/data', express.static(path.join(__dirname, 'data')));
-
-// View engine setup
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Basic health check endpoint for readiness tests
+// Health check FIRST — before body parsers and the static mounts (each static
+// mount costs a disk stat per request). With zero handler work and zero
+// middleware ahead of it, /health's response time measures pure event-loop
+// queueing — the loop-health probe the perf runbooks curl in a tight loop.
 app.get('/health', (req, res) => {
     try {
         res.status(200).json({ status: 'OK', version: pkg.version, time: new Date().toISOString() });
@@ -333,6 +326,19 @@ app.get('/health', (req, res) => {
         res.status(200).json({ status: 'OK' });
     }
 });
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// maxAge lets the operator's browser reuse big assets (bootstrap alone is
+// 233KB over software-TLS on this CPU) instead of re-paying them on every
+// navigation; ETag revalidation still catches a deploy within 5 minutes.
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '5m' }));
+// Serve character/data assets for images and media
+app.use('/data', express.static(path.join(__dirname, 'data'), { maxAge: '1m' }));
+
+// View engine setup
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // Master layout rendering helper
 app.use((req, res, next) => {
@@ -419,8 +425,7 @@ app.use(async (req, res, next) => {
         // Load character name and data for navigation
         if (merged.selectedCharacter) {
             try {
-                const charactersData = await fs.readFile(path.join(__dirname, 'data', 'characters.json'), 'utf8');
-                const characters = JSON.parse(charactersData);
+                const characters = await loadCharactersCached();
                 const currentChar = characters.find(c => c.id === merged.selectedCharacter);
                 res.locals.currentCharacterName = currentChar ? currentChar.name : null;
                 res.locals.currentCharacterObject = currentChar || null;
@@ -798,12 +803,30 @@ app.use((req, res) => {
     });
 });
 
-// Load configuration
+// Load configuration.
+//
+// Both loadConfig() and loadCharactersCached() run inside the global
+// middleware on EVERY request; without the memo that was 2 SD-card reads +
+// 2 JSON.parse per request, multiplied by the dashboard's ~2-4 polls/second.
+// A 2s TTL is imperceptible for what these feed (theme, character name in
+// the nav) — selectedCharacter stays authoritative from in-memory config,
+// so character switches are never delayed by this cache.
+// var (not let/const): loadConfig() is called at module top level, above this
+// point in the file — a let binding would still be in its temporal dead zone
+// on that first call. var hoists; the guards below tolerate undefined.
+var MW_CACHE_TTL_MS = 2000;
+var _cfgCache = null;
+var _charsCache = null;
+
 async function loadConfig() {
+    if (_cfgCache && _cfgCache.data && (Date.now() - _cfgCache.at) < MW_CACHE_TTL_MS) {
+        return _cfgCache.data;
+    }
     try {
         const configPath = path.join(__dirname, 'config/app-config.json');
         const configData = await fs.readFile(configPath, 'utf8');
-        return JSON.parse(configData);
+        _cfgCache = { at: Date.now(), data: JSON.parse(configData) };
+        return _cfgCache.data;
     } catch (error) {
         console.warn('Config file not found, using defaults');
         return {
@@ -812,6 +835,15 @@ async function loadConfig() {
             selectedCharacter: null
         };
     }
+}
+
+async function loadCharactersCached() {
+    if (_charsCache && _charsCache.data && (Date.now() - _charsCache.at) < MW_CACHE_TTL_MS) {
+        return _charsCache.data;
+    }
+    const charactersData = await fs.readFile(path.join(__dirname, 'data', 'characters.json'), 'utf8');
+    _charsCache = { at: Date.now(), data: JSON.parse(charactersData) };
+    return _charsCache.data;
 }
 
 // Health check for mjpg-streamer service

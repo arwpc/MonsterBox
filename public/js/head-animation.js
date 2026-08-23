@@ -147,6 +147,19 @@
     }
     window.addEventListener('pagehide', onPageLeave);
     window.addEventListener('beforeunload', onPageLeave);
+    // bfcache restore after the pagehide beacon killed the tracker: the page
+    // wakes with the toggle ON, polling stopped, tracker dead — a zombie.
+    // Reconcile against the server instead of trusting restored JS state.
+    window.addEventListener('pageshow', function(e) {
+      if (e.persisted && currentCharacterId) {
+        isOpenCVActive = false;
+        isHeadTrackingOn = false;
+        stopPolling();
+        if (el.ocvEnabled) el.ocvEnabled.checked = false;
+        updateOpenCVUI(false);
+        loadConfig(currentCharacterId);
+      }
+    });
   }
 
   function bindSlider(range, badge) {
@@ -197,6 +210,14 @@
               isHeadTrackingOn = true;
               if (el.htEnabled) el.htEnabled.checked = true;
             }
+          } else if (data.config && data.config.opencvEnabled !== false && data.config.webcamPartId) {
+            // Saved intent is ON but no tracker is running — the state after
+            // every service restart/deploy, which used to render the toggle
+            // ON over a boxless video with no hint. Honor the saved intent:
+            // restart the tracker (camera consumer only — the servo mapping
+            // is a separate enable and keeps its own saved state).
+            showToast('Restarting OpenCV tracking (saved setting)', 'info');
+            startOpenCV();
           }
           updateFormState();
           updateHeadTrackingStatusDisplay();
@@ -738,6 +759,24 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.success) {
+          // The tracker stopped server-side (crash, or another page/consumer
+          // took the camera): resync instead of showing "Running/Searching"
+          // over a boxless video forever.
+          if (isOpenCVActive && data.active === false) {
+            isOpenCVActive = false;
+            isHeadTrackingOn = false;
+            stopPolling();
+            if (el.ocvEnabled) el.ocvEnabled.checked = false;
+            if (el.htEnabled) el.htEnabled.checked = false;
+            updateOpenCVUI(false);
+            clearOverlay();
+            updateStatusDisplay(null);
+            updateFormState();
+            showToast(data.exited
+              ? 'OpenCV tracker crashed (exit ' + data.exitCode + ') — see /var/log/monsterbox.err. Toggle to restart.'
+              : 'OpenCV tracking was stopped outside this page. Toggle to restart.', 'error');
+            return;
+          }
           drawOverlay(data);
           updateStatusDisplay(data);
         }

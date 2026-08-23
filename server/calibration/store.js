@@ -174,6 +174,11 @@ function shapeForRead(profile) {
 export class JsonCalibrationStore {
   constructor(filePath) {
     this.filePath = filePath || DEFAULT_CAL_PATH;
+    // mtime+size-validated parse cache. load() sits on two hot paths — every
+    // hardware command's bounds check and the pose-health N+1 on
+    // GET /poses/api/poses — and without this each call re-read and re-parsed
+    // the whole file from the SD card.
+    this._fileCache = null;
   }
 
   /**
@@ -182,8 +187,16 @@ export class JsonCalibrationStore {
    */
   async load() {
     try {
+      const stat = await fs.stat(this.filePath);
+      if (this._fileCache
+          && this._fileCache.mtimeMs === stat.mtimeMs
+          && this._fileCache.size === stat.size) {
+        return this._fileCache.data;
+      }
       const raw = await fs.readFile(this.filePath, 'utf8');
-      return JSON.parse(raw || '{}');
+      const data = JSON.parse(raw || '{}');
+      this._fileCache = { mtimeMs: stat.mtimeMs, size: stat.size, data };
+      return data;
     } catch (e) {
       if (e && e.code === 'ENOENT') return {};
       throw e;
@@ -194,6 +207,9 @@ export class JsonCalibrationStore {
     await fs.mkdir(path.dirname(this.filePath), { recursive: true });
     // Atomic write so an interrupted calibration write can't corrupt the file.
     await writeJsonAtomic(this.filePath, data);
+    // The atomic rename lands with a fresh mtime, but drop the cache anyway so
+    // a same-millisecond rewrite can never serve the pre-save snapshot.
+    this._fileCache = null;
   }
 
   async _resolveCharacter(characterId) {

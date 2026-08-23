@@ -560,7 +560,9 @@ router.post('/api/move-stream', async (req, res) => {
 // meters on one page drove ~7.5 python+ALSA spawns/second at ~87% of the Pi's
 // total CPU. 500ms still refreshes a VU meter at 2Hz.
 const audioLevelCache = new Map();
-const CACHE_TTL = 500;
+// 1000ms: a VU meter refreshing at 1Hz is still a usable meter, and halving
+// the probe rate halves the python+ALSA spawn load per open audio page.
+const CACHE_TTL = 1000;
 
 // One in-flight probe per device, shared by every concurrent caller. Four
 // meters on the same deviceId used to spawn four simultaneous ALSA opens of

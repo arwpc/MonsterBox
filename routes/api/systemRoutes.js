@@ -17,6 +17,12 @@ import systemService from '../../services/systemService.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../../package.json');
+
+// Immutable per-boot values — os.cpus() builds a fresh per-core array on every
+// call, which /info paid twice per request for values that never change.
+const _cpuInfo = os.cpus();
+const CPU_COUNT = _cpuInfo.length;
+const CPU_MODEL = (_cpuInfo[0] && _cpuInfo[0].model) || 'Unknown';
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const router = express.Router();
@@ -92,8 +98,8 @@ router.get('/info', (req, res) => {
             systemUptime: os.uptime(),
             totalMemory: (os.totalmem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
             freeMemory: (os.freemem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
-            cpuCount: os.cpus().length,
-            cpuModel: (os.cpus()[0] && os.cpus()[0].model) || 'Unknown'
+            cpuCount: CPU_COUNT,
+            cpuModel: CPU_MODEL
         };
 
         res.json(systemInfo);

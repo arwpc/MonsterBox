@@ -189,17 +189,31 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
   }
 });
 
-// Head Tracking status for current character's webcam
+// Head Tracking status for current character's webcam.
+// The dashboard polls this at 1 Hz; the webcam id it re-discovers only
+// changes when parts are edited, so the parts.json read is memoized briefly —
+// without this the poll cost 2 SD reads/second just to look up a stable id.
+const HT_CAM_CACHE_TTL_MS = 10000;
+let _htCamCache = { at: 0, characterId: null, camId: null };
 router.get('/api/head-tracking-status', async (req, res) => {
   try {
     const characterId = getCurrentCharacterId(req);
-    const parts = await loadParts();
-    const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
-    const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
-    if (!cam) return res.json({ success: true, headTracking: { enabled: false }, warning: 'No webcam found' });
+    let camId;
+    if (_htCamCache.camId != null
+        && String(_htCamCache.characterId) === String(characterId)
+        && (Date.now() - _htCamCache.at) < HT_CAM_CACHE_TTL_MS) {
+      camId = _htCamCache.camId;
+    } else {
+      const parts = await loadParts();
+      const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
+      const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
+      if (!cam) return res.json({ success: true, headTracking: { enabled: false }, warning: 'No webcam found' });
+      camId = cam.id;
+      _htCamCache = { at: Date.now(), characterId, camId };
+    }
 
     const fRes = { json: (b) => res.json(b), status: (c) => ({ json: (b) => res.status(c).json(b) }) };
-    await motionTrackingController.getHeadTrackingStatus({ query: { webcamId: cam.id } }, fRes);
+    await motionTrackingController.getHeadTrackingStatus({ query: { webcamId: camId } }, fRes);
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -237,6 +251,9 @@ router.post('/api/head-tracking', express.json(), async (req, res) => {
 
       // Apply all saved settings (center, range, invert, smoothing, deadzone, detection mode)
       const params = {
+        // Pin the character here, where it is known — enableHeadTracking
+        // otherwise falls back to the node's mutable selectedCharacter.
+        characterId: characterId,
         centerDeg: typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 0,
         rangeDeg: typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60,
         invertPan: !!savedConfig.invertPan,
@@ -1080,16 +1097,30 @@ async function enableLurkSuperpowers(characterId) {
             maxContourArea: savedConfig.maxContourArea || 100000,
             detectionMode: savedConfig.detectionMode || 'person'
           };
-          try { await motionTrackingController.startTrackingForWebcam(cam.id, trackingParams); } catch (_) {}
+          // A camera that fails to open must be REPORTED, not swallowed —
+          // otherwise lurk claims the pan servo for a tracker that isn't
+          // running and "OpenCV just stopped" has no named cause anywhere.
+          let trackerStarted = true;
+          let trackerError = null;
+          try {
+            await motionTrackingController.startTrackingForWebcam(cam.id, trackingParams);
+          } catch (startErr) {
+            trackerStarted = false;
+            trackerError = startErr.message;
+            console.error(`Lurk: motion tracker failed to start for webcam ${cam.id}: ${startErr.message}`);
+          }
           motionTrackingController.enableHeadTrackingForWebcam(cam.id, {
             panServoId,
+            characterId: characterId,
             centerDeg: typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 0,
             rangeDeg: typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60,
             invertPan: !!savedConfig.invertPan,
             smoothing: typeof savedConfig.smoothing === 'number' ? savedConfig.smoothing : 0.25,
             deadzone: typeof savedConfig.deadzone === 'number' ? savedConfig.deadzone : 5
           });
-          results.headTracking = { enabled: true };
+          results.headTracking = trackerStarted
+            ? { enabled: true }
+            : { enabled: true, trackerRunning: false, error: 'tracker failed to start: ' + trackerError };
         } else {
           results.headTracking = { enabled: false, error: 'No pan servo found' };
         }
