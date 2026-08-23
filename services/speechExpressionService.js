@@ -451,6 +451,9 @@ function stopSpeaking(characterId, options = {}) {
       if (options.resumeIdle !== false) startIdleLiveliness(cid).catch(() => {});
     }
   }, SPEECH_TICK_MS);
+  // A settle interval may still be running from a previous stop — clearing
+  // before overwriting prevents two 10Hz loops fighting over the same head.
+  if (s.settleTimer && s.settleTimer !== settle) clearInterval(s.settleTimer);
   s.settleTimer = settle;
 
   return { stopped: true, ...stats };

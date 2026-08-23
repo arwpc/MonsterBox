@@ -525,33 +525,42 @@ class MotionTracker:
             # Convert to grayscale for processing
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            # Gaussian blur to reduce noise before background subtraction
-            blur_size = self.config.get('blur_size', 5)
-            if blur_size > 1:
-                gray = cv2.GaussianBlur(gray, (blur_size, blur_size), 0)
+            # The background-subtraction + morphology pipeline below feeds the
+            # MOTION modes only — in pure person/upperbody mode its output is
+            # never read, yet it cost 15-40% of a Pi 4B core on every frame.
+            # Skip it where nothing consumes it (the fallback branch guards
+            # against a None mask, so an unexpected mode degrades safely).
+            fg_mask = None
+            if self.detection_mode not in ('person', 'upperbody'):
+                # Gaussian blur to reduce noise before background subtraction
+                # (mutates gray, as it always did — cascade consumers downstream
+                # of this branch expect the blurred image)
+                blur_size = self.config.get('blur_size', 5)
+                if blur_size > 1:
+                    gray = cv2.GaussianBlur(gray, (blur_size, blur_size), 0)
 
-            # Apply background subtraction
-            fg_mask = self.bg_subtractor.apply(
-                gray,
-                learningRate=self.config['background_learning_rate']
-            )
+                # Apply background subtraction
+                fg_mask = self.bg_subtractor.apply(
+                    gray,
+                    learningRate=self.config['background_learning_rate']
+                )
 
-            # Threshold to remove shadows (MOG2 marks shadows as 127)
-            _, fg_mask = cv2.threshold(fg_mask, 200, 255, cv2.THRESH_BINARY)
+                # Threshold to remove shadows (MOG2 marks shadows as 127)
+                _, fg_mask = cv2.threshold(fg_mask, 200, 255, cv2.THRESH_BINARY)
 
-            # Noise reduction — open removes small noise, close fills gaps in large objects
-            kernel_size = self.config['noise_kernel_size']
-            if kernel_size < 1:
-                kernel_size = 3
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-            fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel)
+                # Noise reduction — open removes small noise, close fills gaps in large objects
+                kernel_size = self.config['noise_kernel_size']
+                if kernel_size < 1:
+                    kernel_size = 3
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+                fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel)
 
-            # Dilate + close to merge nearby fragments into one big blob
-            dilate_size = self.config.get('dilate_size', 7)
-            if dilate_size > 1:
-                dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilate_size, dilate_size))
-                fg_mask = cv2.dilate(fg_mask, dilate_kernel, iterations=2)
-                fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, dilate_kernel)
+                # Dilate + close to merge nearby fragments into one big blob
+                dilate_size = self.config.get('dilate_size', 7)
+                if dilate_size > 1:
+                    dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilate_size, dilate_size))
+                    fg_mask = cv2.dilate(fg_mask, dilate_kernel, iterations=2)
+                    fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, dilate_kernel)
 
             # Find contours based on detection mode
             min_area = self.config['min_contour_area']
@@ -562,6 +571,16 @@ class MotionTracker:
             mode = self.detection_mode
             self.frames_since_detect += 1
             run_full_detect = (self.frames_since_detect >= self.detect_interval) or not self.cv_tracker_ok
+            # An empty room used to force FULL detection on EVERY frame:
+            # cv_tracker_ok is false whenever nothing is tracked — the steady
+            # state of an idle prop — and HOG even at 10 fps is a whole core
+            # doing nothing useful. Bound detection by TIME so idle cost has a
+            # ceiling regardless of frame rate. Motion modes stay per-frame
+            # (they're an order of magnitude cheaper and need continuity).
+            if run_full_detect and mode in ('person', 'upperbody'):
+                min_gap = float(self.config.get('min_detect_gap_sec', 0.5))
+                if time.time() - getattr(self, '_last_full_detect', 0.0) < min_gap:
+                    run_full_detect = False
 
             # For person/upperbody/person+motion modes, use tracker between detections
             use_tracker = mode in ('person', 'upperbody', 'person+motion')
@@ -583,10 +602,11 @@ class MotionTracker:
 
             if not use_tracker or run_full_detect:
                 self.frames_since_detect = 0
+                self._last_full_detect = time.time()
 
                 # Motion detection (MOG2 background subtraction)
                 motion_detections = []
-                if mode in ('motion', 'all', 'person+motion'):
+                if fg_mask is not None and mode in ('motion', 'all', 'person+motion'):
                     contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                     valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
                     for c in valid_contours:
@@ -684,8 +704,10 @@ class MotionTracker:
                         if not overlap:
                             new_detections.append(md)
                     new_detections.extend(hand_detections)
-                else:
-                    # Fallback to motion
+                elif fg_mask is not None:
+                    # Fallback to motion (guarded: person/upperbody skip the
+                    # mask pipeline entirely, so an unexpected mode landing
+                    # here degrades to no-detections instead of crashing)
                     contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                     valid_contours = [c for c in contours if min_area <= cv2.contourArea(c) <= max_area]
                     for c in valid_contours:

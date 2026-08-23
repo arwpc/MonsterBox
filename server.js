@@ -927,10 +927,10 @@ async function onServerReady(protocol) {
         console.log(`   AI chat will use HTTP fallback (slower responses)`);
     }
 
-    // Start Audio Health Monitor
+    // Start Audio Health Monitor (it announces its own start — a second log
+    // line here read as a stacked monitor during the 2026-08-23 perf triage)
     try {
         audioHealthMonitor.start();
-        console.log(`🔊 Audio Health Monitor started (checking every 30s)`);
     } catch (error) {
         console.error(`❌ Failed to start Audio Health Monitor:`, error.message);
     }

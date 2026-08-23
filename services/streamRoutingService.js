@@ -283,7 +283,10 @@ class StreamRoutingService {
      * Start periodic cleanup of dead streams
      */
     startPeriodicCleanup(intervalMs = 30000) {
-        setInterval(() => {
+        // Guard against stacking — the handle was never stored, so any repeat
+        // call silently doubled the sweep forever.
+        if (this._cleanupTimer) return;
+        this._cleanupTimer = setInterval(() => {
             this.cleanupDeadStreams().catch(err => {
                 console.error('Stream cleanup error:', err.message);
             });

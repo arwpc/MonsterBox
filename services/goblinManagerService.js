@@ -554,7 +554,11 @@ class GoblinManagerService {
     }
 
     startHeartbeatMonitor() {
-        setInterval(async () => {
+        // Guard against stacking: nothing stored the handle, so a second call
+        // (re-init, tests) would run two monitors dialing every offline goblin
+        // forever.
+        if (this._heartbeatTimer) return;
+        this._heartbeatTimer = setInterval(async () => {
             const now = Date.now();
             let changed = false;
 

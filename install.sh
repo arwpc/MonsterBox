@@ -408,9 +408,13 @@ if [ -f "$REPO_DIR/scripts/optimize-pi-performance.sh" ]; then
     bash "$REPO_DIR/scripts/optimize-pi-performance.sh" || print_warning "optimize-pi-performance.sh reported a non-fatal issue"
 fi
 
-if [ -f "$REPO_DIR/scripts/tune-mjpg.sh" ]; then
-    bash "$REPO_DIR/scripts/tune-mjpg.sh" /dev/video0 640x480 24 80 || print_warning "tune-mjpg.sh reported a non-fatal issue"
-fi
+# NOTE (2026-08-23 perf audit): install used to call tune-mjpg.sh here with a
+# hardcoded '/dev/video0 640x480 24 80', silently overriding the canonical
+# launcher's 15fps spec AND its by-id device self-healing on every fresh
+# install — re-arming the documented USB re-enumeration crash-loop and feeding
+# every downstream consumer 60% more frames for zero operator benefit. Per-node
+# geometry belongs in /etc/default/monsterbox-cam, which mjpg-launcher.sh
+# already sources; tune-mjpg.sh now writes exactly that.
 
 # ============================================================
 # 17. Configure ElevenLabs AI
