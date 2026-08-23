@@ -165,20 +165,26 @@ class MotionTracker:
         if self.hog_detector is None:
             return []
         try:
-            # Resize for faster processing on RPi (HOG is expensive)
+            # Resize for faster processing on RPi (HOG is expensive). 320 px
+            # wide and a 1.1 pyramid step, down from 400/1.05: the 1.05 step
+            # alone nearly doubles the pyramid depth, and together the old
+            # values measured ~2 cores of a Pi 4B for detections a smoothed
+            # head-tracker cannot use. A person filling a quarter of the frame
+            # still detects reliably at 320.
+            hog_width = float(self.config.get('hog_width', 320))
             scale = 1.0
             proc_frame = frame
             h, w = frame.shape[:2]
-            if w > 400:
-                scale = 400.0 / w
-                proc_frame = cv2.resize(frame, (400, int(h * scale)))
+            if w > hog_width:
+                scale = hog_width / w
+                proc_frame = cv2.resize(frame, (int(hog_width), int(h * scale)))
 
             # winStride=(8,8) for speed, padding for border detection, scale for multi-scale
             rects, weights = self.hog_detector.detectMultiScale(
                 proc_frame,
                 winStride=(8, 8),
                 padding=(4, 4),
-                scale=1.05
+                scale=float(self.config.get('hog_scale', 1.1))
             )
 
             # Scale rects back to original frame size and filter by confidence
@@ -348,6 +354,13 @@ class MotionTracker:
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             self.cap.set(cv2.CAP_PROP_FPS, 15)
+            # A deep driver queue serves stale frames when processing lags;
+            # one-frame buffering keeps device capture as fresh as the
+            # stream path's drain-to-latest.
+            try:
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            except Exception:
+                pass
 
             logger.info(f"Motion tracker initialized for device: {device_path}")
             return True
@@ -380,7 +393,7 @@ class MotionTracker:
             self.stream_conn = None
             return False
 
-    def _read_mjpeg_frame(self) -> Optional[np.ndarray]:
+    def _read_mjpeg_frame(self, decode: bool = True) -> Optional[np.ndarray]:
         if not self.stream_conn:
             backoff_time = getattr(self, '_reconnect_backoff', 1.0)
             if time.time() - self.last_stream_connect > backoff_time:
@@ -400,6 +413,24 @@ class MotionTracker:
                 return None
             self.frame_buffer += chunk
 
+            # DRAIN the socket. One 32 KB read per processing cycle consumes
+            # far less than the stream produces (~15 fps x ~40 KB), so frames
+            # queued in the KERNEL buffer and the "latest" frame this parser
+            # extracted was seconds old — the bench's 5-seconds-behind video.
+            # Freshness beats throughput: pull everything that is already
+            # waiting, bounded so one call can never spin forever.
+            drained = 0
+            try:
+                fd = self.stream_conn.fileno()
+                while drained < 4 * 1024 * 1024 and select.select([fd], [], [], 0)[0]:
+                    more = self.stream_conn.read(32768)
+                    if not more:
+                        break
+                    self.frame_buffer += more
+                    drained += len(more)
+            except (OSError, ValueError):
+                pass  # fileno unavailable mid-teardown; the blocking read above still worked
+
             last_frame = None
             while True:
                 soi = self.frame_buffer.find(b'\xff\xd8')
@@ -415,8 +446,16 @@ class MotionTracker:
             if len(self.frame_buffer) > 512*1024:
                 self.frame_buffer = self.frame_buffer[-32768:]
 
+            # Always remember the newest complete frame, even on drain-only
+            # calls that skip decoding — the next processing tick uses it.
             if last_frame:
-                arr = np.frombuffer(last_frame, dtype=np.uint8)
+                self._latest_jpeg = last_frame
+            if not decode:
+                return None
+            jpeg = getattr(self, '_latest_jpeg', None)
+            self._latest_jpeg = None
+            if jpeg:
+                arr = np.frombuffer(jpeg, dtype=np.uint8)
                 return cv2.imdecode(arr, cv2.IMREAD_COLOR)
             return None
         except Exception as e:
@@ -900,6 +939,15 @@ class MotionTracker:
         last_output_time = 0
         output_interval = 1.0 / 25.0  # ~25 FPS output
 
+        # Cap the PROCESSING rate. Uncapped, this loop chewed every frame the
+        # CPU could take (~2 cores on a Pi 4B) for detections nobody needs at
+        # 15 Hz — head tracking is smoothed anyway. Between processing ticks
+        # the stream is still DRAINED (decode=False) so the kernel buffer can
+        # never age the picture. 10 fps of fresh frames beats 15 fps of stale.
+        last_process_time = 0.0
+        max_process_fps = float(self.config.get('max_process_fps', 10))
+        min_process_gap = (1.0 / max_process_fps) if max_process_fps > 0 else 0.0
+
         # Send initialization status
         init_status = {
             'initialized': True,
@@ -914,6 +962,14 @@ class MotionTracker:
             while self.running:
                 # Check for config updates from Node parent (non-blocking)
                 self._check_stdin()
+
+                if self.stream_url and min_process_gap > 0:
+                    now = time.time()
+                    if now - last_process_time < min_process_gap:
+                        self._read_mjpeg_frame(decode=False)  # keep the buffer fresh, skip the work
+                        time.sleep(0.005)
+                        continue
+                    last_process_time = now
 
                 status = self.process_frame()
                 if status:
@@ -980,6 +1036,19 @@ def main():
 
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
+
+    # Detection is the most DEFERRABLE work on this box, but this process
+    # inherits the monsterbox service's ELEVATED priority (nice -5 via the
+    # systemd drop-in) — measured at the bench eating two of the Pi 4B's four
+    # cores while legally starving the server, the servo daemon and the video
+    # stream the operator was watching (~5 s behind reality). Push ourselves
+    # BELOW everything that matters; nice() is additive and an unprivileged
+    # process may only lower its own priority, which is exactly the intent.
+    try:
+        os.nice(15)
+        logger.info(f"Deprioritized tracker (nice {os.nice(0)}) — servos and stream outrank detection")
+    except OSError as e:
+        logger.warning(f"Could not deprioritize tracker: {e}")
 
     config = {
         'device': args.device,
