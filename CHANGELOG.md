@@ -2,6 +2,42 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased] - 2026-08-23 — The Knight hardened: type truth, honest failures, one camera consumer
+
+An overnight bench session with the operator at the rig. Sir Dragomir's channel map is
+now FINAL LAW (jaw=3, head=7 multi-turn 900°, box=11 — `docs/hardware/PCA9685-CHANNEL-MAP-DRAGOMIR.md`),
+all three servos calibrated by eye (head 323–491 real°, jaw 27–74, box 16–178 inverted)
+and the known-good state MINTED with a restore procedure
+(`docs/hardware/minted/sirdragomir-2026-08-23/`). Software that shipped on the way:
+
+- **A refused servo command can no longer report success.** The servo daemon's
+  physical-faults guard used to reply ok for a pulse it never wrote; refusals now raise,
+  carry `denied:true` through the client, and return `success:false` with the reason —
+  and denials never fall back to one-shot wrappers. (An hour of debugging healthy
+  hardware bought this one.)
+- **Old code dies on every restart.** A servo daemon from a previous deploy could outlive
+  the service and keep owning the socket; the server now evicts any pre-existing owner at
+  spawn and the deploy pkills stale daemons — a restart always puts on-disk code on the chip.
+- **Multi-turn identity can no longer silently vanish.** Dispatch treats a declared
+  non-180 `rotationRangeDeg` as multi-turn even when the servoType string is lost; every
+  UI select can represent `multi-turn`; writers validate servoType/range/channel; the
+  batch path diverts continuous servos and honors model defaults.
+- **Editors speak real degrees**: pose editor and Animation Studio angle controls span the
+  part's declared travel (0–900 on the head) instead of a hardcoded 0–180.
+- **Sweep test paces itself** by real travel time per leg instead of firing six commands
+  in under a second.
+- **"Mark as Calibrated" on every part type** — non-motion parts (webcam, mic, speaker,
+  sensor) get a minimal device profile carrying the trust stamp; motion endpoints still
+  refuse them.
+- **Head tracking and motion tracking are mutually exclusive** (operator ruling): starting
+  one visibly shuts the other down, and an OpenCV tracker that dies unexpectedly logs to
+  `.err` with its exit code and leaves a tombstone status instead of vanishing.
+- **Gesture/pose light steps work on `led` parts** — the led controller gained the
+  `turnOn`/`turnOff` actions every light step dispatches.
+- Calibration drives thread `characterId` end to end; the knight's physical-faults entry
+  is removed post-calibration (note: that file is enforced by the daemon now, per channel,
+  not advisory). Full audit evidence: `docs/evidence/knight-audit-2026-08-22/`.
+
 ## [Unreleased] - 2026-08-22 — The cloud shift: every open software finding closed, and CI turns green
 
 A cloud session (no hardware, no fleet) that worked the v11 audit's remaining OPEN list to

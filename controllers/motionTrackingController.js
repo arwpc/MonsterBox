@@ -82,6 +82,19 @@ export const startMotionTracking = async (req, res) => {
       });
     }
 
+    // ONE camera consumer at a time (operator ruling, 2026-08-23): starting
+    // motion tracking SHUTS DOWN head tracking on this webcam, visibly,
+    // instead of silently restarting the pipeline underneath it — that silent
+    // clobber is what read as "OpenCV was working and just stopped" at the
+    // bench. The reverse handover lives in enableHeadTracking.
+    let headTrackingShutDown = false;
+    const priorHeadCfg = headTrackingConfigs.get(webcamId);
+    if (priorHeadCfg && priorHeadCfg.enabled) {
+      disableHeadTrackingForWebcam(webcamId);
+      headTrackingShutDown = true;
+      console.error(`🎥 Motion tracking started on webcam ${webcamId} — head tracking SHUT DOWN (one camera consumer at a time)`);
+    }
+
     // Stop existing tracker if running
     if (activeTrackers.has(webcamId)) {
       await stopMotionTrackingInternal(webcamId);
@@ -117,9 +130,12 @@ export const startMotionTracking = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Motion tracking started',
+      message: headTrackingShutDown
+        ? 'Motion tracking started — head tracking was shut down (one camera consumer at a time)'
+        : 'Motion tracking started',
       webcamId,
-      config
+      config,
+      headTrackingShutDown
     });
 
   } catch (error) {
@@ -312,6 +328,7 @@ async function stopMotionTrackingInternal(webcamId) {
   if (tracker) {
     try {
       if (!tracker.killed && tracker.exitCode == null) {
+        tracker._mbRequestedStop = true; // requested stop — the exit handler stays quiet
         tracker.kill('SIGTERM');
 
         // Wait briefly for clean exit
@@ -425,14 +442,33 @@ async function startMotionTrackingProcess(webcamId, devicePath, config) {
     });
 
     tracker.on('exit', (code) => {
-      console.log(`Motion tracking process exited with code ${code}`);
-      activeTrackers.delete(webcamId);
-      trackingStatus.delete(webcamId);
+      // An UNEXPECTED tracker death must be loud and diagnosable. This used to
+      // log to stdout and delete ALL state, so head tracking stayed "enabled"
+      // pointing at nothing while the status endpoint reported that nothing
+      // had ever run — at the bench that read as "OpenCV was working and just
+      // stopped, settings perfect". A requested stop stays quiet; a crash goes
+      // to .err with its exit code and leaves an inspectable tombstone status.
+      const requested = tracker._mbRequestedStop === true;
+      const isCurrent = activeTrackers.get(webcamId) === tracker;
+      if (isCurrent) activeTrackers.delete(webcamId);
+      if (requested || !isCurrent) {
+        if (isCurrent) trackingStatus.delete(webcamId);
+        console.log(`Motion tracking process exited with code ${code}`);
+        return;
+      }
+      console.error(`🎥 Motion tracking process for webcam ${webcamId} EXITED unexpectedly (code ${code}) — no stop was requested. Head tracking on this webcam is idle until tracking restarts.`);
+      trackingStatus.set(webcamId, {
+        active: false,
+        exited: true,
+        exit_code: code,
+        exited_at: new Date().toISOString()
+      });
     });
 
     // Timeout for initialization
     setTimeout(() => {
       if (!initialized) {
+        tracker._mbRequestedStop = true; // our own kill — not an unexpected death
         tracker.kill('SIGTERM');
         reject(new Error('Motion tracking initialization timeout'));
       }
@@ -914,6 +950,13 @@ export const enableHeadTracking = async (req, res) => {
       smoothing: typeof params.smoothing === 'number' ? params.smoothing : 0.3,
       deadzone: typeof params.deadzone === 'number' ? params.deadzone : 5
     };
+    // Reverse handover of the one-consumer rule (operator ruling 2026-08-23):
+    // enabling head tracking takes the camera; a motion-only tracking session
+    // on this webcam is finished business, not a co-owner. Say so in .err so
+    // "OpenCV just stopped" always has a named cause.
+    if (activeTrackers.has(webcamId) && !(headTrackingConfigs.get(webcamId) || {}).enabled) {
+      console.error(`🎥 Head tracking enabled on webcam ${webcamId} — the motion-only tracking session is TAKEN OVER (one camera consumer at a time)`);
+    }
     // Re-enabling on a different servo must not leave the old claim dangling.
     const prior = headTrackingConfigs.get(webcamId);
     if (prior && prior.panServoId != null && String(prior.panServoId) !== String(cfg.panServoId)) {

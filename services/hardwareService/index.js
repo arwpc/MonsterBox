@@ -608,6 +608,20 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
+        // Gesture and pose light steps dispatch 'turnOn'/'turnOff' through
+        // controlPart for every light-ish part (gestureEngineService.setLight,
+        // poseEngine's light case, the scene executor). The 'light' controller
+        // has carried both for ages; this one didn't, so every gesture or pose
+        // light step on a type:'led' part failed with "Action 'turnOn' not
+        // supported" while the setup page's brightness slider worked fine.
+        async turnOn({ pin, brightness, duration }) {
+            const level = (typeof brightness === 'number' && brightness > 0) ? brightness : 100;
+            return await this.setBrightness({ pin, brightness: level, duration });
+        },
+        async turnOff({ pin, duration }) {
+            return await this.setBrightness({ pin, brightness: 0, duration });
+        },
+
         async fade({ pin, fromBrightness, toBrightness, duration = 1000 }) {
             console.log(`🔆 LED Fade - Pin ${pin}: ${fromBrightness}% → ${toBrightness}% over ${duration}ms`);
             return {

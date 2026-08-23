@@ -32,7 +32,31 @@ Speaker (TTS heard earlier). Server healthy on v10.4.0 code.
 (ch11) stopped moving** at the very end of the session — after calibration succeeded and
 after a spontaneous full-Pi reboot. Undiagnosed; no logs captured yet. See issue #1.
 
-## Open issues, in priority order
+## Session close-out addendum (later on 2026-08-23)
+
+The operator returned to the bench and closed out most of the list below:
+
+- **Issue #1 RESOLVED at the bench:** operator confirms jaw and head servos working and
+  calibrated ("no jaw issues"); the earlier jaw/box outage was transient (post-reboot state,
+  never reproduced). The minted snapshot remains the recovery record.
+- **Issue #2 RESOLVED:** the container's red gate was environmental (wedged local test
+  server — kill strays and restart it, see the rules section), but the logged
+  `turnOn not supported` errors exposed the real audit defect: the `led` hardware
+  controller carried no `turnOn`/`turnOff` actions, so EVERY gesture and pose light step
+  on a `type:'led'` part failed while the brightness slider worked. Fixed: `led.turnOn`
+  / `led.turnOff` now alias the real brightness path (unit-tested).
+- **Issue #3 CLOSED by operator ruling:** don't worry about the Pi reboot. The
+  `vcgencmd get_throttled` note stays here for whenever it recurs.
+- **NEW, shipped at close-out:** head tracking and motion tracking are now MUTUALLY
+  EXCLUSIVE by operator ruling — starting motion tracking shuts head tracking down
+  (visible in the API response and `.err`), enabling head tracking takes over a
+  motion-only session with a named log line, and an OpenCV tracker that dies
+  UNEXPECTEDLY now logs to `.err` with its exit code and leaves a tombstone status
+  (`active:false, exited:true, exit_code`) instead of silently deleting all state —
+  the "OpenCV was working and just stopped, settings perfect" mystery now always has a
+  named cause in `/var/log/monsterbox.err`.
+
+## Open issues, in priority order (status per addendum above)
 
 1. **Jaw + box not moving (head fine).** Undiagnosed. Diagnostic path:
    - Drive each via `POST /api/calibration/2/goto {"angle":50}` and
