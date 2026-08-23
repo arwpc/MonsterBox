@@ -32,11 +32,18 @@ describe('Orchestration API (Fleet Command Center)', () => {
   // this file, not an operator and not a fault. The only symptom is nothing coming
   // out of the speakers.
   let originalMuted = false;
+  let originalOrdersEnabled = false;
 
   before(async function () {
     this.timeout(20000);
     const res = await request(BASE_URL).get('/conversation/api/speaker-mute');
     originalMuted = !!(res.body && res.body.muted === true);
+    // Same defect class as mute: the `orders` fan-out below persists
+    // followOrders.enabled on every reachable node. Capture this node's real
+    // state so the restore puts it back instead of leaving voice orders armed
+    // (or disarmed) fleet-wide after every suite run.
+    const fo = await request(BASE_URL).get('/conversation/api/follow-orders');
+    originalOrdersEnabled = !!(fo.body && fo.body.enabled === true);
   });
 
   after(async function () {
@@ -69,6 +76,16 @@ describe('Orchestration API (Fleet Command Center)', () => {
     try {
       await request(BASE_URL).post('/api/orchestration/volume/restore-canonical');
     } catch (_) { /* peers restored at their next service start */ }
+
+    // Follow Orders: this node first, then peers best-effort (mute pattern).
+    await request(BASE_URL)
+      .post('/conversation/api/follow-orders')
+      .send({ enabled: originalOrdersEnabled });
+    try {
+      await request(BASE_URL)
+        .post('/api/orchestration/superpower/orders')
+        .send({ enabled: originalOrdersEnabled });
+    } catch (_) { /* peers restored on their next reachable run */ }
   });
 
 
@@ -245,7 +262,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
     //
     // The fan-out assertion is worth keeping, so capture the real state first and
     // put it back afterwards rather than dropping `mute` from the list.
-    ['lurk', 'jaw', 'head', 'motion', 'mute', 'idle'].forEach((feature) => {
+    ['lurk', 'jaw', 'head', 'motion', 'mute', 'idle', 'orders'].forEach((feature) => {
       it(`toggles ${feature} across the fleet (test mode)`, async () => {
         const res = await request(BASE_URL).post(`/api/orchestration/superpower/${feature}`)
           .send({ enabled: true }).expect(200);

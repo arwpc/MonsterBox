@@ -161,6 +161,19 @@ router.post('/', express.json(), async (req, res) => {
             // watcher. Disabling only the sub-features leaves the trigger armed.
             await conv.disarmLurkCompletely(characterId);
         }));
+
+        // Voice orders are another autonomous trigger: a shouted command must
+        // not restart motion after panic. Persist the disable, stop the
+        // standalone listener, and halt anything an order set in motion.
+        localActions.push(runLocal('disarm-follow-orders', async () => {
+            const svc = await import('../../services/followOrders/followOrdersSuperPowerService.js');
+            const listener = await import('../../services/followOrders/followOrdersListener.js');
+            const executor = await import('../../services/followOrders/followOrdersExecutor.js');
+            const cfg = await svc.readFollowOrdersConfig(characterId);
+            if (cfg.enabled) await svc.writeFollowOrdersConfig(characterId, { ...cfg, enabled: false });
+            await listener.stopStandaloneListener(characterId);
+            await executor.stopEverything(characterId);
+        }));
     }
 
     // Turn AI OFF. Stopping playback does not stop a live agent: an open ElevenLabs

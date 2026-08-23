@@ -692,6 +692,7 @@ class OrchestrationService {
         motion: (on) => ({ method: 'post', path: '/conversation/api/motion-sensor', body: { enabled: on } }),
         mute: (on) => ({ method: 'post', path: '/conversation/api/speaker-mute', body: { muted: on } }),
         idle: (on) => ({ method: 'post', path: on ? '/api/movement/idle/start' : '/api/movement/idle/stop' }),
+        orders: (on) => ({ method: 'post', path: '/conversation/api/follow-orders', body: { enabled: on } }),
     };
 
     /**
@@ -759,6 +760,10 @@ class OrchestrationService {
             disarm.head(false),
             disarm.idle(false),
             disarm.mute(true),
+            // Voice orders are an autonomous motion trigger too: a guest
+            // shouting "raise your arm" seconds after the operator hit stop
+            // must find the ears switched off.
+            disarm.orders(false),
         ];
         const results = await Promise.allSettled(targets.map(async (node) => {
             const outcomes = await Promise.allSettled(
