@@ -1,5 +1,32 @@
 # Bench handoff — 2026-08-23 (Knight hardening session close-out)
 
+## 🏆 DRAGOMIR 100% — operator declaration, 2026-08-23
+
+Every moving part working and calibrated by the operator's hands and eyes; type, config,
+profile, UI and drive path agree; known-good state minted. Milestone commit: `8e5ad77`
+(annotated tag `dragomir-100` — the cloud proxy silently drops tag pushes, so push it
+from any credentialed machine: `git fetch && git tag -a dragomir-100 8e5ad77 -m "DRAGOMIR 100%" && git push origin dragomir-100`).
+
+**Two camera-pipeline items were reported minutes AFTER the declaration — the servos are
+100%, the camera pipeline is not. They are the FIRST work of the next session:**
+
+- **Video preview runs ~5 seconds behind actual movement.** Classic MJPEG buffering:
+  frames queue instead of being dropped when the consumer is slower than the camera.
+  Look at the whole chain — mjpg-streamer settings on the node, the same-origin proxy,
+  and `scripts/motion_tracking_service.py`'s frame reads (it takes both `--device` and
+  `--stream-url`; whichever source it reads must always process the LATEST frame and
+  discard backlog — `cv2.CAP_PROP_BUFFERSIZE=1` on device capture, drain-loop on HTTP
+  MJPEG). A laggy feed also makes head tracking chase where a person WAS 5 s ago.
+- **OpenCV not working on Dragomir (again).** First: confirm the node runs `8e5ad77`
+  (`grep -c headTrackingShutDown controllers/motionTrackingController.js` on the node —
+  ≥1 or the exclusivity/tombstone code isn't there). Then the answer is IN
+  `/var/log/monsterbox.err` by design now: an unexpected tracker death logs
+  `EXITED unexpectedly (code N)`, a takeover logs which feature shut the other down,
+  and `GET /api/webcam/motion-tracking/status` returns the tombstone
+  (`exited:true, exit_code`). Also check whether mjpg-streamer holds `/dev/video0`
+  exclusively while the tracker tries to open the device instead of the stream — the
+  5-second-lag fix and this may be one problem.
+
 **For the next session: this file is the complete brief.** The outgoing session ran in a
 cloud container with NO route to 192.168.8.x — every node command was operator copy-paste.
 A session on the LAN can do it directly (`ssh remote@192.168.8.130`, lands in
