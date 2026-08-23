@@ -102,6 +102,10 @@ ssh remote@$IP 'wpctl get-volume @DEFAULT_AUDIO_SINK@'
 
 ### K — Sir Dragomir (Knight)
 
+**CHANNEL MAP IS FINAL (operator ruling 2026-08-22): jaw=3, head=7 (multi-turn 900°), box=11 —
+`docs/hardware/PCA9685-CHANNEL-MAP-DRAGOMIR.md`. Channel numbers quoted inside the K-items below
+are the history of how we got here, not the map.**
+
 - **K1. ✅ RESOLVED 2026-08-22 (verdict from the bench): NOTHING is electrically dead.**
   Jaw drives great on ch1, the magic box is great, and the head servo is ALIVE on ch4 —
   the operator got it rotating. The 2026-08-19 "+0.4 dB / dead channel" reading is

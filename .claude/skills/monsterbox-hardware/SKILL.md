@@ -20,6 +20,9 @@ own initiative, and no automated suite should command them.
    **blown fuses under simultaneous load**; dedicated 10 A circuits are on Aaron's list.
 2. **Sir Dragomir (4) part 1 (neck).** goBILDA Stingray-2, 900° multi-turn — a full rotation
    **tears the head cabling**. Uncalibrated. Move it on operator direction, eyes on it.
+   **FINAL channel map (operator ruling 2026-08-22, "for once and always"): jaw=3, head=7,
+   box=11** — `docs/hardware/PCA9685-CHANNEL-MAP-DRAGOMIR.md`. Three older maps circulated the
+   same day and each stale assertion caused a channel collision; trust only that file.
 3. **Do not relabel Orlok part 15 ("Head on a Swivel") as multi-turn.** Probably also a
    Stingray, but Aaron's measured 0–180-scale windows work; remapping 0–180→0–1800 silently
    breaks a working head. Mirror-image of the knight: there the wrong label caused harm,

@@ -254,9 +254,16 @@ async function getOrAutoCreateProfile(partId) {
       motion = { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.2 }, { pwmPct: 90, unitsPerSec: 0.4 }], settleMs: 150 };
       bounds = null;
     } else {
-      // No adapter exists for this type (speaker, webcam, sensor, ...) —
-      // return null rather than persist an undrivable capability.
-      return null;
+      // No motion adapter exists for this type (speaker, webcam, microphone,
+      // sensor, light, ...), but the operator's "Mark as Calibrated" stamp must
+      // work on EVERY part in the calibration form (operator ruling,
+      // 2026-08-22: "It should be available for ALL part types"). A minimal
+      // 'device' profile carries the trust stamp and nothing else: no bounds,
+      // no motion model, and getOrCreateAdapter refuses to build an adapter
+      // for it, so every motion endpoint still answers 400 rather than drive.
+      capability = { kind: 'device' };
+      motion = {};
+      bounds = null;
     }
 
     // No lastCalibratedAt: an auto-created placeholder has never been

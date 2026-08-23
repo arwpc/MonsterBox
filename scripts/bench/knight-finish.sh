@@ -2,19 +2,16 @@
 # One-command close-out for Sir Dragomir's bench session (2026-08-22).
 # Run ON the node:  bash scripts/bench/knight-finish.sh
 #
-# Idempotent. Asserts the operator's CONFIRMED channel map — jaw = ch7,
-# MAGIC BOX = ch11 (confirmed at the bench repeatedly, late 2026-08-22) —
-# verifies what actually landed, heals the head's calibration profile (the
-# server rebuilds a placeholder profile to match the part's declared type on
-# first touch), and prints the remaining hands-on steps.
+# Idempotent. Asserts the operator's FINAL channel map, ruled at the bench
+# 2026-08-22 ("for once and always"):
 #
-# THE HEAD'S CHANNEL IS NEVER ASSERTED HERE. An earlier version asserted
-# head = ch11; the box turned out to physically own that pin, so every run of
-# this script re-created the head/box collision the operator had just fixed.
-# The head gets its TYPE truth only (multi-turn, 0-900 real degrees); its
-# channel is set once, by a human with eyes on the physical pin:
-#   curl -sk -X POST https://localhost:3000/setup/calibration/api/parts/1/overrides \
-#     -H 'Content-Type: application/json' -d '{"overrides":{"channel":<REAL PIN>}}'
+#     JAW  = channel 3     HEAD = channel 7 (multi-turn, 0-900 real degrees)
+#     BOX  = channel 11
+#
+# Canonical record: docs/hardware/PCA9685-CHANNEL-MAP-DRAGOMIR.md. Earlier
+# versions of this script asserted two other maps (head=11, then jaw=7) and
+# each wrong assertion re-created a channel collision at the bench — do NOT
+# edit these numbers without the operator's explicit direction.
 set -u
 
 H="https://localhost:3000"
@@ -32,27 +29,28 @@ if [ "$up" != "1" ]; then
   exit 1
 fi
 
-say "asserting the operator's channel map (jaw=7, box=11; head TYPE only — its channel is a human call)"
+say "asserting the FINAL channel map (jaw=3, head=7 multi-turn 0-900, box=11)"
 curl -sk -X POST "$B/1/overrides" -H 'Content-Type: application/json' \
-  -d '{"overrides":{"servoType":"multi-turn","rotationRangeDeg":900}}'; echo
+  -d '{"overrides":{"channel":7,"servoType":"multi-turn","rotationRangeDeg":900}}'; echo
 curl -sk -X POST "$B/2/overrides" -H 'Content-Type: application/json' \
-  -d '{"overrides":{"channel":7,"servoType":"standard"}}'; echo
+  -d '{"overrides":{"channel":3,"servoType":"standard"}}'; echo
 curl -sk -X POST "$B/3/overrides" -H 'Content-Type: application/json' \
   -d '{"overrides":{"channel":11,"servoType":"standard"}}'; echo
 
-say "what actually landed (jaw channel 7; box channel 11; head multi-turn / 900)"
+say "what actually landed (head ch7 multi-turn/900; jaw ch3; box ch11)"
 curl -sk "$B/1" | python3 -c "import json,sys; print('head:', json.load(sys.stdin)['part']['config'])"
 curl -sk "$B/2" | python3 -c "import json,sys; print('jaw :', json.load(sys.stdin)['part']['config'])"
 curl -sk "$B/3" | python3 -c "import json,sys; print('box :', json.load(sys.stdin)['part']['config'])"
 
-HEAD_CH=$(curl -sk "$B/1" | python3 -c "import json,sys; print(json.load(sys.stdin)['part']['config'].get('channel'))")
-if [ "$HEAD_CH" = "11" ]; then
+# Any two motion parts sharing a channel is the collision class that burned
+# this bench three times tonight — refuse to end quietly if it recurs.
+DUPES=$(for p in 1 2 3; do
+  curl -sk "$B/$p" | python3 -c "import json,sys; print(json.load(sys.stdin)['part']['config'].get('channel'))"
+done | sort | uniq -d)
+if [ -n "$DUPES" ]; then
   echo
-  echo "!! HEAD config still claims channel 11 — that pin is the BOX's. Two parts on one"
-  echo "!! channel means head commands drive the box (and the physical-faults guard on the"
-  echo "!! head vetoes the box's channel). Set the head's REAL pin (eyes on the lead):"
-  echo "!!   curl -sk -X POST $B/1/overrides -H 'Content-Type: application/json' \\"
-  echo "!!     -d '{\"overrides\":{\"channel\":<REAL PIN>}}'"
+  echo "!! CHANNEL COLLISION: more than one part claims channel(s): $DUPES"
+  echo "!! Fix with one overrides curl per part before driving anything."
 fi
 
 say "head calibration profile (self-heals to absolute-servo, maxAngleDeg 900, on this read)"
@@ -69,12 +67,9 @@ cat <<'EOS'
 3. /setup/calibration -> Head Servo (reads 0-900): nudge outward
    (fine/med/coarse = 10/25/75 REAL degrees, daemon-fast), Set Min at the safe
    CCW end, Set Max at the safe CW end, cable margin on both, flip Calibrated.
-4. Box: channel 11 is the box's pin (operator-confirmed). Set Min (closed) /
-   Set Max (open) on the box, then flip its Calibrated stamp. If the box does
-   not move, check /var/log/monsterbox.err for "REFUSED ch11": the head's
-   physical-faults entry vetoes ch11 for as long as the HEAD's config also
-   claims channel 11 — fix the head's channel (see warning above), or clear
-   the faults entry once the head is truly calibrated.
-5. Report "head calibrated" so the physical-faults entry for part 1 gets
-   removed from the repo and deployed.
+4. Box (ch11): Set Min (closed) / Set Max (open), then flip its Calibrated
+   stamp. Jaw (ch3): verify its window, re-measure if cleared.
+5. If any part refuses with an error, the reason is REAL now (no more silent
+   success) — read it, check /var/log/monsterbox.err, and fix the named cause
+   rather than retrying.
 EOS
