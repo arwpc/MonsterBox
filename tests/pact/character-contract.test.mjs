@@ -137,6 +137,24 @@ describe('Character Pact Suite', function () {
           expect(cfg.maxAngle).to.be.greaterThan(cfg.minAngle);
         }
       });
+
+      it('super-powers.json (if present) has a valid followOrders shape', function () {
+        const sp = readJsonOrNull(path.join(charDir, 'super-powers.json'));
+        if (!sp) { this.skip(); return; }
+        if (!sp.followOrders) { this.skip(); return; }
+        const fo = sp.followOrders;
+        if (fo.enabled !== undefined) expect(fo.enabled, 'followOrders.enabled').to.be.a('boolean');
+        if (fo.ackMode !== undefined) expect(['speak', 'silent'], 'followOrders.ackMode').to.include(fo.ackMode);
+        for (const cmd of fo.commands || []) {
+          expect(cmd.phrases, 'followOrders.commands[].phrases').to.be.an('array').that.is.not.empty;
+          expect(cmd.action, 'followOrders.commands[].action').to.be.an('object');
+          expect(['pose', 'gesture', 'part', 'stop'], 'followOrders.commands[].action.kind').to.include(cmd.action.kind);
+        }
+        for (const alias of fo.partAliases || []) {
+          expect(alias.alias, 'followOrders.partAliases[].alias').to.be.a('string').that.is.not.empty;
+          expect(alias.partId, 'followOrders.partAliases[].partId').to.not.equal(undefined);
+        }
+      });
     });
   }
 });

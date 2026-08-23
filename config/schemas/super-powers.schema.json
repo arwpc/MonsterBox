@@ -25,6 +25,60 @@
         }
       }
     },
-    "headTracking": { "type": "object" }
+    "headTracking": { "type": "object" },
+    "followOrders": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "requireAddressByName": { "type": "boolean" },
+        "addressAliases": { "type": "array", "items": { "type": "string" } },
+        "ackMode": { "type": "string", "enum": ["speak", "silent"] },
+        "ackPhrases": { "type": "array", "items": { "type": "string" } },
+        "refusalPhrases": { "type": "array", "items": { "type": "string" } },
+        "minConfidence": { "type": "number" },
+        "cooldownMs": { "type": "number" },
+        "defaultDurationMs": { "type": "number" },
+        "maxDurationMs": { "type": "number" },
+        "enablePoseMatching": { "type": "boolean" },
+        "enableGestureMatching": { "type": "boolean" },
+        "enablePartMatching": { "type": "boolean" },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["phrases", "action"],
+            "properties": {
+              "phrases": { "type": "array", "items": { "type": "string" } },
+              "action": {
+                "type": "object",
+                "required": ["kind"],
+                "properties": {
+                  "kind": { "type": "string", "enum": ["pose", "gesture", "part", "stop"] },
+                  "poseId": { "type": ["string", "number"] },
+                  "gestureId": { "type": "string" },
+                  "partId": { "type": ["string", "number"] },
+                  "verb": { "type": "string" },
+                  "durationMs": { "type": "number" },
+                  "angle": { "type": "number" },
+                  "sound": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "partAliases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["alias", "partId"],
+            "properties": {
+              "alias": { "type": "string" },
+              "partId": { "type": ["string", "number"] },
+              "invertOpenClose": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
   }
 }
