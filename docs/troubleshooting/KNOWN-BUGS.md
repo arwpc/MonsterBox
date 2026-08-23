@@ -1844,3 +1844,25 @@ catch a handler that resolves correctly and then drops the value.
   fleet queue loop. `services/orchestrationService.js:602-607` does return
   `success:false, 'No defaultSceneId configured'` for him, but the aggregate fleet call still reads
   as fine. He needs at least one scene authored.
+
+### Head tracking — SHELVED for Halloween 2026 (operator call, 2026-08-23)
+
+After the full chain was rebuilt and verified in code (auto-restarting tracker, honest
+crash reporting, calibrated-window drive mapping, restored HOG reach, robust tracker
+fallback, read1 stream reads), live tracking on Sir Dragomir still did not reach a
+show-usable feel in time, and the operator shelved it: **run Halloween without head
+tracking.** Lurk mode's other superpowers (jaw, idle, motion sensor, AI) are unaffected
+— just leave the Head toggle off.
+
+State of the code at shelving:
+- Final commit `eaffabf` is on main / both claude branches. The last fix (stream reads
+  starving the tracker to <1 fps — read(n) blocking inside the drain loop; loopback-
+  proven 15.3 fps after) was pushed but **never verified on the node**. If anyone
+  retries, it is one command:
+  `cd /home/remote/MonsterBox && git fetch origin main && git checkout origin/main -- scripts && sudo systemctl restart monsterbox.service`
+  then watch the FPS readout on /setup/head-animation — ~10 fps means the starvation
+  is gone and tracking is worth re-judging; still ~1 fps means the bottleneck is
+  elsewhere (stream connect, CPU) and the shelving stands.
+- Everything else from the same sessions IS live and confirmed by the operator:
+  dashboard no longer drags the viewing computer, video is real-time fleet-wide,
+  server latency fixed (/health 2.9s → 19ms on the node).
