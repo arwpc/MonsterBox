@@ -33,14 +33,20 @@
   max-height: 360px;
 }
 
-/* Eerie idle breathing on the whole silhouette */
+/* Eerie idle breathing on the whole silhouette.
+   Infinite keyframes may animate opacity/transform ONLY: animating filter
+   (drop-shadow) re-rasterizes on the main thread every frame forever, part of
+   what made the dashboard drag the viewing computer. Glow is static; the
+   breath is carried by opacity. */
 #mcBodyMap:not(.mc-no-breathe) {
+  filter: drop-shadow(0 0 5px rgba(111, 66, 193, 0.35));
   animation: bm-breathe 5s ease-in-out infinite;
+  will-change: opacity;
 }
 
 @keyframes bm-breathe {
-  0%, 100% { filter: drop-shadow(0 0 2px rgba(111, 66, 193, 0.2)); }
-  50%      { filter: drop-shadow(0 0 8px rgba(111, 66, 193, 0.45)); }
+  0%, 100% { opacity: 0.78; }
+  50%      { opacity: 1; }
 }
 
 /* ── Body Region Fills ── */
@@ -129,12 +135,14 @@
 }
 
 .bm-region.bm-has-parts .bm-ind-light {
+  /* static glow, opacity-only pulse — see the bm-breathe note above */
+  filter: drop-shadow(0 0 5px #ffb300);
   animation: bm-led-pulse 2s ease-in-out infinite;
 }
 
 @keyframes bm-led-pulse {
-  0%, 100% { opacity: 0.5; filter: drop-shadow(0 0 2px #ffd700); }
-  50%      { opacity: 1;   filter: drop-shadow(0 0 8px #ff8c00); }
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
 }
 
 /* ── Region Labels ── */
@@ -383,13 +391,23 @@
 .bm-quick-btn.bm-pose-btn i { color: #6f42c1; }
 .bm-quick-btn.bm-sound-btn i { color: var(--bs-info, #0dcaf0); }
 
-/* Fire flash on quick action */
-.bm-quick-btn.bm-fired {
-  animation: bm-quick-flash 0.35s ease-out;
+/* Fire flash on quick action — a pre-shadowed overlay fading out, so the
+   keyframe animates opacity only (box-shadow keyframes repaint every frame) */
+.bm-quick-btn {
+  position: relative;
+}
+.bm-quick-btn.bm-fired::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 3px var(--bs-success), 0 0 12px rgba(var(--bs-success-rgb), 0.5);
+  pointer-events: none;
+  animation: bm-quick-flash 0.35s ease-out both;
 }
 @keyframes bm-quick-flash {
-  0% { box-shadow: 0 0 0 3px var(--bs-success), 0 0 12px rgba(var(--bs-success-rgb), 0.5); }
-  100% { box-shadow: none; }
+  0% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 /* ── Empty state ── */

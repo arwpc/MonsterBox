@@ -240,6 +240,7 @@
 .mb-btn-glow.mb-btn-ai      { box-shadow: var(--mb-glow-violet); }
 
 .mb-btn-panic {
+  position: relative;
   background: var(--mb-danger);
   color: #fff;
   border-color: var(--mb-danger);
@@ -247,11 +248,26 @@
   font-weight: var(--mb-weight-bold);
   text-transform: uppercase;
   letter-spacing: var(--mb-tracking-wider);
+}
+/* The pulse lives on a composited overlay, never on box-shadow itself:
+   animating box-shadow repaints the button on the main thread every frame
+   forever, and under a backdrop-filtered ancestor that invalidation becomes a
+   full-viewport re-blur — the "dashboard slows the whole computer" bug. Only
+   opacity/transform may ever animate on an infinite loop. */
+.mb-btn-panic::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 22px rgba(200, 35, 44, 0.85);
+  opacity: 0;
+  pointer-events: none;
   animation: mb-glow-pulse var(--mb-dur-slow) var(--mb-ease-in-out) infinite;
+  will-change: opacity;
 }
 @keyframes mb-glow-pulse {
-  0%, 100% { box-shadow: var(--mb-glow-blood); }
-  50%      { box-shadow: 0 0 22px rgba(200, 35, 44, 0.85); }
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
 }
 
 /* Button group */
@@ -654,8 +670,9 @@
 .mb-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(7, 8, 10, 0.72);
-  backdrop-filter: blur(4px);
+  /* No backdrop-filter: with anything animating beneath (the PANIC pulse),
+     a full-viewport blur re-runs every frame for as long as the modal is up. */
+  background: rgba(7, 8, 10, 0.82);
   z-index: var(--mb-z-overlay);
 }
 .mb-modal {
@@ -802,20 +819,31 @@
 }
 .mb-spinner-lg { width: 32px; height: 32px; border-width: 3px; }
 
+/* Shimmer via a translating overlay: animating background-position repaints
+   the element on the main thread every frame; transform stays compositable. */
 .mb-skeleton {
   display: block;
-  background: linear-gradient(90deg,
-    var(--mb-bg-2) 0%,
-    var(--mb-bg-hover) 50%,
-    var(--mb-bg-2) 100%);
-  background-size: 200% 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--mb-bg-2);
   border-radius: var(--mb-radius-sm);
-  animation: mb-skeleton-shimmer 1.4s ease-in-out infinite;
   min-height: 1em;
 }
+.mb-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--mb-bg-hover) 50%,
+    transparent 100%);
+  transform: translateX(-100%);
+  animation: mb-skeleton-shimmer 1.4s ease-in-out infinite;
+  will-change: transform;
+}
 @keyframes mb-skeleton-shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* ==========================================================================

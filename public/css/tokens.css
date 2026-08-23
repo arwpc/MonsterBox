@@ -358,9 +358,15 @@ body {
   50%      { opacity: 0.45; }
 }
 
+/* Infinite keyframes must animate opacity/transform ONLY. Animating
+   box-shadow here repainted the PANIC button on the main thread every frame,
+   and behind the commandbar's backdrop-filter that became a full-viewport
+   re-blur per frame. Pulse a pre-shadowed ::after overlay's opacity instead
+   (see .mb-btn-panic::after in components.css, which owns the live copy of
+   this keyframe name — same-name keyframes: last-loaded stylesheet wins). */
 @keyframes mb-glow-pulse {
-  0%, 100% { box-shadow: var(--mb-glow-poison); }
-  50%      { box-shadow: 0 0 22px rgba(57, 255, 106, 0.7); }
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
 }
 
 @keyframes mb-flicker {

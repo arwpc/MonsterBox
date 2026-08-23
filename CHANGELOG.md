@@ -37,6 +37,16 @@ and the known-good state MINTED with a restore procedure
 - Calibration drives thread `characterId` end to end; the knight's physical-faults entry
   is removed post-calibration (note: that file is enforced by the daemon now, per channel,
   not advisory). Full audit evidence: `docs/evidence/knight-audit-2026-08-22/`.
+- **The dashboard no longer drags the viewing computer.** A Chrome trace from the
+  operator's browser showed the page repainting an ~8000×8000 px region 50×/second
+  forever: the PANIC button's glow pulse animated `box-shadow` (a main-thread repaint
+  every frame), and the sticky command bar's `backdrop-filter: blur(8px)` amplified each
+  tiny invalidation into a giant backdrop re-blur. Every infinite keyframe the dashboard
+  loads now animates only `opacity`/`transform` (glows sit static on `::after` overlays
+  and the overlay's opacity pulses; the skeleton shimmer translates instead of moving
+  `background-position`), and the dashboard's own stylesheets carry no `backdrop-filter`
+  at all — bars and stage overlays use near-opaque backgrounds instead of frosted glass.
+  Pinned by `tests/unit/dashboard-paint-cost.test.js` so neither ingredient can return.
 
 ## [Unreleased] - 2026-08-22 — The cloud shift: every open software finding closed, and CI turns green
 

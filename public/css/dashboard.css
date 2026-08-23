@@ -18,9 +18,10 @@
   gap: var(--mb-space-3);
   padding: var(--mb-space-2) var(--mb-space-3);
   margin: 0 0 var(--mb-space-3) 0;
-  background: color-mix(in srgb, var(--mb-bg-1) 94%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* No backdrop-filter: blurring the backdrop of a sticky bar re-blurs a huge
+     region whenever anything behind it changes (video frames, pulsing badges)
+     — traced as the dashboard dragging the whole viewing computer. */
+  background: color-mix(in srgb, var(--mb-bg-1) 97%, transparent);
   border-bottom: 1px solid var(--mb-border-default);
   box-shadow: var(--mb-shadow-panel);
 }
