@@ -1866,3 +1866,42 @@ State of the code at shelving:
 - Everything else from the same sessions IS live and confirmed by the operator:
   dashboard no longer drags the viewing computer, video is real-time fleet-wide,
   server latency fixed (/health 2.9s → 19ms on the node).
+
+### Webcam "stream unavailable" — mjpg_streamer hangs on a refused VIDIOC_STREAMON (2026-08-23)
+
+Symptom: the Head Animation page (and any webcam preview) shows
+"Webcam stream unavailable. Check mjpg-streamer." indefinitely on one node while
+the same build streams fine on another. `systemctl is-active mjpg-streamer`
+reports **active** the whole time, which is the lie at the centre of this bug.
+
+Root cause is split between hardware and software:
+
+- **Hardware (node-specific).** The Arducam on Orlok fails `VIDIOC_STREAMON`
+  with `-EPROTO` on roughly five of every six opens, at every resolution and
+  pixel format, with nothing in dmesg. It is not dead and it is not bandwidth:
+  all USB audio interfaces sit at altsetting 0, and **once a start succeeds the
+  stream is perfectly stable** — measured 300 frames / 13.7 MB / 20 s at
+  640x480 with zero drops. Only the *start* is unreliable. Dragomir's HHWei
+  camera starts first try every time, which is why the same build works there.
+  `uvcvideo quirks=0x80` (FIX_BANDWIDTH) makes it strictly worse: 0/10 vs ~3/10.
+- **Software (fleet-wide).** `mjpg_streamer` does not exit when its input plugin
+  fails to start. It keeps the process alive, holds `/dev/video0` open, and
+  serves zero frames — so systemd's `Restart=on-failure` never fires and the
+  camera stays hostage forever. The snapshot endpoint just times out.
+
+Fix: `scripts/mjpg-launcher.sh` now proves the start by fetching a real JPEG
+from the snapshot endpoint, and kills + retries when no frame arrives. A node
+whose camera starts first try (Dragomir) reaches `wait` in about a second and
+behaves exactly as before; a flaky node self-heals in ~30 s instead of never.
+Nodes without `curl` fall back to the old straight-through `exec` rather than
+risk killing a stream we cannot verify.
+
+Also hardened: `applyDeviceToService` in `controllers/webcamController.js` used
+to write a systemd drop-in that replaced `ExecStart` with a direct
+`mjpg_streamer` call. One press of "Apply to mjpg-streamer" would silently
+disable the retry recovery *and* re-pin a bare `/dev/videoN`. It now writes
+`MB_CAM_*` environment overrides and keeps the launcher as `ExecStart`,
+resolving the chosen device to its stable `/dev/v4l/by-id/` path.
+
+Standing caution: judge a camera by FRAMES, never by "the unit is active" or
+"the process is up" — both were true for the entire outage.

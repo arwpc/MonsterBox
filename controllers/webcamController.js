@@ -737,13 +737,35 @@ export const applyDeviceToService = async (req, res) => {
 
     const overrideDir = '/etc/systemd/system/mjpg-streamer.service.d';
     const overridePath = path.join(overrideDir, 'override.conf');
-    const mjpgBin = '/usr/local/bin/mjpg_streamer';
-    const wwwPath = '/usr/local/share/mjpg-streamer/www';
+    const launcherPath = path.resolve(__dirname, '..', 'scripts', 'mjpg-launcher.sh');
 
+    // Prefer the stable /dev/v4l/by-id/ path for the chosen device. A bare
+    // /dev/videoN is a moving target: a USB over-current burst once re-enumerated
+    // a node's camera to video1 and the hardcoded device node made mjpg-streamer
+    // crash-loop against a device that no longer existed.
+    let stableDevice = devicePath;
+    try {
+      const byId = '/dev/v4l/by-id';
+      const resolvedTarget = fsSync.realpathSync(devicePath);
+      for (const entry of fsSync.readdirSync(byId)) {
+        if (!entry.endsWith('video-index0')) continue;
+        const candidate = path.join(byId, entry);
+        if (fsSync.realpathSync(candidate) === resolvedTarget) { stableDevice = candidate; break; }
+      }
+    } catch (_) { /* by-id unavailable — the bare node is the only option */ }
+
+    // Drive the launcher rather than mjpg_streamer directly. The launcher
+    // verifies that a real frame arrives and retries when VIDIOC_STREAMON is
+    // refused; invoking the binary here instead would silently disable that
+    // recovery on any node where an operator uses this button.
     const overrideContent = [
       '[Service]',
+      'Environment=MB_CAM_DEV=' + stableDevice,
+      'Environment=MB_CAM_RES=' + resolution,
+      'Environment=MB_CAM_FPS=' + fps,
+      'Environment=MB_CAM_Q=' + quality,
       'ExecStart=',
-      'ExecStart=' + mjpgBin + ' -i "input_uvc.so -d ' + devicePath + ' -r ' + resolution + ' -f ' + fps + ' -q ' + quality + '" -o "output_http.so -p 8090 -w ' + wwwPath + '"',
+      'ExecStart=/bin/bash ' + launcherPath,
       ''
     ].join('\n');
 
