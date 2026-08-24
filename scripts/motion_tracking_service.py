@@ -55,6 +55,12 @@ class MotionTracker:
         # Detection mode: 'motion', 'face', 'face+hands', 'all', 'person', 'upperbody', 'person+motion'
         self.detection_mode = config.get('detection_mode', 'motion')
 
+        # Detection instrumentation (see _log_detection_stats). Opt-in via
+        # MB_DEBUG_DETECT=1 so the SD card is not hammered by the ~10Hz loop.
+        self._detect_debug = os.environ.get('MB_DEBUG_DETECT') == '1'
+        self._last_detect_log = 0.0
+        self._last_hog_weights = []
+
         # Face detection (Haar cascade)
         self.face_cascade = None
         if self.detection_mode in ('face', 'face+hands', 'all'):
@@ -191,10 +197,19 @@ class MotionTracker:
                 scale=float(self.config.get('hog_scale', 1.1))
             )
 
-            # Scale rects back to original frame size and filter by confidence
+            # Scale rects back to original frame size and filter by confidence.
+            # The cut is configurable because 0.3 is a SECOND, silent lock: a
+            # close-range head-and-shoulders subject at the bench scores ~0.07,
+            # so every rect HOG did return was dropped here and the operator saw
+            # "no boxes" with nothing in the log explaining why. Default unchanged.
+            min_weight = float(self.config.get('hog_min_weight', 0.3))
+            try:
+                self._last_hog_weights = [round(float(v), 3) for v in np.ravel(weights)]
+            except Exception:
+                self._last_hog_weights = []
             results = []
             for i, (x, y, w_r, h_r) in enumerate(rects):
-                if len(weights) > i and weights[i] < 0.3:
+                if len(weights) > i and weights[i] < min_weight:
                     continue  # skip low-confidence detections
                 if scale != 1.0:
                     x = int(x / scale)
@@ -211,6 +226,30 @@ class MotionTracker:
         except Exception as e:
             logger.warning(f"HOG detection error: {e}")
             return []
+
+    def _log_detection_stats(self, mode, detections):
+        """Log per-detection-pass counts and confidences.
+
+        Without this there is no way to tell "the detector ran and found nothing"
+        from "the detector never ran" — the exact ambiguity that made the missing
+        OpenCV boxes undiagnosable from the logs. Throttled to once a second and
+        off unless asked for, because this node logs to an SD card and the detect
+        loop runs ~10x/sec.
+        """
+        if not self._detect_debug:
+            return
+        now = time.time()
+        if now - self._last_detect_log < 1.0:
+            return
+        self._last_detect_log = now
+        weights = getattr(self, '_last_hog_weights', [])
+        detail = ''
+        if weights:
+            detail = (f" hog_weights={weights[:8]}"
+                      f" max={max(weights):.3f} cut={self.config.get('hog_min_weight', 0.3)}")
+        elif mode in ('person', 'person+motion'):
+            detail = ' hog_weights=[] (HOG returned no candidate rects at all)'
+        logger.info(f"detect[{mode}]: {len(detections)} detection(s){detail}")
 
     def _detect_upperbody(self, gray):
         """Detect upper bodies using Haar cascade. Returns list of (x,y,w,h)."""
@@ -290,11 +329,15 @@ class MotionTracker:
             if self.cv_tracker is None:
                 self.cv_tracker_ok = False
                 return
+            # OpenCV made Tracker::init a void method in 4.5.2+, so on this build
+            # (4.6.0) it returns None and the old truthiness test threw away a
+            # perfectly good tracker on EVERY detection — cv_tracker_ok was never
+            # once true. Only an explicit False, or a raised exception, is failure.
             ok = self.cv_tracker.init(frame, bbox)
-            if ok:
+            if ok is not False:
                 self.cv_tracker_bbox = bbox
                 self.cv_tracker_ok = True
-                logger.info(f"KCF tracker initialized on bbox {bbox}")
+                logger.info(f"{self._cv_tracker_kind or 'CV'} tracker initialized on bbox {bbox}")
             else:
                 self.cv_tracker = None
                 self.cv_tracker_ok = False
@@ -770,6 +813,8 @@ class MotionTracker:
                             'center': (cx, cy), 'bbox': (x, y, w, h),
                             'area': cv2.contourArea(c), 'matched': False, 'source': 'motion'
                         })
+
+                self._log_detection_stats(mode, new_detections)
 
                 # Re-initialize KCF tracker on best detection for smooth inter-frame tracking
                 if use_tracker and new_detections:
