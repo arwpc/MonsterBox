@@ -331,10 +331,19 @@
 
     // Servo inputs
     var servoInputs = [
-      el.panServoSelect, el.smoothingRange, el.deadzoneRange,
+      el.smoothingRange, el.deadzoneRange,
       el.centerDeg, el.rangeDeg, el.invertPan
     ];
     servoInputs.forEach(function(inp) { if (inp) inp.disabled = !htOn; });
+
+    // The pan servo select is deliberately NOT gated on htOn. It used to be, and
+    // that deadlocked any character whose panServoId had never been saved:
+    // onHeadTrackingToggle() refuses to let the toggle stay checked until a servo
+    // is selected, while the select could only be enabled once the toggle was on.
+    // Mina (panServoId: null) could never escape it. Gate it on OpenCV instead —
+    // head tracking already requires OpenCV, and choosing the servo is the step
+    // that must come first.
+    if (el.panServoSelect) el.panServoSelect.disabled = !ocvOn;
 
     var hasServo = el.panServoSelect && el.panServoSelect.value;
     if (el.testSweepBtn) el.testSweepBtn.disabled = !htOn || !hasServo;
