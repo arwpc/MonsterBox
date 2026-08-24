@@ -1,22 +1,32 @@
 # Mina — PCA9685 channel map
 
-## ⚡ CURRENT MAP — rewired by the operator during the rebuild, 2026-08-22
+## ⛔ THE 2026-08-22 REWIRE WAS NEVER PERFORMED — do not land it
 
-The operator physically re-pinned Mina's harness. This supersedes everything below:
+**Operator confirmation, 2026-08-23 (Aaron, asked directly): Mina's harness is
+UNCHANGED.** The rewire recorded below as "CURRENT" was a plan that never became
+physical. The live and correct map is the one in `data/character-2/parts.json`:
 
-| Part (id) | NEW channel | Old channel (pre-rebuild) |
+| Part (id) | ACTUAL channel | Planned-but-never-wired |
 |---|---|---|
-| Eye (3) | **ch3** | 11 |
-| Neck (2) | **ch7** | 8 |
-| Jaw (1) | **ch11** | 4 |
-| Servo Channel Laser / LED (10) | **ch15** | 0 |
+| Jaw (1) | **ch4** | ~~11~~ |
+| Neck (2) | **ch8** | ~~7~~ |
+| Eye (3) | **ch11** | ~~3~~ |
+| Servo Channel Laser / LED (10) | **ch0** | ~~15~~ |
 
-Part ids are unchanged, so the jaw's measured 22–91° calibration window still
-belongs to part 1. Her node's `parts.json` (and any restored backup of it) still
-carries the OLD channels — landing the new map is a rebuild-acceptance step
-(`MINA-REBUILD.md` §3a: four override curls). The 2026-08-19 "only ch4 responds"
-verdict below described the OLD pin landing and is closed by the rewire; it is
-kept as the historical record and as the method for any future sweep.
+**DO NOT run the four `MINA-REBUILD.md` §3a override curls.** They would move the
+jaw off ch4 — the one channel with a confirmed working servo — and break the only
+part of Mina's head that responds. `parts.json` is right; the doc was wrong.
+
+How the error survived: nothing in software can tell a re-pinned harness from an
+unchanged one. A PCA9685 channel emits PWM whether or not a servo is plugged into
+the pin, so register sampling, `i2cdetect`, and "the command succeeded" all read
+identically either way. Only the operator's eyes settle it — which is how this was
+finally resolved. Treat any future "rewired" note here as unproven until confirmed
+at the rig.
+
+The 2026-08-19 sweep below therefore still stands as the live verdict, including
+its finding that **ch8 (Neck) and ch11 (Eye) are silent while their PWM is correct**
+— a fault downstream of the chip. See `OPERATOR-TODO.md` §2 for the swap test.
 
 ---
 

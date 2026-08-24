@@ -81,9 +81,15 @@ These are her standing hardware faults; the rebuild is the one time fixing them 
 3. Restore the §1 backup to the same paths (repo data files, `/etc/monsterbox/env`,
    crontab). `chown -R remote:remote` the restored data files.
 
-   **3a. Land the 2026-08-22 channel rewire — the restored `parts.json` carries the OLD
-   channels** (jaw 4, neck 8, eye 11, laser 0), and driving those now moves nothing.
-   With the server up:
+   **3a. ⛔ CANCELLED 2026-08-23 — DO NOT RUN THESE CURLS.** The operator confirmed
+   directly that Mina's harness was **never re-pinned**; the 2026-08-22 rewire was a
+   plan that never became physical. The restored `parts.json` channels (jaw 4, neck 8,
+   eye 11, laser 0) are **correct as-is**. Running the curls below would move the jaw
+   off ch4 — the only channel with a servo confirmed to respond — and break the one
+   working part of her head. They are kept only so the cancellation is unambiguous.
+   See `PCA9685-CHANNEL-MAP-MINA.md`.
+
+   <details><summary>Cancelled commands (do not execute)</summary>
    ```bash
    B="https://192.168.8.140:3000/setup/calibration/api/parts"
    curl -sk -X POST "$B/1/overrides"  -H 'Content-Type: application/json' -d '{"overrides":{"channel":11}}'  # Jaw
@@ -91,8 +97,10 @@ These are her standing hardware faults; the rebuild is the one time fixing them 
    curl -sk -X POST "$B/3/overrides"  -H 'Content-Type: application/json' -d '{"overrides":{"channel":3}}'   # Eye
    curl -sk -X POST "$B/10/overrides" -H 'Content-Type: application/json' -d '{"overrides":{"channel":15}}'  # Laser/LED
    ```
-   Channels land immediately (the drive path reads parts.json fresh per command). Part
-   ids are unchanged, so the jaw's measured 22–91° window still applies to part 1.
+   </details>
+
+   Acceptance for this step is now simply: confirm `parts.json` still reads
+   jaw 4 / neck 8 / eye 11 / laser 0, and change nothing.
 4. `sudo systemctl restart monsterbox.service`.
 
 ## 4. Post-rebuild acceptance — run BENCH-CHECKLIST with these Mina-specific additions

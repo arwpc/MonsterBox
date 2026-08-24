@@ -145,14 +145,23 @@ head has since rotated "all the way around and stressed the wires" more than onc
 bench. Before running BENCH-CHECKLIST K3, inspect the cable loom for chafe/stretch and
 re-slack it; after K3's window is set, confirm the loom stays relaxed at both window ends.
 
-## E. Mina's neck/eye channels — ✅ CLOSED BY THE REBUILD REWIRE (2026-08-22)
+## E. Mina's neck/eye channels — ⚠️ REOPENED: the rewire never happened (2026-08-23)
 
-The operator re-pinned Mina's harness during the rebuild; the old ch8/ch11 shared-branch
-hypothesis described wiring that no longer exists. **New map: eye = ch3, neck = ch7,
-jaw = ch11, laser/LED = ch15** (part ids unchanged). Remaining work is acceptance, not
-diagnosis: after restoring her backup, land the map (`MINA-REBUILD.md` §3a curls — the
-restored parts.json still says jaw 4 / neck 8 / eye 11 / laser 0), then nudge each part
-with eyes on it. Full history: `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`.
+**Retracted.** This section previously declared the ch8/ch11 fault closed by a
+2026-08-22 harness rewire. Asked directly on 2026-08-23, the operator confirmed
+**Mina's harness is UNCHANGED**. The rewire was planned, never wired.
+
+So the shared-branch hypothesis is live again, exactly as measured 2026-08-19:
+neck **ch8** (+2.3 dB) and eye **ch11** (+2.8 dB) both carry correct PWM and are
+both silent, against a jaw **ch4** control at +14 dB. Treat ch8 + ch11 as ONE
+suspected shared V+/harness branch, not two coincidental dead servos (§2).
+
+**Do NOT run the `MINA-REBUILD.md` §3a override curls** — they would move the jaw
+off ch4, the only channel with a servo known to respond. `parts.json` (jaw 4 /
+neck 8 / eye 11 / laser 0) is correct and needs no change.
+
+Next step is hands, not software: swap the known-good jaw servo ch4 → ch8, cycle,
+then → ch11. Full history: `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`.
 
 ## F. Orlok's head window was restored from documentation — confirm it physically
 
