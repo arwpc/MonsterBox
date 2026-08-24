@@ -187,15 +187,26 @@ describe('Unified Calibration API', function () {
 
     it('should accept angle for absolute servos', async function () {
       if (!servoPartId) return this.skip();
+      // Ask for an angle INSIDE this part's calibrated window. A hardcoded 90 made
+      // this assertion depend on the node's stored calibration, which is exactly the
+      // character-independence the rest of this file works to avoid: Mina's jaw window
+      // is 28-84, so the server correctly clamped 90 -> 84 and a WORKING code path
+      // failed the smoke gate. Derive the target from the profile instead.
+      const profile = await getCalibrationStore().get(servoPartId, characterId);
+      const bounds = (profile && profile.bounds) || {};
+      const targetAngle = (typeof bounds.minAngle === 'number' && typeof bounds.maxAngle === 'number')
+        ? Math.round((bounds.minAngle + bounds.maxAngle) / 2)
+        : 90;
+
       const res = await request(app)
         .post(`/api/calibration/${servoPartId}/goto`)
-        .send({ angle: 90, speedPct: 50 })
+        .send({ angle: targetAngle, speedPct: 50 })
         .expect('Content-Type', /json/);
 
       if (res.status === 200) {
         expect(res.body).to.have.property('success', true);
         expect(res.body).to.have.property('targetAngle');
-        expect(res.body.targetAngle).to.equal(90);
+        expect(res.body.targetAngle).to.equal(targetAngle);
       }
     });
 
