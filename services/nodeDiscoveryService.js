@@ -277,6 +277,15 @@ export class NodeDiscoveryService {
       if (base) {
         byId.set(key, {
           ...base,
+          // Credit mDNS for what mDNS actually supplied. Spreading `base` kept
+          // source:'config' even when the live address, hostname, version and status
+          // all came from discovery — so the Fleet Command Center's Discovery panel
+          // read "6 config · 0 discovered" while mDNS was working perfectly, and that
+          // panel is precisely where an operator looks to decide whether mDNS is up.
+          // Renfield made it undeniable: his config ip is null by design, yet he was
+          // reported at 192.168.8.224 labelled source:'config' — an address config
+          // could not possibly have provided.
+          source: 'discovered',
           ip: node.status === 'online' ? node.ip : base.ip,
           hostname: node.hostname || base.hostname,
           version: node.version || base.version,

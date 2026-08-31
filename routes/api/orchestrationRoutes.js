@@ -685,6 +685,20 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
         });
 
     } catch (error) {
+        // A node that simply HAS NO CAMERA is not a server fault, and reporting it as
+        // one is not cosmetic: the Fleet Command Center restarts any src-less camera on
+        // every poll, so a 500 here became a permanent retry loop that logged an error
+        // every ~15s forever. Renfield (audio-only, no webcam part) did exactly that.
+        // His /conversation/api/webcam-stream-url answers 404, so map that through as
+        // 404 with a machine-readable code the client can latch on.
+        const upstream = error.response && error.response.status;
+        if (!res.headersSent && upstream === 404) {
+            return res.status(404).json({
+                success: false,
+                code: 'no_webcam',
+                error: 'This animatronic has no webcam stream'
+            });
+        }
         console.error('Error proxying webcam stream:', error.message);
         if (!res.headersSent) {
             res.status(500).json({

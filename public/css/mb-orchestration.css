@@ -279,3 +279,44 @@
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Node-wall skeletons — reserve the grid's footprint before data arrives.
+
+   Measured 2026-08-31 on the real page: #nodeWall rendered a 177px spinner and
+   then grew to 986px (laptop), 1714px (tablet) and 3434px (phone) once the six
+   cards appeared, pushing the Goblins row and the bottom rail down with it.
+   That produced a Cumulative Layout Shift of 0.18 desktop / 0.27 laptop /
+   0.45 tablet, against a 0.25 "poor" threshold.
+
+   Height is pinned to what a real card measured (~490px wide viewports,
+   ~555px narrow) so the swap is close to shift-free. Keep this in step with
+   .fcc-card if the card's contents change materially.
+   --------------------------------------------------------------------------- */
+.fcc-skeleton {
+  height: 491px;
+  border-style: dashed;
+  opacity: .35;
+  background: linear-gradient(
+    100deg,
+    var(--mb-surface-2, rgba(255, 255, 255, .04)) 30%,
+    var(--mb-surface-3, rgba(255, 255, 255, .08)) 50%,
+    var(--mb-surface-2, rgba(255, 255, 255, .04)) 70%
+  );
+  background-size: 200% 100%;
+  animation: fcc-skeleton-sheen 1.6s ease-in-out infinite;
+}
+
+@media (max-width: 991.98px) {
+  .fcc-skeleton { height: 555px; }
+}
+
+@keyframes fcc-skeleton-sheen {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* A skeleton is decoration, not information — respect reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  .fcc-skeleton { animation: none; }
+}

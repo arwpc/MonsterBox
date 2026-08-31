@@ -89,12 +89,24 @@
 
 <!-- ============ NODE WALL ============ -->
 <div class="row g-3" id="nodeWall">
-  <div class="col-12" id="wallLoading">
-    <div class="mb-empty">
-      <span class="mb-spinner mb-spinner-lg"></span>
-      <p class="mb-empty-body">Loading fleet…</p>
-    </div>
+  <%
+    // Reserve the real grid's footprint before any fetch returns. The old placeholder
+    // was a single 177px spinner row, so when the six cards arrived everything below
+    // jumped down by 838-3257px depending on viewport (CLS 0.18 desktop / 0.45 tablet,
+    // "poor" above 0.25). These skeletons carry the SAME column classes and card
+    // height as the real cards, so the swap is close to shift-free. Count comes from
+    // the animatronics registry, so adding a seventh animatronic reserves seven.
+    const skeletonCount = (typeof nodeCount === 'number' && nodeCount > 0) ? nodeCount : 6;
+  %>
+  <div class="col-12" id="wallLoading" aria-live="polite" aria-busy="true">
+    <span class="mb-spinner"></span>
+    <span class="mb-text-sm mb-text-secondary">Loading fleet…</span>
   </div>
+  <% for (let i = 0; i < skeletonCount; i++) { %>
+  <div class="col-sm-6 col-lg-4 col-xxl-3 fcc-skeleton-col" aria-hidden="true">
+    <div class="mb-card fcc-card fcc-skeleton"></div>
+  </div>
+  <% } %>
 </div>
 
 <!-- ============ GOBLINS ============ -->
@@ -257,6 +269,11 @@
   // ---------- node cards ----------
   function cardId(id) { return 'node-' + String(id).replace(/[^a-z0-9]/gi, '_'); }
 
+  // How many consecutive stream failures before a card stops auto-retrying. Small on
+  // purpose: a genuinely flaky camera still recovers within a couple of polls, and a
+  // node that has no camera stops generating server errors almost immediately.
+  const CAM_RETRY_LIMIT = 3;
+
   // Cache-buster so a retry is a real new request, not a replay of the failed one.
   function startCam(img, id) { img.src = API + '/animatronic/' + id + '/webcam-stream?_=' + Date.now(); }
 
@@ -315,13 +332,37 @@
     // A dead stream must FORGET its src. updateCard() only restarts a camera whose
     // img has no src, so leaving the failed URL in place latched that guard off
     // forever and a recovered camera was never shown again.
+    // Give up after a few consecutive failures instead of retrying forever.
+    // updateCard() restarts any src-less camera on EVERY poll, which is right for a
+    // stream that died and will come back — but a node with no camera at all can
+    // never succeed, so that same rule made the page request a stream, fail, and
+    // retry every ~15s for as long as it was open. Renfield (audio-only) generated a
+    // server error on every single cycle. An <img> cannot read a status code from
+    // onerror, so we count failures rather than inspect the response.
     img.onerror = function () {
       img.removeAttribute('src');
-      off.textContent = 'Webcam unavailable — click to retry';
+      const fails = (parseInt(img.dataset.camFails || '0', 10) || 0) + 1;
+      img.dataset.camFails = String(fails);
+      if (fails >= CAM_RETRY_LIMIT) {
+        img.dataset.camGaveUp = '1';
+        off.textContent = 'No webcam — click to retry';
+      } else {
+        off.textContent = 'Webcam unavailable — click to retry';
+      }
       off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible');
     };
-    img.onload = function () { off.classList.add('fcc-hidden'); img.classList.remove('fcc-invisible'); };
-    off.onclick = function (ev) { ev.stopPropagation(); off.textContent = 'Reconnecting…'; startCam(img, node.id); };
+    img.onload = function () {
+      delete img.dataset.camFails; delete img.dataset.camGaveUp;
+      off.classList.add('fcc-hidden'); img.classList.remove('fcc-invisible');
+    };
+    // A manual click always overrides the give-up latch — the operator may have just
+    // plugged a camera in.
+    off.onclick = function (ev) {
+      ev.stopPropagation();
+      delete img.dataset.camFails; delete img.dataset.camGaveUp;
+      off.textContent = 'Reconnecting…';
+      startCam(img, node.id);
+    };
     cam.appendChild(img); cam.appendChild(off);
     cam.onclick = function () { openCam(node); };
     card.appendChild(cam);
@@ -435,7 +476,7 @@
     // camera that recovers comes back on its own without a page reload.
     const img = col.querySelector('.fcc-cam-wrap img');
     const camOff = col.querySelector('.fcc-cam-off');
-    if (img && node.online && !img.getAttribute('src')) {
+    if (img && node.online && !img.getAttribute('src') && !img.dataset.camGaveUp) {
       if (camOff) camOff.textContent = 'Reconnecting…';
       startCam(img, node.id);
     }
@@ -504,6 +545,8 @@
 
   function renderWall(nodes) {
     const loading = $('#wallLoading'); if (loading) loading.remove();
+    // Drop the reserved skeletons the moment real cards are about to be appended.
+    document.querySelectorAll('.fcc-skeleton-col').forEach(sk => sk.remove());
     const wall = $('#nodeWall');
     // online first, then offline; stable by id within group
     nodes.sort((a, b) => (b.online === a.online) ? String(a.id).localeCompare(String(b.id)) : (b.online ? 1 : -1));
