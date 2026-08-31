@@ -25,8 +25,8 @@
 > not good news either** — nothing from the 6.x–10.x trains exists on them, and a fleet tool
 > that reaches them over the wrong scheme reports a false failure (the 2026-08-30 ear-check
 > scored both `SILENT` for exactly this reason). **Deploy to them before believing anything
-> about them.** See their per-node sections. **Renfield** (char 6) has still never been on
-> the network at all.
+> about them.** See their per-node sections. **Renfield** (char 6) **came onto the network for
+> the first time on 2026-08-30** and is now a running node — see his section.
 >
 > ⚪ *Superseded (kept so the old norm is not re-applied from memory):* "Three of six nodes
 > are UNVERIFIED — by choice, not by fault; PumpkinHead and Groundbreaker are deliberately
@@ -931,6 +931,65 @@ verified. Still offline for the entire v9.2.0 session." Also the historical v9.2
 line above scoring Groundbreaker `OFFLINE — untestable, not passing` is now obsolete.
 
 ### Renfield — char 6 · *no address (`ip: null` by design)*
+
+🟢 **BUILT AND ONLINE 2026-08-30/31 — first time ever.** `192.168.8.224`, serving
+`https://192.168.8.224:3000/health` at **10.5.0**, advertising `_monsterbox._tcp`, and listed
+`online` by Orlok's orchestration. **His `ip` in `config/animatronics.json` is still `null`
+and must stay that way** — discovery overlays the live address; see the `_ip` note in that
+file.
+
+He is the fleet's **first Raspberry Pi 5**, **first Debian 13 (trixie)** and **first Python
+3.13** node. What that took, so nobody re-derives it:
+
+- **PEP 668 is in force** (`/usr/lib/python3.13/EXTERNALLY-MANAGED`) and **`audioop` was
+  removed from the CPython stdlib in 3.13**, while `python_wrappers/microphone_cli.py`
+  imports it. **Sidestepped, not defeated** — trixie ships both as apt packages, so **no venv
+  and no `--break-system-packages`**: `sudo apt-get install -y python3-pyaudio
+  python3-audioop-lts`. They land in `/usr/lib/python3/dist-packages`, so plain
+  `/usr/bin/python3` — the interpreter Node's `child_process` spawns — resolves them.
+  `install.sh` still assumes bookworm and needs this branch.
+- **No passwordless sudo** (unlike the rest of the fleet). Key auth was bootstrapped from
+  Orlok on 2026-08-30; before that he was password-only.
+- Node v22.23.2, git-HEAD code, own TLS cert, `monsterbox.service` enabled with the
+  `10-priority` / `20-secrets` / `30-crontab` drop-ins, `selectedCharacter=6` agreeing with
+  hostname auto-select. `.err` carries exactly one recurring line (`git rev-parse` — there is
+  no `.git` on the node, which is normal for an rsync deploy).
+
+**PROVEN:** microphone capture (125 frames, non-zero RMS, XVF3800 via the PyAudio path, with
+idle and positive controls); schema validation across all six characters; the **full
+character-contract suite, 12/12 for character 6**; all four scenes structurally clean
+(`sayThis`/`wait` only, no motion steps, no missing audio assets).
+
+**NOT PROVEN, and it is not a small gap:**
+- 🟡 **His speaker output cannot be verified acoustically from software, structurally.** The
+  XVF3800 is an echo-cancelling speakerphone that gates out his own playback — a 0.40→1.40
+  sweep moved his array's own reading by **0.0 dB** while the residual floor *dropped* 4 dB
+  (AES gating). Unlike Orlok and Mina — whose ear-checks actually run through their **USB
+  camera** mics — Renfield has **no second microphone**. So he is deaf to his own mouth.
+  *What would prove it:* a human in the room, an off-board mic, or a **peer animatronic
+  within earshot** listening while he speaks. Until then his output is **unverified, not
+  bad** — the signal path is proven electrically to the DAC.
+- 🟡 **Conversation path never exercised end to end** and **reboot survival never tested** —
+  both deferred, not failed: the operator imposed a no-audio rule (household asleep) and a
+  reboot clears the `wpctl` sink mute that is currently guaranteeing silence.
+
+**Hardware:** audio-only. ReSpeaker XVF3800 array + powered speakers on its line-out (a Pi 5
+has no analog jack, and the two HDMI cards carry no PipeWire sink, so that is the only
+output). Operator 2026-08-31: **the speakers are a good set, the same as Sir Dragomir's** —
+both speaker parts carry `modelId: speaker_respeaker_xvf3800`, so his tuning is the nearest
+reference point. Canonical `sinkVolume` set to **1.00**, measured: the array's hardware
+attenuator **saturates there** (0.40=-23 dB, 0.55=-15, 0.70=-9, 0.85=-4, 1.00=0, 1.30=0), so
+Orlok's 1.30 is pure PipeWire software gain that can clip. **Not ear-verified** — the only
+value on the fleet list that has not been heard.
+
+**No motion.** `/dev/i2c-1` does not exist (only the HDMI DDC buses i2c-13/14), so no PCA9685
+and no servos — though note that is a Pi 5 `dtparam` matter, not a permanent ceiling. The
+`Renfield Shake Motor` (BTS7960, GPIO 27/22/17/23) is **NOT WIRED** (operator, 2026-08-30):
+`enabled:false` in `parts.json` and listed in `physical-faults.json`, kept rather than deleted
+so its wiring notes survive. `super-powers.json` pins `jawAnimation`, `headTracking` and
+`followOrders` all `false` with a written reason each — notably `followOrders` would otherwise
+start a boot listener that grabs the **same** XVF3800 capture device the conversation path
+needs, and only one holder can capture at a time.
 🔴 **Has never been on the network. Nothing about this character is hardware-verified.** His
 data, agent, fleet entry and placeholder image are complete and schema-valid; the Pi does not
 exist yet.

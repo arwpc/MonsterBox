@@ -2,6 +2,35 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased] - 2026-08-31 — All six animatronics online for the first time
+
+PumpkinHead, Groundbreaker and Renfield brought onto the fleet overnight, one
+workflow each. **All six nodes now serve 10.5.0 over HTTPS.**
+
+- **PumpkinHead (char 1)** — 5.5.0/HTTP → 10.5.0/HTTPS, own cert, discovered,
+  and **proven across a real reboot** (boot_id changed; all units back enabled
+  and active; every node-local fix survived byte-identical). `parts.json` cut
+  **35 → 7**: 28 test-debris entries removed against the real hardware
+  inventory, including three PCA9685 servos that could never run on a node whose
+  I²C bus scans empty. 6 of 7 real parts alive — the wiper motor held GPIO13
+  high for exactly the commanded window (200.8 ms / 1000.0 ms) with a physical
+  object moving in lockstep. **PIR sensor (GPIO16) is dead** and is flagged.
+- **Groundbreaker (char 5)** — 5.5.0/HTTP → 10.5.0/HTTPS, Node v20 → v22, and it
+  had been **serving the wrong character entirely** (`selectedCharacter: 2`).
+  Audio proven end to end. **Its 12 V wiper motor died during testing** after
+  ~1.5 s cumulative energization, showing the signature of a *stalled* motor —
+  turn the mechanism by hand before replacing any fuse.
+- **Renfield (char 6)** — built from a bare Pi. The fleet's first **Pi 5**,
+  first **Debian 13 (trixie)**, first **Python 3.13**. PEP 668 and the stdlib
+  removal of `audioop` were sidestepped with apt packages
+  (`python3-pyaudio python3-audioop-lts`) rather than a venv. Mic capture,
+  schemas and the 12/12 character contract all pass. **His speaker output cannot
+  be verified acoustically** — the XVF3800 gates out his own playback and he has
+  no second mic.
+- **Fixed: every node's boot armed random motion on the WHOLE fleet.**
+  `boot-init.sh` called the fleet-wide orchestration route instead of the
+  node-local one. Caught when a reboot armed all five; no pose had fired.
+
 ## [Unreleased] - 2026-08-30 — Session-start log review (ops)
 
 No application code changed. Recorded here because two of the three fixes are
