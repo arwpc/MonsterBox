@@ -345,33 +345,58 @@ router.post('/tts/generate', requireElevenLabsConfig, async (req, res) => {
         const { text } = req.body || {};
         let { voice_id, model, voice_settings, characterId } = req.body || {};
 
-        // Resolve a safe default voice_id when missing or blank
+        // Resolve the character's OWN tts-config and use it as the BASE for this
+        // request, with anything explicitly supplied in the body overriding it.
+        //
+        // This used to consult the character config only when voice_id was missing,
+        // and even then it took ONLY voice_id from it -- `options` below was built
+        // purely from req.body. So every caller that did not hand-carry voice settings
+        // got `undefined` for model/stability/similarity_boost, and
+        // elevenLabsTTSService.generateSpeech() fell back to its own defaults of
+        // stability 0.5 / similarity_boost 0.5.
+        //
+        // That is the origin of the "0.5/0.5 clobber signature" that has been hunted
+        // as a FILE-clobber mystery more than once. Nothing was ever writing 0.5/0.5
+        // into tts-config.json: this route simply ignored the file and the service
+        // defaulted. Verified 2026-08-31 on PumpkinHead -- the on-disk config read
+        // 0.25/0.65, unchanged, while the request log showed 0.5/0.5 going out.
+        //
+        // It also matters that THIS is the only TTS route that does not play audio:
+        // the correct-settings path (/tts/generate-and-play) makes sound, so before
+        // this fix there was no way to generate a character's real voice silently.
+        let charTTS = null;
         try {
-            if (!voice_id || String(voice_id).trim() === '') {
-                // Prefer the provided characterId, otherwise use currently selected character
-                if (!characterId) {
-                    try {
-                        const cfg = await readConfig();
-                        characterId = cfg && cfg.selectedCharacter ? cfg.selectedCharacter : null;
-                    } catch (_) { /* ignore */ }
-                }
-                const resolved = await getTTSConfigForCharacter(characterId);
-                voice_id = resolved && resolved.voice_id ? resolved.voice_id : voice_id;
+            if (!characterId) {
+                try {
+                    const cfg = await readConfig();
+                    characterId = cfg && cfg.selectedCharacter ? cfg.selectedCharacter : null;
+                } catch (_) { /* ignore */ }
             }
-        } catch (_) { /* best-effort fallback */ }
+            charTTS = await getTTSConfigForCharacter(characterId);
+        } catch (_) { /* best-effort: a missing config must not break generation */ }
+
+        if ((!voice_id || String(voice_id).trim() === '') && charTTS && charTTS.voice_id) {
+            voice_id = charTTS.voice_id;
+        }
 
         // If still no voice_id, fail fast with a clear message rather than hitting ElevenLabs 404
         if (!voice_id || String(voice_id).trim() === '') {
             return res.status(400).json({ success: false, error: 'voice_id is required (resolved none). Configure TTS voice in AI Settings.' });
         }
 
-        // Convert frontend format to service format
+        // Convert frontend format to service format. Explicit body values win; the
+        // character's configured voice fills every gap. `??` (not `||`) on purpose --
+        // stability 0 and similarity_boost 0 are legitimate settings.
+        const pick = (fromBody, fromConfig) => (fromBody !== undefined ? fromBody : fromConfig);
         const options = {
-            model: model,
-            stability: voice_settings?.stability,
-            similarity_boost: voice_settings?.similarity_boost,
-            style: voice_settings?.style,
-            use_speaker_boost: voice_settings?.use_speaker_boost
+            model: pick(model, charTTS?.model),
+            stability: pick(voice_settings?.stability, charTTS?.stability),
+            similarity_boost: pick(voice_settings?.similarity_boost, charTTS?.similarity_boost),
+            style: pick(voice_settings?.style, charTTS?.style),
+            use_speaker_boost: pick(voice_settings?.use_speaker_boost, charTTS?.use_speaker_boost),
+            // Speaking speed is part of a character's identity; the service clamps it
+            // and only applies it on models that honour voice_settings.speed.
+            speed: pick(voice_settings?.speed, charTTS?.speed)
         };
 
         const result = await elevenLabsTTSService.generateSpeech(text, voice_id, options);
