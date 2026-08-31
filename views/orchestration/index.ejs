@@ -291,6 +291,35 @@
     });
   });
 
+  // Only decode the streams the operator can actually see.
+  //
+  // The page already stops every stream when the TAB is hidden. This is the same idea
+  // one level down: a card scrolled off the bottom of the wall is still a live MJPEG
+  // connection being decoded frame after frame. With six nodes on a laptop only about
+  // three cards are on screen at once, so roughly half the decode work was being spent
+  // on pixels nobody could see.
+  //
+  // Uses the same src-stashing dance as the visibilitychange handler. The extra flag
+  // matters: updateCard() restarts any src-less camera on every poll, so without
+  // data-cam-offscreen it would immediately undo this.
+  const camVisibility = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      const img = e.target;
+      if (e.isIntersecting) {
+        img.dataset.camOffscreen = '';
+        delete img.dataset.camOffscreen;
+        if (!img.getAttribute('src') && img.dataset.camStashed) {
+          img.src = img.dataset.camStashed.replace(/([?&]_=)\d+/, '$1' + Date.now());
+          delete img.dataset.camStashed;
+        }
+      } else if (img.getAttribute('src')) {
+        img.dataset.camStashed = img.src;
+        img.dataset.camOffscreen = '1';
+        img.removeAttribute('src');
+      }
+    }
+  }, { rootMargin: '200px' }) : null;   // 200px so a card wakes just before it scrolls in
+
   function buildCard(node) {
     const col = el('div', 'col-sm-6 col-lg-4 col-xxl-3');
     col.id = cardId(node.id);
@@ -326,6 +355,13 @@
     // No loading="lazy" here: this is an endless multipart MJPEG response, and a
     // lazily-deferred stream may never be started at all.
     const img = el('img'); img.alt = esc(node.name) + ' webcam';
+    // Tell the browser the frame size up front. Streams are served at 320x240
+    // (/etc/default/monsterbox-cam) since 2026-08-31; without intrinsic dimensions the
+    // first frame of each of six streams triggers its own layout pass. decoding=async
+    // keeps JPEG decode off the critical path -- six concurrent MJPEG decodes were the
+    // bulk of ~4s of long tasks per load.
+    img.width = 320; img.height = 240;
+    img.decoding = 'async';
     const off = el('div', 'fcc-cam-off fcc-hidden', 'Webcam unavailable');
     if (node.online) { startCam(img, node.id); }
     else { off.textContent = 'Node offline'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); }
@@ -340,6 +376,13 @@
     // server error on every single cycle. An <img> cannot read a status code from
     // onerror, so we count failures rather than inspect the response.
     img.onerror = function () {
+      // Aborting an in-flight MJPEG load fires onerror too. We abort deliberately when a
+      // card scrolls out of view or the tab is hidden, and counting those as failures
+      // would latch camGaveUp after a few scrolls and permanently show "No webcam" on a
+      // perfectly good camera. Only count errors we did not cause.
+      if (img.dataset.camOffscreen || img.dataset.camStashed || img.dataset.camPaused) {
+        return;
+      }
       img.removeAttribute('src');
       const fails = (parseInt(img.dataset.camFails || '0', 10) || 0) + 1;
       img.dataset.camFails = String(fails);
@@ -363,6 +406,7 @@
       off.textContent = 'Reconnecting…';
       startCam(img, node.id);
     };
+    if (camVisibility) camVisibility.observe(img);
     cam.appendChild(img); cam.appendChild(off);
     cam.onclick = function () { openCam(node); };
     card.appendChild(cam);
@@ -476,7 +520,7 @@
     // camera that recovers comes back on its own without a page reload.
     const img = col.querySelector('.fcc-cam-wrap img');
     const camOff = col.querySelector('.fcc-cam-off');
-    if (img && node.online && !img.getAttribute('src') && !img.dataset.camGaveUp) {
+    if (img && node.online && !img.getAttribute('src') && !img.dataset.camGaveUp && !img.dataset.camOffscreen) {
       if (camOff) camOff.textContent = 'Reconnecting…';
       startCam(img, node.id);
     }

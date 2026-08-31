@@ -203,7 +203,13 @@ export async function startStandaloneListener(characterId) {
 
   const listener = await import('../serverSTTListener.js').then(m => m.default || m);
   const deviceId = await microphoneDeviceFor(characterId);
-  const sessionId = listener.startSession({
+  // startSession returns { success, sessionId } -- NOT a bare id. Assigning the whole
+  // object here meant stopStandaloneListener() later called stopSession(<object>) on a
+  // Map keyed by string, which always missed: turning Follow Orders OFF left the
+  // session running and the microphone held. On a ReSpeaker XVF3800 only one holder
+  // can capture at a time, so that orphan blocks the conversation path outright, and
+  // _cleanupOldSessions() cannot reap a session whose id was never recorded.
+  const started = listener.startSession({
     deviceId,
     model: 'scribe_v2',
     language: 'en',
@@ -211,6 +217,11 @@ export async function startStandaloneListener(characterId) {
       handleTranscript(characterId, text, { source: 'standalone' }).catch(() => { });
     }
   });
+  const sessionId = started && started.sessionId ? started.sessionId : null;
+  if (!sessionId) {
+    console.warn(`[FollowOrders] STT listener did not return a session id for character ${characterId}; not tracking a session we cannot stop`);
+    return { started: false, reason: 'no-session-id' };
+  }
   state.standaloneSessionId = sessionId;
   console.log(`[FollowOrders] standalone listener up for character ${characterId} (device ${deviceId}, session ${sessionId})`);
   return { started: true, sessionId };
@@ -222,7 +233,11 @@ export async function stopStandaloneListener(characterId, { keepWanted = false }
   if (!state.standaloneSessionId) return { stopped: false };
   try {
     const listener = await import('../serverSTTListener.js').then(m => m.default || m);
-    listener.stopSession(state.standaloneSessionId);
+    const res = listener.stopSession(state.standaloneSessionId);
+    if (!res || res.success !== true) {
+      // Say so loudly rather than logging "listener down" over a mic that is still open.
+      console.warn(`[FollowOrders] stopSession(${state.standaloneSessionId}) did not confirm: ${res && res.error ? res.error : 'unknown'} — the microphone may still be held`);
+    }
   } catch (err) {
     console.warn(`[FollowOrders] failed stopping standalone session: ${err.message}`);
   }
