@@ -43,8 +43,24 @@
 > One blocking hardware fault remains: **part 1's 12 V motor rail is dead** (it failed *during*
 > testing; Pi side proven good). **Reboot survival is still unproven — 10.5.0 has never
 > cold-booted here.** Full detail, including the retracted claims, is in the Groundbreaker
-> section below. *PumpkinHead now also reports `10.5.0` in Orlok's fleet-health view, but that
-> was another session's work and is **not** verified here — its entry below still stands.*
+> section below.
+>
+> 🟢 **SUPERSEDED FOR PUMPKINHEAD TOO, 2026-08-30/31 overnight — char 1 is now a full fleet
+> member on 10.5.0 over HTTPS, and it is the first of the two storage nodes proven to survive
+> a reboot.** Deployed from a clean export of git HEAD; code landing **proven by grep on the
+> node** (`hog_min_weight`, `_log_detection_stats`, `panServoSelect.disabled = !ocvOn`), not by
+> the version string. TLS certs generated, so plain `http://` is now refused and the
+> wrong-scheme false-failure class is closed for this node. `selectedCharacter` corrected
+> **2 → 1** (it had been serving *Coffin Breaker*, so every earlier API answer about this node
+> described the wrong character). `parts.json` cut **35 → 7** against a real hardware
+> inventory, `poses.json` **26 → 0** (all debris), and node-local schema validation went
+> **2 errors → 0**. **Six of seven parts proven alive by measurement** — wiper motor at the GPIO
+> register plus observed physical motion, three speaker aliases by ear-check transcript, mic on
+> frames, camera on frames. **The PIR (part 5) is dead** and is recorded in
+> `config/physical-faults.json`. **The find that matters most is not a part:** a phantom
+> `calibration_profiles.json` entry silently truncates every forward motor command and had
+> already walked the motor to its boundary — scene 100's authored 2000 ms motor step really ran
+> 400 ms. Full detail in the PumpkinHead section below.
 >
 > 🟢 **The three live nodes all answered `/health` with `10.1.0` on 2026-08-19 07:14**
 > (Orlok 192.168.8.120 · Sir Dragomir 192.168.8.130 · Mina 192.168.8.140), all serving HTTPS.
@@ -96,7 +112,10 @@ Legend: 🔴 blocking / broken · 🟡 reliability / intermittent · 🟢 mitiga
 > 9.2.0**: **Orlok AUDIBLE** (20.1 dB rise, 100% word recall), **Sir Dragomir AUDIBLE**
 > (33.3 dB, 69% recall, **canonical voice confirmed**), **Mina AUDIBLE** (12.4 dB, 80% recall,
 > **canonical voice confirmed**). **PumpkinHead, Groundbreaker and Renfield `OFFLINE` —
-> untestable, not passing.** The Dusk Ceremony was separately verified end to end on real
+> untestable, not passing.** *(PumpkinHead's `OFFLINE` here was a **scheme artifact**, not a
+> fault — it was serving plain HTTP while the checker assumed HTTPS. Superseded 2026-08-30/31:
+> it is now on 10.5.0 over HTTPS and its speaker is ear-check-proven audible with a verbatim
+> transcript. See the PumpkinHead section.)* The Dusk Ceremony was separately verified end to end on real
 > speakers: Mina 6.5 dB / 100% recall, Orlok 11.3 dB / 100%, Sir Dragomir 13.0 dB / 92% — all
 > `HEARD`.
 
@@ -456,32 +475,269 @@ emergency stop (see Security / Ops). It has been **restored**, but re-check any 
 superpowers after a suite run that predates the `httpNode` guard.
 
 ### PumpkinHead — char 1 · `192.168.8.150`
-🟠 **BACK ONLINE as of 2026-08-30 — and five majors stale. This supersedes the "offline is
-expected, never a finding" norm for this node.** Powered up ~21:07 CDT (uptime 1 h 42 m at
-02:49 UTC), answers `ping`, accepts key-based SSH, and serves
-`http://192.168.8.150:3000/health` → `{"status":"OK","version":"5.5"}`. `package.json` on the
-node reads **5.5.0**, git HEAD `379104d3 "Changes and fixes"` — the live fleet is on **10.5.0**.
-Two consequences, both already observed: (1) **it serves plain HTTP, not HTTPS**, so every
-fleet caller that assumes `https://<ip>:3000` fails with
-`SSL routines:tls_validate_record_header:wrong version number` — that is exactly why the
-2026-08-30 ear-check scored it `SILENT` with a failed say call, and the "silence" is
-**not evidence about its speaker**; (2) nothing from the 6.x–10.x trains exists on it,
-including the wrong-voice fix. **It needs `npm run deploy:all` (or a targeted deploy) before
-any claim about it means anything.** Groundbreaker (char 5) is in the identical state — same
-uptime, same 5.5.0, same HTTP-only — so the two were almost certainly powered up together on
-purpose. Until it is deployed to, treat every finding below as untested.
+🟢 **BROUGHT UP TO 10.5.0, JOINED TO THE FLEET, AND PROVEN ACROSS A REBOOT — 2026-08-30/31
+overnight.** Everything in the superseded 5.5.0 entry below is stale. Verified from Orlok:
+`curl -sk https://192.168.8.150:3000/health` → `{"status":"OK","version":"10.5.0"}`, and plain
+`http://` to the same port is now **refused** (curl rc 52), so the scheme mismatch that produced
+every false `OFFLINE`/`SILENT` score for this node is gone. Deploy came from a clean export of
+git HEAD, and **the code was proven to have landed by grepping the node for changed symbols,
+not by the version string** — `hog_min_weight` and `_log_detection_stats` in
+`scripts/motion_tracking_service.py`, `panServoSelect.disabled = !ocvOn` in
+`public/js/head-animation.js`, plus `services/characterContext.js`, `routes/setup/follow-orders.js`,
+`services/mjpegRelay.js` and `goblin/`. (This node's git repo has **no commits at all** —
+`git log` reports "your current branch 'master' does not have any commits yet". There is no HEAD
+here to compare against, so grep is the *only* way to know what it runs.)
 
-🔴 **Prior status (kept for history): Offline (long-term).** Not verified. Hardware state unknown until the node is powered
-and reachable. **Still offline for the entire v9.2.0 session** — nothing in v9.1.0/v9.2.0 has
-run on this node, including the wrong-voice fix that made him speak in Sir Dragomir's voice.
+**Fleet membership confirmed four ways, 2026-08-31 04:51–04:55 UTC (and again after the
+reboot):** Orlok's `/api/orchestration/nodes` lists id 1 `source:"config" discovered:true
+status:"online" version:"10.5.0" trusted:true ip:"192.168.8.150"`;
+`/api/orchestration/fleet-health` returns it `online:true, hostname:"pumpkinhead", rssMb 99.2,
+memLevel normal` in a **6-of-6-online** fleet; `avahi-browse -rt _monsterbox._tcp` resolves
+`pumpkinhead.local → 192.168.8.150:3000` with `"ver=10.5.0" "character=PumpkinHead" "id=1"`; and
+`npm run check:discovery` prints a **complete 5×5 mesh**. No manual pin was needed. The node's
+own `/api/orchestration/nodes` returns count 6 with every peer at 10.5.0.
 
-- 🟡 **Part 1 "Wiper Motor" has a corrupted description.** `data/character-1/parts.json`
-  part 1 reads `"description": "Test updated via comprehensive tests"` and carries a stray
-  `config.testFlag` — the same damage class left by a historical hardware-test run and
-  repaired on Orlok's part 1 in v9.0.0 (the test that caused it is fixed; see Test Suite).
-  **Deliberately NOT fixed here:** this node is offline and its hardware unverified, so the
-  real description would be a guess. Write it when someone can confirm what the part actually
-  drives, following the convention used by Orlok part 2.
+🟢 **REBOOT SURVIVAL PROVEN BY AN ACTUAL REBOOT — this is what the Groundbreaker entry still
+lacks.** `sudo systemctl reboot`; `boot_id` changed
+`d895a5fb…` → `ef536df5…` and `uptime -s` moved `22:53:45` → `23:53:44`, so it was a real cold
+start of the OS, not a service bounce. HTTPS answered again **~100 s** later. After the reboot:
+`monsterbox`, `avahi-daemon`, `mjpg-streamer`, `monsterbox-boot-check` and `monsterbox-init` all
+**enabled *and* active**, `NRestarts=0`; certs intact; `selectedCharacter` still 1; mDNS still
+advertising; Orlok still sees it online; `/var/log/monsterbox-boot.log` ends
+`🎃 READY FOR HALLOWEEN! 🎃`. Endpoints re-checked post-reboot, all **200**: `/health`,
+`/api/parts`, `/scenes/api/`, `/poses/api/poses`, `/conversation/api/speaker-mute`,
+`/api/orchestration/fleet-health`, `/poses/editor`, `/conversation/api/agent-status`.
+GPIO 13/16/26 all came back `ip pd | lo` (inputs, pulled down) — nothing energized at boot.
+
+**The "wrong character entirely" defect is fixed.** Before the deploy this node's
+`config/app-config.json` had `selectedCharacter: 2 / dataPath data/character-2`, so `/api/parts`
+returned **`Jaw of Coffin`** — every earlier API answer about "PumpkinHead" actually described
+Coffin Breaker. It now reads `selectedCharacter: 1 / dataPath data/character-1`, verified again
+after the reboot, and `/api/parts` returns `Wiper Motor`.
+
+**Data hygiene, done against a real hardware inventory (`i2cdetect` empty, `lsusb`, `aplay -l`,
+`arecord -l`, `v4l2-ctl`), all reversible:**
+- `parts.json` **35 → 7**. Kept: 1 Wiper Motor, 3 Speaker Left, 4 Speaker Right, 5 PIR,
+  6 PumpkinHead Cam, 7 Webcam Microphone, 8 USB Dongle Speaker. Removed 28 — 15 hardware-test
+  artifacts (`T Act` ×5, `Auto Mic` ×5, `T Light`, `Test Motor/Actuator BTS7960` ×2 each) and the
+  13-entry bulk scaffold 48–60 created inside **one second** at `2025-10-27T18:53:28-29Z`.
+  Every removal is preserved verbatim with a `_removalReason` in
+  `data/character-1/parts.debris-removed-20260830.json`.
+- **Two removed parts were actively dangerous, not merely noisy:** part 51 (`LinearAct`) declared
+  `pwmPin 13` and parts 45/62 declared `lpwmPin 13` — the *same* pin as the real wiper motor.
+  Autonomous selection of any of them would have driven the wiper's PWM line while believing it
+  was moving an actuator that does not exist.
+- `poses.json` **26 → 0**. All 26 were named `elbow - Half Bend`, hashed to **one** distinct
+  signature, and every one targeted `partId 30` — an `Auto Mic` test artifact on this node. Every
+  pose was a dangling reference to a servo PumpkinHead has never had. Preserved in
+  `poses.debris-removed-20260830.json`.
+- **Node-local schema validation 2 errors → 0** (`npm --prefix /home/remote/MonsterBox run
+  validate:schemas` → `✓ Schema validation passed (6 characters)`, re-confirmed post-reboot). The
+  `parts.json` break (`[32].type - enum: value "head_tracking"`) *was* debris part 60 — removing
+  the debris removed the break; no schema was loosened. `character-6/poses.json characterId:null`
+  → `6`.
+- A **stale per-character registry shadow** was neutralized: `data/character-1/characters.json`
+  declared id 1 = **`Orlok`**, and `services/elevenLabsWebSocketService.js:194-217` consults that
+  copy *before* the fleet registry when resolving `elevenLabsAgentId`. Renamed to
+  `characters.json.stale-orlok-shadow.bak`; `/conversation/api/agent-status` now returns
+  `agent_0801k3f1dybkecj88sta18gwwrv5`, characterId 1, from the canonical `data/characters.json`.
+
+**Parts proven by measurement, not by success fields — 6 of 7 alive, 1 dead:**
+- 🟢 **Part 1 Wiper Motor is ALIVE**, proven at the register *and* by observed physical motion,
+  *with negative controls*. GPIO13 (sampled ~775–950 Hz off `GPLEV0`) was high for exactly the
+  commanded window every time: 200 ms → 200.8 ms, 500 ms → 500.1 ms, scene step → 400.9 ms. The
+  node's own camera measured the motion: frame-differenced mean-abs rose from a 0.032–0.045 floor
+  to 0.236 / 1.776 / 2.037. **It is mechanical, not a camera artefact** — the difference was
+  confined to **2 of 48 grid cells** (46.6 and 28.4 vs 0.0–5.2 elsewhere) with a global brightness
+  shift of only +0.014, which auto-exposure cannot produce. Two no-command controls showed
+  0.046 and 0.121 (floor 0.128), and a tracked null step moved 0.01 px.
+- 🟢 **Parts 3, 4 and 8 (speakers) all make real sound**, ear-checked with the mute flag read
+  first (`{"muted":false}`): silence floor RMS 147.6 → RMS 556.5 / 556.7 / 556.5, peaks 4.2–4.4 k.
+  Scene 100's `sayThis` closed the full loop by transcript — ElevenLabs `scribe_v1` returned
+  *"Fear me. I am the terror that walks in darkness"* at `language_probability 0.975`, matching
+  the authored text.
+- 🟢 **Part 7 Microphone is ALIVE**, judged on frames plus a controlled delta through the app's
+  own part path: 112 000 frames / 7.00 s, RMS 158 → 558, with the 250 ms windows stepping up at
+  **exactly** t = 2.5 s, matching the scripted 2 s speaker delay.
+- 🟢 **Part 6 Camera is ALIVE**, judged on FRAMES: 119 JPEG SOI markers in 5 s direct, 116 through
+  the app's HTTPS relay, three *distinct* snapshot md5s (a live sensor, not one frame replayed).
+  Re-checked post-reboot: **158 markers**. It was also the instrument that measured the motor.
+- 🔴 **Part 5 PIR Motion Sensor (GPIO16) is DEAD.** A non-destructive internal-pull probe made
+  GPIO16 follow the pull exactly (12/12 LOW pulled down, 12/12 HIGH pulled up) — **identical to
+  known-unwired control pins GPIO17 and GPIO22**. A powered HC-SR501-class PIR drives its output
+  push-pull and a ~50 k internal pull-up cannot override it. Corroborated by
+  `detectMotion duration=20` → `detections:0`, and by GPIO16 staying flat across all 9288 register
+  samples during a motor run that swung a mass ~54 px through the frame. Recorded in
+  `config/physical-faults.json` under `characters.1.parts.5`; the writer asserted character 3's
+  subtree was byte-identical before and after. **Honored by the running code, re-verified after
+  the reboot:** `getPhysicalFault(1,5)` → `{broken:true,…}`, `isTestSafePart(1,5)` → `false`, while
+  parts 1/3/4/6/7/8 are `testSafe:true` and char 3's entries are untouched.
+  *Caveat recorded in the file:* a PIR that is wired but **unpowered** presents the same
+  high-impedance signature, so this proves *nothing is driving GPIO16*, not *no wire exists*.
+  **Would prove it fixed:** re-run the pull probe — a live PIR refuses to follow the pull-up — then
+  clear the `characters.1.parts.5` entry.
+
+- 🔴 **OPEN — a phantom calibration profile silently truncates every forward motor command, and
+  had already disabled it.** `data/calibration_profiles.json` holds a **bare-key** entry `"1"`
+  (openloop-linear, `minP 0.30 / maxP 0.80`, bin `{pwmPct:50, unitsPerSec:0.2}`).
+  `server/calibration/store.js getRaw()` falls back to that legacy bare key **for any character**,
+  so it governs PumpkinHead; `routes/api/partsApi.js` then recomputes duration from `currentP` in
+  `data/actuator-positions.json`. Proven three ways: at `currentP 0.60` a **2000 ms** command drove
+  the pin **1000 ms**; at `currentP 0.80 = maxP` a 2000 ms command drove it **0 ms** and returned
+  HTTP 502 `"Duration must be positive. Got 0"`; a 500 ms reverse moved the estimate exactly
+  `0.80 → 0.70` and unblocked it. **The node was found already in the fully-blocked state**
+  (`currentP 0.80`, `movesSinceHome 7`). **This cripples the node's only scene:** scene 100 authors
+  its motor step as `duration 2000`, the executor ran it at **400 ms** (register-confirmed 400.9 ms
+  = 20 % of the authored move), *and persists the estimate* — so the next play gets 0 ms and fails.
+  Nothing in the scene result says why. **The profile is template data, not a measurement of this
+  hardware:** `scripts/motor_control.py` has no PWM at all (any speed > 0 writes the pin fully
+  high), so a bin recorded at `pwmPct: 50` cannot have come from this driver, and `0.2` is
+  byte-identical to the hardcoded fallback `bin.unitsPerSec || 0.2`. **Deliberately not fixed** —
+  it is operator calibration data. **Would prove it fixed:** drop the bare `"1"` entry (or its
+  bounds), then confirm a 2000 ms command holds GPIO13 high for ~2000 ms and scene 100 reports
+  `duration: 2000`. Left at `currentP 0.64` (~800 ms of headroom) so the motor is not
+  dead-on-arrival.
+
+- 🔴 **OPEN — scene 100's audio step points at an asset that does not exist.** The step references
+  `f8db8bdd-2ed5-4852-93be-9c5acf33fba8.mp3`, absent from `data/audio-library/files/` with zero
+  matching entries in `library.json`. It returns
+  `{"success":false,"error":"Process exited with code 1","stepType":"audio"}` **while the scene
+  overall still reports `"success":true,"played":100`** — a failing step is invisible at the top
+  level. **Would prove it fixed:** repoint the step at a real library id and see the step result
+  return `success:true`.
+
+- 🟡 **OPEN — the three "speaker" parts are aliases, not Left/Right.** Parts 3, 4 and 8 all carry
+  `config.device: "default"`, and `wpctl` shows one default sink (81, *Audio Adapter Unitek Y-247A
+  Analog Stereo*, vol 0.70). The three ear-checks are near-identical (RMS 556.5 / 556.7 / 556.5)
+  because all three drove the same sink; nothing addresses the second sink (34, Built-in Audio,
+  vol 0.40). Not a bug so much as a wiring-plus-data decision. **Would prove it fixed:** distinct
+  `config.device` values per part and three ear-checks with materially different results.
+
+- 🟡 **OPEN — `POST /api/parts/<id>/test action=play` cannot take a library filename.** The route
+  passes `filename` straight to `speaker_cli.py`, which does a bare `os.path.exists()` against the
+  server's cwd. A bare library name fails with an opaque `"Process exited with code 1"`; only an
+  absolute path works. The wrapper knows the real reason (`{"status":"error","message":"file not
+  found","file":…}`) but only the exit code surfaces.
+
+- 🟡 **OPEN — the microphone part-test response discards the only fields that prove capture.** The
+  controller returns bytes, `filePath` and a byte count; `testResponse()` in
+  `routes/api/partsApi.js` reduces it to `{success, message, part}`. Given the standing rule that
+  capture is judged on FRAMES and never on `success:true`, **this route actively removes the
+  evidence** — the WAV had to be found by hand in `/tmp` on the node.
+
+- 🟡 **OPEN — `POST /api/parts/6/test action=capture` returns 502**, `VIDEOIO(V4L2:/dev/video0):
+  can't open camera by index`. Cause proven with `sudo fuser -v /dev/video0`: **mjpg_streamer holds
+  the device exclusively**. This is device contention, **not** broken hardware — the stream serves
+  119 frames in 5 s and `listControls` on the same part succeeds. Deliberately **not** listed in
+  `physical-faults.json`, because that would make autonomous code skip a working camera.
+
+- 🟡 **OPEN — cross-character calibration contamination inside `data/character-1/`, and it is live
+  code, not dormant data.** `servo_calibrations.json` is keyed `"5" → "Elbow of Orlok"` while part 5
+  here is the PIR; `linear_actuator_calibrations.json` is keyed `"3" → "Right Arm of Orlok"` while
+  part 3 here is a speaker; `simple_calibrations.json` is keyed to part 9, which does not exist.
+  `services/hardwareService/servo.js:80-92` reads `<dataPath>/servo_calibrations.json` and returns
+  `calibrations[String(partId)]`, so `getCalibration(5)` on PumpkinHead would hand back **Orlok's
+  elbow**. Harmless *today* only because PumpkinHead now has zero servo parts. Left in place —
+  operator calibration data is not deleted on an agent's initiative.
+
+- 🟡 **OPEN — no `super-powers.json` exists anywhere on this node.** `find data -name
+  super-powers.json` returns nothing. That file is in the deploy's rsync exclude list *by design*
+  (a deploy brings code, never another machine's superpower toggles), so **no deploy can create
+  it**. Jaw animation, head tracking, lurk and idle have nowhere to persist here until one is
+  authored locally.
+
+- ⚪ **OPEN — no PCA9685 and no I2C device of any kind.** `sudo /usr/sbin/i2cdetect -y 1` prints an
+  entirely empty grid, confirmed independently by an SMBus `write_quick` sweep of 0x03–0x77;
+  `adafruit_pca9685` and `board`/`busio` are not installed. The three servo parts that declared
+  `0x40 ch0/1/2` were removed because they could never run. A side effect is the harmless
+  `✗ servoChannels: unknown` line at every startup — `services/resource/startupHealthCheck.js:107-128`
+  probes the bus unconditionally and treats failure as informational.
+  *Trap:* `i2cdetect` lives at `/usr/sbin` and is **not** on a non-login SSH shell's PATH, so a bare
+  `i2cdetect` answers `command not found`, which reads exactly like the tool being missing.
+
+- ⚪ **Cosmetic, survives the upgrade — the app cannot refresh its own mDNS advert.**
+  `⚠️ Could not write avahi service file (/etc/avahi/services/monsterbox.service): EACCES` at every
+  start, because the file is root-owned and the app runs as `remote`. mDNS itself is fine (the
+  deploy wrote a correct file with `sudo`, and resolution is confirmed).
+
+- ⚪ **By choice — `SECURITY: MONSTERBOX_SSH_PASSWORD is not set`** at every start, so SSH-originated
+  fleet control *from* PumpkinHead is disabled. HTTPS orchestration is unaffected and Orlok holds
+  fleet SSH trust; no credential was planted in a systemd unit.
+
+- ✅ **FIXED — part 1's corrupted description.** Was `"Test updated via comprehensive tests"` with a
+  stray `config.testFlag: true` — a historical hardware-test run had written into a **genuine** part.
+  Now `"Jeep Wagoneer wiper motor (MDD10A, dir GPIO26 / pwm GPIO13)"`, `testFlag` dropped, `modelId`
+  / pins / markers / `simpleCalibration` untouched. *Damage class worth remembering: test debris was
+  not only extra parts, it also mutated an existing one.*
+
+- ✅ **FIXED — the `tts-config` 0.5/0.5 clobber signature.** The old file read
+  `stability 0.5 / similarity_boost 0.5 / eleven_monolingual_v1` — that was the **5.5.0 default**,
+  not drift. Now `eleven_v3`, `0.25 / 0.65`, voice `Z7RrOqZFTyLpIlzCgfsp`.
+
+- ✅ **FIXED — STT was pointed at a part that does not exist.** `stt-config.json` had
+  `microphonePartId "9"` (parts here are 1, 3–8; there has never been a 9) and
+  `microphoneDeviceId "pulse"`. Repointed to part **7** and the camera-mic node name
+  `alsa_input.usb-SONix_Technology_Co.__Ltd._Streaming_Camera_SN0001-02.mono-fallback` — the exact
+  string `services/elevenLabsWebSocketService.js:1931` feeds to capture — and then ear-checked
+  *through that configured string*, transcribed verbatim by `scribe_v1`.
+
+- ✅ **FIXED — the two historical `.err` error classes are gone.** `Error loading goblins:
+  Unexpected non-whitespace character after JSON at position 1650` no longer appears (the deploy
+  replaced `data/goblins.json`), and no `library.audio is not iterable` at startup. Post-reboot,
+  `/var/log/monsterbox.err` since the boot boundary contains **exactly the three known warnings**
+  (`MONSTERBOX_SSH_PASSWORD`, `uv_os_setpriority EACCES`, avahi EACCES) and `/var/log/monsterbox.log`
+  contains only the informational `✗ servoChannels` line under an overall
+  `Startup health check: OK`. Zero exceptions, zero `MODULE_NOT_FOUND`, zero unhandled rejections.
+
+**Node facts worth not re-deriving:**
+- 🟠 **This is a 4 GB Pi (3.7 Gi total RAM), not the 8 GB the project docs assume.** Runtime is
+  comfortable (RSS ~99 MB, 3.4 Gi available, disk 16 %), but browser-suite headroom is lower than
+  the rest of the fleet.
+- 🟠 **A released lgpio line keeps its OUTPUT mode and its last level.** `motor_control.py` calls
+  `gpio_free()`, yet GPIO13/26 stay `op` across process exit, and **GPIO26 (the MDD10A direction
+  line) sits latched HIGH after any `backward` command** until a `forward` one clears it. Not a
+  stall path (GPIO13 is written 0 first), but do not read `pinctrl get` showing `op` as evidence
+  something is running. `pinctrl set <pin> ip pd` is the actual reset; all three pins were left
+  `ip pd | lo` and came back that way after the reboot.
+- 🟠 **`success:true` from `POST /api/parts/1/test` says nothing about how long the motor ran.** A
+  2000 ms request returned `success:true` having driven the pin for 1000 ms, with no field anywhere
+  saying so. The only honest read is the GPIO level register.
+- 🟢 **Method worth reusing on dark nodes:** the node's own camera is a fine motion sensor.
+  Frame-difference against a pre-command mean, then check *where* the difference lives — a real
+  mechanical move lights 2 of 48 grid cells with near-zero global brightness shift, while
+  auto-exposure lifts all 48 uniformly. **Audio did *not* resolve the motor** (loudest 250 ms window
+  during a 1000 ms run was 220.5 against neighbours of 164–204) — use the camera, not the ear-check
+  rig, to judge motors here.
+- 🟢 **The persistent `mpg123` is not a leak.** `mpg123 --quiet -o pulse -f 32768 -` (PPID = the node
+  server) reads stdin as a warm player and did **not** multiply across 36 minutes and a TTS trigger.
+  Side effect: it keeps the USB sink from suspending, which removes the cold-start half of the
+  jaw-sync spread.
+- 🟠 **Log-boundary traps, two of them.** `/var/log/monsterbox.log` contains binary bytes — plain
+  `grep` prints "binary file matches" and silently gives you nothing; use `grep -a`. And the startup
+  banner **changed** with the upgrade (`🎭 MonsterBox 5.5 server running on port 3000` →
+  `🎭 MonsterBox 10.5.0 server running on https://localhost:3000`), so a regex written for the old
+  text anchors you several boots too early. `.err` has no timestamps; find the boundary with
+  `awk '/SECURITY: MONSTERBOX_SSH_PASSWORD/{n=NR} END{print n}'`. It is still 9.27 MB of mostly
+  dormant Nov-2025 content — a logrotate pass here remains worthwhile.
+- ⚪ **Junk directory `data/character-1/character-1/`** holds a stray `parts.json` (`Default Servo`
+  on pin 18). Not on any read path found, but it is a shadow waiting for a mis-joined path.
+- ⚪ **Husk directories `data/character-7` … `character-13`** survive with only rsync-excluded files
+  (`parts.json`/`poses.json`/`servo_calibrations.json`). Harmless.
+- ⚪ **The only credential on the box is `/etc/monsterbox/elevenlabs.key`** (52 bytes, mode 0600). It
+  is now backed up to `/home/remote/prehalloween-backup/env-and-misc/`; it is **not** in git and was
+  not in the original 182 MB tarball. If this node is reimaged without it, the key is lost.
+- **Backups on the node:** `/home/remote/prehalloween-backup/pumpkinhead-node-state-20260830-224053.tar.gz`
+  (182 MB, pre-upgrade), `env-and-misc/` (`.env`, `.env.backup`, `elevenlabs.key`), and
+  `data-cleanup-20260830-230210/` (pre-edit `character-1`, `character-6`, `characters.json`).
+  `physical-faults.json.bak-20260830-2340`.
+
+⚪ *Superseded (kept for history): the 5.5.0 / plain-HTTP entry.* Powered up ~21:07 CDT 2026-08-30
+serving `{"status":"OK","version":"5.5"}` over plain HTTP with git HEAD `379104d3`; the fleet was on
+10.5.0, so every caller assuming `https://<ip>:3000` failed with
+`tls_validate_record_header:wrong version number` — which is exactly why the 2026-08-30 ear-check
+scored it `SILENT`, and that "silence" was **never evidence about its speaker**. Subsystems that
+404'd on 5.5.0 (`/poses/editor`, `/api/orchestration/*`, `/conversation/api/speaker-mute`,
+`/api/characters`) now return 200. Prior to that: 🔴 offline long-term, hardware state unknown.
 
 ### Groundbreaker — char 5 · `192.168.8.200`
 🟢 **BROUGHT UP TO 10.5.0 AND FULLY JOINED TO THE FLEET, 2026-08-30/31 overnight.** Everything
@@ -677,6 +933,52 @@ exist yet.
 ---
 
 ## Cross-Cutting Software Bugs
+
+- ~~🔴 **Every node's boot armed random motion on the WHOLE FLEET.**~~ — **FIXED
+  2026-08-30 (`scripts/boot-init.sh`).** `monsterbox-init.service` runs
+  `boot-init.sh` on every boot, and the script POSTed
+  **`/api/orchestration/enable-random-poses`** — an orchestration route that maps over
+  `orchestrationService.animatronics` and fans out to **every animatronic in the
+  fleet** (`routes/api/orchestrationRoutes.js:377`). The script's own comment reads
+  *"Enable random poses on the local device"*, so intent and implementation had
+  disagreed since it was written. **One node rebooting therefore armed unattended
+  random motion on all five** — including Orlok's shared elbow/forearm rail (parts
+  4+5, which has blown fuses under simultaneous load) and Sir Dragomir's 900°
+  multi-turn neck (a full rotation tears the head cabling). Caught when a
+  PumpkinHead reboot during the overnight bring-up armed the entire fleet; verified
+  `enabled:true` on all five, disabled all five, and **`lastPoseTime` was still `0`
+  everywhere — the feature was armed but had not yet fired a single pose**, so no
+  hardware was harmed. Fix: call the node-local **`/api/random-poses/enable`**
+  instead, sending no `characterId` so the route's own `resolveCharacter(req)`
+  fallback picks that node's selected character. Pushed to all five nodes and to the
+  deploy staging copy. *Proof it stays fixed:* reboot any one node and confirm the
+  other four still read `enabled:false` at `/api/random-poses/settings`.
+- 🟡 **`scripts/deploy-to-animatronic.sh` — three defects found during the 5.5.0 →
+  10.5.0 upgrades (2026-08-30).** All three are live for every node:
+  1. **Silent stale dependencies.** It runs `npm ci || npm install` ONLY when
+     `node_modules` is absent. On a node being upgraded across major versions,
+     `node_modules` stays at the old release's tree and the app runs on deps that do
+     not satisfy `package.json` — three deps were left behind the lockfile on
+     Groundbreaker until `npm ci` was run by hand. It should install whenever the
+     lockfile is newer than the tree.
+  2. **The character-select call silently 400s.** The end-of-script
+     `curl -d '{"id":'${CHARACTER_ID}'}'` sits inside a double-quoted remote command
+     block, so the embedded quotes collapse and the body arrives malformed
+     (`entity.parse.failed` in `.err`). The selection only landed because hostname
+     auto-select set it independently.
+  3. **The systemd unit is rewritten on every deploy.** `if [ ! -f \"$SERVICE_FILE\" ]`
+     expands `$SERVICE_FILE` on the LOCAL box where it is unset, so the test is
+     always true. Cosmetic today (the rewritten unit matches) but it prints
+     "Installing systemd service..." every time and would silently clobber a
+     hand-tuned unit.
+- 🟡 **`config/physical-faults.json` is neither fleet-wide nor node-local — it is the
+  worst of both (2026-08-30).** It is a tracked repo file, but it is NOT in the
+  deploy's rsync excludes. A broken-part entry written on a node (Groundbreaker's
+  dead motor, `characters.5.parts.1`) is honored in-process, but the next
+  `deploy-to-animatronic.sh` overwrites the file with repo HEAD and **the fault
+  entry silently vanishes** — re-arming autonomous code to select a part known to be
+  broken. Decide which it is: either exclude it from rsync and treat it as node-local
+  measurement, or require fault entries to be committed. Do not leave it as is.
 
 ### Opened from the 2026-08-30/31 Groundbreaker bring-up
 
@@ -990,7 +1292,10 @@ exist yet.
   per-character models are therefore inert on this path. Not fixed — flagged with the fix
   above; needs `characterId` threaded into the lookup.
 - 🟡 **Missing/dangling `modelId` across the fleet, and no gate check catches it.**
-  Verified 2026-08-19: PumpkinHead (char 1) **16 of 24 parts** have no `modelId`;
+  Verified 2026-08-19: PumpkinHead (char 1) **16 of 24 parts** have no `modelId`
+  *(stale — that count came from Orlok's copy of `character-1`; the **node's own**
+  `parts.json` was 35 parts and is now **7** after the 2026-08-30/31 debris cleanup, so this
+  needs re-counting on the node)*;
   Groundbreaker (char 5) **3 of 4**; Renfield (char 6) **2 of 3**. Mina, Orlok and Sir
   Dragomir are clean (0 problems each). Sir Dragomir has **no `data/character-4/models/`
   directory** at all, unlike chars 1–3. `npm run gate` validates schemas but never checks
@@ -1712,7 +2017,9 @@ the entry:**
   instead of trusting the label.
 - ⚪ **`tests/system/orchestration.test.js:97` — "returns status for a known node"** — expects
   200, gets 404. **Environmental, genuinely pre-existing.** The test hardcodes node id 1
-  (PumpkinHead, `192.168.8.150`), which is physically offline (`EHOSTUNREACH`). v9.0.0 touched
+  (PumpkinHead, `192.168.8.150`). **As of 2026-08-30/31 that node is online on 10.5.0 over
+  HTTPS**, so this test should now be re-run — if it still fails, the cause is no longer
+  "node powered off". v9.0.0 touched
   neither the route nor the test. Underlying fragility worth fixing: the route maps
   `success:false → 404` (`routes/api/orchestrationRoutes.js:1171`), conflating "unknown node"
   with "node unreachable" — those deserve different status codes, and the test should not
@@ -1750,8 +2057,10 @@ Plus one that was not flake at all:
   Since v9.0.0 the missing part no longer aborts the scene — hardware steps are non-fatal —
   so it plays through and reports the failed step. An operator should confirm the intended
   part and correct it in the Animation Studio.
-- 🟡 **Character 1 part 1 description is test debris** — see the PumpkinHead section above.
-  Left unfixed on purpose (node offline, hardware unverified).
+- ~~🟡 **Character 1 part 1 description is test debris**~~ — **FIXED 2026-08-30/31 on the node**
+  now that the hardware is verified: description restored to `"Jeep Wagoneer wiper motor
+  (MDD10A, dir GPIO26 / pwm GPIO13)"` and the stray `config.testFlag` dropped. See the
+  PumpkinHead section.
 - ~~**Groundbreaker character-ID mismatch (5 vs 7) — producing a phantom character-7.**~~ —
   **resolved as of 2026-08-17.** `config/animatronics.json` now maps host `groundbreaker` to
   **characterId 5**, matching `data/characters.json`; the registry is a clean 1–6. The stray
