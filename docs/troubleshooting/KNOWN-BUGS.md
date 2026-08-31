@@ -505,6 +505,28 @@ exist yet.
 
 ## Cross-Cutting Software Bugs
 
+- 🟡 **A deploy from a node with a dirty working tree pushes that node's uncommitted state to
+  the whole fleet — and `certs/` is protected only by file permissions, not by an exclude
+  (found 2026-08-30).** `scripts/deploy-to-animatronic.sh` rsyncs `./` with **`--delete`**.
+  Its exclude list correctly covers node-local *operational* state (calibration, parts,
+  poses, super-powers, app-config, speaker-state…), but **not** these, all of which differed
+  between nodes at review time:
+  `certs/server.cert`, `certs/server.key`, `data/models/*.json`,
+  `data/character-*/scenes.json`, `data/character-*/ai-config/tts-config.json`,
+  `.github/workflows/ci.yml`, `.mcp.json`, `.claude/settings.json`.
+  So deploying from a node whose tree is dirty (the normal state of a dev seat — Orlok had 24
+  modified files) silently propagates those edits, and `--delete` removes peer files the
+  deploying node happens not to have. **`certs/` survives today only because the cert and key
+  are root-owned and rsync cannot overwrite them** — that is precisely the "⚠ rsync exit 23:
+  some files were skipped (usually root-owned certs/)" warning the script already prints and
+  tolerates. On any node whose certs are owned by `remote`, a deploy hands that node the
+  deploying node's TLS identity. Note the `tts-config.json` exposure lines up with the
+  still-unexplained voice-config clobber class. *Fix direction:* add explicit excludes for
+  `certs/`, `data/models/`, `data/character-*/scenes.json` and
+  `data/character-*/ai-config/`, and have the deploy refuse (or loudly warn) when
+  `git status --porcelain` is non-empty on the deploying node. *Proof it is fixed:* a
+  dry-run deploy from a dirty tree lists no file outside the intended code set.
+
 ### Opened from the 2026-08-19 v10.4 overnight log review
 
 - ⚪ **`scripts/log-review.mjs` only works from the repo root — a real trap for fleet runs.**
