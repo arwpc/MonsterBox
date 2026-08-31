@@ -320,3 +320,84 @@
 @media (prefers-reduced-motion: reduce) {
   .fcc-skeleton { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Mobile roll-ups.
+
+   Measured on a 390px viewport 2026-08-31: the page was 5164px tall — about six
+   full screens — with #nodeWall alone at 3434px (six 556px cards, 205px of each
+   being webcam). Operator: "super long and mountains of scrolling with no
+   categories that roll up."
+
+   Node cards start collapsed to their header row on narrow screens, and the
+   three reference panels below (Goblins, Command Log, Discovery) start closed.
+   Desktop layout is untouched — every rule here is inside a max-width query
+   except the button itself.
+   --------------------------------------------------------------------------- */
+.fcc-collapse-btn {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  color: var(--mb-text-secondary, #9aa);
+  font-size: 1rem;
+  line-height: 1;
+  padding: .35rem .5rem;
+  cursor: pointer;
+  border-radius: 6px;
+  display: none;             /* desktop keeps every card open */
+}
+.fcc-collapse-btn:hover { color: var(--mb-text, #eee); background: rgba(255,255,255,.06); }
+.fcc-collapse-btn:focus-visible { outline: 2px solid var(--mb-accent, #6cf); outline-offset: 2px; }
+
+@media (max-width: 767.98px) {
+  .fcc-collapse-btn { display: inline-flex; align-items: center; }
+
+  /* A collapsed card is just its header row. */
+  .fcc-card.fcc-collapsed .fcc-cam-wrap,
+  .fcc-card.fcc-collapsed .fcc-card-body { display: none; }
+  .fcc-card.fcc-collapsed { min-height: 0; }
+
+  /* Tighten the stack so six headers read as a list, not six panels. */
+  #nodeWall > [class*="col-"] { margin-bottom: .25rem; }
+
+  /* Section roll-ups. */
+  .fcc-section-toggle { cursor: pointer; user-select: none; }
+  .fcc-section-toggle::after {
+    content: "\25BE";
+    float: right;
+    font-size: .8em;
+    opacity: .7;
+    transition: transform .15s ease;
+  }
+  .fcc-section-toggle[aria-expanded="false"]::after { content: "\25B8"; }
+  .fcc-section-body.fcc-section-closed { display: none; }
+
+  /* Skeletons must not reserve a full card each on a phone, or the placeholder
+     re-creates the very scroll length the collapse removes. */
+  .fcc-skeleton { height: 64px; }
+}
+
+/* Mobile toolbar strip — see the roll-up note above.
+   The sticky .fcc-bar measured 433px of an 844px phone viewport (51% of the screen)
+   and intercepted taps meant for the cards beneath it. On narrow screens the control
+   rows collapse behind a Controls toggle; the online count and EMERGENCY STOP stay
+   visible, because a panic control behind a menu is not a panic control. */
+.fcc-mobile-strip { display: none; }
+
+@media (max-width: 767.98px) {
+  .fcc-mobile-strip {
+    display: flex;
+    align-items: center;
+    gap: var(--mb-space-2, .5rem);
+  }
+  #fccBarRows { display: none; }
+  #fccBarRows.fcc-rows-open { display: block; margin-top: var(--mb-space-3, .75rem); }
+
+  /* Keep the collapsed bar shallow so it cannot swallow the viewport again. */
+  .fcc-bar { padding: var(--mb-space-2, .5rem); margin-bottom: var(--mb-space-2, .5rem); }
+
+  /* The full control set is a lot of buttons on a narrow screen: let it wrap and
+     scroll inside the bar rather than pushing the page taller. */
+  #fccBarRows.fcc-rows-open .fcc-row { flex-wrap: wrap; gap: var(--mb-space-2, .5rem); }
+  #fccBarRows.fcc-rows-open { max-height: 55vh; overflow-y: auto; }
+}

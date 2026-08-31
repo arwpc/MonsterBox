@@ -16,6 +16,24 @@
 
 <!-- ============ STICKY COMMAND BAR ============ -->
 <div class="fcc-bar">
+  <!-- Mobile-only compact strip. The full toolbar measured 433px of an 844px phone
+       viewport -- 51% of the screen, permanently, because .fcc-bar is sticky. It also
+       intercepted taps aimed at the cards underneath it. On narrow screens the toolbar
+       collapses to this strip; EMERGENCY STOP stays visible at all times because a
+       panic control you have to expand a menu to reach is not a panic control. -->
+  <div class="fcc-mobile-strip">
+    <span class="mb-badge" title="Nodes currently online / total in the fleet">
+      <span class="mb-dot mb-dot-idle" id="fleetDotMini"></span>
+      <span id="fleetCountMini" class="mb-mono">— / —</span>
+    </span>
+    <button class="mb-btn mb-btn-sm mb-btn-secondary" id="toolbarToggle" type="button"
+      aria-expanded="false" aria-controls="fccBarRows" title="Show or hide the fleet controls">
+      <i class="bi bi-sliders"></i> Controls</button>
+    <button class="mb-btn mb-btn-sm mb-btn-danger fcc-estop ms-auto" id="estopMini" type="button"
+      title="Immediately halt every animatronic">
+      <i class="bi bi-exclamation-octagon-fill"></i> STOP</button>
+  </div>
+  <div id="fccBarRows">
   <div class="fcc-row">
     <!-- Fleet health rollup -->
     <span class="mb-badge" id="fleetPill" title="Nodes currently online / total in the fleet">
@@ -85,6 +103,7 @@
     <button class="mb-btn mb-btn-sm mb-btn-danger" id="rebootAll" title="Reboot targeted animatronics (SSH)">
       <i class="bi bi-power"></i> Reboot</button>
   </div>
+  </div><!-- /#fccBarRows -->
 </div>
 
 <!-- ============ NODE WALL ============ -->
@@ -320,6 +339,91 @@
     }
   }, { rootMargin: '200px' }) : null;   // 200px so a card wakes just before it scrolls in
 
+  function isNarrow() { return window.matchMedia('(max-width: 767.98px)').matches; }
+
+  // Mobile toolbar strip. The real controls live in #fccBarRows; on a phone they start
+  // hidden and the strip carries the online count, a Controls toggle, and STOP.
+  (function wireMobileToolbar() {
+    const toggle = document.getElementById('toolbarToggle');
+    const rows = document.getElementById('fccBarRows');
+    const estopMini = document.getElementById('estopMini');
+    if (toggle && rows) {
+      toggle.addEventListener('click', () => {
+        const open = rows.classList.toggle('fcc-rows-open');
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+    }
+    // Reuse the real handler rather than duplicating panic logic.
+    if (estopMini) {
+      estopMini.addEventListener('click', () => {
+        const real = document.getElementById('estop');
+        if (real) real.click();
+      });
+    }
+  })();
+
+  // Keep the compact strip's count in step with the main pill.
+  function mirrorFleetPill() {
+    const src = document.getElementById('fleetCount');
+    const dst = document.getElementById('fleetCountMini');
+    if (src && dst) dst.textContent = src.textContent;
+    const sd = document.getElementById('fleetDot');
+    const dd = document.getElementById('fleetDotMini');
+    if (sd && dd) dd.className = sd.className;
+  }
+
+  // Roll up the whole lower half of the page on a phone. The operator's words: "super
+  // long and mountains of scrolling with no categories that roll up." These three
+  // blocks (Goblins, Command Log, Discovery) are reference panels, not things you
+  // steer with, so they start closed on narrow screens and stay open on desktop.
+  function makeSectionsCollapsible() {
+    if (!isNarrow()) return;
+    const targets = [
+      { head: document.querySelector('#goblinRow')?.closest('.mt-4')?.querySelector('h2'), body: document.querySelector('#goblinRow') },
+      { head: document.querySelector('#commandLog')?.closest('.mb-panel')?.querySelector('.mb-panel-title'), body: document.querySelector('#commandLog') },
+      { head: document.querySelector('#discoveryState')?.closest('.mb-panel')?.querySelector('.mb-panel-title'), body: document.querySelector('#discoveryState')?.closest('.mb-panel-body') },
+    ];
+    for (const t of targets) {
+      if (!t.head || !t.body || t.head.dataset.collapsible) continue;
+      t.head.dataset.collapsible = '1';
+      t.head.classList.add('fcc-section-toggle');
+      t.head.setAttribute('role', 'button');
+      t.head.setAttribute('tabindex', '0');
+      t.body.classList.add('fcc-section-body', 'fcc-section-closed');
+      t.head.setAttribute('aria-expanded', 'false');
+      const toggle = () => {
+        const closed = t.body.classList.toggle('fcc-section-closed');
+        t.head.setAttribute('aria-expanded', String(!closed));
+      };
+      t.head.addEventListener('click', toggle);
+      t.head.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+    }
+  }
+
+  // Collapsing must also stop the stream, and must survive the poll: updateCard()
+  // restarts any src-less camera, so without its own flag a collapsed card would
+  // quietly keep decoding video behind a hidden panel -- exactly the cost we are
+  // trying to remove on a phone.
+  function setCardCollapsed(card, collapsed) {
+    card.classList.toggle('fcc-collapsed', collapsed);
+    const btn = card.querySelector('[data-role="collapse"]');
+    if (btn) { btn.setAttribute('aria-expanded', String(!collapsed)); btn.textContent = collapsed ? '\u25B8' : '\u25BE'; }
+    const img = card.querySelector('.fcc-cam-wrap img');
+    if (!img) return;
+    if (collapsed) {
+      if (img.getAttribute('src')) { img.dataset.camStashed = img.src; img.removeAttribute('src'); }
+      img.dataset.camCollapsed = '1';
+    } else {
+      delete img.dataset.camCollapsed;
+      if (!img.getAttribute('src') && img.dataset.camStashed) {
+        img.src = img.dataset.camStashed.replace(/([?&]_=)\d+/, '$1' + Date.now());
+        delete img.dataset.camStashed;
+      }
+    }
+  }
+
   function buildCard(node) {
     const col = el('div', 'col-sm-6 col-lg-4 col-xxl-3');
     col.id = cardId(node.id);
@@ -334,8 +438,21 @@
       '<span class="fcc-chip ' + (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '" data-role="chip" title="Discovery source / trust">' +
         (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '</span>' +
       '<label class="mb-check" title="Target this node for global actions">' +
-        '<input type="checkbox" data-role="target" aria-label="Target ' + esc(node.name) + '"></label>';
+        '<input type="checkbox" data-role="target" aria-label="Target ' + esc(node.name) + '"></label>' +
+      '<button class="fcc-collapse-btn" data-role="collapse" type="button" aria-expanded="true" ' +
+        'aria-label="Collapse ' + esc(node.name) + '" title="Collapse / expand this node">\u25BE</button>';
     card.appendChild(head);
+
+    // On a phone the six cards stacked to 3434px -- the whole page was 5164px, about
+    // six full screens of scrolling with nothing that rolled up. Cards now start
+    // COLLAPSED on narrow viewports: the header row still carries name, status dot and
+    // discovery chip, and one tap opens the camera and controls. Desktop is unchanged.
+    if (isNarrow()) card.classList.add('fcc-collapsed');
+    const collapseBtn = head.querySelector('[data-role="collapse"]');
+    collapseBtn.onclick = function (ev) {
+      ev.stopPropagation();
+      setCardCollapsed(card, !card.classList.contains('fcc-collapsed'));
+    };
 
     // Double-click the node's name → that node's own dashboard in a new tab.
     // The IP is resolved at click time from state, not from this closure: mDNS
@@ -363,7 +480,7 @@
     img.width = 320; img.height = 240;
     img.decoding = 'async';
     const off = el('div', 'fcc-cam-off fcc-hidden', 'Webcam unavailable');
-    if (node.online) { startCam(img, node.id); }
+    if (node.online && !isNarrow()) { startCam(img, node.id); }
     else { off.textContent = 'Node offline'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); }
     // A dead stream must FORGET its src. updateCard() only restarts a camera whose
     // img has no src, so leaving the failed URL in place latched that guard off
@@ -380,7 +497,7 @@
       // card scrolls out of view or the tab is hidden, and counting those as failures
       // would latch camGaveUp after a few scrolls and permanently show "No webcam" on a
       // perfectly good camera. Only count errors we did not cause.
-      if (img.dataset.camOffscreen || img.dataset.camStashed || img.dataset.camPaused) {
+      if (img.dataset.camOffscreen || img.dataset.camStashed || img.dataset.camPaused || img.dataset.camCollapsed) {
         return;
       }
       img.removeAttribute('src');
@@ -520,7 +637,7 @@
     // camera that recovers comes back on its own without a page reload.
     const img = col.querySelector('.fcc-cam-wrap img');
     const camOff = col.querySelector('.fcc-cam-off');
-    if (img && node.online && !img.getAttribute('src') && !img.dataset.camGaveUp && !img.dataset.camOffscreen) {
+    if (img && node.online && !img.getAttribute('src') && !img.dataset.camGaveUp && !img.dataset.camOffscreen && !img.dataset.camCollapsed) {
       if (camOff) camOff.textContent = 'Reconnecting…';
       startCam(img, node.id);
     }
@@ -731,6 +848,12 @@
   // ---------- boot ----------
   log('Fleet Command Center ready', 'muted');
   refresh(); loadGoblins();
+  setInterval(mirrorFleetPill, 2000);
+  // Goblins render asynchronously, so wire the roll-ups after that has had a chance to
+  // paint; the helper is idempotent (it skips anything already marked collapsible).
+  makeSectionsCollapsible();
+  setTimeout(makeSectionsCollapsible, 1500);
+  window.addEventListener('resize', makeSectionsCollapsible);
   setInterval(refresh, POLL_MS);
 })();
 </script>
