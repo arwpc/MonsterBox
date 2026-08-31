@@ -13,12 +13,20 @@
 > re-verify on each node before relying on it. Update this file as issues are fixed (strike
 > them through and note the version).
 
-> ⚪ **Three of six nodes are UNVERIFIED — by choice, not by fault.**
-> **PumpkinHead** (char 1) and **Groundbreaker** (char 5) are **deliberately unplugged** and
-> are expected to be unreachable; they are not a mystery outage. **Renfield** (char 6) has
-> never been on the network at all. Nothing in the 9.x or 10.x trains has been exercised on
-> their hardware — treat every claim about them as untested, and re-verify from scratch when
-> they are powered back up.
+> 🟠 **CHANGED 2026-08-30 — PumpkinHead and Groundbreaker are no longer unplugged.**
+> Both were powered up ~21:07 CDT and are reachable by ping, SSH, and HTTP. They are
+> **running MonsterBox 5.5.0 and serving plain HTTP, not HTTPS** — five majors behind the
+> live fleet, and unreachable by any caller that assumes `https://<ip>:3000`. So the old
+> guidance inverts: their absence is no longer expected, but **their `/health` answering is
+> not good news either** — nothing from the 6.x–10.x trains exists on them, and a fleet tool
+> that reaches them over the wrong scheme reports a false failure (the 2026-08-30 ear-check
+> scored both `SILENT` for exactly this reason). **Deploy to them before believing anything
+> about them.** See their per-node sections. **Renfield** (char 6) has still never been on
+> the network at all.
+>
+> ⚪ *Superseded (kept so the old norm is not re-applied from memory):* "Three of six nodes
+> are UNVERIFIED — by choice, not by fault; PumpkinHead and Groundbreaker are deliberately
+> unplugged and are expected to be unreachable."
 >
 > 🟢 **The three live nodes all answered `/health` with `10.1.0` on 2026-08-19 07:14**
 > (Orlok 192.168.8.120 · Sir Dragomir 192.168.8.130 · Mina 192.168.8.140), all serving HTTPS.
@@ -27,7 +35,11 @@
 > string is *not* proof the node runs that code (see the deploy-drift item below). Per-node
 > version claims in the sections below were corrected to 10.1.0 in the 2026-08-19 log review.
 
-> 📋 **Last log review: 2026-08-19 07:14–07:25 (v10.4 overnight session, from Mina).**
+> 📋 **Last log review: 2026-08-30 21:44 CDT (session-start review, from Orlok).** Findings:
+> fleet-wide accidental mute (fixed), Orlok journald cap self-defeating (root-caused + fixed),
+> `sematext-vector` crash-loop (open, needs one manual command), the two storage nodes back
+> online at 5.5.0 (above), and Dragomir's ear-check capture contention. Previous review:
+> 2026-08-19 07:14–07:25 (v10.4 overnight session, from Mina).
 > `scripts/log-review.mjs` run on all three live nodes plus a direct `grep -a` sweep of
 > **both** `/var/log/monsterbox.log` and `/var/log/monsterbox.err` on each. Findings folded
 > into the sections below; the new ones are grouped under *Opened from the 2026-08-19 v10.4
@@ -129,11 +141,34 @@ top). No new physical work has been done on parts 2/3/4/5.
   **these two parts really are Orlok's and really do share one fused rail** — it is the same
   rail the operator is measuring for part 4. The warning should stay until the rail is
   resolved; it is data, not noise.
-- 🟡 **Journal is 218 MB against a 64 MB cap, with ~82,000 warning+ lines this boot.** The
+- ~~🟡 **Journal is 218 MB against a 64 MB cap, with ~82,000 warning+ lines this boot.** The
   fleet-wide journald cap from the 2026-08-17 OS baseline is **not holding on Orlok**
-  (Mina and Sir Dragomir are both at 56 MB). Either the drop-in was lost on this node or
-  something is out-flooding rotation. SD wear item — see the OS-baseline note.
-  `journalctl --disk-usage` → *Archived and active journals take up 217.6M*.
+  (Mina and Sir Dragomir are both at 56 MB).~~ — **ROOT-CAUSED and FIXED 2026-08-30.**
+  The drop-in was never lost; it was self-defeating. Orlok's
+  `/etc/systemd/journald.conf.d/monsterbox.conf` carried **`SystemMaxFileSize=100M` against
+  `SystemMaxUse=64M`** — a single journal file was permitted to exceed the entire budget, so
+  rotation could not enforce the total and archives piled up (three 45.7 MB files, 177 MB
+  total at review time). The two nodes that held their cap were never configured the same
+  way: **Mina `SystemMaxFileSize=20M`, Dragomir `16M`** — that difference, not flooding, is
+  the whole bug. Orlok set to `16M` to match Dragomir (backup at
+  `monsterbox.conf.bak-2026-08-30`), `journalctl --vacuum-size=64M`, journald restarted →
+  **177 MB → 40 MB**, active files now 8 MB. *Proof it stayed fixed:* `journalctl
+  --disk-usage` stays under 64 MB across several boots. ⚠️ **OS-level, not in git** — a
+  reimaged node loses it; add it to the OS-baseline note.
+- 🟡 **`sematext-vector.service` is enabled and crash-looping on Orlok — the fleet's only
+  failed unit, and it has been failing since long before this review.** It exits
+  `status=78/CONFIG` in 26 ms, six times, then hits the start limit:
+  `ERROR vector::cli: Configuration error. error=unknown variant `sematext`, expected one of
+  … `sematext_logs`, `sematext_metrics` …  in `sinks.sematext`` — the sink in
+  `/opt/spm/spm-monitor/vector/monsterbox_logs.toml` is named `sematext`, which is not a
+  valid Vector sink type. **Mina and Sir Dragomir do not have this unit at all**
+  (`No such file or directory`), so this is leftover from the Sematext install that the
+  2026-08-17 fleet-wide disable missed on this node. It is third-party log shipping with a
+  dead token (see the 2026-08-17 note) — nothing in MonsterBox depends on it. Its real cost
+  is that it keeps `systemctl --failed` permanently non-empty, which is exactly the signal a
+  health check needs to stay meaningful. *Fix (one line, needs a human — the agent's
+  `systemctl disable` was refused by the permission classifier):*
+  `sudo systemctl disable --now sematext-vector.service && sudo systemctl reset-failed sematext-vector.service`
 - ⚪ **One USB disconnect this boot** — `Aug 18 23:20:58 orlok kernel: usb 1-1.2: USB
   disconnect, device number 4`. **No** over-current lines in `dmesg` at review time, so this
   is not (yet) the hub over-current fault that ate a webcam before. Watch for recurrence.
@@ -323,6 +358,23 @@ diagnostic below still applies.
   drive time.
 
 ### Sir Dragomir — char 4 · `192.168.8.130`
+
+- 🟡 **Ear-check scores Sir Dragomir `CAPTURE-FAILED` because the app is already holding the
+  microphone — not because his mics are broken (2026-08-30).** The ear-check's `scp` of
+  `/tmp/mb-earcheck-cast-c*.wav` failed for *both* mics because the WAVs were never written.
+  On the node, `wpctl status` shows a live `PipeWire ALSA [python3.11]` stream with
+  `input_FL/FR < USB Camera:capture_*` **[active]**, and `ps` catches the owner mid-flight:
+  `python3 /home/remote/MonsterBox/python_wrappers/microphone_cli.py record_wav 80 16000 1 0.3`
+  — the app's own short-record level poller, respawning continuously. One capture process per
+  device, so the ear-check's longer capture loses the race every time. Both devices are
+  present and healthy (`arecord -l`: card 2 reSpeaker XVF3800, card 4 USB Camera).
+  **What this does NOT prove:** his *speaker*. The say call succeeded with the canonical voice
+  (`wXvR48IpOq9HACltTmt7`), but with no capture there is no ear-check proof of sound in the
+  air — his output is **unverified**, not bad. *Fix direction:* have the ear-check pause or
+  detect the level poller before recording (and say so in the verdict) instead of reporting a
+  contention loss as a capture fault — the current wording sends investigators at the hardware.
+  *Proof it is fixed:* an ear-check that scores Dragomir AUDIBLE/SILENT on merit while the
+  dashboard is open.
 🟢 **Serving 10.1.0** (`/health` 2026-08-19 07:14; journal 56 MB, avahi service file present
 and owned by `remote`, rewritten 2026-08-19 01:37). *Previously recorded here as v9.3.0 —
 corrected by the 2026-08-19 log review.*
@@ -386,7 +438,22 @@ emergency stop (see Security / Ops). It has been **restored**, but re-check any 
 superpowers after a suite run that predates the `httpNode` guard.
 
 ### PumpkinHead — char 1 · `192.168.8.150`
-🔴 **Offline (long-term).** Not verified. Hardware state unknown until the node is powered
+🟠 **BACK ONLINE as of 2026-08-30 — and five majors stale. This supersedes the "offline is
+expected, never a finding" norm for this node.** Powered up ~21:07 CDT (uptime 1 h 42 m at
+02:49 UTC), answers `ping`, accepts key-based SSH, and serves
+`http://192.168.8.150:3000/health` → `{"status":"OK","version":"5.5"}`. `package.json` on the
+node reads **5.5.0**, git HEAD `379104d3 "Changes and fixes"` — the live fleet is on **10.5.0**.
+Two consequences, both already observed: (1) **it serves plain HTTP, not HTTPS**, so every
+fleet caller that assumes `https://<ip>:3000` fails with
+`SSL routines:tls_validate_record_header:wrong version number` — that is exactly why the
+2026-08-30 ear-check scored it `SILENT` with a failed say call, and the "silence" is
+**not evidence about its speaker**; (2) nothing from the 6.x–10.x trains exists on it,
+including the wrong-voice fix. **It needs `npm run deploy:all` (or a targeted deploy) before
+any claim about it means anything.** Groundbreaker (char 5) is in the identical state — same
+uptime, same 5.5.0, same HTTP-only — so the two were almost certainly powered up together on
+purpose. Until it is deployed to, treat every finding below as untested.
+
+🔴 **Prior status (kept for history): Offline (long-term).** Not verified. Hardware state unknown until the node is powered
 and reachable. **Still offline for the entire v9.2.0 session** — nothing in v9.1.0/v9.2.0 has
 run on this node, including the wrong-voice fix that made him speak in Sir Dragomir's voice.
 
@@ -399,6 +466,14 @@ run on this node, including the wrong-voice fix that made him speak in Sir Drago
   drives, following the convention used by Orlok part 2.
 
 ### Groundbreaker — char 5 · `192.168.8.200`
+🟠 **BACK ONLINE as of 2026-08-30, running 5.5.0 over plain HTTP — identical to PumpkinHead;
+see that node's entry for the full write-up.** Uptime 1 h 42 m at 02:49 UTC, key-based SSH
+works, `http://192.168.8.200:3000/health` → `{"status":"OK","version":"5.5"}`, node
+`package.json` **5.5.0**, git HEAD `981af5a8 "Emergency fix: Repair corrupted audio libraries
+and restore system functionality"`. The 2026-08-30 ear-check's `SILENT` verdict for this node
+is an **HTTPS-to-an-HTTP-server artifact**, not a speaker finding — though its `USB Audio
+Device` did show a dead-flat floor (-83.9 → -83, rise 0.8 dB) that is worth a real look
+*after* it is deployed to and re-checked over the correct scheme.
 🔴 **Offline (long-term).** Not verified. Also see the character-ID mismatch below.
 **Still offline for the entire v9.2.0 session** — unverified, and he was one of the characters
 speaking in Orlok's voice before v9.1.0.
@@ -453,6 +528,17 @@ exist yet.
   session and then be ignored on the night it matters. *Fix direction:* have it report the
   flag's value and **when/by what** it was last set (the state now persists in
   `data/speaker-state.json`), rather than treating ON as an error by itself.
+  **2026-08-30 — the wolf was real, and the cry was still unreadable.** Session-start review
+  found `speakerMuted: true` on **all three live nodes** (Orlok, Mina, Dragomir), and this
+  time it was *not* intended: no overnight session was running, and Orlok's
+  `data/speaker-state.json` carried `updatedAt: 2026-08-31T02:43:02Z` — inside the window of
+  a `test:system`/`test:unit` run started minutes earlier. That is the documented
+  suite-mutates-operator-state class, and the persisted mute means it survives reboots until
+  someone notices. All three unmuted via `POST /conversation/api/speaker-mute {"muted":false}`
+  and verified `muted:false`. This raises the priority of the fix direction above: because
+  the check cannot distinguish intended silence from an accidental fleet-wide mute, a real
+  fleet mute sat undetected until a human happened to run a log review. `updatedAt` is
+  already persisted — surfacing it (and the setter) in the check is most of the work.
 - ⚪ **Fleet queue fan-out logs the two deliberately-unplugged nodes as errors on every
   operation.** From Sir Dragomir's `.err`:
   `Queue clear failed for PumpkinHead -> https://…/scenes/api/queue/clear [no-status]: connect EHOSTUNREACH`

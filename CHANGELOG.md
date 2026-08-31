@@ -2,6 +2,47 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased] - 2026-08-30 — Session-start log review (ops)
+
+No application code changed. Recorded here because two of the three fixes are
+**OS-level and therefore not in git** — a reimaged node loses them.
+
+- **The fleet was silently muted.** All three live nodes (Orlok, Mina, Sir
+  Dragomir) came up `speakerMuted: true` with no session intending it; Orlok's
+  `speaker-state.json` timestamp landed inside a local test-suite run, matching
+  the known suite-mutates-operator-state class. Because the mute persists, it
+  survives reboots until a human notices. All three unmuted and verified.
+- **Orlok's journald cap was self-defeating, not lost** (OS-level).
+  `SystemMaxFileSize=100M` against `SystemMaxUse=64M` let one journal file
+  exceed the whole budget, so rotation could not enforce the total — 177 MB of
+  journals on an SD card. Mina (`20M`) and Dragomir (`16M`) were never
+  configured that way, which is why only Orlok drifted. Orlok set to `16M`;
+  177 MB → 40 MB.
+- **`sematext-vector.service` is enabled and crash-looping on Orlok** — invalid
+  sink type `sematext` (valid: `sematext_logs`), `status=78/CONFIG`. Leftover
+  from an install the 2026-08-17 fleet-wide Sematext disable missed on this
+  node; the peers do not have the unit at all. Still open — it keeps
+  `systemctl --failed` permanently non-empty. One-line manual fix in
+  `docs/troubleshooting/KNOWN-BUGS.md`.
+
+- **PumpkinHead and Groundbreaker are no longer "in storage."** Both were powered
+  up ~21:07 and serve `/health` — but on **plain HTTP** and at **version 5.5.0**,
+  five majors behind the fleet. Every fleet caller that assumes
+  `https://<ip>:3000` fails against them with `wrong version number`, which is
+  why the ear-check scored both `SILENT`; that verdict is a scheme artifact, not
+  a speaker finding. They need a deploy before any claim about them means
+  anything. The tracker's "offline is expected, never a finding" norm for these
+  two is superseded.
+- **Sir Dragomir's ear-check `CAPTURE-FAILED` is contention, not broken mics.**
+  The app's own `microphone_cli.py record_wav` level poller holds the USB Camera
+  continuously (visible as an active PipeWire stream), so the ear-check's longer
+  capture never gets the device. Both mics are present and healthy. His
+  *speaker* is consequently **unverified**, not bad.
+- **Ear-check result:** Orlok and Mina **AUDIBLE** through real air after the
+  unmute (rise 31.4 dB / 28.9 dB, recall 100% / 80%, canonical voices).
+
+Details and proof-of-fix criteria: `docs/troubleshooting/KNOWN-BUGS.md`.
+
 ## [10.5.0] - 2026-08-23 — Follow Orders: the animatronics obey spoken commands
 
 Any character now obeys voice orders — "raise your arm", "open the box", "close
