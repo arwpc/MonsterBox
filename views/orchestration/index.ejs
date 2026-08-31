@@ -80,11 +80,20 @@
 
   <div class="fcc-row">
     <!-- Say to all -->
+    <!-- One box, two behaviours. "say <words>" speaks those exact words. Anything else
+         is handed to each animatronic's ElevenLabs agent as an instruction, and the
+         agents are already well enough developed to interpret it in character. -->
     <div class="mb-input-group fcc-say">
-      <input type="text" class="mb-input mb-serif" id="sayAllText" placeholder="Say to targeted nodes…"
-        title="Broadcast this text as speech" aria-label="Text to speak on the targeted nodes">
-      <button class="mb-btn mb-btn-sm mb-btn-secondary" id="sayAllBtn" title="Speak on the targeted nodes (all if none selected)">
-        <i class="bi bi-megaphone"></i> Say</button>
+      <input type="text" class="mb-input mb-serif" id="sayAllText"
+        placeholder="say Welcome to Warner Castle"
+        title="Two ways to use this:&#10;  say <words>  — speaks those exact words, quotes optional&#10;  anything else — an instruction for their AI agents to interpret&#10;Examples:&#10;  say Welcome to Warner Castle&#10;  make them all howl at the moon&#10;  everyone greet our guest by name&#10;  run a short welcome ceremony together"
+        aria-describedby="promptHint"
+        aria-label="Tell the targeted animatronics what to say or do">
+      <button class="mb-btn mb-btn-sm mb-btn-secondary" id="sayAllBtn" title="Send to the targeted nodes (all if none selected)">
+        <i class="bi bi-megaphone"></i> Send</button>
+    </div>
+    <div class="fcc-prompt-hint" id="promptHint" aria-live="polite">
+      <b>say</b> <i>words</i> speaks them exactly · anything else is an instruction their agents interpret
     </div>
 
     <span class="fcc-sep"></span>
@@ -800,11 +809,91 @@
     });
   });
 
+  // ---------- fleet prompt ----------
+  // Short, clear English. The first is deliberately the literal form: the word `say`
+  // followed by the words, no quotes needed.
+  const PROMPT_EXAMPLES = [
+    'say Welcome to Warner Castle',
+    'make them all howl at the moon',
+    'everyone greet our guest by name',
+    'run a short welcome ceremony together',
+  ];
+
+  // Quotes are optional around what you want said. If they are there, drop them --
+  // otherwise the animatronic dutifully pronounces them. Handles straight, curly and
+  // guillemet pairs.
+  function stripWrappingQuotes(str) {
+    const pairs = [['"', '"'], ["'", "'"], ['\u201C', '\u201D'], ['\u2018', '\u2019'], ['\u00AB', '\u00BB']];
+    let out = String(str || '').trim();
+    for (const [open, close] of pairs) {
+      if (out.length >= 2 && out[0] === open && out[out.length - 1] === close) {
+        return out.slice(1, -1).trim();
+      }
+    }
+    return out;
+  }
+
+  // `say <words>` -> speak those words verbatim. Anything else -> hand the whole thing
+  // to the agents as an instruction. Exported onto window for testing.
+  function parseFleetPrompt(raw) {
+    const text = String(raw || '').trim();
+    if (!text) return null;
+    const literal = text.match(/^say\b\s*([\s\S]*)$/i);
+    if (literal) {
+      const words = stripWrappingQuotes(literal[1]);
+      // "say" with nothing after it is not a literal command; let the agents field it.
+      if (words) return { mode: 'say', text: words };
+    }
+    return { mode: 'agent', text: stripWrappingQuotes(text) };
+  }
+  window.parseFleetPrompt = parseFleetPrompt;
+
+  (function wirePromptExamples() {
+    const input = $('#sayAllText');
+    const hint = $('#promptHint');
+    if (!input) return;
+    let i = 0;
+    // Cycle the greyed example while the box is empty; it disappears the moment they
+    // type, because that is what a placeholder does.
+    const cycle = setInterval(() => {
+      if (input.value || document.activeElement === input) return;
+      i = (i + 1) % PROMPT_EXAMPLES.length;
+      input.placeholder = PROMPT_EXAMPLES[i];
+    }, 4000);
+    window.addEventListener('beforeunload', () => clearInterval(cycle));
+    const syncHint = () => { if (hint) hint.classList.toggle('fcc-hidden', !!input.value); };
+    input.addEventListener('input', syncHint);
+    syncHint();
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#sayAllBtn').click(); });
+  })();
+
   $('#sayAllBtn').addEventListener('click', async () => {
-    const text = $('#sayAllText').value.trim(); if (!text) return;
-    // targeted say uses per-node say when a subset is chosen, else say-all
-    if (state.targets.size) { for (const id of state.targets) doNode(id, '/say', { text }, (state.nodes.get(String(id)) || {}).name + ' speaking'); }
-    else fleetAction('Say-all', '/say-all', { method: 'POST', body: JSON.stringify({ text }) });
+    const parsed = parseFleetPrompt($('#sayAllText').value);
+    if (!parsed) return;
+    const { mode, text } = parsed;
+    const names = () => (state.targets.size ? targetLabel() : 'the fleet');
+
+    if (mode === 'say') {
+      // Literal speech — unchanged behaviour, just with the `say` prefix removed.
+      log('Say to ' + names() + ': "' + text + '"', 'ok');
+      if (state.targets.size) { for (const id of state.targets) doNode(id, '/say', { text }, (state.nodes.get(String(id)) || {}).name + ' speaking'); }
+      else fleetAction('Say-all', '/say-all', { method: 'POST', body: JSON.stringify({ text }) });
+      return;
+    }
+
+    // Agent instruction. There is no fleet-wide ask endpoint, so fan out per node the
+    // same way a targeted say already does. Each node's /ask-ai forwards to its own
+    // ElevenLabs agent with its own characterId, so every character answers in its own
+    // voice and personality rather than reciting one shared line.
+    const ids = state.targets.size
+      ? Array.from(state.targets)
+      : Array.from(state.nodes.values()).filter(n => n.online).map(n => n.id);
+    if (!ids.length) { log('No online nodes to instruct', 'warn'); return; }
+    log('Instruction to ' + names() + ' (' + ids.length + ' agent' + (ids.length === 1 ? '' : 's') + '): ' + text, 'ok');
+    for (const id of ids) {
+      const node = state.nodes.get(String(id)) || {};
+      doNode(id, '/ask-ai', { text }, (node.name || id) + ' interpreting');
+    }
   });
 
   $('#startLoops').addEventListener('click', () => fleetAction('Start queue loops', '/start-all-queue-loops', { method: 'POST' }));

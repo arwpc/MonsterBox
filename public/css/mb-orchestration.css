@@ -401,3 +401,21 @@
   #fccBarRows.fcc-rows-open .fcc-row { flex-wrap: wrap; gap: var(--mb-space-2, .5rem); }
   #fccBarRows.fcc-rows-open { max-height: 55vh; overflow-y: auto; }
 }
+
+/* Fleet prompt hint — the one-line explainer under the say/instruct box.
+   Greyed, and it gets out of the way the moment the operator starts typing. */
+.fcc-prompt-hint {
+  font-size: .75rem;
+  color: var(--mb-text-secondary, #8b8b96);
+  opacity: .75;
+  margin-top: .25rem;
+  flex-basis: 100%;
+}
+.fcc-prompt-hint b { color: var(--mb-text, #ddd); font-weight: 600; }
+.fcc-prompt-hint i { font-style: italic; }
+
+@media (max-width: 767.98px) {
+  /* On a phone the toolbar is already collapsed behind Controls; the hint would just
+     add height to the expanded panel, and the input's title carries the same text. */
+  .fcc-prompt-hint { display: none; }
+}
