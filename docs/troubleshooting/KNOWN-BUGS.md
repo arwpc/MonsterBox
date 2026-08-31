@@ -689,6 +689,29 @@ after the reboot, and `/api/parts` returns `Wiper Motor`.
   contains only the informational `✗ servoChannels` line under an overall
   `Startup health check: OK`. Zero exceptions, zero `MODULE_NOT_FOUND`, zero unhandled rejections.
 
+- 🔴 **OPEN, AND IT WILL SILENTLY UNDO TONIGHT'S WORK — the next deploy to this node reverts
+  three of the fixes above.** `deploy-to-animatronic.sh` rsyncs with `--delete` and its exclude
+  list covers `data/character-*/parts.json`, `poses.json` and `data/calibration_profiles.json`
+  (so the debris cleanup and the phantom motor profile both survive) — but it does **not** cover
+  these three, all of which exist in repo HEAD with the *old* values:
+  1. **`config/physical-faults.json`** — HEAD carries `characters` keys `['3']` only. A deploy
+     overwrites the node's copy and **erases the char-1 part-5 PIR fault entry**, after which
+     `isTestSafePart(1,5)` returns `true` again and autonomous code will happily select the dead
+     PIR. *(The general form of this defect — tracked-but-not-excluded fault file — was recorded
+     in commit `00f6ed5f`; this is the concrete char-1 casualty.)*
+  2. **`data/character-1/ai-config/stt-config.json`** — HEAD still has `microphonePartId: "9"`
+     (a part that has never existed here) and `deviceId: "pulse"`. A deploy undoes the repoint to
+     the proven camera mic.
+  3. **`data/character-1/characters.json`** — HEAD still declares **id 1 = `"Orlok"`**. A deploy
+     re-creates the stale registry shadow that was renamed to `.stale-orlok-shadow.bak`, and
+     because `services/elevenLabsWebSocketService.js:194-217` consults that per-character copy
+     **before** the fleet registry, PumpkinHead can resolve the wrong `elevenLabsAgentId` again.
+
+  **Would prove it fixed:** either add all three to the rsync exclude list, or land the corrected
+  values in the repo. **Until then, re-verify these three after any deploy to `.150`** —
+  `getPhysicalFault(1,5).broken === true`, `stt-config.microphonePartId === "7"`, and no
+  `data/character-1/characters.json` present.
+
 **Node facts worth not re-deriving:**
 - 🟠 **This is a 4 GB Pi (3.7 Gi total RAM), not the 8 GB the project docs assume.** Runtime is
   comfortable (RSS ~99 MB, 3.4 Gi available, disk 16 %), but browser-suite headroom is lower than
