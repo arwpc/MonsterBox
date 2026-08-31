@@ -4,7 +4,11 @@
 > Organized by animatronic (for one-node-at-a-time work) plus cross-cutting software,
 > data-hygiene, and security items.
 >
-> **Last hardware verification:** 2026-08-18 (10.0.x session) — **Orlok**, far-field
+> **Last hardware verification:** 2026-08-30/31 (overnight bring-up) — **Groundbreaker**
+> (char 5): speaker, microphone and webcam each proven by measurement (ear-check with idle
+> and positive controls, frames, and a full TTS→speaker→air→mic→STT transcript round trip),
+> and part 1's motor driven, measured, and found to have **died mid-test** — see its section.
+> Previous: 2026-08-18 (10.0.x session) — **Orlok**, far-field
 > microphone capture on the ReSpeaker XVF3800 array, proven twice end to end through real air
 > (see *Far-field STT* below). The 2026-08-16 v9.2.0 pass — **Orlok** servo/gesture/I²C work
 > plus **remote audio-only checks on Mina and Sir Dragomir** — still stands for everything it
@@ -27,6 +31,20 @@
 > ⚪ *Superseded (kept so the old norm is not re-applied from memory):* "Three of six nodes
 > are UNVERIFIED — by choice, not by fault; PumpkinHead and Groundbreaker are deliberately
 > unplugged and are expected to be unreachable."
+>
+> 🟢 **SUPERSEDED FOR GROUNDBREAKER, 2026-08-30/31 overnight — char 5 is now a full fleet
+> member on 10.5.0 over HTTPS.** Node runtime v20.20.2 → **v22.23.2**, deployed from a clean
+> export of git HEAD, code landing **proven by grep on the node** (not by the version string),
+> TLS certs generated so plain `http://` is now refused, and `selectedCharacter` corrected from
+> **2 → 5** (it had been serving *Coffin Breaker*, so every earlier API answer about this node
+> described the wrong character). Discovery is a complete 5×5 mesh via `check:discovery`, and
+> `avahi-browse` resolves it. Speaker, microphone and webcam are all proven by measurement —
+> **the old "dead-flat −83.9 dB floor" was the adapter's empty mic jack, not the speaker.**
+> One blocking hardware fault remains: **part 1's 12 V motor rail is dead** (it failed *during*
+> testing; Pi side proven good). **Reboot survival is still unproven — 10.5.0 has never
+> cold-booted here.** Full detail, including the retracted claims, is in the Groundbreaker
+> section below. *PumpkinHead now also reports `10.5.0` in Orlok's fleet-health view, but that
+> was another session's work and is **not** verified here — its entry below still stands.*
 >
 > 🟢 **The three live nodes all answered `/health` with `10.1.0` on 2026-08-19 07:14**
 > (Orlok 192.168.8.120 · Sir Dragomir 192.168.8.130 · Mina 192.168.8.140), all serving HTTPS.
@@ -466,17 +484,172 @@ run on this node, including the wrong-voice fix that made him speak in Sir Drago
   drives, following the convention used by Orlok part 2.
 
 ### Groundbreaker — char 5 · `192.168.8.200`
-🟠 **BACK ONLINE as of 2026-08-30, running 5.5.0 over plain HTTP — identical to PumpkinHead;
-see that node's entry for the full write-up.** Uptime 1 h 42 m at 02:49 UTC, key-based SSH
-works, `http://192.168.8.200:3000/health` → `{"status":"OK","version":"5.5"}`, node
-`package.json` **5.5.0**, git HEAD `981af5a8 "Emergency fix: Repair corrupted audio libraries
-and restore system functionality"`. The 2026-08-30 ear-check's `SILENT` verdict for this node
-is an **HTTPS-to-an-HTTP-server artifact**, not a speaker finding — though its `USB Audio
-Device` did show a dead-flat floor (-83.9 → -83, rise 0.8 dB) that is worth a real look
-*after* it is deployed to and re-checked over the correct scheme.
-🔴 **Offline (long-term).** Not verified. Also see the character-ID mismatch below.
-**Still offline for the entire v9.2.0 session** — unverified, and he was one of the characters
-speaking in Orlok's voice before v9.1.0.
+🟢 **BROUGHT UP TO 10.5.0 AND FULLY JOINED TO THE FLEET, 2026-08-30/31 overnight.** Everything
+in the superseded entry below is stale. Verified from Orlok this session: `curl -sk
+https://192.168.8.200:3000/health` → `{"status":"OK","version":"10.5.0"}`; plain `http://` to
+the same port now returns **curl code 000** (TLS-only listener), so the scheme mismatch that
+produced every false `OFFLINE`/`SILENT` score for this node is gone. Node runtime upgraded
+**v20.20.2 → v22.23.2** (npm 10.9.8, matching Orlok) so it is no longer off-fleet. Deploy came
+from a clean export of git HEAD, and **the code was proven to have landed by grepping the node
+for changed symbols, not by the version string** — `hog_min_weight` ×2 and
+`_log_detection_stats` ×3 in `scripts/motion_tracking_service.py`, `panServoSelect.disabled =
+!ocvOn` ×1 in `public/js/head-animation.js`, all matching the staging copy exactly, plus md5
+agreement on `server.js`, `services/characterContext.js` and `package.json`. (The node's git
+HEAD is still `981af5a8` with ~1300 dirty files — that is the normal "deploy rsyncs files, not
+git" signature and is **not** evidence either way.)
+
+**Fleet membership confirmed four ways, 2026-08-31 04:40–04:45 UTC:** Orlok's
+`/api/orchestration/nodes` lists id 5 `source:"config" discovered:true status:"online"
+version:"10.5.0" trusted:true`; `/api/orchestration/fleet-health` returns it `online:true,
+hostname:"groundbreaker", rssMb 101.7, memLevel normal`; `avahi-browse -rpt _monsterbox._tcp`
+resolves `groundbreaker.local → 192.168.8.200:3000 "ver=10.5.0" "character=Groundbreaker"
+"id=5"`; and `npm run check:discovery` prints a **complete 5×5 mesh** — every node sees
+Groundbreaker and Groundbreaker sees every node. No manual pin was needed.
+
+**The "wrong character entirely" defect is fixed.** Before the deploy this node's
+`config/app-config.json` had `selectedCharacter: 2`, so it served **Coffin Breaker** — and
+5.5.0 had no `resolveCharacter()`, so `?characterId=5` was ignored and *every* API answer
+about this node was really about char 2. It now reads `selectedCharacter: 5 /
+dataPath data/character-5`, `data/characters.json` lists ids 1–6 with id 5 = `Groundbreaker`
+(was: id 5 = `PumpkinHead_Updated` plus a separate id 7 = `Groundbreaker`), `/api/parts`
+returns `Groundbreaker Motor`, and `?characterId=2` correctly returns `Jaw of Coffin`.
+
+**Proven by measurement, not by success fields:**
+- 🟢 **Speaker (part 3) is ALIVE.** Mute flag checked first (`{"muted":false}`). Idle control
+  RMS 251 / −42.3 dBFS vs 12298 / −8.5 dBFS during playback = **+33.8 dB**, clipping the mic.
+  Full loop closed by transcript: `POST /conversation/api/say` → ElevenLabs TTS → speaker →
+  air → mic → `/api/elevenlabs/stt/transcribe` returned *"Groundbreaker online. Testing one,
+  two, three, four, five."* — an exact match of what was sent.
+- 🟢 **Microphone (part 4) is ALIVE.** Via the app's own capture layer,
+  `microphone_cli.py get_level` → `frames 375, level 0.1884` silent / `0.4750` during
+  playback; `record_wav 1.0` wrote exactly 32,044 bytes. Non-zero frames **and** non-zero RMS
+  **and** a measured response to a known stimulus.
+- 🟢 **Webcam (part 2) is ALIVE.** Judged on FRAMES: a 4 s pull of
+  `http://127.0.0.1:8090/?action=stream` returned 864,256 bytes containing **120 JPEG SOI
+  markers** (~20 fps sustained); snapshot returns a valid JPEG. `/dev/video0` reading "Device
+  or resource busy" to direct `ffmpeg` is mjpg-streamer holding it, not a fault.
+- 🟢 **Schema validation passes with zero errors** (`validate-schemas.mjs` → RC 0, 6
+  characters), corroborated by the app's own startup line.
+
+- 🔴 **Part 1 (Groundbreaker Motor) — the 12 V rail is DEAD. It died mid-test on 2026-08-30
+  and has not recovered. This is the one blocking hardware fault on the node.** It started
+  the session *alive*: three drives at 30 % duty produced +26 dB over idle against null
+  controls (speed 0, same code path) that produced +0.8 dB — six for six — and the proof is
+  **causal, not correlational**: the radiated acoustic fundamental tracked the commanded
+  `pwmFrequency` exactly (400 Hz → 396 Hz peak at **17718×** over idle, harmonics at
+  1200/1600/3200/7600; 800 → 828 Hz; 2000 → 1996 Hz). Nothing else in a shared room follows a
+  JSON field. After **~1.5 s cumulative energization** that signature vanished permanently:
+  every later drive (duty 20/30/40/50/60/75/100, **both** directions, pwm 400–3200 Hz) is
+  indistinguishable from the idle control, a 5 Hz square wave produced **zero** switching
+  thumps, and a deliberate **6-minute rest did not restore it** — which rules out a
+  self-resetting polyfuse or a supply in hiccup mode. **The Pi side is PROVEN GOOD:** a
+  5 Hz/50 % drive sampled with `pinctrl` shows R_EN/L_EN (GPIO 17) held HIGH for the whole
+  drive, RPWM (GPIO 27) a clean 10-cycle square wave at ~50 % duty, LPWM (GPIO 22) correctly
+  LOW for forward; `vcgencmd get_throttled` = `0x0`. Both half-bridges went dead together,
+  which points at the **shared 12 V supply, its fuse, or the motor lead** rather than one
+  driver channel. *Software cannot narrow it further — there is no current sensing in this
+  rig.* ⚠️ **Read before replacing the fuse:** the motor showed **no sign of rotating** even
+  while current flowed (pure PWM-fundamental tone, sharp on/off edges, **no coast-down tail,
+  no brush/gear noise**), which is the signature of a **stalled** motor drawing stall current
+  — a 12 V Jeep Wagoneer wiper stalls at ~15–25 A. **Turn the mechanism by hand through its
+  full travel and clear any jam first, or the new fuse will open on the first command.**
+  *Proof it is fixed:* a 30 % / 300 ms forward drive again produces the ≥+20 dB acoustic
+  response whose fundamental tracks `pwmFrequency` — **and** the prop visibly moves, with a
+  coast-down tail present this time (that tail is what would finally prove rotation, which has
+  **never** been demonstrated on this rig).
+- 🔴 **10.5.0 has NEVER cold-booted on this node — reboot survival is unproven.** The only
+  cold boot in the journal (2026-08-30 22:20:08) ran **5.5.0**; everything since has been
+  service restarts (current app start 23:01:35). A reboot was deliberately **not** performed
+  this session, for the `boot-init` reason below. Every persistent artifact was audited on
+  disk instead and all of it is on `/dev/mmcblk0p2` ext4, not tmpfs: `certs/server.cert` +
+  `server.key`, `config/app-config.json`, `config/physical-faults.json`,
+  `data/character-5/parts.json`, and `/etc/avahi/services/monsterbox.service`;
+  `systemd-analyze verify` is clean, `systemctl --failed` is empty, and monsterbox /
+  mjpg-streamer / avahi-daemon / monsterbox-init / monsterbox-boot-check are all `enabled`.
+  *Proof it is fixed:* reboot, then `https://…/health` → 10.5.0, `/api/parts` → Groundbreaker
+  Motor, `avahi-browse` resolves it, `check:discovery` still shows the full mesh, and an
+  ear-check still passes **with nobody logged in**.
+- ⚪ **Audio on this node depends on tty1 autologin, not on systemd linger — do not "clean
+  that up".** `loginctl show-user remote` reports **`Linger=no`**, and PipeWire /
+  pipewire-pulse / wireplumber are *user* units, so on paper audio should die on an
+  unattended boot. It does not, because `/etc/systemd/system/getty@tty1.service.d/` runs
+  `agetty --autologin remote`: at the 22:20 boot, session 1 opened on **tty1/seat0 at
+  22:20:05**, `user@1000.service` and PipeWire started **22:20:06**, and the first SSH login
+  was not until **22:29:31** — nine minutes later. So the audio stack is genuinely up before
+  anyone connects. **But it is one config change away from silently vanishing:** disabling
+  tty1 autologin, or switching the default target, would leave `/run/user/1000` absent and
+  every ear-check silent with no error in either log. If autologin is ever removed, run
+  `loginctl enable-linger remote` in the same change.
+- 🟡 **`data/character-5/poses.json` holds one stale template pose that cannot execute.**
+  `"elbow - Half Bend"` targets `partId 1` with `type "servo"` and `angleDeg 45`, but part 1
+  is a **motor** (BTS7960). `poses.schema.json` does not cross-check `parts[].type` against
+  `parts.json`, so this passes the gate. Left in place — deleting operator content is beyond
+  a bring-up's remit. *Proof it is fixed:* the pose is removed or rebuilt against real part
+  types, **and** the pose editor refuses to save a servo target against a motor part.
+- 🟡 **The part-1 fault entry lives only on the node and the next deploy will erase it.**
+  `characters.5.parts.1` was written into `config/physical-faults.json` **on 192.168.8.200**
+  and is honored in-process (`getPhysicalFault(5,'1')` → `broken:true`,
+  `isTestSafePart(5,'1')` → **false**, healthy parts unaffected), so suites and autonomous
+  code will no longer select the dead motor. But `config/physical-faults.json` is **not** in
+  `scripts/deploy-to-animatronic.sh`'s rsync excludes, so `--delete` will overwrite it with
+  the repo copy and the entry vanishes silently. Not committed from the node because Orlok's
+  working tree already has that file modified by another session. Pre-edit backup on the
+  node: `config/physical-faults.json.bak-2026-08-30-gbmotor`. *Proof it is fixed:* the
+  character-5 block is merged into the repo copy and committed, **or** the file is added to
+  the deploy excludes — the two options are mutually exclusive and someone should decide
+  which it is (see the cross-cutting item).
+- 🟡 **Character-5 content gaps (verified against the node's own files, not Orlok's copy).**
+  No `super-powers.json` and no `movement-config.json` in `data/character-5/` — both are
+  rsync-excluded, so a deploy will never supply them. `servo_calibrations.json` and
+  `linear_actuator_calibrations.json` are both empty (`{}` / `[]`). None of this breaks
+  schema validation (`super-powers.json` is optional), but Groundbreaker has no super-power
+  config and no calibration data to build on.
+- 🟡 **Startup health check reports a FALSE `✗ servoChannels` failure on every boot.**
+  `✗ servoChannels: unknown (Command failed: python3 python_wrappers/servo_cli.py reconcile)`
+  → `{"code":"E_BUS_IO","message":"cannot read PCA9685 0x40 ch0: [Errno 5] Input/output
+  error"}`. That is **correct for this rig**: an SMBus probe of every address 0x03–0x77 on
+  `/dev/i2c-1` returns **no devices at all**, and Groundbreaker's only actuator is a
+  GPIO/BTS7960 motor. (Useful corollary: the "PWM outlives the process" hazard does not apply
+  to this node — there are no PCA9685 channels to leave energized.) Also `i2cdetect` is not
+  installed here, so the hint the error prints cannot be followed. *Proof it is fixed:* the
+  check reports `n/a — no PWM board configured` when the character has zero servo /
+  linear-actuator parts.
+- ⚪ **The C-Media Unitek Y-247A's pink MIC jack is empty — this is not a fault, and it is the
+  trap that produced the old "dead-flat floor" reading below.** That adapter presents **both**
+  a playback sink (PipeWire node 81, the default sink and the working speaker) **and** a
+  capture source (node 82). Node 82 measures RMS 2.1 / peak 9 / −83.7 dBFS *while a
+  co-located mic clips at 32768*, and STT of it returns `""` — yet `amixer` shows its capture
+  at 83 % `[on]` with AGC on and `wpctl get-volume 82` = 0.80, so every software knob is ruled
+  out. It is simply an unpopulated jack. **Pin every ear-check for this node to
+  `alsa_input.usb-HHWei_…USB_Camera_HHW001-02.analog-stereo` (PipeWire node 80), which is what
+  `stt-config.json` already names. Recording from node 82 will score Groundbreaker SILENT no
+  matter how loud the speakers are.** Note input and output are on two different USB devices.
+- ⚪ **`MONSTERBOX_SSH_PASSWORD` is not set in this node's service environment**, so SSH-based
+  fleet control *originating from* Groundbreaker (reboot / restart-service / update-config /
+  deploy) is disabled and logs one notice per boot. HTTPS orchestration is unaffected and
+  Orlok holds fleet SSH trust, so this only matters if Groundbreaker ever needs to drive
+  peers. Left alone deliberately — installing a fleet credential is an operator call.
+- ⚪ **Cosmetic: `Could not write avahi service file (…): EACCES` once per boot.** The app runs
+  as unprivileged `remote`; the file itself is correct and *is* being served (proven by
+  `avahi-browse` from Orlok) because the deploy writes it with sudo. Either grant the
+  directory to the service user or downgrade the log line.
+
+**Retracted / corrected claims — do not carry these forward:**
+- ❌ *"`tts-config.json` is still the untuned 0.5/0.5 default, so Groundbreaker has no tuned
+  voice."* **False.** The node's actual file is `{model: eleven_v3, voice_id:
+  vfaqCOvlrKi4Zp7C2IAm, stability: 0.45, similarity_boost: 0.6, speed: 0.9}`, byte-identical
+  to git HEAD. He has a tuned voice and demonstrably speaks. Whether Aaron *likes* it is still
+  open — there are no operator voice-acceptance criteria for char 5 the way there are for Mina
+  and Dragomir.
+- ❌ *"its `USB Audio Device` showed a dead-flat floor (−83.9 → −83) worth a real look."*
+  **Explained and closed** — that was the empty mic jack on the adapter (node 82), not the
+  speaker. See the ⚪ item above. The speakers are connected and working.
+- ❌ *"5.5.0 / plain HTTP / offline / unverified."* All superseded above.
+
+⚪ *Superseded (kept so it is not re-applied from memory):* "🟠 BACK ONLINE as of 2026-08-30,
+running 5.5.0 over plain HTTP — identical to PumpkinHead. 🔴 Offline (long-term). Not
+verified. Still offline for the entire v9.2.0 session." Also the historical v9.2.0 ear-check
+line above scoring Groundbreaker `OFFLINE — untestable, not passing` is now obsolete.
 
 ### Renfield — char 6 · *no address (`ip: null` by design)*
 🔴 **Has never been on the network. Nothing about this character is hardware-verified.** His
@@ -504,6 +677,114 @@ exist yet.
 ---
 
 ## Cross-Cutting Software Bugs
+
+### Opened from the 2026-08-30/31 Groundbreaker bring-up
+
+- 🔴 **`scripts/boot-init.sh` fires a FLEET-WIDE command on every single boot, while its own
+  comment says "local device". One node rebooting reconfigures all six.** The script POSTs
+  `/api/orchestration/enable-random-poses`, and that route
+  (`routes/api/orchestrationRoutes.js:377`) **maps over `orchestrationService.animatronics`
+  and calls `executeOnAnimatronic` for every entry** — each of which POSTs
+  `/api/random-poses/enable` to that peer over HTTPS. It has already happened: the journal on
+  .200 shows the 22:20 boot enabling random poses on **PumpkinHead and Groundbreaker** in one
+  shot; the 22:53 re-run failed only because it used `https` against a then-plain-HTTP server.
+  Now that certs are installed, **the next reboot of .200 will succeed and will fan out to
+  every reachable animatronic.** Measured evidence that this is a real state change, not a
+  no-op: at 04:45 UTC Mina, Orlok and Sir Dragomir were already `enabled:true` with exactly
+  the boot-init defaults `3000 / 0.2 / 0.5`, while **PumpkinHead and Renfield were
+  `enabled:false` at the pristine `3000 / 0.2 / 0.6`** — so a Groundbreaker reboot would flip
+  those two. Mitigating, from reading the service: `randomPoseService.enable()` only sets an
+  **in-memory flag**; nothing moves at that moment, because motion happens later via
+  `triggerDuringTTS` during a conversation. So the hazard is a **latent** one — a peer that is
+  then spoken to may fire a random pose (on Sir Dragomir that could select his 900° neck).
+  **This is why the Groundbreaker bring-up did not reboot the node.** *Fix direction:* point
+  `boot-init.sh` at the node-local `/api/random-poses/enable` with its own `characterId`,
+  which is what the script's comment already claims it does; or give the orchestration route
+  an `ids?` parameter like the other fan-outs have. *Proof it is fixed:* record every peer's
+  `/api/random-poses/settings` before and after a reboot of one node — only the rebooted
+  node's entry changes.
+- 🟡 **`scripts/deploy-to-animatronic.sh` skips `npm install` whenever `node_modules` exists,
+  so a version-jump deploy silently leaves stale dependencies.** It prints "Dependencies
+  already installed" and moves on. On .200, upgrading 5.5.0 → 10.5.0 left **axios 1.12.2**
+  (needs `^1.15.0`), **multer 2.0.2** (needs `^2.1.1`) and **music-metadata 11.9.0** (pinned
+  `11.12.3`) — the app ran on deps that do not satisfy `package.json`, with no warning in
+  either log. Fixed by hand on this node with `npm ci --omit=dev` ("added 128 packages"; all
+  deps now satisfy). **This affects every node that gets upgraded across a major.**
+  *Fix direction:* always run `npm ci --omit=dev` (it took ~5 s on this Pi), or stamp and
+  compare `package-lock.json`. *Proof it is fixed:* deploy to a node with an old
+  `node_modules` and confirm the installed versions match the lockfile afterwards.
+- 🟡 **The deploy script's end-of-run character-select POSTs malformed JSON and 400s
+  silently.** The line
+  `curl -s -X POST -H 'Content-Type: application/json' -d '{"id":'${CHARACTER_ID}'}' http://127.0.0.1:3000/setup/characters/api/select`
+  sits inside a **double-quoted** remote command block, so the embedded double quotes collapse
+  and the body arrives as literal `{id:5}`. Caught in `/var/log/monsterbox.err` on .200:
+  `entity.parse.failed … body: '{id:5}' statusCode: 400`. It also targets `http://`, which now
+  fails outright on any cert-bearing node. **Character 5 ended up selected only because
+  MonsterBox's hostname auto-select matched hostname `groundbreaker`** — on any node whose
+  hostname does not match its character name, the deploy would leave it on the **wrong
+  character** while still printing `Selected character: N`. *Proof it is fixed:* deploy to a
+  node whose hostname differs from its character name and confirm `app-config.json` lands on
+  the right id, with no `entity.parse.failed` in `.err`.
+- ⚪ **Cosmetic but misleading: the deploy rewrites the systemd unit on every run.**
+  `if [ ! -f \"$SERVICE_FILE\" ]` expands `$SERVICE_FILE` on the **local** box where it is
+  unset, so the test is always true and "Installing systemd service…" prints every time.
+  Harmless on .200 (the rewritten unit matches and the `10-priority.conf` drop-in is separate),
+  but it means **any hand-tuned `monsterbox.service` on a node is silently clobbered by a
+  deploy**.
+- 🟡 **`python_wrappers/microphone_cli.py` ignores the `deviceId` it is given — so
+  `stt-config.microphoneDeviceId` is decorative.** `_setup_pipewire_source()` sets
+  `PULSE_SOURCE`, but PortAudio's pipewire/pulse host device does not honor it on .200, so
+  `get_level` / `record_wav` / `stream_raw` always capture the PipeWire **default** source.
+  **Proven by direct contradiction, not inference:** `get_level` on the adapter mic reported
+  0.0161 silent → 0.5573 during playback (i.e. "it hears the room loudly"), while
+  `pw-record --target 82` — naming that same PipeWire node explicitly — read a flat RMS 2.1 /
+  peak 9 through the identical playback. Running camera / adapter / `default` back to back
+  gives statistically identical results. Harmless on Groundbreaker by luck (its default source
+  *is* the configured mic), but **a node whose default source drifts will capture the wrong
+  mic and report success** — worth checking on Mina and Orlok, whose XVF3800 arrays depend on
+  landing on the right source. *Fix direction (behaviour change, needs approval):* resolve the
+  target to a PortAudio device index and open that index, or shell out to
+  `pw-record --target <node.name>`. *Proof it is fixed:* `get_level` against a deliberately
+  silent device returns a floor while a co-located live mic returns signal.
+- 🟡 **`routes/audioLibrary.js:257` never calls `resolveCharacter(req)` — it destructures
+  `characterId` straight off `req.body` and the file does not import the resolver at all.**
+  When a caller omits it (the common case) `characterId` is `undefined` all the way into
+  `serverPlaybackService.playBufferOnCharacterSpeaker`, which falls back to device `default`.
+  Visible in the live response — `{"message":"Playing … on character undefined speaker",
+  "device":"default"}` — and in the log as `🎵 Starting mpg123 audio stream for character
+  default`. Harmless on Groundbreaker by luck (its speaker part names `default`, which *is*
+  the right sink), but on a node whose speaker part names a specific device **the audio
+  library plays out the wrong hardware**. ⚠️ **This is invisible to `npm run audit:resolver`,
+  because it is a *missing* resolver call rather than a direct read of `selectedCharacter` —
+  the audit only catches the latter.** *Proof it is fixed:* play a library file on a node with
+  a non-`default` speaker device and confirm the log names that device.
+- 🟡 **`config/physical-faults.json` is treated as fleet-wide by rsync but edited as
+  node-local by agents — the worst of both.** It is **not** in the deploy's exclude list, so
+  `--delete` overwrites a node's copy with the repo's; yet agents write node-specific findings
+  into it directly on the node (Groundbreaker's dead motor is there now and will be erased by
+  the next deploy). **Decide deliberately which it is:** a fleet registry that travels with
+  the code (then node edits must be committed to be durable) or node-local state (then it must
+  be added to the excludes). *Proof it is fixed:* a deploy to a node with a local fault entry
+  either preserves it, or the entry is already in git.
+- ⚪ **`data/character-*/character-*/scene-queues.json` — a nested duplicate directory ships in
+  git HEAD, so every node gets it.** Observed as `data/character-5/character-5/` after the
+  deploy. Pre-existing, not introduced by the bring-up; probably a path-join bug in whatever
+  writes scene queues.
+- ⚪ **`CLAUDE.md` is stale about `GET /api/parts`.** It states the endpoint returns a raw
+  array "not a `{ success, parts }` wrapper". On 10.5.0 **both** Orlok and Groundbreaker return
+  `{"success":true,"parts":[…]}`. Confirmed independently in two sessions. Docs fix, not a node
+  defect.
+- ⚪ **Two SSH-over-stdin traps that make failures read as entirely different bugs.**
+  (1) `ssh remote@host` lands in `/home/remote`, **not** the repo — this produced an *empty*
+  tar archive, a `MODULE_NOT_FOUND` from `node -p require('./package.json')`, and five
+  consecutive `npm ci` runs reporting *"can only install with an existing package-lock.json"*
+  when the lockfile was present and identical the whole time. (2) When a script is piped to
+  `bash -s`, **`ffmpeg` reads and eats the remaining script from stdin** — `ls -l tone.wav`
+  became `s: command not found` and a later `curl …` became `url …`. **House pattern that
+  works:** write the commands to a local file whose line 1 is an explicit
+  `cd /home/remote/MonsterBox`, then `ssh -o BatchMode=yes remote@<ip> 'bash -s' < /tmp/f.sh`,
+  and give every `ffmpeg` both `-nostdin` and `< /dev/null`.
+
 
 - 🟡 **A deploy from a node with a dirty working tree pushes that node's uncommitted state to
   the whole fleet — and `certs/` is protected only by file permissions, not by an exclude
