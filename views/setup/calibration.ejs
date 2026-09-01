@@ -4832,8 +4832,28 @@
 
       if (Object.keys(config).length) payload.config = config;
 
-      // Create the part
-      fetch('/setup/calibration/api/parts', {
+      // Create the part.
+      //
+      // Pin the write to the character this page is DISPLAYING. loadParts() above
+      // fetches with an explicit ?characterId, but this POST used to send none, so
+      // the server fell back to resolveCharacter()'s last resort — the node's
+      // app-config selectedCharacter. Those two disagree whenever the operator has
+      // switched character in the UI, and hostname auto-select rewrites
+      // selectedCharacter on every restart. The result was a part listed under the
+      // character you were looking at but written into a DIFFERENT character's
+      // parts.json, with a "created successfully" toast either way.
+      var createCharId = window.__MB_CHAR_ID || null;
+      if (!createCharId) {
+        try {
+          var cl = document.getElementById('charLabel');
+          if (cl && cl.dataset.charId) createCharId = cl.dataset.charId;
+        } catch (e) { /* fall back to server-side resolution */ }
+      }
+      var createUrl = createCharId
+        ? `/setup/calibration/api/parts?characterId=${encodeURIComponent(createCharId)}`
+        : '/setup/calibration/api/parts';
+
+      fetch(createUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
