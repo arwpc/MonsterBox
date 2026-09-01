@@ -2,6 +2,39 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased] - 2026-08-31 — Renfield's eyes, and the Add Part bug they uncovered
+
+- **Renfield's webcam works.** He is no longer audio-only: a Sunplus 1080P
+  Webcam (`1bcf:28c4`) on `/dev/video0`, part id 4 "Renfield's Eyes". Proven by
+  **frames**, not status fields — 60 frames/6 s from mjpg-streamer on the node,
+  98 through his own app stream endpoint, and 296 through Orlok's Fleet Command
+  Center proxy, with a real picture pulled and looked at.
+- **Root cause was an incomplete bring-up, not application code.** Renfield was
+  hand-built rather than `install.sh`'d, and two packages the rest of the fleet
+  has were simply absent. Each produced a symptom that reads like a MonsterBox
+  bug:
+  - **`mjpg-streamer` was never built** — no binary, no systemd unit. The camera
+    still enumerated in the device dropdown (that list reads `/dev/video*`
+    directly), so it looked present while nothing was serving video anywhere.
+    Rebuilt via the canonical `install.sh` Step 14 recipe; trixie also needed
+    `cmake` and `libjpeg-dev`.
+  - **`python3-opencv` was missing** (`install.sh:212`), so `webcam_cli.py` died
+    at `import cv2` and the raw traceback surfaced in the UI as "❌ Hardware
+    Error" — the failure seen when adding the part. The OpenCV *C++* libs were
+    present and are a decoy; only `python3-opencv` provides the `cv2` module.
+- **Fixed: the calibration page wrote parts to the node's character, not the one
+  on screen.** Of twenty `/api/parts` calls, only two named a character. The
+  other eighteen fell through `resolveCharacter()` to its last resort — the
+  node's app-config `selectedCharacter` — which disagrees with the character on
+  screen the moment an operator switches in the UI, and which hostname
+  auto-select rewrites on every restart. The failure read as success: the write
+  landed in a **different character's** `parts.json` and the "saved
+  successfully" toast fired anyway. All call sites now route through one
+  `window.mbPartsUrl()` helper so a new one cannot reintroduce it.
+- **Not a bug, recorded so it stops being re-investigated:** `webcam_cli.py
+  capture` returns "cannot open camera" whenever mjpg-streamer holds the device.
+  Orlok does exactly the same. It is normal fleet-wide contention.
+
 ## [Unreleased] - 2026-08-31 — All six animatronics online for the first time
 
 PumpkinHead, Groundbreaker and Renfield brought onto the fleet overnight, one

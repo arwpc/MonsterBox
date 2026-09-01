@@ -960,15 +960,32 @@ idle and positive controls); schema validation across all six characters; the **
 character-contract suite, 12/12 for character 6**; all four scenes structurally clean
 (`sayThis`/`wait` only, no motion steps, no missing audio assets).
 
+🟢 **WEBCAM ALIVE 2026-08-31 — he is no longer audio-only.** Sunplus `1bcf:28c4` 1080P Webcam
+on `/dev/video0`; part id 4 "Renfield's Eyes". Judged on FRAMES: 60 frames in 6 s from
+mjpg-streamer on the node (36 KB snapshot), 98 through his own app stream endpoint, 296
+through Orlok's Fleet Command Center proxy; a frame was pulled and visually confirmed to be a
+real scene. `mjpg-streamer` is `enabled` and its launcher got first frame on attempt 1.
+**Cause of the outage was an incomplete bring-up, not code** — he was hand-built, never
+`install.sh`'d, so **`mjpg-streamer` had never been compiled** (no binary, no unit; the camera
+still appeared in the device dropdown because that list reads `/dev/video*` directly) and
+**`python3-opencv` was absent** (`install.sh:212`), making `webcam_cli.py` die at `import cv2`
+and surface in the UI as "❌ Hardware Error". The OpenCV *C++* libs were installed and are a
+decoy — only `python3-opencv` supplies the `cv2` module. **Before debugging any missing
+capability on Renfield, first check whether `install.sh` ever installed it here.**
+
 **NOT PROVEN, and it is not a small gap:**
 - 🟡 **His speaker output cannot be verified acoustically from software, structurally.** The
   XVF3800 is an echo-cancelling speakerphone that gates out his own playback — a 0.40→1.40
   sweep moved his array's own reading by **0.0 dB** while the residual floor *dropped* 4 dB
   (AES gating). Unlike Orlok and Mina — whose ear-checks actually run through their **USB
-  camera** mics — Renfield has **no second microphone**. So he is deaf to his own mouth.
-  *What would prove it:* a human in the room, an off-board mic, or a **peer animatronic
-  within earshot** listening while he speaks. Until then his output is **unverified, not
-  bad** — the signal path is proven electrically to the DAC.
+  camera** mics — Renfield had **no second microphone**. So he is deaf to his own mouth.
+  **UNBLOCKED 2026-08-31:** his newly-working webcam brings one. `arecord -l` shows
+  `card 3: Webcam [1080P Webcam]` and PipeWire lists source 35 *1080P Webcam Analog
+  Stereo*, separate from the XVF3800 (source 59) — the exact second-mic arrangement Orlok
+  and Mina are ear-checked through. **The ear-check was NOT run**: the operator's no-audio
+  rule was in force (household asleep). This is now a *scheduled* check, not a structural
+  impossibility. Until it runs his output remains **unverified, not bad** — the signal path
+  is proven electrically to the DAC.
 - 🟡 **Conversation path never exercised end to end** and **reboot survival never tested** —
   both deferred, not failed: the operator imposed a no-audio rule (household asleep) and a
   reboot clears the `wpctl` sink mute that is currently guaranteeing silence.
