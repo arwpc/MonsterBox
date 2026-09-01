@@ -10,10 +10,25 @@ import autoAIService from '../../services/autoAIService.js';
 import orchestrationService from '../../services/orchestrationService.js';
 import nodeDiscoveryService from '../../services/nodeDiscoveryService.js';
 import { relayMjpegLatest } from '../../services/mjpegRelay.js';
+import mjpegFrameCache from '../../services/mjpegFrameCache.js';
 
-// HTTPS agent for self-signed certificates on MonsterBox nodes
-const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+// HTTPS agent for self-signed certificates on MonsterBox nodes.
+// keepAlive so the short JSON proxies (audio-files, stream-url lookups) stop
+// paying a TLS handshake per call — see the same note in orchestrationService.js.
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+    keepAlive: true,
+    keepAliveMsecs: 15000,
+    maxSockets: 64,
+});
 const axiosHttps = axios.create({ httpsAgent });
+
+// MJPEG bodies are endless and we tear them down by destroying the socket. A
+// destroyed socket must NOT go back into a keep-alive pool, so streaming gets its
+// own throwaway-connection agent. Mixing the two pools returns half-dead sockets
+// to the JSON callers and produces sporadic ECONNRESET on health polls.
+const streamAgent = new https.Agent({ rejectUnauthorized: false, keepAlive: false });
+const axiosStream = axios.create({ httpsAgent: streamAgent });
 
 const router = express.Router();
 
@@ -614,6 +629,72 @@ router.post('/auto-ai/stop-all', async (req, res) => {
 });
 
 /**
+ * Resolve a node's real MJPEG URL. Both the live stream proxy and the snapshot
+ * endpoint go through here so they can never disagree about where a camera lives.
+ * Throws with `.upstreamStatus` set when the node answered but refused.
+ */
+async function resolveWebcamUrl(animatronic) {
+    const streamUrlResponse = await axiosHttps.get(
+        `https://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`,
+        { timeout: 5000 }
+    );
+    if (!streamUrlResponse.data || !streamUrlResponse.data.url) {
+        const err = new Error('Webcam stream URL not available');
+        err.upstreamStatus = 404;
+        throw err;
+    }
+    let webcamPath = streamUrlResponse.data.url;
+    if (webcamPath.startsWith('http')) {
+        try { webcamPath = new URL(webcamPath).pathname; } catch (_) { /* keep as-is */ }
+    }
+    return `https://${animatronic.ip}:${animatronic.port}${webcamPath}`;
+}
+
+/**
+ * Single JPEG frame from one animatronic.
+ *
+ * This is what the Fleet Command Center wall uses. A snapshot is a SHORT request:
+ * it releases its browser connection the moment it lands, so six cards can no
+ * longer eat all six of Chrome's per-host HTTP/1.1 connections and starve the
+ * fleet poll behind them. Frames come from mjpegFrameCache, which holds exactly
+ * one upstream stream per node, so polling snapshots costs the yard no more than
+ * the old live wall did. The live MJPEG proxy below still serves the modal.
+ */
+router.get('/animatronic/:id/webcam-snapshot', async (req, res) => {
+    const animId = parseInt(req.params.id);
+    const animatronic = orchestrationService.getAnimatronicById(animId);
+    if (!animatronic) {
+        return res.status(404).json({ success: false, error: 'Animatronic not found' });
+    }
+    try {
+        const frame = await mjpegFrameCache.getFrame(String(animId), async () => {
+            const webcamUrl = await resolveWebcamUrl(animatronic);
+            const response = await axiosStream({ method: 'get', url: webcamUrl, responseType: 'stream', timeout: 0 });
+            return response.data;
+        });
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Content-Length', frame.length);
+        // Every snapshot URL carries its own cache-buster, so it can never go stale.
+        // Making it briefly cacheable lets the client preload a frame into an offscreen
+        // Image and then hand the SAME url to the visible <img>, which the browser
+        // satisfies from memory — a flicker-free swap for one network request.
+        res.setHeader('Cache-Control', 'private, max-age=5');
+        return res.end(frame);
+    } catch (error) {
+        const upstream = (error.response && error.response.status) || error.upstreamStatus;
+        if (upstream === 404) {
+            return res.status(404).json({ success: false, code: 'no_webcam', error: 'This animatronic has no webcam' });
+        }
+        if (upstream === 503) {
+            return res.status(503).json({ success: false, code: 'camera_unavailable', error: 'Camera service is not running' });
+        }
+        // Anything else is "no picture right now" — still not a fault of this server,
+        // and a 500 here is what filled the console with Internal Server Errors.
+        return res.status(503).json({ success: false, code: 'camera_unavailable', error: error.message });
+    }
+});
+
+/**
  * Proxy webcam stream from specific animatronic
  */
 router.get('/animatronic/:id/webcam-stream', async (req, res) => {
@@ -631,25 +712,7 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
         // Import axios for streaming
         // Using top-level axiosHttps instance
 
-        // Get the webcam stream URL from the animatronic's conversation API
-        const streamUrlResponse = await axiosHttps.get(
-            `https://${animatronic.ip}:${animatronic.port}/conversation/api/webcam-stream-url`,
-            { timeout: 5000 }
-        );
-
-        if (!streamUrlResponse.data || !streamUrlResponse.data.url) {
-            return res.status(404).json({
-                success: false,
-                error: 'Webcam stream URL not available'
-            });
-        }
-
-        let webcamPath = streamUrlResponse.data.url;
-        // If the URL is absolute (contains protocol), extract just the path
-        if (webcamPath.startsWith('http')) {
-            try { webcamPath = new URL(webcamPath).pathname; } catch (_) { /* keep as-is */ }
-        }
-        const webcamUrl = `https://${animatronic.ip}:${animatronic.port}${webcamPath}`;
+        const webcamUrl = await resolveWebcamUrl(animatronic);
 
         console.log(`📹 Streaming webcam for ${animatronic.name} from ${webcamUrl}`);
 
@@ -657,7 +720,7 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
         // timeout:0 — an MJPEG body is intentionally endless; axios' timer is not
         // cleared for a streaming response and would abort a healthy feed. Client
         // disconnect cleanup is handled by req.on('close') below.
-        const response = await axiosHttps({
+        const response = await axiosStream({
             method: 'get',
             url: webcamUrl,
             responseType: 'stream',
@@ -691,12 +754,25 @@ router.get('/animatronic/:id/webcam-stream', async (req, res) => {
         // every ~15s forever. Renfield (audio-only, no webcam part) did exactly that.
         // His /conversation/api/webcam-stream-url answers 404, so map that through as
         // 404 with a machine-readable code the client can latch on.
-        const upstream = error.response && error.response.status;
+        const upstream = (error.response && error.response.status) || error.upstreamStatus;
         if (!res.headersSent && upstream === 404) {
             return res.status(404).json({
                 success: false,
                 code: 'no_webcam',
                 error: 'This animatronic has no webcam stream'
+            });
+        }
+        // 503 = the node HAS a webcam part but its mjpg-streamer is not serving
+        // (not installed, not started, or the USB device vanished). That is a fact
+        // about the far node, not a failure of this server, and dressing it as a
+        // 500 made the Fleet Command Center log an "Internal Server Error" for every
+        // card on every poll. Renfield did exactly this for hours: a webcam part had
+        // been registered before mjpg-streamer existed on the box.
+        if (!res.headersSent && upstream === 503) {
+            return res.status(503).json({
+                success: false,
+                code: 'camera_unavailable',
+                error: 'This animatronic\'s camera service is not running'
             });
         }
         console.error('Error proxying webcam stream:', error.message);

@@ -287,6 +287,13 @@
     if (!res.ok) throw new Error((body && (body.error || body.message)) || ('HTTP ' + res.status));
     return body;
   }
+  // Run non-urgent work once the browser is not busy, with a hard fallback so it
+  // always happens even on engines without requestIdleCallback.
+  function whenIdle(fn) {
+    if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(fn, { timeout: 3000 });
+    else setTimeout(fn, 1200);
+  }
+
   function targetIds() { return state.targets.size ? Array.from(state.targets) : undefined; }
   function targetLabel() {
     if (!state.targets.size) return 'All';
@@ -297,54 +304,118 @@
   // ---------- node cards ----------
   function cardId(id) { return 'node-' + String(id).replace(/[^a-z0-9]/gi, '_'); }
 
-  // How many consecutive stream failures before a card stops auto-retrying. Small on
-  // purpose: a genuinely flaky camera still recovers within a couple of polls, and a
-  // node that has no camera stops generating server errors almost immediately.
-  const CAM_RETRY_LIMIT = 3;
+  // ---------- camera wall: snapshots, not six endless streams ----------
+  //
+  // The wall used to open one live MJPEG <img> per node. An MJPEG response never
+  // ends, so six cards permanently held all SIX of the browser's per-host HTTP/1.1
+  // connections and every fetch the page made queued behind them. Measured on a node,
+  // identical page, the only difference being whether the streams ran:
+  //
+  //     cameras ON : fleet-health 9146ms max, pill read "1 / 6 online"
+  //     cameras OFF: fleet-health 3621ms max, pill read "6 / 6 online"
+  //
+  // Those nodes were never offline — the health poll just never got a connection in
+  // time. The wall now pulls single frames, which release their connection on
+  // arrival. The modal still opens a true live stream: one card, one connection.
+  const SNAP_MS = 200;                                   // target wall cadence
+  const SNAP_BACKOFF = [500, 1000, 2000, 5000, 10000];   // per consecutive failure
+  const CAM_RETRY_LIMIT = 3;                             // failures before the card says "no webcam"
+  const camTimers = new WeakMap();
 
-  // Cache-buster so a retry is a real new request, not a replay of the failed one.
+  // The loop is CHAINED, never on an interval: the next frame is requested only
+  // after the previous one resolves, so a slow node degrades to a lower frame rate
+  // instead of piling up requests it will never catch up on.
+  function camRunnable(img) {
+    return !document.hidden
+      && !img.dataset.camOffscreen
+      && !img.dataset.camCollapsed
+      && img.dataset.camWanted === '1';
+  }
+
+  function camSchedule(img, delay) {
+    const prev = camTimers.get(img);
+    if (prev) clearTimeout(prev);
+    camTimers.set(img, setTimeout(function () { camTick(img); }, delay));
+  }
+
+  function camTick(img) {
+    if (!camRunnable(img)) return;   // camResume() restarts the loop
+    const id = img.dataset.camNodeId;
+    const off = img.parentNode && img.parentNode.querySelector('.fcc-cam-off');
+    const url = API + '/animatronic/' + id + '/webcam-snapshot?_=' + Date.now();
+
+    // Decode offscreen first, then hand the SAME url to the visible <img>. The
+    // browser serves it from memory, so the swap never blanks the card.
+    const probe = new Image();
+    probe.onload = function () {
+      if (!camRunnable(img)) return;
+      img.src = url;
+      img.dataset.camFails = '0';
+      delete img.dataset.camGaveUp;
+      if (off) off.classList.add('fcc-hidden');
+      img.classList.remove('fcc-invisible');
+      camSchedule(img, SNAP_MS);
+    };
+    probe.onerror = function () {
+      if (!camRunnable(img)) return;
+      const fails = (parseInt(img.dataset.camFails || '0', 10) || 0) + 1;
+      img.dataset.camFails = String(fails);
+      if (off) {
+        off.textContent = fails >= CAM_RETRY_LIMIT
+          ? 'No webcam — click to retry'
+          : 'Webcam unavailable…';
+        off.classList.remove('fcc-hidden');
+      }
+      if (fails >= CAM_RETRY_LIMIT) img.dataset.camGaveUp = '1';
+      img.classList.add('fcc-invisible');
+      // Never give up entirely: a snapshot is one small request, so a camera that
+      // gets plugged in later heals on its own at the slow end of the backoff.
+      camSchedule(img, SNAP_BACKOFF[Math.min(fails - 1, SNAP_BACKOFF.length - 1)]);
+    };
+    probe.src = url;
+  }
+
+  // Cards start their loops staggered rather than all at once. Six simultaneous
+  // first-frames landed on top of the page's own fleet-health/nodes/audio calls and
+  // pushed them into the connection queue — audio-files measured 6471ms in the
+  // browser for work the server finished in 240ms.
+  let camStagger = 0;
+  function camStart(img, id) {
+    img.dataset.camNodeId = String(id);
+    img.dataset.camWanted = '1';
+    const delay = camStagger;
+    camStagger = (camStagger + 120) % 720;
+    camSchedule(img, delay);
+  }
+  function camStop(img) {
+    img.dataset.camWanted = '';
+    delete img.dataset.camWanted;
+    const t = camTimers.get(img);
+    if (t) { clearTimeout(t); camTimers.delete(img); }
+  }
+  function camResume(img) {
+    if (img.dataset.camNodeId && camRunnable(img)) camSchedule(img, 0);
+  }
+
+  // Live MJPEG — the modal only. One card at a time is one connection, which the
+  // per-host pool can always afford.
   function startCam(img, id) { img.src = API + '/animatronic/' + id + '/webcam-stream?_=' + Date.now(); }
 
-  // A hidden Fleet Command Center tab held one full MJPEG stream PER NODE
-  // open forever (2026-08-23 perf audit). Pause every card's stream while
-  // hidden; resume each with a fresh connection when the tab returns.
+  // A hidden tab should cost the yard nothing. Snapshot loops simply stop asking.
   document.addEventListener('visibilitychange', () => {
-    document.querySelectorAll('img[data-cam-paused], img[src*="/webcam-stream"]').forEach(img => {
-      if (document.hidden) {
-        if (img.src) { img.dataset.camPaused = img.src; img.removeAttribute('src'); }
-      } else if (img.dataset.camPaused) {
-        img.src = img.dataset.camPaused.replace(/([?&]_=)\d+/, '$1' + Date.now());
-        delete img.dataset.camPaused;
-      }
+    document.querySelectorAll('.fcc-cam-wrap img').forEach(img => {
+      if (document.hidden) { const t = camTimers.get(img); if (t) clearTimeout(t); }
+      else camResume(img);
     });
   });
 
-  // Only decode the streams the operator can actually see.
-  //
-  // The page already stops every stream when the TAB is hidden. This is the same idea
-  // one level down: a card scrolled off the bottom of the wall is still a live MJPEG
-  // connection being decoded frame after frame. With six nodes on a laptop only about
-  // three cards are on screen at once, so roughly half the decode work was being spent
-  // on pixels nobody could see.
-  //
-  // Uses the same src-stashing dance as the visibilitychange handler. The extra flag
-  // matters: updateCard() restarts any src-less camera on every poll, so without
-  // data-cam-offscreen it would immediately undo this.
+  // Only pull frames for the cards the operator can actually see. A card scrolled
+  // off the bottom of the wall is pure waste — network, decode and yard bandwidth.
   const camVisibility = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
     for (const e of entries) {
       const img = e.target;
-      if (e.isIntersecting) {
-        img.dataset.camOffscreen = '';
-        delete img.dataset.camOffscreen;
-        if (!img.getAttribute('src') && img.dataset.camStashed) {
-          img.src = img.dataset.camStashed.replace(/([?&]_=)\d+/, '$1' + Date.now());
-          delete img.dataset.camStashed;
-        }
-      } else if (img.getAttribute('src')) {
-        img.dataset.camStashed = img.src;
-        img.dataset.camOffscreen = '1';
-        img.removeAttribute('src');
-      }
+      if (e.isIntersecting) { delete img.dataset.camOffscreen; camResume(img); }
+      else { img.dataset.camOffscreen = '1'; const t = camTimers.get(img); if (t) clearTimeout(t); }
     }
   }, { rootMargin: '200px' }) : null;   // 200px so a card wakes just before it scrolls in
 
@@ -422,14 +493,12 @@
     const img = card.querySelector('.fcc-cam-wrap img');
     if (!img) return;
     if (collapsed) {
-      if (img.getAttribute('src')) { img.dataset.camStashed = img.src; img.removeAttribute('src'); }
       img.dataset.camCollapsed = '1';
+      const t = camTimers.get(img);
+      if (t) clearTimeout(t);
     } else {
       delete img.dataset.camCollapsed;
-      if (!img.getAttribute('src') && img.dataset.camStashed) {
-        img.src = img.dataset.camStashed.replace(/([?&]_=)\d+/, '$1' + Date.now());
-        delete img.dataset.camStashed;
-      }
+      camResume(img);
     }
   }
 
@@ -489,48 +558,16 @@
     img.width = 320; img.height = 240;
     img.decoding = 'async';
     const off = el('div', 'fcc-cam-off fcc-hidden', 'Webcam unavailable');
-    if (node.online && !isNarrow()) { startCam(img, node.id); }
+    if (node.online && !isNarrow()) { camStart(img, node.id); }
     else { off.textContent = 'Node offline'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); }
-    // A dead stream must FORGET its src. updateCard() only restarts a camera whose
-    // img has no src, so leaving the failed URL in place latched that guard off
-    // forever and a recovered camera was never shown again.
-    // Give up after a few consecutive failures instead of retrying forever.
-    // updateCard() restarts any src-less camera on EVERY poll, which is right for a
-    // stream that died and will come back — but a node with no camera at all can
-    // never succeed, so that same rule made the page request a stream, fail, and
-    // retry every ~15s for as long as it was open. Renfield (audio-only) generated a
-    // server error on every single cycle. An <img> cannot read a status code from
-    // onerror, so we count failures rather than inspect the response.
-    img.onerror = function () {
-      // Aborting an in-flight MJPEG load fires onerror too. We abort deliberately when a
-      // card scrolls out of view or the tab is hidden, and counting those as failures
-      // would latch camGaveUp after a few scrolls and permanently show "No webcam" on a
-      // perfectly good camera. Only count errors we did not cause.
-      if (img.dataset.camOffscreen || img.dataset.camStashed || img.dataset.camPaused || img.dataset.camCollapsed) {
-        return;
-      }
-      img.removeAttribute('src');
-      const fails = (parseInt(img.dataset.camFails || '0', 10) || 0) + 1;
-      img.dataset.camFails = String(fails);
-      if (fails >= CAM_RETRY_LIMIT) {
-        img.dataset.camGaveUp = '1';
-        off.textContent = 'No webcam — click to retry';
-      } else {
-        off.textContent = 'Webcam unavailable — click to retry';
-      }
-      off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible');
-    };
-    img.onload = function () {
-      delete img.dataset.camFails; delete img.dataset.camGaveUp;
-      off.classList.add('fcc-hidden'); img.classList.remove('fcc-invisible');
-    };
     // A manual click always overrides the give-up latch — the operator may have just
-    // plugged a camera in.
+    // plugged a camera in, and should not have to reload the page to find out.
     off.onclick = function (ev) {
       ev.stopPropagation();
-      delete img.dataset.camFails; delete img.dataset.camGaveUp;
+      img.dataset.camFails = '0';
+      delete img.dataset.camGaveUp;
       off.textContent = 'Reconnecting…';
-      startCam(img, node.id);
+      camStart(img, node.id);
     };
     if (camVisibility) camVisibility.observe(img);
     cam.appendChild(img); cam.appendChild(off);
@@ -615,7 +652,9 @@
     q('autoStop').addEventListener('click', () => doNode(id, '/auto-ai/stop', {}, node.name + ' Auto-AI off'));
     setCardEnabled(col, node.online);
     // lazy-load audio list once the node is known online
-    if (node.online) loadAudio(id, col);
+    // Deferred: the picker is not usable until the operator reaches for it, and
+    // during page load these six proxied calls only crowded the fleet poll.
+    if (node.online) whenIdle(() => loadAudio(id, col));
   }
 
   function patchCard(col, node) {
@@ -645,10 +684,18 @@
     // "node just came online" and "the stream died and onerror cleared it", so a
     // camera that recovers comes back on its own without a page reload.
     const img = col.querySelector('.fcc-cam-wrap img');
-    const camOff = col.querySelector('.fcc-cam-off');
-    if (img && node.online && !img.getAttribute('src') && !img.dataset.camGaveUp && !img.dataset.camOffscreen && !img.dataset.camCollapsed) {
-      if (camOff) camOff.textContent = 'Reconnecting…';
-      startCam(img, node.id);
+    if (img) {
+      // The snapshot loop is self-healing, so a poll only needs to start or stop it:
+      // start when a node comes online, stop the moment it goes away so an offline
+      // node is not polled for pictures it cannot take.
+      if (node.online && !isNarrow()) {
+        if (img.dataset.camWanted !== '1') camStart(img, node.id);
+      } else if (img.dataset.camWanted === '1') {
+        camStop(img);
+        const camOff = col.querySelector('.fcc-cam-off');
+        if (camOff && !node.online) { camOff.textContent = 'Node offline'; camOff.classList.remove('fcc-hidden'); }
+        img.classList.add('fcc-invisible');
+      }
     }
   }
 
@@ -694,11 +741,26 @@
   $('#fccCamModal').addEventListener('hidden.bs.modal', () => { $('#fccCamModalImg').src = ''; });
 
   // ---------- fleet health poll ----------
+  // A poll that is still in flight must not be joined by the next one. The interval
+  // is 15s but a slow fleet made refresh() take longer than that, and the overlapping
+  // polls competed for the same connections and made each other slower still.
+  let refreshInFlight = false;
   async function refresh() {
-    let health, nodesInfo;
-    try { health = await api('/fleet-health'); }
-    catch (e) { log('Fleet health failed: ' + e.message, 'err'); showWallError(e.message); return; }
-    try { nodesInfo = await api('/nodes'); } catch (_) { nodesInfo = { nodes: [], avahiAvailable: null }; }
+    if (refreshInFlight) return;
+    refreshInFlight = true;
+    try { await refreshOnce(); } finally { refreshInFlight = false; }
+  }
+
+  async function refreshOnce() {
+    // Independent calls, issued together: serially these cost two round trips and
+    // left the wall stale for the sum of both.
+    const [healthRes, nodesRes] = await Promise.allSettled([api('/fleet-health'), api('/nodes')]);
+    if (healthRes.status !== 'fulfilled') {
+      const msg = healthRes.reason && healthRes.reason.message || 'unknown error';
+      log('Fleet health failed: ' + msg, 'err'); showWallError(msg); return;
+    }
+    const health = healthRes.value;
+    const nodesInfo = nodesRes.status === 'fulfilled' ? nodesRes.value : { nodes: [], avahiAvailable: null };
 
     // merge /nodes provenance (source/trust) into health cards by id
     const prov = new Map();

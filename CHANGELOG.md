@@ -2,6 +2,65 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased] - 2026-09-01 — the Fleet Command Center was starving itself
+
+Reported as "orchestration is jacked up": nodes flickering offline, six 500s in
+the console, and a page that crawled. A HAR from the operator's browser showed
+`blocked: 4544ms` on requests and `Timed out after 5000ms` against peers that
+were, in fact, perfectly healthy.
+
+- **Six live MJPEG streams ate the browser's entire connection pool.** An MJPEG
+  response never ends, so one `<img>` per node permanently held one of Chrome's
+  SIX per-host HTTP/1.1 connections. Every `fetch()` the page made afterwards
+  queued behind them. The same page, differing only in whether the streams ran:
+
+  |                   | cameras ON      | cameras OFF     |
+  |-------------------|-----------------|-----------------|
+  | fleet-health max  | 9146 ms         | 3621 ms         |
+  | fleet-health avg  | 6355 ms         | 1875 ms         |
+  | fleet pill        | **1 / 6 online**| 6 / 6 online    |
+
+  The nodes were never offline and the server was never slow — under those same
+  six streams it answered `fleet-health` to `curl` in **0.3 s**. They were
+  offline only in the browser's connection queue. **The wall now pulls
+  snapshots**, which release their connection on arrival; the modal still opens a
+  true live stream, because one card is one connection.
+- **New:** `GET /api/orchestration/animatronic/:id/webcam-snapshot` — one JPEG,
+  served from `services/mjpegFrameCache.js`. The cache holds exactly ONE upstream
+  stream per node (the same single connection the live relay held) and answers
+  every snapshot from the newest frame in memory, so polling frames costs the
+  yard nothing extra and never pays a TLS handshake per frame. Upstream
+  connections idle out after 30 s, so a closed tab stops pulling video. Measured
+  cold 0.19–0.93 s, **warm ~20 ms**.
+- **Fixed: inter-node calls had no HTTP keep-alive.** Every one opened a fresh
+  TCP connection and did a full TLS handshake — `fleet-health` alone is up to
+  three calls per node per 15 s poll, ~18 handshakes, on Pi-class CPUs, forever.
+  Streaming keeps its own throwaway-connection agent so a destroyed socket can
+  never re-enter the keep-alive pool.
+- **Fixed: a node whose camera service is down returned HTTP 500.** Only upstream
+  404 was mapped; a 503 (mjpg-streamer not running) became an Internal Server
+  Error on every card on every poll. Now `503 code:"camera_unavailable"`.
+- **Fixed: every node published its own IP to the fleet as `127.0.0.1`.** Avahi
+  resolves the local host to several addresses and emits one record per address;
+  the last one won. Harmless for a self-call, wrong for the card's "open this
+  node's dashboard" link — on an operator's laptop it pointed at the laptop.
+- **Fixed: the fleet poll could overlap itself.** The interval is 15 s but a slow
+  poll took longer, and the overlapping polls competed for the same connections
+  and made each other slower. Also `fleet-health` and `nodes` now issue together
+  instead of serially, and the six per-node audio-library fetches are deferred to
+  idle — in-browser they measured 6471 ms for work the server does in 240 ms.
+- **Renfield's camera retuned** to the fleet standard 320x240/10fps/q55; he had
+  no `/etc/default/monsterbox-cam` and was serving 640x480/15/q60, **366 KB/s on
+  his own — more than the other five nodes combined**. Now 113 KB/s.
+- **New:** `scripts/diag-orchestration.mjs` (page-level timing/console/network
+  diagnostic, `--no-cams` control) and `scripts/click-orchestration.mjs` (click
+  sweep). The sweep refuses to activate anything that reaches hardware, speakers
+  or power — those are inspected for wiring only.
+
+Result on the same harness that reproduced the fault: `fleet-health` **9146 ms →
+~1100 ms**, 6/6 online on every poll, **6/6 cameras painting**, and **zero**
+console errors, uncaught exceptions or 5xx responses across a full click sweep.
+
 ## [Unreleased] - 2026-08-31 — Renfield's eyes, and the Add Part bug they uncovered
 
 - **Renfield's webcam works.** He is no longer audio-only: a Sunplus 1080P

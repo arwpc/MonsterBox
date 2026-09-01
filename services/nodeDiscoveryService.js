@@ -71,6 +71,14 @@ export function parseAvahiBrowse(output) {
     }
 
     if (!address) continue;
+    // Avahi resolves the LOCAL host to several addresses and emits one record per
+    // address — 127.0.0.1 as well as the real LAN IP. Whichever landed last won, so
+    // every node ended up publishing its own IP to the fleet registry as 127.0.0.1.
+    // Harmless for a self-call, wrong for everything else: the Fleet Command Center
+    // offers "open this node's dashboard", and on an operator's laptop that link
+    // pointed at the laptop. A peer is never reachable on loopback, so drop it and
+    // let the node's routable record (or config/animatronics.json) stand.
+    if (/^127\./.test(address)) continue;
     const id = txt.id !== undefined ? String(txt.id) : (hostname || rawName);
     nodes.push({
       id,
