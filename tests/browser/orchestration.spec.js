@@ -40,9 +40,13 @@ test.describe('Fleet Command Center', () => {
         await expect(page.locator('#fleetCount')).toContainText('online', { timeout: 10000 });
     });
 
-    test('shows all six superpower master toggles', async () => {
-        await expect(page.locator('.fcc-sp')).toHaveCount(6);
-        for (const sp of ['lurk', 'jaw', 'head', 'motion', 'idle', 'mute']) {
+    // Was "all six" and asserted 6 — `orders` was added with the fleet prompt box and
+    // this went red on a page that was working correctly. Derive the count from the
+    // list so adding the next one cannot leave a stale number behind.
+    const MASTER_TOGGLES = ['lurk', 'jaw', 'head', 'motion', 'idle', 'mute', 'orders'];
+    test('shows every superpower master toggle', async () => {
+        await expect(page.locator('.fcc-sp')).toHaveCount(MASTER_TOGGLES.length);
+        for (const sp of MASTER_TOGGLES) {
             await expect(page.locator(`.fcc-sp[data-sp="${sp}"]`)).toBeVisible();
         }
     });

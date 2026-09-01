@@ -49,6 +49,58 @@ were, in fact, perfectly healthy.
   and made each other slower. Also `fleet-health` and `nodes` now issue together
   instead of serially, and the six per-node audio-library fetches are deferred to
   idle — in-browser they measured 6471 ms for work the server does in 240 ms.
+- **Fixed: every real deploy stopped the node and never brought it back.**
+  `scripts/deploy-to-animatronic.sh` ran `pkill -f servo_daemon` over SSH to
+  evict a stale daemon. `pkill -f` matches full command lines, and the remote
+  shell's own command line contains that string — so the session **killed
+  itself** and ssh returned 255. The `|| true` was on the far side and never
+  ran; `set -e` was still armed, so the script aborted between "service
+  stopped" and both the rsync and the restart. The node was left dark and the
+  deploy reported a bare failure with no cause. Now `pkill -f '[s]ervo_daemon'`
+  (a bracketed class cannot match itself), plus a local `|| true` so nothing
+  between stop and restart can abort the script. Reproduced and verified:
+  `ssh node "pkill -f servo_daemon || true"` exits **255**; the bracketed form
+  exits **0**.
+- **Fixed: Renfield was `ip: null` in `config/animatronics.json`,** on the
+  reasoning that his Pi had never been on the network. He joined 2026-08-30 and
+  the null outlived its reason: every config-driven path skipped him silently —
+  `npm run deploy:all` read the roster, deployed to five nodes, and reported
+  success while one animatronic was never touched at all.
+- **New: `/api/system/info` reports the node's own `ip` and `addresses`.** The
+  fleet had exactly two sources for a node's address, and both have been wrong
+  in production (the null above; avahi resolving each node's own record to
+  loopback). A self-report is the authoritative third: whatever a node answers
+  on is the address that works. `fleet-health` now carries `reportedIp` and
+  raises `ipMismatch` when it disagrees with the roster, so a stale address is
+  visible instead of being found by something failing.
+
+### Raspberry Pi 5 (Renfield) — the codebase runs, the bring-up was incomplete
+
+Renfield is a Pi 5 / Debian 13 trixie node that was hand-built and never had
+`install.sh` or `deploy:all` run against it. Audited against the canonical
+installer:
+
+- **`dtparam=i2c_arm=on` and `dtparam=spi=on` were commented out** — `install.sh`
+  enables both (`raspi-config nonint do_i2c 0` / `do_spi 0`). Without them there
+  is no `/dev/i2c-1`, so **PCA9685 servo control is impossible**; only the
+  internal `i2c-13`/`i2c-14` buses existed. Enabled and rebooted; `/dev/i2c-1`
+  is present and scans.
+- **No `/etc/sudoers.d/010_pi-nopasswd`** (every other node has it), so remote
+  `sudo systemctl` fails and he cannot be deployed to. **Still outstanding.**
+- Missing runtime packages installed: `python3-scipy`, `pipewire-alsa`,
+  `fswebcam`, `imagemagick`, `spi-tools`, `libasound2-dev`, `libv4l-dev`,
+  `libopenblas-dev`.
+- **`install.sh` is not trixie/Pi 5-clean.** `libatlas-base-dev` has no trixie
+  candidate (use `libopenblas-dev`) and aborts the whole apt batch, so nothing
+  in that group installs. `libasound2`/`libgtk-3-0` are `t64` renames. Two
+  packages must NOT be installed on a Pi 5: `pigpio` (no RP1 support) and
+  `python3-rpi.gpio` — the real RPi.GPIO cannot drive Pi 5 GPIO and would
+  displace `python3-rpi-lgpio`, the shim that makes existing RPi.GPIO code work.
+- **Verdict: no major code changes needed for Pi 5.** `gpiochip0` is the RP1
+  bank and `linear_actuator_control.py` already opens chip 0; `stepper_cli.py`
+  tries lgpio first and only falls back to pigpio/RPi.GPIO. The gaps were all
+  provisioning, not application code.
+
 - **Renfield's camera retuned** to the fleet standard 320x240/10fps/q55; he had
   no `/etc/default/monsterbox-cam` and was serving 640x480/15/q60, **366 KB/s on
   his own — more than the other five nodes combined**. Now 113 KB/s.

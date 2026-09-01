@@ -852,6 +852,15 @@ class OrchestrationService {
                 card.uptimeSec = typeof info?.uptime === 'number' ? Math.round(info.uptime) : null;
                 card.cpuCount = info?.cpuCount ?? null;
                 card.hostname = info?.hostname || node.hostname || null;
+                // What the node says its OWN address is. The roster and mDNS have both
+                // been wrong in production (a null ip that silently excluded a node from
+                // deploy:all; avahi resolving every node's own record to 127.0.0.1), and
+                // nothing surfaced either. Reporting both makes a stale roster visible
+                // instead of leaving it to be discovered by something failing.
+                card.reportedIp = info?.ip || null;
+                if (card.reportedIp && node.ip && card.reportedIp !== node.ip) {
+                    card.ipMismatch = { configured: node.ip, reported: card.reportedIp };
+                }
             } catch (error) {
                 // Fall back to the bare /health ping so a node without /api/system/info
                 // still reads as online.

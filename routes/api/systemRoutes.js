@@ -84,16 +84,48 @@ function requireAdmin(req, res, next) {
 }
 
 /**
+ * This node's own network identity, as the node itself sees it.
+ *
+ * Until now a node reported its hostname but never an address, so the fleet had
+ * exactly two sources for "where is this animatronic": the static roster in
+ * config/animatronics.json, and mDNS. Both have failed in production — one node
+ * sat in the roster with `ip: null` and was silently skipped by every
+ * config-driven path including `npm run deploy:all`, and avahi resolved each
+ * node's own record to 127.0.0.1. A self-report is the third, authoritative
+ * source: whatever the node answers on is the address that actually works.
+ *
+ * Loopback and internal interfaces are excluded — a peer can never reach those.
+ */
+function ownNetwork() {
+    const ifaces = os.networkInterfaces();
+    const addresses = [];
+    for (const [name, addrs] of Object.entries(ifaces || {})) {
+        for (const a of addrs || []) {
+            const family = typeof a.family === 'number' ? (a.family === 4 ? 'IPv4' : 'IPv6') : a.family;
+            if (a.internal) continue;
+            addresses.push({ iface: name, address: a.address, family, mac: a.mac || null });
+        }
+    }
+    // Prefer IPv4 — every inter-node URL in this app is built as https://<ip>:<port>,
+    // and a bare IPv6 there would need brackets the callers do not add.
+    const v4 = addresses.filter(a => a.family === 'IPv4');
+    return { ip: v4.length ? v4[0].address : null, addresses };
+}
+
+/**
  * GET /api/system/info - Get system information
  */
 router.get('/info', (req, res) => {
     try {
+        var net = ownNetwork();
         var systemInfo = {
             success: true,
             version: pkg.version,
             nodeVersion: process.version,
             platform: os.platform() + ' ' + os.arch(),
             hostname: os.hostname(),
+            ip: net.ip,
+            addresses: net.addresses,
             uptime: process.uptime(),
             systemUptime: os.uptime(),
             totalMemory: (os.totalmem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',

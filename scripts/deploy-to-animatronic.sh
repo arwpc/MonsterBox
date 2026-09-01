@@ -115,7 +115,15 @@ if [ "$DRY_RUN" != "1" ]; then
     # evicts stale owners at startup too; this pkill is the deploy-side
     # guarantee that the old version is DEAD before the new one starts.
     # Killing it leaves servos holding their last pulse — nothing moves.
-    ${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "pkill -f servo_daemon || true"
+    # The bracket in '[s]ervo_daemon' is load-bearing. `pkill -f servo_daemon`
+    # matches the command line of the very shell running it, so the remote session
+    # KILLED ITSELF and ssh returned 255. `|| true` runs on the far side and never
+    # got the chance; `set -e` was still armed here, so the script aborted right
+    # after stopping the service and before both the rsync AND the restart —
+    # every real deploy left the node dark and reported a bare failure. The
+    # bracketed class cannot match itself. The local `|| true` is the second belt:
+    # nothing between "service stopped" and "service restarted" may abort this script.
+    ${SSH_RUN} ${SSH_OPTS} ${REMOTE_USER}@${IP_ADDRESS} "pkill -f '[s]ervo_daemon' || true" || true
 fi
 # rsync's exit status is checked explicitly rather than left to `set -e`.
 #
