@@ -3,6 +3,41 @@
   try { if (window.MB_TEST_MODE) document.documentElement.classList.add('mb-test-mode'); } catch (e) { }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // Character-pinned /api/parts URLs.
+  //
+  // Every parts call must name the character this page is DISPLAYING. The two
+  // list calls always did; create, update, delete, model, overrides and
+  // markers did not — so the server fell through resolveCharacter() to its
+  // last resort, the node's app-config selectedCharacter. Those two disagree
+  // the moment an operator switches character in the UI, and hostname
+  // auto-select rewrites selectedCharacter on every restart, so they drift on
+  // their own without anyone touching the picker.
+  //
+  // The failure was silent and read as success: the write landed in a
+  // DIFFERENT character's parts.json, the "saved successfully" toast fired
+  // anyway, and the change was absent from the list being looked at. Found
+  // 2026-08-31 while adding a webcam part to Renfield.
+  //
+  // Route every parts URL through here so a new call site cannot reintroduce
+  // it. `suffix` is everything after /api/parts (e.g. '/12/markers').
+  // ─────────────────────────────────────────────────────────────────────────
+  window.mbPartsUrl = function (suffix) {
+    var base = '/setup/calibration/api/parts' + (suffix || '');
+    var cid = window.__MB_CHAR_ID || null;
+    if (!cid) {
+      try {
+        var label = document.getElementById('charLabel');
+        if (label && label.dataset.charId) cid = label.dataset.charId;
+      } catch (e) { /* fall through */ }
+    }
+    // No client-side answer: leave the URL bare and let the server resolve,
+    // which is strictly better than guessing a character here.
+    if (!cid) return base;
+    return base + (base.indexOf('?') === -1 ? '?' : '&')
+      + 'characterId=' + encodeURIComponent(cid);
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
   // Design-system feedback primitives.
   //
   // Defined before every other script on the page so that any handler can
@@ -508,7 +543,7 @@
                   let successCount = 0, failCount = 0;
                   for (const id of ids) {
                     try {
-                      const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                      const resp = await fetch(window.mbPartsUrl(`/${encodeURIComponent(id)}`), { method: 'DELETE' });
                       if (resp.ok) successCount++; else failCount++;
                     } catch (e) { failCount++; }
                   }
@@ -2167,7 +2202,7 @@
 
     async function refreshEffective(partId) {
       try {
-        const r = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(partId)}/effective`);
+        const r = await fetch(window.mbPartsUrl(`/${encodeURIComponent(partId)}/effective`));
         const d = await r.json();
         if (!d || !d.success) return;
         const md = document.getElementById('modelDefaultsJson');
@@ -2190,7 +2225,7 @@
       if (!selected) return;
       const val = modelSelect.value;
       if (!val) { showToast('Select a model', 'warning'); return; }
-      const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/model`, {
+      const resp = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/model`), {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modelId: val })
       });
       const j = await resp.json();
@@ -2222,7 +2257,7 @@
           if (!schemaKeys.has(k) && obj[k] === undefined) obj[k] = selected.config[k];
         });
       }
-      const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/overrides`, {
+      const resp = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/overrides`), {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: obj })
       });
       const j = await resp.json();
@@ -2263,7 +2298,7 @@
       const schema = OVERRIDE_SCHEMAS[selected.type] || [];
       const clears = {};
       schema.forEach(f => { clears[f.key] = null; });
-      const resp = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/overrides`, {
+      const resp = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/overrides`), {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overrides: clears })
       });
       const j = await resp.json();
@@ -2465,7 +2500,7 @@
       var existingConfig = selected.config || {};
       var mergedConfig = Object.assign({}, existingConfig, trackingConfig);
 
-      fetch('/setup/calibration/api/parts/' + encodeURIComponent(selected.id), {
+      fetch(window.mbPartsUrl('/' + encodeURIComponent(selected.id)), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ config: mergedConfig })
@@ -2810,7 +2845,7 @@
           })
           .catch(function () { return { part: part, ok: false }; });
       }
-      fetch('/setup/calibration/api/parts')
+      fetch(window.mbPartsUrl())
         .then(function (r) { return r.json(); })
         .then(function (data) {
           var allParts = (data.parts || []);
@@ -3406,9 +3441,9 @@
                 }
                 // Persist to part config so the gain survives a reboot
                 // (server.js re-applies it at startup).
-                fetch('/setup/calibration/api/parts/' + pid).then(function (r) { return r.json(); }).then(function (pd) {
+                fetch(window.mbPartsUrl('/' + pid)).then(function (r) { return r.json(); }).then(function (pd) {
                   if (!pd.success) throw new Error(pd.error || 'load failed');
-                  return fetch('/setup/calibration/api/parts/' + pid, {
+                  return fetch(window.mbPartsUrl('/' + pid), {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ config: { inputGainPercent: gainPercent } })
                   }).then(function (r) { return r.json(); });
@@ -3970,7 +4005,7 @@
       const raw = el.value;
       const num = raw !== '' ? Number(raw) : undefined;
       const body = { name, kind: 'absolute', value: num, unit: unitFor(selected) };
-      const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
+      const response = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/markers`), {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
       }).catch(() => null);
       if (response && response.ok) {
@@ -4003,7 +4038,7 @@
 
         try {
           const body = { name, kind: 'absolute', value: 0, unit: unitFor(selected) };
-          const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`, {
+          const response = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/markers`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -4039,7 +4074,7 @@
 
         if (okToRemove) {
           try {
-            const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+            const response = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}`), {
               method: 'DELETE'
             });
 
@@ -4068,7 +4103,7 @@
     async function loadMarkers() {
       if (!selected) return;
       try {
-        const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers`);
+        const response = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/markers`));
         if (response.ok) {
           const data = await response.json();
           renderMarkers(data.markers || []);
@@ -4112,7 +4147,7 @@
     async function deleteMarker(name) {
       if (!selected) return;
       try {
-        const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}/markers/${encodeURIComponent(name)}`, {
+        const response = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/markers/${encodeURIComponent(name)}`), {
           method: 'DELETE'
         });
         if (response.ok) {
@@ -4832,28 +4867,8 @@
 
       if (Object.keys(config).length) payload.config = config;
 
-      // Create the part.
-      //
-      // Pin the write to the character this page is DISPLAYING. loadParts() above
-      // fetches with an explicit ?characterId, but this POST used to send none, so
-      // the server fell back to resolveCharacter()'s last resort — the node's
-      // app-config selectedCharacter. Those two disagree whenever the operator has
-      // switched character in the UI, and hostname auto-select rewrites
-      // selectedCharacter on every restart. The result was a part listed under the
-      // character you were looking at but written into a DIFFERENT character's
-      // parts.json, with a "created successfully" toast either way.
-      var createCharId = window.__MB_CHAR_ID || null;
-      if (!createCharId) {
-        try {
-          var cl = document.getElementById('charLabel');
-          if (cl && cl.dataset.charId) createCharId = cl.dataset.charId;
-        } catch (e) { /* fall back to server-side resolution */ }
-      }
-      var createUrl = createCharId
-        ? `/setup/calibration/api/parts?characterId=${encodeURIComponent(createCharId)}`
-        : '/setup/calibration/api/parts';
-
-      fetch(createUrl, {
+      // Create the part, pinned to the character on screen (see mbPartsUrl).
+      fetch(window.mbPartsUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -5031,7 +5046,7 @@
         return;
       }
 
-      fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+      fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}`), {
         method: 'DELETE'
       })
         .then(r => r.json())
@@ -5286,7 +5301,7 @@
       console.log('Configuration extracted:', config);
 
       // Send update request
-      const response = await fetch(`/setup/calibration/api/parts/${encodeURIComponent(selected.id)}`, {
+      const response = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData)
@@ -6383,7 +6398,7 @@
           // Persist gain to part config (the PUT deep-merges, so only the
           // changed key is sent). Surface a failed save instead of letting the
           // auto-tuned gain silently evaporate at the next reboot (F7).
-          fetch('/setup/calibration/api/parts/' + partId, {
+          fetch(window.mbPartsUrl('/' + partId), {
             method: 'PUT', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ config: { inputGainPercent: currentGain } })
           }).then(function (r) { return r.json(); }).then(function (j) {
