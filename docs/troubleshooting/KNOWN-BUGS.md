@@ -974,7 +974,23 @@ decoy — only `python3-opencv` supplies the `cv2` module. **Before debugging an
 capability on Renfield, first check whether `install.sh` ever installed it here.**
 
 **NOT PROVEN, and it is not a small gap:**
-- 🟡 **His speaker output cannot be verified acoustically from software, structurally.** The
+- 🟢 **RESOLVED 2026-09-01 — his speaker is acoustically ALIVE, proven by tone.** Operator
+  asked for a tone rather than speech. A 2 s sine played on the XVF3800 sink at wpctl
+  **0.25** (deliberately low — after midnight) was heard by the **webcam mic**: 1 kHz rose
+  **+21.3 dB** over a silent-room control and was the loudest component above 200 Hz at
+  exactly 1000.0 Hz. Frequency-agility cross-check: a 1500 Hz tone detected at 1500
+  (**+24.2 dB**) while the *same* recording read **−2.4 dB at 1000 Hz** — the detector
+  follows the commanded frequency, so this is his speaker and not an artifact. Sink was
+  restored to the state it was found in (1.00, MUTED). **Two method traps worth reusing:**
+  his room's **60 Hz mains hum is louder than any midnight-safe tone**, so "is the tone the
+  loudest thing in the recording" *rejects* a good detection — judge the loudest component
+  **above 200 Hz**; and never score a band MAX against the spectrum's global MEDIAN, which
+  reads ~44 dB SNR on pure silence (compare band max vs p95, and let an A/B against a
+  control recording decide). **Still open:** room loudness for a human listener and speech
+  intelligibility — a tone reaching a mic establishes neither, and his `sinkVolume: 1.00`
+  remains un-ear-verified by a person.
+- ~~🟡 **His speaker output cannot be verified acoustically from software, structurally.**~~
+  *(Superseded by the tone check above; retained for the reasoning.)* The
   XVF3800 is an echo-cancelling speakerphone that gates out his own playback — a 0.40→1.40
   sweep moved his array's own reading by **0.0 dB** while the residual floor *dropped* 4 dB
   (AES gating). Unlike Orlok and Mina — whose ear-checks actually run through their **USB
