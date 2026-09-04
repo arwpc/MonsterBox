@@ -74,6 +74,8 @@ const SPLIT_PARTICLE_VERBS = {
   lower: { down: 'close' }
 };
 
+import { interpretBodyIntent, partsForIntent } from './bodyRoles.js';
+
 const AMBIGUITY_MARGIN = 0.25;
 
 function escapeRegExp(s) {
@@ -297,8 +299,70 @@ export function matchOrder(transcript, ctx) {
   // 5) Part + verb.
   if (cfg.enablePartMatching === false) return { matched: false, reason: 'below_threshold' };
 
+  // 6) Body-role interpretation, used whenever the literal rungs above cannot
+  // resolve the phrase. A guest says "wave", "look at me", "open your mouth" —
+  // none of which is any character's part NAME. bodyRoles sorts this
+  // character's own parts into canonical roles and maps the intent onto one, so
+  // the same sentence works on an animatronic whose parts nobody here has seen.
+  // Declared before rung 5 so every one of its refusals can fall through here.
+  const bodyFallback = (reason, detail) => {
+    const intent = interpretBodyIntent(text);
+    if (!intent) return { matched: false, reason, ...(detail ? { detail } : {}) };
+
+    // Prefer a hand-authored pose when the character has one for this intent —
+    // a "Wave" pose is a performance; one actuator jerking is not. The pose rung
+    // above scored the guest's literal words; this re-scores on the intent's
+    // vocabulary, which is what makes "say hi" reach a pose called "Wave".
+    if (cfg.enablePoseMatching !== false && (ctx.poses || []).length) {
+      // Score how much of the POSE the intent's vocabulary covers, not the other
+      // way round: an intent carries several synonyms and only one of them will
+      // be the pose's word, so scoring the intent would dilute every match below
+      // threshold. Anchored on the first two expansion tokens — the anatomy and
+      // the intent itself, never the verb — so a pose merely called "Open" is
+      // not dragged in by "open your mouth".
+      const anchors = new Set(intent.expand.slice(0, 2));
+      const scored = ctx.poses.map(pose => {
+        const candTokens = [...new Set([
+          ...tokenize(normalizeTranscript(pose.name)),
+          ...(pose.tags || []).flatMap(t => tokenize(normalizeTranscript(t)))
+        ])];
+        const anchored = candTokens.some(tok => anchors.has(tok));
+        return {
+          key: `pose:${pose.id}`, pose,
+          score: anchored ? overlapScore(candTokens, intent.expand) : 0
+        };
+      });
+      const { best, rivals } = pickBest(scored);
+      if (best && best.score >= minConfidence && !(rivals && rivals.length)) {
+        return {
+          matched: true, kind: 'pose', poseId: best.pose.id, poseName: best.pose.name,
+          confidence: best.score, addressed, via: 'body-intent', intent: intent.phrase, role: intent.role
+        };
+      }
+    }
+
+    const { candidates } = partsForIntent(intent, ctx.parts || [], ctx.brokenPartIds || []);
+    if (!candidates.length) {
+      return { matched: false, reason: 'no_such_role', detail: `nothing on this character fills the "${intent.role}" role for "${intent.phrase}"` };
+    }
+    if (candidates.length > 1) {
+      return {
+        matched: false, reason: 'ambiguous', role: intent.role, intent: intent.phrase,
+        candidates: candidates.map(c => ({ partId: c.part.partId, name: c.part.name, side: c.side }))
+      };
+    }
+    const chosen = candidates[0];
+    const result = finishPartMatch(chosen.part, intent.verb, 0.8, addressed, null);
+    if (result.matched) {
+      result.via = 'body-intent';
+      result.intent = intent.phrase;
+      result.role = intent.role;
+    }
+    return result;
+  };
+
   const verbHit = findVerb(text);
-  if (!verbHit) return { matched: false, reason: 'no_verb' };
+  if (!verbHit) return bodyFallback('no_verb');
 
   // "be quiet" / "silence" with no object silences the speaker(s).
   const objectTokens = tokenize(verbHit.remainder);
@@ -309,7 +373,7 @@ export function matchOrder(transcript, ctx) {
         return { matched: true, kind: 'part', part: speaker, verb: 'quiet', confidence: 1, addressed };
       }
     }
-    return { matched: false, reason: 'no_object', detail: `verb "${verbHit.phrase}" had no object` };
+    return bodyFallback('no_object', `verb "${verbHit.phrase}" had no object`);
   }
 
   // Alias table first — the operator's explicit vocabulary.
@@ -331,7 +395,7 @@ export function matchOrder(transcript, ctx) {
   });
   const { best, rivals } = pickBest(scored);
   if (!best || best.score < minConfidence) {
-    return { matched: false, reason: 'below_threshold', detail: `no part matched "${verbHit.remainder}"` };
+    return bodyFallback('below_threshold', `no part matched "${verbHit.remainder}"`);
   }
   const distinctRivals = (rivals || []).filter(r => r.part.partId !== best.part.partId);
   if (distinctRivals.length) {
@@ -341,7 +405,16 @@ export function matchOrder(transcript, ctx) {
       candidates: [best, ...distinctRivals].map(c => ({ partId: c.part.partId, name: c.part.name, score: c.score }))
     };
   }
-  return finishPartMatch(best.part, verbHit.verb, best.score, addressed, null);
+  const literal = finishPartMatch(best.part, verbHit.verb, best.score, addressed, null);
+  // "raise your hand" scores highest against a LAMP that happens to be named
+  // after a hand, then dies because you cannot raise a light. The guest meant
+  // the arm.
+  // A verb/type mismatch means the name match was the wrong reading, so give the
+  // body interpreter its turn before refusing outright.
+  if (!literal.matched && literal.reason === 'verb_object_mismatch') {
+    return bodyFallback(literal.reason, literal.detail);
+  }
+  return literal;
 }
 
 function finishPartMatch(part, verb, confidence, addressed, alias) {
