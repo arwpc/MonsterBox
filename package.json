@@ -63,6 +63,8 @@
     "test:hardware:stepper": "MONSTERBOX_HARDWARE_AVAILABLE=1 BASE_URL=http://localhost:3100 mocha tests/hardware/stepper.test.js --reporter spec --exit --timeout 30000",
     "test:hardware:mic": "MONSTERBOX_HARDWARE_AVAILABLE=1 BASE_URL=http://localhost:3100 mocha tests/hardware/microphone-crud-mocha.test.js --reporter spec --exit --timeout 30000",
     "earcheck": "node scripts/fleet-audio/earcheck.mjs",
+    "test:e2e": "node scripts/fleet-e2e.mjs",
+    "test:e2e:full": "node scripts/fleet-e2e.mjs --full",
     "verify": "npm run test:system && npm run test:unit && npm run test:browser",
     "verify:quick": "npm run test:quick",
     "verify:mcp": "npm run test:system && npm run test:unit && npm run test:mcp",
