@@ -397,6 +397,17 @@ test.describe('Phase 1: Dashboard', () => {
         await page.waitForTimeout(500);
         await toggle.click({ force: true });
         await page.waitForTimeout(300);
+        // Each click fires its own fire-and-forget POST; two in 500 ms can land
+        // out of order and the LAST write wins. On a live node that left Orlok's
+        // jaw disabled after the suite. Confirm the end state and put it back.
+        await page.waitForTimeout(700);
+        let nowChecked = await toggle.isChecked().catch(() => wasChecked);
+        if (nowChecked !== wasChecked) {
+          await toggle.click({ force: true });
+          await page.waitForTimeout(1000);
+          nowChecked = await toggle.isChecked().catch(() => wasChecked);
+        }
+        expect(nowChecked, `${id} must end where it started`).toBe(wasChecked);
         console.log(`  Monster Features: ${id} toggled successfully`);
       } else {
         console.log(`  Monster Features: ${id} not found`);
