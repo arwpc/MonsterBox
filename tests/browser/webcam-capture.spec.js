@@ -23,6 +23,18 @@ async function skipUnlessPart(page, partId, modelId) {
   test.skip(!present, `part ${partId} on this node is not ${modelId} — hardware lives on another node`);
 }
 
+// Any enabled webcam part is enough for the capture test — Mina's and Sir
+// Dragomir's cameras are not Arducams but do serve frames through mjpg-streamer.
+// Audio-only nodes have none and must skip, not fail on "mjpg-streamer not running".
+async function skipUnlessAnyWebcam(page) {
+  const parts = await page.evaluate(async () => {
+    try { const r = await fetch('/api/parts'); return await r.json(); }
+    catch (e) { return null; }
+  });
+  const present = Array.isArray(parts) && parts.some(p => String(p.type).toLowerCase() === 'webcam' && p.enabled !== false);
+  test.skip(!present, 'no webcam part on this node — hardware lives on another node');
+}
+
 const MJPG_SNAPSHOT_URL = 'http://127.0.0.1:8090/?action=snapshot';
 
 // These tests require the node that physically carries the Arducam + mjpg-streamer
@@ -97,6 +109,7 @@ test.describe('Webcam Capture — Arducam B0205', () => {
   test('should capture a real image from the webcam via mjpg-streamer', async () => {
     // First confirm mjpg-streamer is healthy via the Express API
     await page.goto(BASE_URL + '/setup/calibration', { waitUntil: 'domcontentloaded' });
+    await skipUnlessAnyWebcam(page);
     const health = await page.evaluate(async () => {
       var r = await fetch('/setup/calibration/api/webcam/health');
       return r.json();
