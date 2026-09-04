@@ -2,13 +2,26 @@
 
 All notable changes to MonsterBox are documented in this file.
 
-## [Unreleased] - 2026-09-04 — every fleet click paid six TLS handshakes
+## [10.5.1] - 2026-09-04 — every fleet click paid six TLS handshakes
 
 Reported as "the communication takes full seconds — these are not slow
 computers." They are not: each node handles a fleet request in **2–5 ms**. The
 seconds were spent *getting to* the nodes, and the same shape repeated at every
 layer — a connection that was thrown away and rebuilt for each ask.
 
+- **Fixed: real-time conversation audio was silent on the PipeWire 1.4 node** (Renfield,
+  Debian 13 / Pi 5). Conversation audio is headerless s16 PCM piped into a long-lived
+  `pw-play`; PipeWire 1.4's `pw-play` hands stdin to libsndfile unless `--raw` is given
+  ("Format not recognised"), exited at once, and every chunk the conversation wrote
+  died as EPIPE — re-spawned per chunk, three deep in `.err`, while `writePcmStream`
+  reported success. Bookworm's 1.2.x has no `--raw` flag and plays raw stdin as-is, so the
+  flag is probed once per process from `pw-play --help` and passed only where the tool
+  advertises it (`_pwplayRawArgs()` in `services/serverPlaybackService.js`). Proven with
+  a second of zero-valued PCM on both PipeWire versions — inaudible by construction, so it
+  was checkable at 3 am. Unit test: `tests/unit/pwplay-raw-stdin.test.js` (3).
+- **Fixed: `fatal: not a git repository` on every restart of an rsync-deployed node.** The
+  startup `git rev-parse` inherited stderr; the catch already answered `unknown`. Git's
+  stderr is now discarded so `.err` carries only failures that mean something.
 - **Fixed: the servers closed idle connections after 5 s (Node's default), so
   the orchestrator's sockets to the five peers were dead before every click.**
   The fleet-health poll runs every 15 s; operator clicks come seconds apart. So

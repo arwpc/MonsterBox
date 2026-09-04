@@ -260,7 +260,10 @@ app.locals.gitCommit = (function () {
         return execSync('git rev-parse --short HEAD', {
             cwd: path.resolve(__dirname),
             encoding: 'utf8',
-            timeout: 2000
+            timeout: 2000,
+            // rsync-deployed nodes have no .git; the catch below already answers
+            // 'unknown', so git's own "fatal:" line has no business in .err.
+            stdio: ['ignore', 'pipe', 'ignore']
         }).trim();
     } catch (_) {
         return 'unknown';

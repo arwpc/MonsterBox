@@ -143,6 +143,8 @@ class ServerPlaybackService {
     this._mpg123Available = this._detectMpg123();
     this._ffmpegAvailable = this._detectCmd('ffmpeg');
     this._pwplayAvailable = this._detectCmd('pw-play');
+    // Probed on first use, not here: see _pwplayRawArgs().
+    this._pwplayRaw = null;
   }
 
   /**
@@ -230,6 +232,28 @@ class ServerPlaybackService {
     } catch (_) {
       return false;
     }
+  }
+
+  /**
+   * Headerless PCM on stdin needs `--raw` from PipeWire 1.4 on (Debian 13 / Pi 5).
+   *
+   * Bookworm's pw-play (1.2.x) has no such flag and plays raw stdin as-is. 1.4.2
+   * hands stdin to libsndfile instead, which answers "Format not recognised",
+   * pw-play exits, and every chunk the conversation writes lands as EPIPE — the
+   * stream is re-spawned per chunk and the node says nothing while writePcmStream
+   * reports success. Found in Renfield's .err after his first conversation.
+   * Probed once per process from the tool's own --help; absent flag = old syntax.
+   */
+  _pwplayRawArgs() {
+    if (this._pwplayRaw === null) {
+      try {
+        const r = spawnSync('pw-play', ['--help'], { encoding: 'utf8', timeout: 3000 });
+        this._pwplayRaw = /--raw\b/.test(String(r.stdout || '') + String(r.stderr || ''));
+      } catch (_) {
+        this._pwplayRaw = false;
+      }
+    }
+    return this._pwplayRaw ? ['--raw'] : [];
   }
 
   _detectCmd(cmd) {
@@ -388,7 +412,8 @@ class ServerPlaybackService {
 
     const { spawn } = await import('child_process');
 
-    const pwArgs = ['--format', 's16', '--rate', String(sampleRate), '--channels', '1',
+    const pwArgs = [...this._pwplayRawArgs(),
+                    '--format', 's16', '--rate', String(sampleRate), '--channels', '1',
                     '--volume', String(Math.max(0, Math.min(1, volume / 100)).toFixed(3))];
     if (deviceId && deviceId !== 'default') pwArgs.push('--target', deviceId);
     pwArgs.push('-'); // read from stdin

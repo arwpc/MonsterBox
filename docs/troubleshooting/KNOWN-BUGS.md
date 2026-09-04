@@ -22,7 +22,7 @@
 > re-verify on each node before relying on it. Update this file as issues are fixed (strike
 > them through and note the version).
 
-> 🟢 **CURRENT STATE, 2026-09-03/04 — all six nodes serve 10.5.0 over HTTPS. Read the version
+> 🟢 **CURRENT STATE, 2026-09-04 — all six nodes serve 10.5.1 over HTTPS. Read the version
 > from `package.json`, not from any number written into this file.** PumpkinHead and
 > Groundbreaker's "5.5.0 / plain HTTP" era (2026-08-30 and earlier, described in the three
 > layered notes immediately below) is fully closed — both were upgraded and rebooted onto
@@ -969,8 +969,22 @@ He is the fleet's **first Raspberry Pi 5**, **first Debian 13 (trixie)** and **f
   Orlok on 2026-08-30; before that he was password-only.
 - Node v22.23.2, git-HEAD code, own TLS cert, `monsterbox.service` enabled with the
   `10-priority` / `20-secrets` / `30-crontab` drop-ins, `selectedCharacter=6` agreeing with
-  hostname auto-select. `.err` carries exactly one recurring line (`git rev-parse` — there is
-  no `.git` on the node, which is normal for an rsync deploy).
+  hostname auto-select. `.err` used to carry one recurring line (`git rev-parse` — there is
+  no `.git` on the node, which is normal for an rsync deploy); 10.5.1 discards git's stderr
+  at startup, so a `fatal:` line there now means something.
+- 🟢 **RESOLVED 10.5.1 (2026-09-04) — real-time conversation audio was SILENT on this node,
+  and only this node.** Conversation audio is headerless s16 PCM piped into a long-lived
+  `pw-play`. His PipeWire is **1.4.2** (trixie); its `pw-play` hands stdin to libsndfile
+  unless `--raw` is given, answered `sndfile: failed to open audio file "-": Format not
+  recognised` / `error: open failed: Input/output error`, exited, and every chunk the
+  conversation wrote died as `write EPIPE` — re-spawned per chunk, three deep in `.err`,
+  while `writePcmStream` reported success. Bookworm's 1.2.7 has no `--raw` flag and plays raw
+  stdin as-is, so `serverPlaybackService._pwplayRawArgs()` probes `pw-play --help` once per
+  process and adds the flag only where advertised. Proven with one second of zero-valued PCM
+  on both versions (inaudible by construction — checkable during quiet hours): 1.4.2 fails
+  without the flag and exits 0 with it; 1.2.7 exits 0 without it. **A spoken conversation on
+  him has still not been heard by ear** — TTS (`sayThis`, mpg123) was never affected; this
+  was the ConvAI stream only. First trixie-specific runtime difference found; expect more.
 
 **PROVEN:** microphone capture (125 frames, non-zero RMS, XVF3800 via the PyAudio path, with
 idle and positive controls); schema validation across all six characters; the **full

@@ -16,7 +16,7 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
-## What's New — Unreleased (September 2026) — The fleet answers in milliseconds, not seconds
+## What's New — v10.5.1 (September 2026) — The fleet answers in milliseconds, not seconds
 
 "The communication takes full seconds — these are not slow computers." Each node
 handles a fleet request in 2–5 ms; the seconds were spent getting to it. Details and
@@ -37,6 +37,9 @@ the measurements in `CHANGELOG.md`.
   and audio library three times; `/api/system/volume` is memoised (57 → 4–8 ms).
 - **Wi-Fi power-save off** on the nodes (`scripts/node-baseline/wifi-powersave-off.sh`,
   now an `install.sh` step) — the radio's doze added 10–100 ms to every first packet.
+- **Conversation audio on PipeWire 1.4 nodes** (Debian 13 / Pi 5): `pw-play` there needs
+  `--raw` for headerless PCM on stdin or it exits silently on the first chunk; the flag is
+  probed per node, so Renfield speaks in conversation and Bookworm nodes are unchanged.
 
 ## What's New — v10.5.0 (August 2026) — Follow Orders: the animatronics obey spoken commands
 
