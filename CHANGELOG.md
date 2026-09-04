@@ -18,6 +18,15 @@ All notable changes to MonsterBox are documented in this file.
   `tests/unit/node-baseline-script.test.js` (7): bare-node layout, idempotence, tuned
   drop-in preserved, drifted cap converged.
 
+### Fixed — portraits uploaded from another character's row landed in the selected character's folder
+- The characters table's "Manage images" link passed `?charId=`, which the images page never read: it always
+  opened on the SELECTED character, with a bare numeric ID box saying so. Two portraits (PumpkinHead's and
+  Groundbreaker's) had been living in Orlok's `images/` since July — Groundbreaker's `activeImage` pointed at a
+  file his own folder didn't have (initials avatar), PumpkinHead had none. The link now passes `?characterId=`,
+  the route resolves it through `resolveCharacter(req)`, and the page shows a character picker by name
+  (same element id, so the page script is unchanged). The misfiled files are moved home, the two byte-identical
+  duplicates removed, and PumpkinHead's active image set through the app's own writer.
+
 ## [10.5.1] - 2026-09-04 — every fleet click paid six TLS handshakes
 
 Reported as "the communication takes full seconds — these are not slow

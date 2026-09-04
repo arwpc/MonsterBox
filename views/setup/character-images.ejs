@@ -3,10 +3,27 @@
         <button id="saveBtn" class="btn btn-success btn-sm" title="Save and return to characters"><i class="bi bi-check-circle"></i> Save & Return</button>
         <a href="/setup/characters" class="btn btn-secondary btn-sm" title="Cancel and return to characters"><i class="bi bi-x-circle"></i> Cancel</a>
       </div>
+      <%
+        // Which character these images belong to. A bare ID box defaulted to the
+        // selected character regardless of which row the operator came from, so
+        // uploads for other characters landed in the wrong folder — pick by name.
+        var imagesCharId = (typeof currentCharacter !== 'undefined' && currentCharacter)
+          ? Number(currentCharacter)
+          : (config && config.selectedCharacter ? Number(config.selectedCharacter) : null);
+        var imagesCharList = (typeof characterMenu !== 'undefined' && Array.isArray(characterMenu)) ? characterMenu : null;
+      %>
       <div class="mb-3">
-        <label class="form-label">Character ID</label>
+        <label class="form-label" for="charId">Character</label>
+        <% if (imagesCharList && imagesCharList.length) { %>
+        <select id="charId" class="form-select" title="Character whose images to manage">
+          <% imagesCharList.forEach(function (c) { %>
+          <option value="<%= c.id %>"<%= Number(c.id) === imagesCharId ? ' selected' : '' %>><%= c.name %> (ID <%= c.id %>)</option>
+          <% }); %>
+        </select>
+        <% } else { %>
         <input id="charId" class="form-control mb-mono" type="number" title="Character ID"
-          value="<%= (typeof currentCharacter !== 'undefined' && currentCharacter) ? currentCharacter : (config && config.selectedCharacter ? config.selectedCharacter : '') %>" />
+          value="<%= imagesCharId !== null ? imagesCharId : '' %>" />
+        <% } %>
       </div>
       <form id="uploadForm" class="mb-3">
         <div class="input-group">
