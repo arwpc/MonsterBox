@@ -172,10 +172,10 @@
   function loadSortable(cb) {
     if (typeof Sortable !== 'undefined') return cb();
     var s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js';
+    s.src = '/vendor/sortablejs/Sortable.min.js';
     s.onload = cb;
     s.onerror = function () {
-      console.warn('PanelSortable: SortableJS CDN load failed — drag disabled');
+      console.warn('PanelSortable: SortableJS failed to load — drag disabled');
       cb();
     };
     document.head.appendChild(s);

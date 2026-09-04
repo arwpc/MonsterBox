@@ -349,7 +349,7 @@ class AdvancedAudioPlayer {
         }
 
         // Import WaveSurfer dynamically
-        const WaveSurfer = await import('https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.esm.js');
+        const WaveSurfer = await import('/vendor/wavesurfer/wavesurfer.esm.js');
 
         // Create new WaveSurfer instance
         // Use MediaElement backend instead of WebAudio to support MP3 files
