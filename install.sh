@@ -519,76 +519,12 @@ fi
 # ============================================================
 print_status "Step 19b: Applying node OS baseline..."
 
-# avahi service file writable by the app (it rewrites its own advertisement)
-mkdir -p /etc/avahi/services
-touch /etc/avahi/services/monsterbox.service
-chown "$ACTUAL_USER:$ACTUAL_USER" /etc/avahi/services/monsterbox.service
-
-# journald: persistent, capped (SD wear vs post-mortem after a power cut)
-mkdir -p /var/log/journal /etc/systemd/journald.conf.d
-printf '[Journal]\nStorage=persistent\nSystemMaxUse=64M\nSystemMaxFileSize=16M\n' \
-    > /etc/systemd/journald.conf.d/monsterbox.conf
-systemctl restart systemd-journald 2>/dev/null || true
-
-# Wi-Fi power-save OFF. With it on, the radio dozes between beacons and every
-# first packet after an idle gap waits for the next one: LAN ping 11-31 ms avg
-# with 100 ms spikes, and every inter-node call and browser request paid it.
-# Persistent via NetworkManager; immediate via iw so it applies without a
-# re-activation that would drop the link. See scripts/node-baseline/wifi-powersave-off.sh
-mkdir -p /etc/NetworkManager/conf.d
-printf '# MonsterBox: Wi-Fi power-save adds 10-100 ms of doze latency to every LAN packet.\n[connection]\nwifi.powersave = 2\n' \
-    > /etc/NetworkManager/conf.d/10-monsterbox-wifi-powersave.conf
-nmcli general reload conf 2>/dev/null || true
-if ip link show wlan0 >/dev/null 2>&1; then
-    (command -v iw >/dev/null && iw dev wlan0 set power_save off) || /usr/sbin/iw dev wlan0 set power_save off 2>/dev/null || true
-fi
-
-# app-log rotation (they grow unbounded otherwise; 8.5MB in one night observed)
-cat > /etc/logrotate.d/monsterbox <<'LOGROTATE'
-/var/log/monsterbox.log /var/log/monsterbox.err {
-    size 10M
-    rotate 5
-    compress
-    missingok
-    notifempty
-    copytruncate
-}
-LOGROTATE
-
-# monsterbox.service drop-ins: priority + secrets (EnvironmentFile with the
-# leading dash is optional, so a node without /etc/monsterbox/env still boots)
-mkdir -p /etc/systemd/system/monsterbox.service.d
-chmod 755 /etc/systemd/system/monsterbox.service.d
-printf '[Service]\nNice=-5\nCPUWeight=90\nIOWeight=90\n' \
-    > /etc/systemd/system/monsterbox.service.d/10-priority.conf
-printf '[Service]\n# Secrets live in /etc/monsterbox/env — the app does NOT read .env.\nEnvironmentFile=-/etc/monsterbox/env\n' \
-    > /etc/systemd/system/monsterbox.service.d/20-secrets.conf
-chmod 644 /etc/systemd/system/monsterbox.service.d/*.conf
-
-# Log files owned by the service user — a root-owned log killed the boot
-# readiness check at its first `tee` under set -e, every boot, on one node.
-for lf in /var/log/monsterbox.log /var/log/monsterbox.err /var/log/monsterbox-boot.log; do
-    touch "$lf"
-    chown "$ACTUAL_USER:$ACTUAL_USER" "$lf"
-done
-
-# Secrets file scaffold (600). The app does NOT read .env; this file is loaded
-# by the 20-secrets drop-in. Placeholders stay commented until the operator
-# fills them in — without MONSTERBOX_SSH_PASSWORD, fleet SSH ops refuse loudly
-# by design; without MB_ADMIN_TOKEN, remote destructive endpoints are refused.
-if [ ! -f /etc/monsterbox/env ]; then
-    mkdir -p /etc/monsterbox
-    cat > /etc/monsterbox/env << 'ENVEOF'
-# MonsterBox secrets. Read by monsterbox.service via EnvironmentFile.
-# The app does NOT read .env — nothing loads dotenv — so this is the only place
-# these take effect. Restart the service after editing:
-#   sudo systemctl restart monsterbox.service
-#MONSTERBOX_SSH_PASSWORD=change-me
-#MB_ADMIN_TOKEN=change-me
-ENVEOF
-    chmod 600 /etc/monsterbox/env
-    print_warning "/etc/monsterbox/env scaffolded with commented placeholders — fill in the secrets."
-fi
+# One script, one source of truth: avahi ownership, journald cap, logrotate, Wi-Fi
+# power-save, service drop-ins, log ownership and the secrets scaffold all live in
+# scripts/node-baseline/apply-baseline.sh, which is also what an operator runs by hand
+# on a node that drifted (it is idempotent and reports [changed]/[ok] per item).
+MB_REPO_DIR="$REPO_DIR" bash "$REPO_DIR/scripts/node-baseline/apply-baseline.sh" "$ACTUAL_USER" \
+    || print_warning "Node baseline script reported a problem — re-run scripts/node-baseline/apply-baseline.sh by hand."
 
 # Boot readiness check — verifies audio/video/app actually came up after boot
 # (probes are HTTPS; the log file above must stay owned by $ACTUAL_USER).
@@ -609,7 +545,7 @@ if [ -f "$REPO_DIR/scripts/install-monsterbox-watchdog.sh" ]; then
 fi
 
 systemctl daemon-reload 2>/dev/null || true
-print_success "Node OS baseline applied (avahi perms, journald 64M, logrotate, drop-ins, log ownership, secrets scaffold, boot-check, liveness watchdog)"
+print_success "Node OS baseline applied (apply-baseline.sh: avahi perms, journald 64M, logrotate, Wi-Fi power-save, drop-ins, log ownership, secrets scaffold; plus boot-check and liveness watchdog)"
 
 # Install Playwright browsers for testing (optional, non-fatal)
 sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null && \

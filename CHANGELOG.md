@@ -2,6 +2,22 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased]
+
+- **One idempotent node-OS baseline script**, `scripts/node-baseline/apply-baseline.sh`
+  (`sudo bash …` on a node, or piped over ssh from the node holding fleet trust). A deploy
+  rsyncs the repo and cannot touch `/etc`, so nodes drift: the 2026-09-04 audit found
+  PumpkinHead with a **2.3 GB journal** on its SD card, no log rotation, no service
+  drop-ins and a root-owned avahi file the app could not rewrite (EACCES at every start —
+  no mDNS self-advertisement); Groundbreaker without journald cap, logrotate or the
+  secrets/crontab drop-ins; Wi-Fi power-save ON on all five peers. The script converges
+  each item and reports `[changed]`/`[ok]`; drop-ins are written only when missing so
+  hand-tuned `Restart=` lines survive; the journald cap carries `SystemMaxFileSize`
+  (without it the cap never held). `install.sh` Step 19b now calls this script instead of
+  carrying its own copy. Proven without root under `MB_BASELINE_PREFIX` by
+  `tests/unit/node-baseline-script.test.js` (7): bare-node layout, idempotence, tuned
+  drop-in preserved, drifted cap converged.
+
 ## [10.5.1] - 2026-09-04 — every fleet click paid six TLS handshakes
 
 Reported as "the communication takes full seconds — these are not slow
