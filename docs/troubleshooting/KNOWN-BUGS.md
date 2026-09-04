@@ -2265,16 +2265,23 @@ Plus one that was not flake at all:
   only supported way for a legitimate remote script to call them.
   *To fully close:* set `MB_ADMIN_TOKEN` in each node's `monsterbox.service` environment —
   note `.env` is **not** loaded by the app.
-- 🟡 **`npm audit` is clean, but GitHub Dependabot still reports 3 high — discrepancy
-  unresolved.** Locally (v9.0.0) `npm audit` went **2 high → 0**: `brace-expansion`
-  1.1.13→1.1.18 / 2.0.3→2.1.4 and `js-yaml` 4.3.0→4.3.1, both transitive and
-  **devDependency-only** (mocha/nodemon). Cleared with a plain `npm audit fix` — patch bumps
-  only, no new deps, no breaking upgrades. **However, GitHub's Dependabot reported 3 high on
-  the last push and those alerts have not been read**, so we cannot say which package the
-  third one is or whether the two overlap. `gh` is not authenticated on this node, which is
-  why the alerts couldn't be pulled directly. *To close:* authenticate `gh` (or open the
-  repo's Security tab) and reconcile the three alerts against the local tree — do not treat
-  the clean local audit as proof the Dependabot alerts are gone.
+- ~~**`npm audit` clean but Dependabot reporting alerts — discrepancy unresolved.**~~ —
+  **reconciled 2026-09-03 (v10.5.0).** The two open Dependabot alerts were both **moderate**
+  and both against **`qs`**, a transitive dep of `express` (and of `body-parser`, and of
+  `superagent` in devDeps): GHSA-4mjr-xmp4-gh2g (`utils.isBuffer()` calls a non-callable
+  `constructor.isBuffer` → uncaught `TypeError` on a parse→stringify round-trip; needs
+  `plainObjects`/`allowPrototypes` **and** a later `qs.stringify()`) and GHSA-x5fp-wj9c-mxmx
+  (`arrayLimit` bypass via bracket-key comma parsing; needs `comma: true`). Both patched in
+  **qs 6.16.0**. MonsterBox never imports `qs` and never calls `qs.stringify()`, and neither
+  express nor body-parser sets `comma: true`, so **neither was reachable in practice** — but
+  express 4.22.2 pins `qs: ~6.15.1`, so the bump could not come from the range. Fixed with a
+  top-level `overrides: { "qs": "^6.16.0" }` in `package.json` (same mechanism already used
+  for `serialize-javascript`); lock diff is 3 lines, `npm audit` → **0 vulnerabilities**,
+  `npm ci` dry-run clean, `test:smoke` 627 passing. **Deliberately not done:** upgrading to
+  express 5.x (its `qs: ^6.14.0` range would take 6.16.0 natively) — that is a major bump of
+  the core framework and out of bounds. `gh` on this node is still unauthenticated (401 Bad
+  credentials), so the alerts were identified via `npm audit` + the advisory pages, not the
+  Security tab; re-check the tab after the next push to confirm both alerts close.
 
 ---
 
