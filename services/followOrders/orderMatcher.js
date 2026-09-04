@@ -52,6 +52,28 @@ const VERB_TYPE_COMPAT = {
   play: new Set(['speaker'])
 };
 
+// Particle verbs, split around their object. English lets the particle slide to
+// the end — "turn the light off" is exactly as natural as "turn off the light",
+// and a nine-year-old says it both ways. findVerb() only ever looked for the
+// contiguous form, so the shifted form fell out as `no_verb` and the animatronic
+// did nothing while reporting a clean refusal.
+//
+// Head -> particle -> the verb the pair means. Matched only when at least one
+// token sits BETWEEN head and particle, so "turn off the light" still resolves
+// through the contiguous lexicon above and this pass never double-fires.
+const SPLIT_PARTICLE_VERBS = {
+  turn: { on: 'on', off: 'off', up: 'open', down: 'close' },
+  switch: { on: 'on', off: 'off' },
+  shut: { off: 'off', down: 'close' },
+  put: { on: 'on', out: 'off', up: 'open', down: 'close' },
+  pull: { in: 'close', back: 'close', down: 'close', up: 'open' },
+  push: { out: 'open', up: 'open', down: 'close' },
+  light: { up: 'on' },
+  lift: { up: 'open' },
+  raise: { up: 'open' },
+  lower: { down: 'close' }
+};
+
 const AMBIGUITY_MARGIN = 0.25;
 
 function escapeRegExp(s) {
@@ -113,8 +135,33 @@ function tokenize(text, { dropStopwords = true } = {}) {
   return text.split(' ').filter(tok => tok && (!dropStopwords || !STOPWORD_TOKENS.has(tok)));
 }
 
+/**
+ * Find a split particle verb: <head> ...object... <particle>, with at least one
+ * token between them. Runs BEFORE the contiguous lexicon because "shut the light
+ * off" would otherwise match the bare verb "shut" (close) and then be refused as
+ * verb_object_mismatch against a light.
+ */
+function findSplitParticleVerb(text) {
+  const toks = text.split(' ').filter(Boolean);
+  for (let h = 0; h < toks.length; h++) {
+    const particles = SPLIT_PARTICLE_VERBS[toks[h]];
+    if (!particles) continue;
+    // Scan from the end so "turn the light off now" prefers the real particle.
+    for (let p = toks.length - 1; p > h + 1; p--) {
+      const verb = particles[toks[p]];
+      if (!verb) continue;
+      const remainder = toks.slice(h + 1, p).concat(toks.slice(p + 1)).join(' ').trim();
+      if (!remainder) continue;
+      return { verb, phrase: `${toks[h]} … ${toks[p]}`, remainder };
+    }
+  }
+  return null;
+}
+
 /** Find the first verb (by lexicon order) present in the phrase. */
 function findVerb(text) {
+  const split = findSplitParticleVerb(text);
+  if (split) return split;
   const padded = ` ${text} `;
   for (const [verb, phrases] of Object.entries(VERB_LEXICON)) {
     for (const phrase of phrases) {
@@ -314,4 +361,4 @@ function finishPartMatch(part, verb, confidence, addressed, alias) {
   return result;
 }
 
-export { VERB_LEXICON, VERB_TYPE_COMPAT };
+export { VERB_LEXICON, VERB_TYPE_COMPAT, SPLIT_PARTICLE_VERBS };

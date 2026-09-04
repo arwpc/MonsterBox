@@ -312,11 +312,22 @@ async function runStep(characterId, step, claimed) {
             .filter(t => claimed.has(t.partId));
         if (!targets.length) return { ok: false, step, reason: 'no claimable parts' };
 
-        await transitionServos(characterId, targets, {
+        // transitionServos silently drops parts declared physically broken and
+        // returns only the ones it actually drove ([] when every target was
+        // refused). Without comparing the two, a step whose only part is broken
+        // returned ok:true and the gesture reported a clean 3/3 while a limb
+        // never moved — the same "one working part masks a dead one" failure the
+        // pose engine was fixed for in v9.0.0.
+        const driven = await transitionServos(characterId, targets, {
             durationMs: Number(step.durationMs) || 800,
             easing: step.easing || 'ease_in_out'
         });
-        return { ok: true, step };
+        const drivenCount = Array.isArray(driven) ? driven.length : targets.length;
+        const refused = targets.length - drivenCount;
+        if (drivenCount === 0) {
+            return { ok: false, step, refused, reason: 'every target part is declared physically broken' };
+        }
+        return { ok: true, step, refused };
     } catch (err) {
         return { ok: false, step, reason: err.message };
     }
@@ -395,13 +406,21 @@ export async function performGesture(characterId, gestureId, opts = {}) {
         }
 
         const ok = results.filter(r => r.ok).length;
+        const partsRefused = results.reduce((n, r) => n + (r.refused || 0), 0);
         // One line per gesture — no per-tick logging, per the SD-card discipline.
-        console.log(`[GestureEngine] ${gestureId} on character ${characterId}: ${ok}/${results.length} steps, ${claimed.size} part(s) claimed`);
+        console.log(`[GestureEngine] ${gestureId} on character ${characterId}: ${ok}/${results.length} steps, ${claimed.size} part(s) claimed` +
+            (partsRefused ? `, ${partsRefused} part(s) refused as physically broken` : ''));
         // Body awareness: note the performed gesture. Fire-and-forget.
         import('./bodyStateService.js')
             .then(m => (m.default || m).recordGesture(characterId, gestureId, { source: 'gesture-engine' }))
             .catch(() => { /* belief tracking is optional */ });
-        return { performed: true, gestureId, stepsOk: ok, stepsTotal: results.length, claimed: [...claimed] };
+        return {
+            performed: true, gestureId,
+            stepsOk: ok, stepsTotal: results.length,
+            partsRefused,
+            partialFailure: ok < results.length || partsRefused > 0,
+            claimed: [...claimed]
+        };
     } catch (err) {
         console.warn(`[GestureEngine] ${gestureId} on character ${characterId} failed: ${err.message}`);
         return { performed: false, reason: err.message };
