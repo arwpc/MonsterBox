@@ -739,10 +739,14 @@ test.describe('5. Calibration Page', () => {
       const sliderCount = await sliders.count();
       console.log(`  Found ${sliderCount} calibration sliders`);
 
-      // Test buttons
-      const testBtn = page.locator('button:has-text("Test"), button:has-text("test")');
-      if (await testBtn.first().isVisible().catch(() => false)) {
-        await testBtn.first().click();
+      // Test buttons. The sweep button is rendered DISABLED for a part with no
+      // measured window (Renfield's motor), and a click on a disabled control
+      // waits out the action timeout instead of doing nothing — check enabled too.
+      const testBtn = page.locator('button:has-text("Test"), button:has-text("test")').first();
+      const clickable = await testBtn.isVisible().catch(() => false)
+        && await testBtn.isEnabled().catch(() => false);
+      if (clickable) {
+        await testBtn.click();
         await page.waitForTimeout(500);
       }
 
