@@ -45,7 +45,7 @@ router.get('/images', async function (req, res) {
     // The characters table links here with ?characterId=<row>. Before this was
     // honoured the page always opened on the SELECTED character, and portraits
     // uploaded from another character's row landed in that folder instead
-    // (two of them lived in Orlok's for weeks).
+    // (two portraits sat in the selected character's folder for weeks).
     const ctx = await resolveCharacter(req);
     res.renderWithLayout('setup/character-images', {
       title: 'Character Images - MonsterBox',
