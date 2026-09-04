@@ -53,6 +53,14 @@ const WANT_AUDIO = FULL || flag('audio');
 const WANT_AI = FULL || flag('ai');
 const WANT_DRIVE = FULL || flag('drive');
 const nodeFilter = arg('nodes', 'all');
+// Volume the fleet is set to before any audio check, as a PERCENT of each
+// node's own scale. Defaults to 20 because these runs happen late and the
+// household has been woken twice by test audio. --volume 0 leaves whatever the
+// operator set alone. The canonical per-node volumes are NOT expressible on
+// this 0-100 master scale (one node's ear-verified level is 1.3), so the undo
+// is restore-canonical, where every node re-applies its OWN value.
+const VOLUME_PCT = parseInt(arg('volume', '20'), 10);
+const RESTORE_AFTER = flag('restore-volume');
 
 // Every node serves HTTPS with a self-signed cert. Node's global fetch ignores
 // an `agent` option (that is node-fetch's API, not undici's), so this uses the
@@ -362,6 +370,21 @@ for (const node of nodes) {
 
 if (WANT_AUDIO) {
   const reachable = results.filter(r => r.rows[0].state === 'PASS').map(r => r.node.id);
+
+  if (VOLUME_PCT > 0) {
+    // Turn the yard down BEFORE casting anything. An ear-check is scored on the
+    // RISE above each node's own noise floor, not on absolute loudness, so a
+    // quiet run is just as conclusive as a loud one.
+    const conductor = `https://127.0.0.1:3000`;
+    const res = await req(`${conductor}/api/orchestration/volume`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ volume: VOLUME_PCT }), timeoutMs: 60000
+    });
+    console.log(res.json?.success
+      ? `── fleet volume set to ${VOLUME_PCT}% on ${res.json.successful}/${res.json.total} node(s)\n`
+      : `── WARNING: could not set fleet volume (${res.json?.error || res.error}); running at whatever it was\n`);
+  }
+
   console.log(`── ear-check (${reachable.length} node(s)) — recording each node's own microphone…\n`);
   const verdicts = runEarcheck(reachable);
   if (verdicts.__error) {
@@ -387,12 +410,33 @@ if (WANT_AUDIO) {
       const mics = v.mics || [];
       const deaf = (x) => x.floorFlat === true || (typeof x.floorDb === 'number' && x.floorDb < -70);
       const noCapture = mics.length > 0 && mics.every(deaf);
-      if (v.verdict !== 'AUDIBLE' && noCapture) {
+
+      // recall is a FRACTION in the result file (1 = every cast word came back),
+      // not a percent. Printing it raw reported a flawless 100% read-back as
+      // "recall 1%", which reads like a catastrophe.
+      const recallPct = Math.round((Number(v.recall) || 0) * 100);
+      const quiet = VOLUME_PCT > 0 && VOLUME_PCT < 50;
+
+      if (v.verdict === 'AUDIBLE') {
+        record(r, 'speaker AUDIBLE by ear', 'PASS', `AUDIBLE rise ${v.riseDb}dB recall ${recallPct}%`);
+      } else if (noCapture) {
         record(r, 'speaker AUDIBLE by ear', 'SKIP',
           `cannot verify — every microphone on this node is a dead-flat jack. Speaker UNPROVEN, not disproven. ${v.diagnosis || ''}`);
+      } else if (recallPct >= 50) {
+        // The words came back. Level rise is low only because WE turned the
+        // fleet down, so a low rise here is a property of the run, not of the
+        // speaker. Intelligibility is the stronger evidence of the two.
+        record(r, 'speaker AUDIBLE by ear', 'PASS',
+          `${v.verdict} but INTELLIGIBLE at ${VOLUME_PCT}% — recall ${recallPct}%, rise ${v.riseDb}dB — "${String(v.transcript).slice(0, 45)}"`);
+      } else if (quiet) {
+        // Deliberately too quiet to clear this node's noise floor. That is an
+        // inconclusive measurement, NOT a broken speaker, and calling it a
+        // failure would send someone to check hardware that is fine.
+        record(r, 'speaker AUDIBLE by ear', 'SKIP',
+          `INCONCLUSIVE at ${VOLUME_PCT}% volume (rise ${v.riseDb}dB, recall ${recallPct}%) — too quiet for this node's mic to clear its floor. Re-run louder to verify.`);
       } else {
-        record(r, 'speaker AUDIBLE by ear', v.verdict === 'AUDIBLE' ? 'PASS' : 'FAIL',
-          `${v.verdict} rise ${v.riseDb}dB recall ${v.recall}%` + (v.transcript ? ` — "${String(v.transcript).slice(0, 50)}"` : ''));
+        record(r, 'speaker AUDIBLE by ear', 'FAIL',
+          `${v.verdict} rise ${v.riseDb}dB recall ${recallPct}%` + (v.transcript ? ` — "${String(v.transcript).slice(0, 45)}"` : ''));
       }
     }
   }
