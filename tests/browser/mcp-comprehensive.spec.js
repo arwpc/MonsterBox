@@ -398,7 +398,7 @@ test.describe('Phase 1: Dashboard', () => {
         await toggle.click({ force: true });
         await page.waitForTimeout(300);
         // Each click fires its own fire-and-forget POST; two in 500 ms can land
-        // out of order and the LAST write wins. On a live node that left Orlok's
+        // out of order and the LAST write wins. On a live node that left the
         // jaw disabled after the suite. Confirm the end state and put it back.
         await page.waitForTimeout(700);
         let nowChecked = await toggle.isChecked().catch(() => wasChecked);

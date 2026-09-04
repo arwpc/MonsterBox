@@ -103,7 +103,11 @@ test.describe('Webcam Capture — Arducam B0205', () => {
     expect(res.success).toBe(true);
     expect(res.part.type).toBe('webcam');
     expect(res.part.modelId).toBe('arducam-b0205');
-    expect(res.part.name).toBe('Eye of Orlok');
+    // The name is the operator's label for the part, not a contract — the model id
+    // above is what identifies the camera. Naming a character here tripped the
+    // independence ratchet on every other node.
+    expect(typeof res.part.name).toBe('string');
+    expect(res.part.name.length).toBeGreaterThan(0);
   });
 
   test('should capture a real image from the webcam via mjpg-streamer', async () => {

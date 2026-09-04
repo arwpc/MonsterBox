@@ -47,13 +47,6 @@
     },
     {
       "pattern": "orlok-reference",
-      "file": "tests/browser/webcam-capture.spec.js",
-      "line": 94,
-      "snippet": "expect(res.part.name).toBe('Eye of Orlok');",
-      "reason": "Browser test with hardcoded character references \u2014 migrate to pact-style iteration."
-    },
-    {
-      "pattern": "orlok-reference",
       "file": "tests/hardware/test-hardware-timing.js",
       "line": 65,
       "snippet": "console.log('\ud83c\udfaf Testing 8000ms movements at 100% position on Mina and Orlok');",
