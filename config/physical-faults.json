@@ -1,6 +1,6 @@
 {
   "_readme": [
-    "PHYSICALLY BROKEN HARDWARE — an inventory of rigs that are damaged right now.",
+    "PHYSICALLY BROKEN HARDWARE \u2014 an inventory of rigs that are damaged right now.",
     "",
     "THIS IS NOT THE RETIRED SAFETY-LIMIT SYSTEM. Do not confuse the two.",
     "config/hardware-safety.json was emptied on 2026-08-20 by operator ruling ('You can remove these",
@@ -8,24 +8,30 @@
     "operator command, clamps no angle, caps no duration and serializes no rail.",
     "",
     "This file does something narrower and different. It records which parts are PHYSICALLY DAMAGED,",
-    "so that code choosing a part ON ITS OWN INITIATIVE — an automated test suite, a diagnostic",
-    "script, a fleet sweep — does not pick a broken one. AND, since the servo daemon gained its",
+    "so that code choosing a part ON ITS OWN INITIATIVE \u2014 an automated test suite, a diagnostic",
+    "script, a fleet sweep \u2014 does not pick a broken one. AND, since the servo daemon gained its",
     "last-line-of-defence check (2026-08-22): the daemon REFUSES to energize any PCA9685 channel",
-    "that a listed part's config claims, for EVERY caller, UI and API included — and because the",
+    "that a listed part's config claims, for EVERY caller, UI and API included \u2014 and because the",
     "veto is by CHANNEL, a second part configured onto the same channel is refused too (this",
     "silenced the knight's magic box, which shares no hardware with the broken-listed head but",
     "briefly shared its configured channel). The refusal is now reported to the caller as an",
     "error, and logged in /var/log/monsterbox.err as 'REFUSED ch<N>'. To drive a listed part,",
-    "clear its entry here — a deliberate one-line operator action — and restart or wait ~30s",
+    "clear its entry here \u2014 a deliberate one-line operator action \u2014 and restart or wait ~30s",
     "(the daemon caches this file briefly).",
     "",
     "Why it exists: tests/system/parts-api.test.js was written to skip these parts and selected them",
     "through safetyLimits.isTestSafePart(). When hardware-safety.json was emptied, that helper began",
-    "returning true for every part, so the loop picked servos[0] — Orlok's dead Elbow on the fused",
+    "returning true for every part, so the loop picked servos[0] \u2014 Orlok's dead Elbow on the fused",
     "rail that has repeatedly blown. The guard inverted into selecting the worst possible part, and",
     "npm run test:system physically drove the Elbow and the Bow actuator on 2026-08-21.",
     "",
-    "Remove an entry when the operator repairs the hardware, not to make a test pass."
+    "Remove an entry when the operator repairs the hardware, not to make a test pass.",
+    "",
+    "NOT-PRESENT counts as broken here. A part that is fully specified in parts.json but was never",
+    "physically wired is, to an autonomous caller, indistinguishable from a damaged one: it accepts",
+    "the command, energizes nothing, and reports success. Renfield's shake motor is the first such",
+    "entry. status must be the literal string \"broken\" either way \u2014 that is the only value",
+    "getPhysicalFault() matches; a friendlier status like \"not-wired\" would silently guard nothing."
   ],
   "characters": {
     "3": {
@@ -33,23 +39,33 @@
       "parts": {
         "2": {
           "status": "broken",
-          "reason": "Left Arm of Manipulation — operator reports the left arm is physically damaged.",
+          "reason": "Left Arm of Manipulation \u2014 operator reports the left arm is physically damaged.",
           "since": "2026-08-21"
         },
         "3": {
           "status": "broken",
-          "reason": "Bow At The Waist — operator reports the back is physically damaged. Also has a self-contradicting BTS7960 wiring record: the part description says RPWM=21/LPWM=19 while the data fields say rpwmPin:19/lpwmPin:21, and that swap inverts direction, so 'extend' may physically retract.",
+          "reason": "Bow At The Waist \u2014 operator reports the back is physically damaged. Also has a self-contradicting BTS7960 wiring record: the part description says RPWM=21/LPWM=19 while the data fields say rpwmPin:19/lpwmPin:21, and that swap inverts direction, so 'extend' may physically retract.",
           "since": "2026-08-21"
         },
         "4": {
           "status": "broken",
-          "reason": "Elbow — electrically dead, and shares a fused rail with part 5 that has repeatedly blown. Was found on 2026-08-21 still energized at 1308.6us after a test run, which is a stall-current path.",
+          "reason": "Elbow \u2014 electrically dead, and shares a fused rail with part 5 that has repeatedly blown. Was found on 2026-08-21 still energized at 1308.6us after a test run, which is a stall-current path.",
           "since": "2026-08-21"
         },
         "5": {
           "status": "broken",
-          "reason": "Forearm Rotation — operator reports the forearm is physically damaged. Travel was never measured. Shares the fused rail with part 4.",
+          "reason": "Forearm Rotation \u2014 operator reports the forearm is physically damaged. Travel was never measured. Shares the fused rail with part 4.",
           "since": "2026-08-21"
+        }
+      }
+    },
+    "6": {
+      "_note": "Renfield is an AUDIO-ONLY character. He has no motion hardware at all: /dev/i2c-1 does not exist on his Pi (only i2c-13/14, which are HDMI DDC buses), so there is no PCA9685 and no servo capability, and his one motor part was never wired. Nothing here is damaged \u2014 it was never connected.",
+      "parts": {
+        "1": {
+          "status": "broken",
+          "reason": "Renfield Shake Motor \u2014 NOT WIRED. Operator confirmed 2026-08-30 that the BTS7960 H-bridge (RPWM=27, LPWM=22, R_EN=17, L_EN=23) was never connected and no motor is attached. Driving it moves nothing while linear_actuator_control_v2.py still returns success, so an unattended scene or a follow-orders match would log a lie. The part is KEPT in data/character-6/parts.json with enabled:false so its wiring notes survive for the day it is wired; clear this entry then.",
+          "since": "2026-08-30"
         }
       }
     }

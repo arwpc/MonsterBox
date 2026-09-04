@@ -4,15 +4,8 @@
     "characterId": 6,
     "steps": [
       {
-        "type": "motor",
-        "partId": "1",
-        "speed": 60,
-        "duration": 1200,
-        "concurrent": true
-      },
-      {
         "type": "sayThis",
-        "text": "\u2026whereas the party of the first part is NOCTURNAL\u2026 [chuckles] strike that \u2014 he'll love it. Keep it in.",
+        "text": "…whereas the party of the first part is NOCTURNAL… [chuckles] strike that — he'll love it. Keep it in.",
         "concurrent": false
       },
       {
@@ -22,7 +15,7 @@
       },
       {
         "type": "sayThis",
-        "text": "Moth. Eleven forty PM. Substantial. Entered. \u2026The registry grows FAT tonight.",
+        "text": "Moth. Eleven forty PM. Substantial. Entered. …The registry grows FAT tonight.",
         "concurrent": false
       }
     ],
@@ -34,15 +27,8 @@
     "steps": [
       {
         "type": "sayThis",
-        "text": "\u2026and upon completion: one seat at the table. Perpetuity. Signed\u2026 [sighs] \u2026unsigned. Pending.",
+        "text": "…and upon completion: one seat at the table. Perpetuity. Signed… [sighs] …unsigned. Pending.",
         "concurrent": false
-      },
-      {
-        "type": "motor",
-        "partId": "1",
-        "speed": 70,
-        "duration": 900,
-        "concurrent": true
       },
       {
         "type": "sayThis",
@@ -57,15 +43,8 @@
     "characterId": 6,
     "steps": [
       {
-        "type": "motor",
-        "partId": "1",
-        "speed": 80,
-        "duration": 1500,
-        "concurrent": true
-      },
-      {
         "type": "sayThis",
-        "text": "[chuckles] \u2026seventeen souls, he says. SEVENTEEN. I have fifteen. The audit is coming, pumpkin. The audit is COMING.",
+        "text": "[chuckles] …seventeen souls, he says. SEVENTEEN. I have fifteen. The audit is coming, pumpkin. The audit is COMING.",
         "concurrent": false
       }
     ],
@@ -77,19 +56,12 @@
     "steps": [
       {
         "type": "sayThis",
-        "text": "\u2026dear master \u2014 per my last four hundred correspondences \u2014 I remain available. Punctual.",
+        "text": "…dear master — per my last four hundred correspondences — I remain available. Punctual.",
         "concurrent": false
       },
       {
-        "type": "motor",
-        "partId": "1",
-        "speed": 50,
-        "duration": 2000,
-        "concurrent": true
-      },
-      {
         "type": "sayThis",
-        "text": "\u2026And I shake, sometimes. So I know you are there.",
+        "text": "…And I shake, sometimes. So I know you are there.",
         "concurrent": false
       }
     ],

@@ -45,11 +45,5 @@
     ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["playwright"],
-  "mcpServers": {
-    "playwright": {
-      "type": "sse",
-      "url": "http://localhost:8931/sse"
-    }
-  }
+  "enabledMcpjsonServers": ["playwright"]
 }
