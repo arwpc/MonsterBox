@@ -77,6 +77,22 @@ else
   ok "avahi: service file owned by $SVC_USER"
 fi
 
+# 1b. Repo paths the deploy must be able to replace. rsync writes a temp file beside
+#     the target and renames it, so a root-owned directory (certs/ was created by sudo on
+#     several nodes) silently keeps that node on whatever it had — Sir Dragomir served
+#     his July certificate through every deploy. The deploy itself reported success.
+for sub in certs; do
+  d="$REPO_DIR/$sub"
+  [ -d "$d" ] || continue
+  if [ "$(stat -c %U "$d")" != "$SVC_USER" ]; then
+    chown -R "$SVC_USER:$SVC_USER" "$d" \
+      && changed "repo: $d now owned by $SVC_USER (deploys can replace it again)" \
+      || echo "  [note]    repo: could not chown $d"
+  else
+    ok "repo: $d owned by $SVC_USER"
+  fi
+done
+
 # 2. journald: persistent (post-mortem after a power cut) but capped (SD wear).
 #    SystemMaxUse alone does NOT hold — the cap is enforced per file, so without a
 #    SystemMaxFileSize well under it the journal grows past the cap anyway.

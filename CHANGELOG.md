@@ -16,7 +16,10 @@ All notable changes to MonsterBox are documented in this file.
   (without it the cap never held). `install.sh` Step 19b now calls this script instead of
   carrying its own copy. Proven without root under `MB_BASELINE_PREFIX` by
   `tests/unit/node-baseline-script.test.js` (7): bare-node layout, idempotence, tuned
-  drop-in preserved, drifted cap converged.
+  drop-in preserved, drifted cap converged. It also hands `certs/` back to the service user:
+  rsync writes a temp file beside the target and renames it, so a root-owned `certs/` (sudo-created
+  on two nodes) silently kept Sir Dragomir on his July certificate through every deploy that
+  reported success.
 
 ### Fixed — portraits uploaded from another character's row landed in the selected character's folder
 - The characters table's "Manage images" link passed `?charId=`, which the images page never read: it always
