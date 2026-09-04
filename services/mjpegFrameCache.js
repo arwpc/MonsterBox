@@ -30,14 +30,14 @@ const TAIL_KEEP = 65536;
 
 class MjpegFrameCache {
     constructor() {
-        /** key -> { latest, latestAt, upstream, idleTimer, waiters, opening, error } */
+        /** key -> { latest, latestAt, upstream, idleTimer, waiters, opening, error, errorAt } */
         this.entries = new Map();
     }
 
     _entry(key) {
         let e = this.entries.get(key);
         if (!e) {
-            e = { latest: null, latestAt: 0, upstream: null, idleTimer: null, waiters: [], opening: null, error: null };
+            e = { latest: null, latestAt: 0, upstream: null, idleTimer: null, waiters: [], opening: null, error: null, errorAt: 0 };
             this.entries.set(key, e);
         }
         return e;
@@ -78,6 +78,7 @@ class MjpegFrameCache {
                 // network buffers alive for as long as the frame is cached.
                 e.latest = Buffer.from(newest);
                 e.latestAt = Date.now();
+                e.error = null;
                 const waiters = e.waiters;
                 e.waiters = [];
                 waiters.forEach(w => w.resolve(e.latest));
@@ -88,7 +89,9 @@ class MjpegFrameCache {
             const waiters = e.waiters;
             e.waiters = [];
             e.upstream = null;
-            waiters.forEach(w => w.reject(err || new Error('Upstream stream ended')));
+            e.error = err || new Error('Upstream stream ended');
+            e.errorAt = Date.now();
+            waiters.forEach(w => w.reject(e.error));
         };
         upstream.once('end', () => fail(new Error('Upstream stream ended')));
         upstream.once('error', (err) => fail(err));
@@ -99,23 +102,34 @@ class MjpegFrameCache {
      *
      * @param {string} key                       cache identity (node id)
      * @param {() => Promise<import('stream').Readable>} openUpstream
-     * @param {{ idleMs?: number, waitMs?: number, maxAgeMs?: number }} [opts]
+     * @param {{ idleMs?: number, waitMs?: number, maxAgeMs?: number, failTtlMs?: number }} [opts]
      * @returns {Promise<Buffer>} a complete JPEG
      */
     async getFrame(key, openUpstream, opts = {}) {
-        const { idleMs = 30000, waitMs = 8000, maxAgeMs = 10000 } = opts;
+        const { idleMs = 30000, waitMs = 8000, maxAgeMs = 10000, failTtlMs = 15000 } = opts;
         const e = this._entry(key);
         this._armIdle(key, idleMs);
 
         // Fresh enough to serve straight from memory — the common case.
         if (e.latest && (Date.now() - e.latestAt) <= maxAgeMs) return e.latest;
 
+        // A camera that just failed is not asked again for a while. Without this
+        // every snapshot request re-ran the node-side probe (about 4 s when
+        // mjpg-streamer answers HTTP but its input is dead), and since the wall
+        // polls each card continuously, ONE dead camera kept one of the browser's
+        // six connections busy around the clock. Failing in a millisecond gives
+        // that connection back to the toggles and the health poll.
+        if (e.error && !e.upstream && !e.opening && (Date.now() - e.errorAt) < failTtlMs) {
+            if (e.latest) return e.latest;
+            throw e.error;
+        }
+
         if (!e.upstream && !e.opening) {
             e.opening = (async () => {
                 const stream = await openUpstream();
                 this._consume(key, stream);
             })()
-                .catch((err) => { e.error = err; throw err; })
+                .catch((err) => { e.error = err; e.errorAt = Date.now(); throw err; })
                 .finally(() => { e.opening = null; });
         }
         if (e.opening) {
@@ -133,7 +147,19 @@ class MjpegFrameCache {
             const timer = setTimeout(() => {
                 e.waiters = e.waiters.filter(w => w.timer !== timer);
                 if (e.latest) return resolve(e.latest);
-                reject(new Error(`No frame from ${key} within ${waitMs}ms`));
+                // An open stream that never yields a frame is a dead camera behind
+                // a live HTTP server (mjpg-streamer does exactly this when STREAMON
+                // is refused). Drop it and remember the failure, so the next attempt
+                // reopens after the back-off instead of waiting on the same silent
+                // socket for another eight seconds.
+                const err = new Error(`No frame from ${key} within ${waitMs}ms`);
+                e.error = err;
+                e.errorAt = Date.now();
+                if (e.upstream) {
+                    try { e.upstream.destroy(); } catch (_) { /* already gone */ }
+                    e.upstream = null;
+                }
+                reject(err);
             }, waitMs);
             if (typeof timer.unref === 'function') timer.unref();
             const waiter = {
@@ -172,6 +198,8 @@ class MjpegFrameCache {
             frameBytes: e.latest ? e.latest.length : 0,
             ageMs: e.latestAt ? Date.now() - e.latestAt : null,
             upstreamOpen: !!e.upstream,
+            lastError: e.error ? String(e.error.message || e.error) : null,
+            errorAgeMs: e.errorAt ? Date.now() - e.errorAt : null,
         }));
     }
 }

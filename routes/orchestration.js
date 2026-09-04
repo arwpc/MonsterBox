@@ -1,7 +1,23 @@
 import express from 'express';
 import { readFile } from 'fs/promises';
 import path from 'path';
+import orchestrationService from '../services/orchestrationService.js';
 const router = express.Router();
+
+// Start collecting fleet health the moment the PAGE is requested, not when its
+// script finally asks. The wall's first fleet-health call used to be the first
+// contact with the fleet: six cold TCP+TLS handshakes over dozing Wi-Fi radios,
+// 0.4-1.2 s measured, all of it after the HTML, CSS and JS had already loaded.
+// Firing here overlaps that fan-out with the page load; the script's request
+// then joins the in-flight collection or hits the memo, and even a slow browser
+// that misses the memo window finds the sockets already open. Not in test mode:
+// a Playwright page load must not reach into the real yard.
+function prewarmFleetHealth() {
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true' || process.env.NODE_ENV === 'test') return;
+    Promise.resolve()
+        .then(() => orchestrationService.getFleetHealth())
+        .catch(err => console.warn('orchestration: fleet-health prewarm failed:', err && err.message));
+}
 
 // How many node cards the page should reserve space for before any fetch returns.
 // Without this the wall renders a 177px spinner and then jumps to the real grid
@@ -28,6 +44,7 @@ async function countAnimatronics() {
  * GET /orchestration - Main orchestration control interface
  */
 router.get('/', async function (req, res) {
+    prewarmFleetHealth();
     res.renderWithLayout('orchestration/index', {
         title: 'Orchestration Control - MonsterBox',
         page: 'orchestration',

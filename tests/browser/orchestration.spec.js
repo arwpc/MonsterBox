@@ -41,14 +41,18 @@ test.describe('Fleet Command Center', () => {
     });
 
     // Was "all six" and asserted 6 — `orders` was added with the fleet prompt box and
-    // this went red on a page that was working correctly. Derive the count from the
-    // list so adding the next one cannot leave a stale number behind.
-    const MASTER_TOGGLES = ['lurk', 'jaw', 'head', 'motion', 'idle', 'mute', 'orders'];
+    // this went red on a page that was working correctly; then `aiMotion` was added
+    // and it went red again on a bare count. Name the set and report the stranger
+    // by name, so the next addition fails with "aiMotion is not in the list", not "8".
+    const MASTER_TOGGLES = ['lurk', 'jaw', 'head', 'aiMotion', 'motion', 'idle', 'mute', 'orders'];
     test('shows every superpower master toggle', async () => {
-        await expect(page.locator('.fcc-sp')).toHaveCount(MASTER_TOGGLES.length);
         for (const sp of MASTER_TOGGLES) {
             await expect(page.locator(`.fcc-sp[data-sp="${sp}"]`)).toBeVisible();
         }
+        const onPage = await page.locator('.fcc-sp').evaluateAll(els => els.map(e => e.getAttribute('data-sp')));
+        const strangers = onPage.filter(sp => !MASTER_TOGGLES.includes(sp));
+        expect(strangers, `superpower toggles not in MASTER_TOGGLES: ${strangers.join(', ')}`).toEqual([]);
+        expect(onPage.length).toBe(MASTER_TOGGLES.length);
     });
 
     test('shows the transport + panic controls', async () => {

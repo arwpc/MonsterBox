@@ -149,11 +149,21 @@
 
   // ── Data Loading ──
 
+  // The poses list and the audio library are also loaded by dashboard.js and
+  // dashboard-v2.js on the same page; go through the shared fetch so all three
+  // ride one request each.
+  function sharedJson(url) {
+    if (window.MonsterBox && typeof window.MonsterBox.sharedJson === 'function') {
+      return window.MonsterBox.sharedJson(url);
+    }
+    return fetch(url).then(function (r) { return r.json(); });
+  }
+
   function fetchData(charId) {
     return Promise.allSettled([
-      fetch('/api/parts?characterId=' + encodeURIComponent(charId)).then(function (r) { return r.json(); }),
-      fetch('/poses/api/poses').then(function (r) { return r.json(); }),
-      fetch('/audio-library/api/library').then(function (r) { return r.json(); })
+      sharedJson('/api/parts?characterId=' + encodeURIComponent(charId)),
+      sharedJson('/poses/api/poses'),
+      sharedJson('/audio-library/api/library')
     ]);
   }
 

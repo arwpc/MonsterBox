@@ -59,6 +59,9 @@ import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import goblinManagerService from './services/goblinManagerService.js';
 import orchestrationService from './services/orchestrationService.js';
+import { jsonCompression } from './services/jsonCompression.js';
+import { staticCompression } from './services/staticCompression.js';
+import { avatarUrl } from './services/characterImageService.js';
 import nodeDiscoveryService from './services/nodeDiscoveryService.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
 import jawServoDaemon from './services/jawServoDaemon.js';
@@ -331,12 +334,33 @@ app.get('/health', (req, res) => {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// JSON bodies over 1 KB go out gzipped (built-in zlib; the audio library is
+// 233 KB plain, 27 KB compressed). Streams and proxies are untouched.
+app.use(jsonCompression());
+// Third-party bundles only change when someone upgrades them, so they can sit
+// in the browser for a week. App CSS/JS stays at 5 minutes because deploys are
+// frequent and nothing versions the URLs.
+app.use('/vendor', staticCompression(path.join(__dirname, 'public', 'vendor'), { maxAgeSeconds: 7 * 24 * 3600 }));
+app.use('/vendor', express.static(path.join(__dirname, 'public', 'vendor'), { maxAge: '7d' }));
 // maxAge lets the operator's browser reuse big assets (bootstrap alone is
 // 233KB over software-TLS on this CPU) instead of re-paying them on every
 // navigation; ETag revalidation still catches a deploy within 5 minutes.
+// Gzip in front of both mounts (built-in zlib, compressed once per file, held in
+// memory): the dashboard's ~750 KB of CSS+JS is ~190 KB on the wire.
+app.use(staticCompression(path.join(__dirname, 'public'), { maxAgeSeconds: 300 }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '5m' }));
 // Serve character/data assets for images and media
-app.use('/data', express.static(path.join(__dirname, 'data'), { maxAge: '1m' }));
+app.use('/data', express.static(path.join(__dirname, 'data'), {
+    maxAge: '1m',
+    setHeaders(res, filePath) {
+        // A character portrait is ~300 KB and rides on every page; a same-name
+        // re-upload shows within the hour (or on a hard refresh). JSON under
+        // /data keeps the one-minute window.
+        if (/\.(png|jpe?g|gif|webp|svg)$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+        }
+    }
+}));
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -445,9 +469,23 @@ app.use(async (req, res, next) => {
                 res.locals.currentCharacterImage = (currentChar && currentChar.activeImage)
                     ? `/data/character-${currentChar.id}/images/${currentChar.activeImage}`
                     : null;
+                // The 96px rendition for the 28–48px avatars in the chrome. The full
+                // portrait (one live node's is 800x800, 316 KB) was downloaded and decoded
+                // on every page for a thumbnail-sized slot.
+                res.locals.currentCharacterAvatar = (currentChar && currentChar.activeImage)
+                    ? avatarUrl(currentChar.id, currentChar.activeImage)
+                    : null;
+                // The character menu used to fetch this list (and /api/current) on
+                // every page load; the layout already has it in memory.
+                res.locals.characterMenu = characters.map(c => ({
+                    id: c.id, name: c.name, activeImage: c.activeImage || null,
+                    avatar: c.activeImage ? avatarUrl(c.id, c.activeImage) : null
+                }));
             } catch (e) {
                 res.locals.currentCharacterName = null;
                 res.locals.currentCharacterObject = null;
+                res.locals.currentCharacterAvatar = null;
+                res.locals.characterMenu = null;
             }
         } else {
             res.locals.currentCharacterName = null;
@@ -915,10 +953,28 @@ try {
     console.log(`   Generate certs: openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/server.key -out certs/server.cert -days 3650 -subj "/CN=monsterbox"`);
 }
 
+// Keep idle client connections open well past Node's 5 s default.
+//
+// Measured from the dev seat, 2026-09-04: the fleet mute fan-out took 56-65 ms when the
+// orchestrator's sockets to the five peers were warm and 200-1230 ms when they
+// had gone cold — with Keep-Alive: timeout=5 they went cold between every 15 s
+// health poll and every pair of operator clicks, so nearly every click paid six
+// TCP+TLS handshakes over Wi-Fi radios that also have to wake from power-save.
+// Each node's own request handling is 2-5 ms; the handshakes WERE the latency.
+// 65 s outlasts the poll and the pauses between clicks; browsers' pooled
+// connections benefit the same way. headersTimeout must stay above it or Node
+// may tear down a kept-alive socket mid-request.
+const KEEP_ALIVE_TIMEOUT_MS = 65000;
+function tuneKeepAlive(srv) {
+    srv.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
+    srv.headersTimeout = KEEP_ALIVE_TIMEOUT_MS + 1000;
+    return srv;
+}
+
 // Start primary server: HTTPS if certs available, HTTP otherwise
 let server;
 if (sslOptions) {
-    httpsServer = https.createServer(sslOptions, app);
+    httpsServer = tuneKeepAlive(https.createServer(sslOptions, app));
     server = httpsServer;
     httpsServer.listen(PORT, '0.0.0.0', async () => {
         await onServerReady('https');
@@ -927,9 +983,9 @@ if (sslOptions) {
         console.error(`❌ HTTPS server failed:`, e.message);
     });
 } else {
-    server = app.listen(PORT, '0.0.0.0', async () => {
+    server = tuneKeepAlive(app.listen(PORT, '0.0.0.0', async () => {
         await onServerReady('http');
-    });
+    }));
 }
 
 async function onServerReady(protocol) {
@@ -1082,7 +1138,7 @@ try {
     for (const tp of testPorts) {
         if (tp === PORT) continue;
         import('http').then(({ default: http }) => {
-            const testServer = http.createServer(app);
+            const testServer = tuneKeepAlive(http.createServer(app));
             // Bind to loopback only. This listener serves the ENTIRE app over
             // plaintext HTTP; on a production RPi (HTTPS on the main port) binding
             // to 0.0.0.0 silently re-exposed every hardware/calibration endpoint

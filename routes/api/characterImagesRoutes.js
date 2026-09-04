@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import { listImages, saveImage, deleteImage, setActiveImage, ensureImagesDir } from '../../services/characterImageService.js';
+import { listImages, saveImage, deleteImage, setActiveImage, ensureImagesDir, thumbnailPath, initialsAvatarSvg, characterDisplayName } from '../../services/characterImageService.js';
 
 const router = express.Router({ mergeParams: true });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -60,8 +60,28 @@ router.get('/characters/:id/images/:filename', async (req, res) => {
     const filePath = path.join(dir, filename);
     try {
       await (await import('fs')).promises.access(filePath);
-      return res.sendFile(filePath);
+      // ?w=96 asks for the avatar rendition the page chrome draws at 28–48px.
+      // Generated once, cached on disk; on any failure the original is served.
+      if (req.query.w) {
+        const thumb = await thumbnailPath(id, filename, parseInt(String(req.query.w), 10));
+        if (thumb) return res.sendFile(thumb, { maxAge: '1h' });
+      }
+      // Same policy as the /data static mount that serves these files under
+      // their canonical URL: an hour in the browser, ETag revalidation after.
+      // max-age=0 had the 300 KB portrait re-downloading on every page.
+      return res.sendFile(filePath, { maxAge: '1h' });
     } catch (_) {
+      // An avatar request (?w=) for a portrait this node does not have (they
+      // are node-local) gets the character's initials as an SVG — the same face
+      // the CSS fallback draws — rather than a 404 on every fleet-listing page
+      // or the webcam "no stream" picture the bare URL falls back to. Short
+      // cache: the file may arrive with the next upload.
+      if (req.query.w) {
+        const name = await characterDisplayName(id);
+        res.set('Cache-Control', 'public, max-age=60');
+        res.type('image/svg+xml');
+        return res.send(initialsAvatarSvg(name, parseInt(String(req.query.w), 10)));
+      }
       // Fallback placeholder to avoid 404s in tests
       const { fileURLToPath } = await import('url');
       const { default: nodePath } = await import('path');

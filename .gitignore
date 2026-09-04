@@ -110,3 +110,6 @@ public/__preview_*.html
 .tmp*/
 .scratch/
 data/log-review-state.json
+
+# avatar thumbnails are derived from the originals on demand (services/characterImageService.js)
+data/character-*/images/.thumbs/

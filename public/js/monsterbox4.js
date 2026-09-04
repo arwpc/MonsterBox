@@ -16,7 +16,36 @@ class MonsterBox {
     constructor() {
         this.apiBase = '';
         this.currentCharacter = this.getCurrentCharacter();
+        this._sharedJson = new Map();
         this.init();
+    }
+
+    /**
+     * One request per URL per page-load burst.
+     *
+     * The dashboard's three scripts each fetched the pose list and the audio
+     * library for themselves — five requests for two payloads (one of them
+     * 233 KB) into the browser's six-connection pool, while the toggles the
+     * operator actually wanted queued behind them. Concurrent callers share
+     * the in-flight promise, and the parsed body is kept for a short window
+     * so a caller arriving a beat later still joins. The window is short on
+     * purpose: a list re-read after a save must see the save. Pass
+     * { fresh: true } to bypass it outright.
+     */
+    sharedJson(url, opts = {}) {
+        const ttl = typeof opts.ttlMs === 'number' ? opts.ttlMs : 1500;
+        const now = Date.now();
+        const hit = this._sharedJson.get(url);
+        if (hit && !opts.fresh && (hit.inflight || (now - hit.at) < ttl)) return hit.promise;
+
+        const promise = fetch(url, opts.init).then((response) => response.json());
+        const entry = { promise, inflight: true, at: now };
+        this._sharedJson.set(url, entry);
+        promise.then(
+            () => { entry.inflight = false; entry.at = Date.now(); },
+            () => { if (this._sharedJson.get(url) === entry) this._sharedJson.delete(url); }
+        );
+        return promise;
     }
 
     init() {

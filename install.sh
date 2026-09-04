@@ -151,7 +151,11 @@ apt-get install -y \
     python3-setuptools \
     python3-wheel \
     python3-numpy \
-    python3-scipy
+    python3-scipy \
+    python3-pil
+
+# python3-pil (Pillow) renders the avatar thumbnails (python_wrappers/image_thumb.py);
+# without it every page falls back to the full ~300 KB character portrait.
 
 # ============================================================
 # 5. Install Hardware Control Libraries
@@ -525,6 +529,19 @@ mkdir -p /var/log/journal /etc/systemd/journald.conf.d
 printf '[Journal]\nStorage=persistent\nSystemMaxUse=64M\nSystemMaxFileSize=16M\n' \
     > /etc/systemd/journald.conf.d/monsterbox.conf
 systemctl restart systemd-journald 2>/dev/null || true
+
+# Wi-Fi power-save OFF. With it on, the radio dozes between beacons and every
+# first packet after an idle gap waits for the next one: LAN ping 11-31 ms avg
+# with 100 ms spikes, and every inter-node call and browser request paid it.
+# Persistent via NetworkManager; immediate via iw so it applies without a
+# re-activation that would drop the link. See scripts/node-baseline/wifi-powersave-off.sh
+mkdir -p /etc/NetworkManager/conf.d
+printf '# MonsterBox: Wi-Fi power-save adds 10-100 ms of doze latency to every LAN packet.\n[connection]\nwifi.powersave = 2\n' \
+    > /etc/NetworkManager/conf.d/10-monsterbox-wifi-powersave.conf
+nmcli general reload conf 2>/dev/null || true
+if ip link show wlan0 >/dev/null 2>&1; then
+    (command -v iw >/dev/null && iw dev wlan0 set power_save off) || /usr/sbin/iw dev wlan0 set power_save off 2>/dev/null || true
+fi
 
 # app-log rotation (they grow unbounded otherwise; 8.5MB in one night observed)
 cat > /etc/logrotate.d/monsterbox <<'LOGROTATE'

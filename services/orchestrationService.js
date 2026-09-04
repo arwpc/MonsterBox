@@ -37,6 +37,9 @@ const execAsync = promisify(exec);
 // discovery (untrusted), and several control paths interpolate the host into a
 // shell string for SSH — validate before any such use to close command injection.
 const HOST_RE = /^[A-Za-z0-9.\-]{1,253}$/;
+// How long one fleet-health answer serves repeat callers (page paint + first
+// poll, or two browsers). Well under the 15 s poll, so nothing reads stale.
+const FLEET_HEALTH_MEMO_MS = 1500;
 // Matches the convention used across the app and in routes/api/orchestrationRoutes.js.
 function isTestMode() {
     return process.env.MB_TEST_MODE === '1'
@@ -53,6 +56,7 @@ class OrchestrationService {
         const config = this.loadAnimatronicsConfig();
         this.animatronics = config.animatronics;
         this.goblins = config.goblins;
+        this._fleetHealthMemo = new Map();
 
         this.sshUser = 'remote';
         // Inter-node control credential. The ONLY source is MONSTERBOX_SSH_PASSWORD in
@@ -848,12 +852,38 @@ class OrchestrationService {
      * unreachable nodes report online:false. Powers the command-center health cards.
      */
     async getFleetHealth(ids = null) {
+        // Coalesce: the Fleet Command Center's first paint and its first poll can
+        // overlap, and two operators' browsers ask the same question of the same
+        // six nodes. One fan-out in flight per id-set, answer reused for a beat.
+        const key = Array.isArray(ids) ? ids.map(String).sort().join(',') : '*';
+        const cached = this._fleetHealthMemo.get(key);
+        if (cached && (cached.inflight || (Date.now() - cached.at) < FLEET_HEALTH_MEMO_MS)) {
+            return cached.promise;
+        }
+        const entry = { promise: null, inflight: true, at: Date.now() };
+        entry.promise = this._collectFleetHealth(ids).then(
+            (result) => { entry.inflight = false; entry.at = Date.now(); return result; },
+            (error) => { this._fleetHealthMemo.delete(key); throw error; }
+        );
+        this._fleetHealthMemo.set(key, entry);
+        return entry.promise;
+    }
+
+    async _collectFleetHealth(ids) {
         const targets = this.getControllableAnimatronics(ids);
         const results = await Promise.allSettled(targets.map(async (node) => {
             const card = { id: node.id, name: node.name, ip: node.ip, port: node.port, source: node.source, trusted: node.trusted !== false };
+            // All three probes leave together. Waiting for /api/system/info before
+            // asking for memory and telemetry made every card cost two round
+            // trips to that node — and the page's refresh is paced by the slowest.
+            const infoP = this.httpNode(node, { path: '/api/system/info', timeout: 5000 });
+            const enrichP = Promise.allSettled([
+                this.httpNode(node, { path: '/api/resource/memory', timeout: 4000 }),
+                this.httpNode(node, { path: '/api/movement/telemetry', timeout: 4000 }),
+            ]);
             try {
                 // /api/system/info carries version + uptime + cpu in one lightweight call.
-                const info = await this.httpNode(node, { path: '/api/system/info', timeout: 5000 });
+                const info = await infoP;
                 card.online = true;
                 card.version = info?.version || null;
                 card.uptimeSec = typeof info?.uptime === 'number' ? Math.round(info.uptime) : null;
@@ -882,10 +912,7 @@ class OrchestrationService {
                 }
             }
             // Best-effort enrichment; a node may lack a given endpoint on older builds.
-            const [mem, movement] = await Promise.allSettled([
-                this.httpNode(node, { path: '/api/resource/memory', timeout: 4000 }),
-                this.httpNode(node, { path: '/api/movement/telemetry', timeout: 4000 }),
-            ]);
+            const [mem, movement] = await enrichP;
             if (mem.status === 'fulfilled' && mem.value?.memory) {
                 card.rssMb = mem.value.memory.rssMB ?? null;
                 card.memLevel = mem.value.memory.level ?? null;

@@ -109,7 +109,7 @@
         function createAvatar(c, size) {
           size = size || 40;
           var initials = getInitials(c.name || 'Character ' + c.id);
-          var imageUrl = c.activeImage ? '/api/characters/' + c.id + '/images/' + c.activeImage : '';
+          var imageUrl = c.activeImage ? '/api/characters/' + c.id + '/images/' + encodeURIComponent(c.activeImage) + '?w=' + (size > 64 ? 128 : 64) : '';
           var avatarHtml = '<div class="character-avatar rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center" ' +
             'style="width:' + size + 'px;height:' + size + 'px;min-width:' + size + 'px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-weight:bold;font-size:' + Math.floor(size * 0.4) + 'px;border:2px solid rgba(255,255,255,0.2);vertical-align:middle;">';
           if (imageUrl) {

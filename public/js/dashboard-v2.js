@@ -22,9 +22,13 @@
     });
   }
 
+  // Shared with dashboard.js and manual-controls.js, which ask for the same
+  // pose list and audio library on the same page load.
   function getJSON(url, cb) {
-    fetch(url).then(function (r) { return r.json(); }).then(function (d) { cb(null, d); })
-      .catch(function (e) { cb(e); });
+    var p = (window.MonsterBox && typeof window.MonsterBox.sharedJson === 'function')
+      ? window.MonsterBox.sharedJson(url)
+      : fetch(url).then(function (r) { return r.json(); });
+    p.then(function (d) { cb(null, d); }).catch(function (e) { cb(e); });
   }
 
   function postJSON(url, body, cb) {

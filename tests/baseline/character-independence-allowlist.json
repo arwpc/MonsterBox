@@ -13,7 +13,7 @@
     {
       "pattern": "orlok-reference",
       "file": "public/js/character-menu.js",
-      "line": 43,
+      "line": 52,
       "snippet": "var wanted = ['PumpkinHead', 'Mina', 'Orlok', 'Sir Dragomir'];",
       "reason": "Client-side character menu may reference character names in labels."
     },

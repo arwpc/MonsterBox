@@ -2,6 +2,103 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased] - 2026-09-04 — every fleet click paid six TLS handshakes
+
+Reported as "the communication takes full seconds — these are not slow
+computers." They are not: each node handles a fleet request in **2–5 ms**. The
+seconds were spent *getting to* the nodes, and the same shape repeated at every
+layer — a connection that was thrown away and rebuilt for each ask.
+
+- **Fixed: the servers closed idle connections after 5 s (Node's default), so
+  the orchestrator's sockets to the five peers were dead before every click.**
+  The fleet-health poll runs every 15 s; operator clicks come seconds apart. So
+  nearly every fan-out started with six fresh TCP + TLS handshakes over Wi-Fi
+  radios that also had to wake from power-save: connect 23–500 ms and TLS
+  20–130 ms per peer, up to 1.17 s on one. Measured from the dev seat, the
+  fleet mute fan-out took **56–65 ms** with warm sockets and **200–1230 ms**
+  with cold ones; the same call 7 s after the previous one was already back to
+  196–427 ms. All three listeners (HTTPS :3000, HTTP :3100, and the fallback)
+  now keep idle connections for 65 s (`keepAliveTimeout`, with `headersTimeout`
+  just above it, `server.js`). Node's `http.Agent` honours the server's
+  `Keep-Alive: timeout=` hint, so once every node runs this the orchestrator's
+  pool stays warm across polls and clicks with no client change; the browser's
+  six pooled connections benefit the same way.
+- **Fixed: the Fleet Command Center's first health answer waited on nothing but
+  its own page.** `GET /orchestration` now starts the fleet-health fan-out as
+  the page HTML is sent, so the first `fleet-health` the page asks for is
+  answered from the in-flight collection: **10 ms** instead of 430–480 ms.
+  Fleet-health results are also memoised for 1.5 s with in-flight coalescing
+  (`services/orchestrationService.js`), so a page's first paint, its first
+  poll, and a second operator's browser share ONE fan-out; and the three probes
+  to each node (`info`, `memory`, `telemetry`) leave together instead of the
+  latter two waiting on the first.
+- **Fixed: the wall painted nothing until the slowest node answered.** The
+  roster (`/nodes`, local, milliseconds) now draws six named cards in a
+  "checking…" state at once, and health lights the dots as it lands. A card
+  never waits on a peer to show its own name; a failed health call settles the
+  pending cards instead of leaving them checking forever.
+- **Fixed: snapshots were still crowding out the toggles.** After the 09-01
+  change six cards each polled at 200 ms; when a node was slow — and one dead
+  camera pinned a connection for ~4 s per attempt — the pool refilled and every
+  action queued behind pictures. At most **two** snapshot requests are in
+  flight page-wide (12 s watchdog so a hung request can't hold a slot), leaving
+  four connections for actions and the health poll. Server-side, a camera that
+  just failed is not re-probed for 15 s (`mjpegFrameCache` `failTtlMs`) and a
+  stream that opens but yields no frame is dropped rather than waited on again;
+  `webcamController` memoises the mjpg-streamer probe (10 s on failure, 2 s on
+  success). Log lines scroll once per animation frame instead of forcing a
+  synchronous layout per line (233 ms of main thread during load, profiled).
+- **New: gzip for JSON and static text, from Node's built-in `zlib` — no new
+  dependency.** `services/jsonCompression.js` compresses `res.json()` bodies
+  over 1 KB at level 1 (the audio library: **238 272 → 27 336 bytes**, 3.6 ms
+  on a Pi 4B); streams, proxies and the MJPEG relay are untouched.
+  `services/staticCompression.js` serves `public/` text assets compressed once
+  per file and held in memory, keyed by path + mtime + size, with weak ETags
+  and 304s (`bootstrap.min.css` **232 948 → 30 835**; the dashboard's CSS+JS
+  **782 KB → 159 KB** on the wire).
+- **New: a cache policy the browser can use.** Everything under `public/` was
+  re-validated on every page. Vendor bundles now cache for 7 days, app CSS/JS
+  for 5 minutes (deploys are frequent and nothing versions the URLs), character
+  images for 1 hour, JSON under `/data` for 1 minute.
+- **New: avatar thumbnails.** The chrome's 28–48 px avatars loaded the full
+  character portrait — one live node's is 800×800, **316 KB**, downloaded twice
+  per page. `python_wrappers/image_thumb.py` (Pillow, already on every node)
+  renders 64/96/128/256 px renditions into `data/character-N/images/.thumbs/`
+  on first request; `GET /api/characters/:id/images/:file?w=96` serves them
+  (**2.5 KB**). The layout, character menu, first-run page and character list
+  all use the small rendition. Portraits are node-local, so a `?w=` request for
+  one this node does not hold answers a 200 SVG of the character's initials (the
+  face the CSS fallback draws) instead of a 404 on every fleet-listing page or
+  the webcam "no stream" picture the bare URL still falls back to;
+  `saveImage`/`deleteImage` drop stale thumbnails.
+- **Fixed: the dashboard fetched the same lists two and three times.**
+  `dashboard.js`, `dashboard-v2.js` and `manual-controls.js` each asked for the
+  pose list and the audio library on the same page load; they now ride one
+  request each through `window.MonsterBox.sharedJson`. The character menu
+  fetched `/api/characters` and `/api/current` on every page for data the layout
+  already had in memory; it is rendered in.
+- **Fixed: `/api/system/volume` shelled out to `wpctl` on every page load**
+  (the control bar asks on every page; 100–160 ms TTFB). Reads are memoised
+  for 2 s with in-flight coalescing, updated on `PUT`, forgotten on
+  `/volume/canonical`: **57 ms → 4–8 ms**. `execFile`, no shell.
+- **New: Wi-Fi power-save off** (`scripts/node-baseline/wifi-powersave-off.sh`,
+  and an `install.sh` step). With it on the radio dozes between beacons and
+  every first packet after an idle gap waits for the next one: LAN ping
+  11–31 ms average with 100 ms spikes, paid by every inter-node call and
+  browser request. Persistent via NetworkManager, immediate via `iw`. Applied
+  on the dev seat; the peers need it run by hand (it needs sudo on each node).
+- **New:** `scripts/perf/measure-orch.mjs` and `scripts/perf/waterfall.mjs` —
+  Playwright-driven page timing with simulated RTT/bandwidth, used for the
+  numbers above. Caveat for anyone re-measuring: a browser running ON the Pi 4B
+  inflates CPU/main-thread timings 5–8× over the operator's laptop; the
+  network-level milestones (TTFB, dispatch order, wire bytes) are the valid
+  comparison.
+- **Tests:** `tests/unit/response-compression.test.js` (12) and
+  `tests/unit/character-image-thumbnails.test.js` (10). The Fleet Command Center
+  browser spec now names its master toggles (`aiMotion` had been added to the
+  page without the list; the bare count went red on a page that was right) and
+  reports a stranger by name.
+
 ## [Unreleased] - 2026-09-01 — the Fleet Command Center was starving itself
 
 Reported as "orchestration is jacked up": nodes flickering offline, six 500s in

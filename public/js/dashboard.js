@@ -38,6 +38,15 @@
     setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 4500);
   }
 
+  // Shared with manual-controls.js and dashboard-v2.js, which ask for the same
+  // scenes/poses on the same page load; see MonsterBox.sharedJson.
+  function sharedJson(url) {
+    if (window.MonsterBox && typeof window.MonsterBox.sharedJson === 'function') {
+      return window.MonsterBox.sharedJson(url);
+    }
+    return fetch(url).then(function (r) { return r.json(); });
+  }
+
   function mbConfirm(opts) {
     return new Promise(function (resolve) {
       var backdrop = document.createElement('div');
@@ -641,22 +650,27 @@
 
       setCharName();
       bindEvents();
-      await loadSpeakers();
-      await initChat();
 
-      await loadWebcam();
-      await loadJawSettings();
-      await loadHeadTrackStatus();
-      await loadAiMotionStatus();
-      await loadMotionSensorStatus();
-      await loadFollowOrdersSettings();
-      await loadLurkState();
-      await loadScenes();
-      await loadPoses();
-
-      if (typeof ManualControls !== 'undefined') {
-        await ManualControls.init({ characterId: currentCharacterId });
-      }
+      // Every loader owns one endpoint and one control and catches its own
+      // errors, so nothing here depends on order. Awaited one after another
+      // this was fourteen sequential round trips — a full second of waterfall
+      // over Wi-Fi before the manual controls even began to load.
+      await Promise.allSettled([
+        loadSpeakers(),
+        initChat(),
+        loadWebcam(),
+        loadJawSettings(),
+        loadHeadTrackStatus(),
+        loadAiMotionStatus(),
+        loadMotionSensorStatus(),
+        loadFollowOrdersSettings(),
+        loadLurkState(),
+        loadScenes(),
+        loadPoses(),
+        (typeof ManualControls !== 'undefined')
+          ? ManualControls.init({ characterId: currentCharacterId })
+          : Promise.resolve()
+      ]);
 
       // Initialize Bootstrap tooltips
       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
@@ -687,15 +701,17 @@
 
     async function refreshPageState() {
       setCharName();
-      await loadSpeakers();
-      await loadWebcam();
-      await loadJawSettings();
-      await loadHeadTrackStatus();
-      await loadAiMotionStatus();
-      await loadFollowOrdersSettings();
-      await loadLurkCapabilities();
-      await loadScenes();
-      await loadPoses();
+      await Promise.allSettled([
+        loadSpeakers(),
+        loadWebcam(),
+        loadJawSettings(),
+        loadHeadTrackStatus(),
+        loadAiMotionStatus(),
+        loadFollowOrdersSettings(),
+        loadLurkCapabilities(),
+        loadScenes(),
+        loadPoses()
+      ]);
 
       // Update chat panel for new character
       const chatCharNameEl = $('chatCharacterName');
@@ -1747,8 +1763,7 @@ async function saveHeadTrackSettings() {
       const container = $('scenesContainer');
 
       try {
-        const r = await fetch('/scenes/api/');
-        const j = await r.json();
+        const j = await sharedJson('/scenes/api/');
 
         if (j && j.success && j.scenes && j.scenes.length > 0) {
           dashboardScenes = j.scenes;
@@ -1920,8 +1935,7 @@ async function saveHeadTrackSettings() {
       var container = $('posesContainer');
 
       try {
-        var r = await fetch('/poses/api/poses');
-        var j = await r.json();
+        var j = await sharedJson('/poses/api/poses');
 
         if (j && Array.isArray(j) && j.length > 0) {
           dashboardPoses = j;
@@ -2430,7 +2444,8 @@ async function saveHeadTrackSettings() {
     // Use the server-resolved active image for the current character. The old
     // hardcoded '/images/characters/character-<id>.png' path did not exist and
     // 404'd on every dashboard load (broken avatar + console error).
-    var url = window.__MB_CHAR_IMAGE;
+    // 38px slot: the avatar rendition, not the full portrait.
+    var url = window.__MB_CHAR_AVATAR || window.__MB_CHAR_IMAGE;
     if (!url) return;
     var img = new Image();
     img.onload = function () {

@@ -4,7 +4,7 @@
  * SSH key management, and config templates.
  */
 
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import crypto from 'crypto';
 import express from 'express';
 import fs from 'fs/promises';
@@ -27,6 +27,43 @@ const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..',
 
 const router = express.Router();
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+// GET /volume is asked by the control bar on EVERY page load and by the
+// dashboard. Each answer was a shell spawn plus a wpctl round-trip to PipeWire:
+// 100-160 ms of TTFB measured on a Pi 4B, and one of the browser's six
+// connections held for the duration while the page's own fetches queued behind
+// it. Remember the last reading for a beat and coalesce concurrent readers.
+// Writes through this router update the memo in place, so a slider never reads
+// its own change stale; an operator's wpctl from a shell shows up within 2 s.
+const VOLUME_MEMO_MS = 2000;
+const volumeMemo = { at: 0, fraction: null, inflight: null };
+
+function rememberVolume(fraction) {
+    volumeMemo.fraction = fraction;
+    volumeMemo.at = Date.now();
+}
+
+function forgetVolume() {
+    volumeMemo.at = 0;
+}
+
+async function readSinkVolumeFraction() {
+    if (volumeMemo.fraction != null && (Date.now() - volumeMemo.at) < VOLUME_MEMO_MS) {
+        return volumeMemo.fraction;
+    }
+    if (volumeMemo.inflight) return volumeMemo.inflight;
+    // execFile, not exec: no /bin/sh in the middle of a call this frequent.
+    volumeMemo.inflight = execFileAsync('wpctl', ['get-volume', '@DEFAULT_AUDIO_SINK@'], { timeout: 5000 })
+        .then(({ stdout }) => {
+            const match = stdout.match(/Volume:\s+([\d.]+)/);
+            const fraction = match ? parseFloat(match[1]) : 0.9;
+            rememberVolume(fraction);
+            return fraction;
+        })
+        .finally(() => { volumeMemo.inflight = null; });
+    return volumeMemo.inflight;
+}
 
 /**
  * Guard for destructive system-control endpoints (reboot / shutdown /
@@ -309,9 +346,7 @@ router.get('/volume', async (req, res) => {
         if (process.env.MB_TEST_MODE === '1') {
             return res.json(volumePayload(0.9));
         }
-        const { stdout } = await execAsync('wpctl get-volume @DEFAULT_AUDIO_SINK@', { timeout: 5000 });
-        const match = stdout.match(/Volume:\s+([\d.]+)/);
-        res.json(volumePayload(match ? parseFloat(match[1]) : 0.9));
+        res.json(volumePayload(await readSinkVolumeFraction()));
     } catch (error) {
         console.error('Error getting volume:', error.message);
         res.json(volumePayload(0.9));
@@ -345,6 +380,7 @@ router.put('/volume', express.json(), async (req, res) => {
         }
         const linear = (vol / 100).toFixed(2);
         await execAsync(`wpctl set-volume @DEFAULT_AUDIO_SINK@ ${linear}`, { timeout: 5000 });
+        rememberVolume(parseFloat(linear));
         res.json(volumePayload(parseFloat(linear)));
     } catch (error) {
         console.error('Error setting volume:', error.message);
@@ -368,6 +404,7 @@ router.post('/volume/canonical', async (req, res) => {
             return res.json({ success: true, testMode: true, skipped: true, reason: 'test mode' });
         }
         const result = await systemService.applyCanonicalSinkVolume();
+        forgetVolume();
         res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
         console.error('Error restoring canonical volume:', error.message);

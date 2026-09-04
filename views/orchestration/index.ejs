@@ -261,9 +261,18 @@
   $('#fccConfirmBackdrop').addEventListener('click', () => closeConfirm(false));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && confirmResolve) closeConfirm(false); });
 
+  // Reading scrollHeight forces a synchronous layout of the whole page, and log()
+  // is called for every node as the wall fills — profiled at 233ms of main thread
+  // during load. Scroll once per frame instead, when layout is happening anyway.
+  let logScrollQueued = false;
+  function scrollLogSoon(box) {
+    if (logScrollQueued) return;
+    logScrollQueued = true;
+    requestAnimationFrame(() => { logScrollQueued = false; box.scrollTop = box.scrollHeight; });
+  }
   function log(msg, type) {
     const line = el('div', type || 'muted', '<span class="muted">' + new Date().toLocaleTimeString() + '</span> ' + esc(msg));
-    const box = $('#commandLog'); box.appendChild(line); box.scrollTop = box.scrollHeight;
+    const box = $('#commandLog'); box.appendChild(line); scrollLogSoon(box);
     while (box.children.length > 300) box.removeChild(box.firstChild);
   }
   // Per-node failures already travel in results[] and were being thrown away, so
@@ -273,7 +282,7 @@
     r.results.filter(x => x && x.success === false).forEach(x => {
       const who = x.animatronic || x.goblin || x.id || 'node';
       const line = el('div', 'err detail', '↳ ' + esc(who) + ': ' + esc(x.error || 'failed'));
-      const box = $('#commandLog'); box.appendChild(line); box.scrollTop = box.scrollHeight;
+      const box = $('#commandLog'); box.appendChild(line); scrollLogSoon(box);
     });
   }
   function summarize(r) {
@@ -323,6 +332,30 @@
   const CAM_RETRY_LIMIT = 3;                             // failures before the card says "no webcam"
   const camTimers = new WeakMap();
 
+  // At most TWO snapshot requests in flight page-wide. Six cards each polling at
+  // 200 ms still filled the six-connection pool whenever a node was slow — one
+  // dead camera alone pinned a connection for ~4 s per attempt — and every toggle
+  // the operator pressed queued behind pictures. Two slots keep the wall moving
+  // (a warm snapshot is ~20 ms) and leave four connections for the actions and
+  // the health poll, which is what "the fleet is slow" was actually made of.
+  const CAM_MAX_INFLIGHT = 2;
+  const CAM_PROBE_TIMEOUT_MS = 12000;   // a slot is never held forever by a hung request
+  let camInflight = 0;
+  const camQueue = [];
+
+  function camAcquire(img) {
+    if (camInflight < CAM_MAX_INFLIGHT) { camInflight++; return true; }
+    if (camQueue.indexOf(img) === -1) camQueue.push(img);
+    return false;
+  }
+  function camRelease() {
+    camInflight = Math.max(0, camInflight - 1);
+    while (camQueue.length && camInflight < CAM_MAX_INFLIGHT) {
+      const next = camQueue.shift();
+      if (camRunnable(next)) { camInflight++; camFetch(next); }
+    }
+  }
+
   // The loop is CHAINED, never on an interval: the next frame is requested only
   // after the previous one resolves, so a slow node degrades to a lower frame rate
   // instead of piling up requests it will never catch up on.
@@ -341,6 +374,11 @@
 
   function camTick(img) {
     if (!camRunnable(img)) return;   // camResume() restarts the loop
+    if (!camAcquire(img)) return;    // queued; camRelease() fetches it when a slot frees
+    camFetch(img);
+  }
+
+  function camFetch(img) {
     const id = img.dataset.camNodeId;
     const off = img.parentNode && img.parentNode.querySelector('.fcc-cam-off');
     const url = API + '/animatronic/' + id + '/webcam-snapshot?_=' + Date.now();
@@ -348,7 +386,22 @@
     // Decode offscreen first, then hand the SAME url to the visible <img>. The
     // browser serves it from memory, so the swap never blanks the card.
     const probe = new Image();
+    let settled = false;
+    const settle = function () {
+      if (settled) return false;
+      settled = true;
+      clearTimeout(watchdog);
+      camRelease();
+      return true;
+    };
+    const watchdog = setTimeout(function () {
+      if (!settle()) return;
+      probe.onload = probe.onerror = null;
+      probe.src = '';
+      if (camRunnable(img)) camSchedule(img, SNAP_BACKOFF[0]);
+    }, CAM_PROBE_TIMEOUT_MS);
     probe.onload = function () {
+      if (!settle()) return;
       if (!camRunnable(img)) return;
       img.src = url;
       img.dataset.camFails = '0';
@@ -358,6 +411,7 @@
       camSchedule(img, SNAP_MS);
     };
     probe.onerror = function () {
+      if (!settle()) return;
       if (!camRunnable(img)) return;
       const fails = (parseInt(img.dataset.camFails || '0', 10) || 0) + 1;
       img.dataset.camFails = String(fails);
@@ -393,6 +447,8 @@
     delete img.dataset.camWanted;
     const t = camTimers.get(img);
     if (t) { clearTimeout(t); camTimers.delete(img); }
+    const qi = camQueue.indexOf(img);
+    if (qi !== -1) camQueue.splice(qi, 1);
   }
   function camResume(img) {
     if (img.dataset.camNodeId && camRunnable(img)) camSchedule(img, 0);
@@ -512,7 +568,7 @@
     const head = el('div', 'fcc-card-head');
     head.innerHTML =
       '<span class="mb-dot ' + (node.online ? 'mb-dot-live' : 'mb-dot-idle') + '" data-role="dot" title="' +
-        (node.online ? 'Online' : 'Offline') + '"></span>' +
+        (node.pending ? 'Checking…' : (node.online ? 'Online' : 'Offline')) + '"></span>' +
       '<span class="fcc-card-name mb-serif" title="' + esc(node.name) + '">' + esc(node.name) + '</span>' +
       '<span class="fcc-chip ' + (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '" data-role="chip" title="Discovery source / trust">' +
         (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '</span>' +
@@ -560,7 +616,7 @@
     img.decoding = 'async';
     const off = el('div', 'fcc-cam-off fcc-hidden', 'Webcam unavailable');
     if (node.online && !isNarrow()) { camStart(img, node.id); }
-    else { off.textContent = 'Node offline'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); }
+    else { off.textContent = node.pending ? 'Checking node…' : 'Node offline'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); }
     // A manual click always overrides the give-up latch — the operator may have just
     // plugged a camera in, and should not have to reload the page to find out.
     off.onclick = function (ev) {
@@ -625,13 +681,13 @@
   const NODE_CONTROLS = ['text', 'say', 'ask', 'audioSel', 'playAudio', 'loopAudio',
                          'stopAudio', 'autoInterval', 'autoStart', 'autoStop'];
 
-  function setCardEnabled(col, online) {
+  function setCardEnabled(col, online, pending) {
     NODE_CONTROLS.forEach(role => {
       const control = col.querySelector('[data-role="' + role + '"]');
       if (control) control.disabled = !online;
     });
     const note = col.querySelector('[data-role="offlineNote"]');
-    if (note) note.classList.toggle('fcc-hidden', !!online);
+    if (note) note.classList.toggle('fcc-hidden', !!online || !!pending);
     const cam = col.querySelector('.fcc-cam-wrap');
     if (cam) cam.setAttribute('aria-disabled', online ? 'false' : 'true');
   }
@@ -651,18 +707,18 @@
     q('stopAudio').addEventListener('click', () => doNode(id, '/stop-audio', {}, node.name + ' audio stopped'));
     q('autoStart').addEventListener('click', () => doNode(id, '/auto-ai/start', { interval: parseInt(q('autoInterval').value, 10) || 30 }, node.name + ' Auto-AI on'));
     q('autoStop').addEventListener('click', () => doNode(id, '/auto-ai/stop', {}, node.name + ' Auto-AI off'));
-    setCardEnabled(col, node.online);
+    setCardEnabled(col, node.online, node.pending);
     // lazy-load audio list once the node is known online
     // Deferred: the picker is not usable until the operator reaches for it, and
     // during page load these six proxied calls only crowded the fleet poll.
-    if (node.online) whenIdle(() => loadAudio(id, col));
+    if (node.online) { col.dataset.audioLoaded = '1'; whenIdle(() => loadAudio(id, col)); }
   }
 
   function patchCard(col, node) {
     const dot = col.querySelector('[data-role="dot"]');
     if (dot) {
       dot.className = 'mb-dot ' + (node.online ? 'mb-dot-live' : 'mb-dot-idle');
-      dot.title = node.online ? 'Online' : 'Offline';
+      dot.title = node.pending ? 'Checking…' : (node.online ? 'Online' : 'Offline');
     }
     const chip = col.querySelector('[data-role="chip"]');
     if (chip) { const c = node.trusted === false ? 'untrusted' : (node.source || 'config'); chip.className = 'fcc-chip ' + c; chip.textContent = c; }
@@ -676,11 +732,19 @@
         if (node.servoLatencyMs != null) bits.push(node.servoLatencyMs + 'ms');
         if (node.cpuCount != null) bits.push(node.cpuCount + ' cpu');
         h.textContent = bits.join(' · ') || (node.ip || '');
+      } else if (node.pending) {
+        h.textContent = 'checking… (' + (node.ip || '?') + ')';
       } else {
         h.textContent = (node.error ? node.error : 'offline') + ' (' + (node.ip || '?') + ')';
       }
     }
-    setCardEnabled(col, node.online);
+    setCardEnabled(col, node.online, node.pending);
+    // A card built from the roster (before health) has no audio list yet; fetch it
+    // the first time the node is known to be online. loadAudio appends, so once.
+    if (node.online && !col.dataset.audioLoaded) {
+      col.dataset.audioLoaded = '1';
+      whenIdle(() => loadAudio(node.id, col));
+    }
     // Restart the stream on every poll where the img has no src — that covers both
     // "node just came online" and "the stream died and onerror cleared it", so a
     // camera that recovers comes back on its own without a page reload.
@@ -755,13 +819,35 @@
   async function refreshOnce() {
     // Independent calls, issued together: serially these cost two round trips and
     // left the wall stale for the sum of both.
-    const [healthRes, nodesRes] = await Promise.allSettled([api('/fleet-health'), api('/nodes')]);
-    if (healthRes.status !== 'fulfilled') {
-      const msg = healthRes.reason && healthRes.reason.message || 'unknown error';
-      log('Fleet health failed: ' + msg, 'err'); showWallError(msg); return;
+    const healthP = api('/fleet-health');
+    const nodesP = api('/nodes');
+
+    // The roster is local and answers in milliseconds; fleet-health has to hear
+    // back from every node. On first load the wall is painted from the roster
+    // straight away — six named cards in a "checking" state — and health lights
+    // the dots when it lands. Nothing waits on the slowest node to show a name.
+    let nodesInfo = { nodes: [], avahiAvailable: null };
+    try {
+      nodesInfo = await nodesP;
+      if (!$('#nodeWall').querySelector('.fcc-card')) {
+        renderWall((nodesInfo.nodes || []).map(n => Object.assign({}, n, { online: undefined, pending: true })));
+      }
+    } catch (_) { /* the health render below still covers the wall */ }
+
+    let health;
+    try { health = await healthP; }
+    catch (err) {
+      const msg = err && err.message || 'unknown error';
+      log('Fleet health failed: ' + msg, 'err');
+      // Cards painted from the roster must not sit on "checking…" forever.
+      state.nodes.forEach((node, id) => {
+        if (!node.pending) return;
+        const col = $('#' + cardId(id)); if (!col) return;
+        const settled = Object.assign({}, node, { online: false, pending: false, error: msg });
+        state.nodes.set(id, settled); patchCard(col, settled); col.classList.add('fcc-ghost');
+      });
+      showWallError(msg); return;
     }
-    const health = healthRes.value;
-    const nodesInfo = nodesRes.status === 'fulfilled' ? nodesRes.value : { nodes: [], avahiAvailable: null };
 
     // merge /nodes provenance (source/trust) into health cards by id
     const prov = new Map();
@@ -788,7 +874,7 @@
       let col = $('#' + cardId(node.id));
       if (!col) { col = buildCard(node); wall.appendChild(col); }
       patchCard(col, node); // populate health/dot immediately on first render too
-      col.classList.toggle('fcc-ghost', !node.online);
+      col.classList.toggle('fcc-ghost', !node.pending && !node.online);
     }
     refreshTargetSummary();
   }

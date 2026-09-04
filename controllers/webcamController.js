@@ -325,7 +325,29 @@ export const setControls = async (req, res) => {
  *
  * @returns {Promise<{streaming:boolean, httpResponding:boolean, reason:string|null}>}
  */
+// One probe in flight at a time, and a failed verdict stands for a while. Every
+// stream and snapshot request runs this probe, and a dead input plugin makes it
+// take the full 4 s snapshot timeout — so a peer polling this node's camera for
+// its wall paid 4 s per attempt and tied up one of its browser's connections
+// the whole time. A camera coming back reads as down for at most ten seconds.
+const PROBE_FAIL_MEMO_MS = 10000;
+const PROBE_OK_MEMO_MS = 2000;
+let probeMemo = { at: 0, result: null, inflight: null };
+
 async function probeMjpgStreamer() {
+  if (probeMemo.inflight) return probeMemo.inflight;
+  if (probeMemo.result) {
+    const ttl = probeMemo.result.streaming ? PROBE_OK_MEMO_MS : PROBE_FAIL_MEMO_MS;
+    if (Date.now() - probeMemo.at < ttl) return probeMemo.result;
+  }
+  probeMemo.inflight = probeMjpgStreamerUncached().then(
+    (result) => { probeMemo = { at: Date.now(), result, inflight: null }; return result; },
+    (error) => { probeMemo.inflight = null; throw error; }
+  );
+  return probeMemo.inflight;
+}
+
+async function probeMjpgStreamerUncached() {
   const withTimeout = async (url, ms) => {
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), ms);

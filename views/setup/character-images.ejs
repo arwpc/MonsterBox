@@ -29,12 +29,15 @@
           fetch('/api/characters/' + id + '/images').then(function (r) { return r.json(); }).then(function (data) {
             if (!data || !data.success) { elList.innerHTML = '<div class="col-12 text-danger">Failed to load</div>'; return; }
             elActive.textContent = data.active || '(none)';
+            var loadedAt = Date.now();
             var html = '';
             for (var i = 0; i < data.images.length; i++) {
               var img = data.images[i];
               html += '<div class="col-auto">' +
                 '<div class="card" style="width:12rem">' +
-                '<img src="' + esc(img.url) + '" class="card-img-top" alt="">' +
+                // Portraits are browser-cached for an hour; this page is where a
+                // same-name re-upload has to show immediately, so bust it here only.
+                '<img src="' + esc(img.url) + '?v=' + loadedAt + '" class="card-img-top" alt="">' +
                 '<div class="card-body p-2 d-flex gap-1">' +
                 '<button class="btn btn-sm btn-outline-success" title="Set as active image" onclick="__imgs.setActive(\'' + esc(img.filename) + '\')"><i class="bi bi-check2"></i></button>' +
                 '<button class="btn btn-sm btn-outline-danger" title="Delete this image" onclick="__imgs.del(\'' + esc(img.filename) + '\')"><i class="bi bi-trash"></i></button>' +

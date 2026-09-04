@@ -14,7 +14,7 @@
       <div class="mb-card mb-card-interactive skull-card <%= (selectedCharacter===ch.id) ? 'selected' : '' %>" data-id="<%= ch.id %>" tabindex="0">
         <div style="display:flex; align-items:center; justify-content:center; padding: var(--mb-space-5); min-height: 160px;">
           <% if (ch.activeImage) { %>
-            <img src="/api/characters/<%= ch.id %>/images/<%= ch.activeImage %>" alt="<%= ch.name %>"
+            <img src="/api/characters/<%= ch.id %>/images/<%= encodeURIComponent(ch.activeImage) %>?w=128" alt="<%= ch.name %>"
                  style="width: 128px; height: 128px; object-fit: cover; border-radius: 50%; border: 3px solid var(--mb-border-accent); box-shadow: var(--mb-glow-poison);"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
             <span class="skull-emoji" style="display:none; font-size: 72px;">💀</span>

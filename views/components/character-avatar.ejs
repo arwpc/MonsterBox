@@ -28,7 +28,10 @@ function getInitials(name) {
 }
 
 const initials = getInitials(charName);
-const imageUrl = activeImage ? `/api/characters/${charId}/images/${activeImage}` : '';
+// The avatar rendition (?w=96, generated once by the image service), the same
+// URL the control bar and the character menu use, so the browser fetches one
+// small copy per character rather than the full portrait per URL scheme.
+const imageUrl = activeImage ? `/api/characters/${charId}/images/${encodeURIComponent(activeImage)}?w=96` : '';
 %>
 
 <div class="character-avatar-wrapper d-inline-flex align-items-center <%= className %>" data-character-id="<%= charId %>">
@@ -40,7 +43,8 @@ const imageUrl = activeImage ? `/api/characters/${charId}/images/${activeImage}`
            alt="<%= charName %>" 
            class="w-100 h-100 object-fit-cover"
            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-      <div class="w-100 h-100 d-none align-items-center justify-content-center" style="display: none !important;">
+      <%# no d-none / !important here: the onerror handler's display='flex' must win %>
+      <div class="w-100 h-100 align-items-center justify-content-center" style="display: none;">
         <%= initials %>
       </div>
     <% } else { %>

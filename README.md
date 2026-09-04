@@ -16,6 +16,28 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
+## What's New — Unreleased (September 2026) — The fleet answers in milliseconds, not seconds
+
+"The communication takes full seconds — these are not slow computers." Each node
+handles a fleet request in 2–5 ms; the seconds were spent getting to it. Details and
+the measurements in `CHANGELOG.md`.
+
+- **Idle connections stay open for 65 s** (Node's default closed them after 5 s), so
+  the orchestrator's sockets to the peers are warm between health polls and clicks:
+  fleet mute fan-out **56–65 ms** on warm sockets vs **200–1230 ms** cold.
+- **Fleet Command Center**: fleet-health starts collecting as the page HTML is sent
+  (first answer 10 ms, was 430–480 ms), results shared across concurrent callers for
+  1.5 s, six named cards paint from the roster at once and light up as health lands,
+  and snapshots are capped at two in flight so actions never queue behind pictures.
+- **Gzip from Node's built-in `zlib`** for JSON over 1 KB and static text (audio
+  library 233 KB → 27 KB; dashboard CSS+JS 782 KB → 159 KB), with a real cache
+  policy (vendor 7 d, app assets 5 min, images 1 h) and 304s.
+- **Avatar thumbnails** (Pillow, `?w=96`): the 316 KB portrait no longer rides on
+  every page for a 32 px slot; the dashboard no longer fetches the same pose list
+  and audio library three times; `/api/system/volume` is memoised (57 → 4–8 ms).
+- **Wi-Fi power-save off** on the nodes (`scripts/node-baseline/wifi-powersave-off.sh`,
+  now an `install.sh` step) — the radio's doze added 10–100 ms to every first packet.
+
 ## What's New — v10.5.0 (August 2026) — Follow Orders: the animatronics obey spoken commands
 
 Tell any character to "raise your arm", "open the box", or "close your coffin door"
