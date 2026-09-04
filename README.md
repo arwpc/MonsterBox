@@ -753,6 +753,38 @@ adapter jack returns a dead-flat floor that reads as a silent speaker. Requires 
 SSH to each node and an ElevenLabs key. More:
 `scripts/fleet-audio/README.md`, `scripts/yard-theater/README.md`.
 
+### Whole-fleet end-to-end — `scripts/fleet-e2e.mjs`
+
+The ear-check proves audio. This proves everything else, on every animatronic, and prints one
+matrix: reachability and version, that each node is serving **its own** character, the eight
+main pages, parts, every super power, the conversational AI, spoken-motion resolution, and
+capability CRUD.
+
+```bash
+node scripts/fleet-e2e.mjs                 # structural only — no noise, no hardware, no credits
+node scripts/fleet-e2e.mjs --nodes 3,6     # a subset, by animatronic id
+node scripts/fleet-e2e.mjs --audio         # + ear-check (makes noise, spends credits)
+node scripts/fleet-e2e.mjs --ai            # + a live agent round trip (spends credits)
+node scripts/fleet-e2e.mjs --drive         # + ONE small real movement per node
+node scripts/fleet-e2e.mjs --full          # all of the above
+```
+
+Three properties worth knowing, because they are the reason it is trustworthy:
+
+- **Nothing is hardcoded to a character.** Each node is asked what IT has — its parts, its
+  roles, its capabilities — and every check adapts or skips. A character with no movable parts
+  is not a failure; it is an audio-only character, and the matrix says so.
+- **It refuses to drive dangerous hardware.** Parts listed in `config/physical-faults.json` are
+  excluded, and so are the parts that are dangerous but deliberately *not* fault-listed (the
+  900-degree multi-turn neck). `--drive` only ever exercises a light: no travel, no shared rail,
+  nothing that can stall.
+- **It cleans up after itself.** The AI Motion toggle is restored to whatever it was, and the
+  capability it creates is deleted again — verified by the vocabulary file being byte-identical
+  afterwards. A run that leaves state behind is a failed run.
+
+Results land in `scripts/fleet-audio/results/fleet-e2e-<stamp>.json`, and the process exits
+non-zero if any check failed, so it can gate a release.
+
 ## AI Management (ElevenLabs)
 
 All AI voice services run through **ElevenLabs** (single provider, single API key).

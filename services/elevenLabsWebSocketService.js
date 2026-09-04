@@ -44,6 +44,28 @@ const MIC_GATE_HANGOVER_MS = 900;
 // Set MB_MIC_VOICE_GATE=0 to stream the raw microphone regardless.
 const MIC_VOICE_GATE_ENABLED = process.env.MB_MIC_VOICE_GATE !== '0';
 
+/**
+ * Is an agent turn a REPLY to something we asked, or the agent's unprompted
+ * opening greeting?
+ *
+ * A fresh agent socket always opens with the configured first_message as its own
+ * turn, before the answer to the question just sent. ElevenLabs distinguishes
+ * them: a reply names the message it answers in `in_response_to_ids`; the
+ * unprompted greeting carries an empty list.
+ *
+ * Absent field => ANSWER, deliberately. An agent or API version that does not
+ * report the field must keep behaving exactly as it did before rather than
+ * having every one of its turns discarded as a greeting, which would make the
+ * character fall silent. This layer may only ever suppress a greeting; it must
+ * never be able to suppress a real answer.
+ *
+ * Pure and exported for tests.
+ */
+export function isAnswerTurn(agentResponseEvent) {
+    const ids = agentResponseEvent && agentResponseEvent.in_response_to_ids;
+    return !Array.isArray(ids) || ids.length > 0;
+}
+
 // Set MB_WS_DEBUG=1 to dump per-message WebSocket payload previews. Default
 // silent: every conversation message otherwise lands in monsterbox.log and
 // wears the SD card.
@@ -2509,8 +2531,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             // If the field is absent entirely — an agent or API
                             // version that does not report it — treat the turn as
                             // an answer so we can never fall silent.
-                            const ids = evt?.in_response_to_ids;
-                            const isAnswer = !Array.isArray(ids) || ids.length > 0;
+                            const isAnswer = isAnswerTurn(evt);
                             if (evt && evt.event_id !== undefined) {
                                 eventVerdict.set(evt.event_id, isAnswer ? 'answer' : 'greeting');
                                 if (isAnswer) releaseStaged(evt.event_id);
@@ -2552,6 +2573,23 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                     // Give streaming a moment to finish any remaining chunks
                     await new Promise(r => setTimeout(r, 1000));
+
+                    // Reap the PCM player. serverPlaybackService keeps ONE
+                    // persistent pw-play per character for ConvAI audio, and until
+                    // now stopPcmStream had exactly one caller — a manual
+                    // audio-stop route — so every one-shot question left a player
+                    // running forever with the sink open. They accumulated silently
+                    // and then a node simply stopped being able to speak:
+                    // generate-and-play returned playback_timeout and the ear-check
+                    // scored it SILENT while the speaker was perfectly fine.
+                    // Measured before this fix: one orphan per node aged 15-18
+                    // minutes, and one on the dev seat aged 1h52m.
+                    try {
+                        const sp = await import('./serverPlaybackService.js').then(m => m.default || m);
+                        await sp.stopPcmStream({ characterId });
+                    } catch (err) {
+                        console.warn(`⚠️  could not stop PCM stream for character ${characterId}: ${err.message}`);
+                    }
 
                     // Prefer the turns that actually answered the question. Fall back
                     // to the full transcript when nothing was ever labelled, so an
