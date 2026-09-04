@@ -280,7 +280,28 @@ export function matchOrder(transcript, ctx) {
     }
   }
 
-  // 4) Gestures — matched against the intent string, then the id.
+  // 4) Gestures — an operator-authored phrase first, then the intent string.
+  //
+  // A capability carries both `intent` (what the AGENT matches on, to choose a
+  // motion that suits what it is saying) and `phrases` (what a GUEST says to ask
+  // for it). One record serves both audiences, which is the whole point of a
+  // single vocabulary — otherwise the same bow needs authoring twice.
+  //
+  // An authored phrase is an exact operator instruction, so it outranks every
+  // fuzzy score below it, exactly as the custom-command table does at rung 2.
+  if (cfg.enableGestureMatching !== false && (ctx.gestures || []).length) {
+    for (const g of ctx.gestures) {
+      for (const rawPhrase of g.phrases || []) {
+        const phrase = normalizeTranscript(rawPhrase);
+        if (!phrase) continue;
+        const contained = phrase.split(' ').length >= 2 && ` ${text} `.includes(` ${phrase} `);
+        if (text === phrase || contained) {
+          return { matched: true, kind: 'gesture', gestureId: g.id, confidence: 1, addressed, via: 'capability-phrase' };
+        }
+      }
+    }
+  }
+
   if (cfg.enableGestureMatching !== false && (ctx.gestures || []).length) {
     const scored = ctx.gestures.map(g => {
       const candTokens = [

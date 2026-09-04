@@ -430,12 +430,137 @@ export async function performGesture(characterId, gestureId, opts = {}) {
     }
 }
 
+// ---------------------------------------------------------------- authoring (CRUD)
+
+/**
+ * Read the raw vocabulary file for editing — every recipe as authored, including
+ * ones that currently fail validation.
+ *
+ * loadGestures() deliberately DROPS invalid recipes so the runtime only ever
+ * performs things it trusts. An editor that read through it would silently make
+ * a broken recipe disappear the moment you opened the page, and "save" would
+ * then delete it. Authoring reads the file directly.
+ */
+export async function readVocabulary(characterId) {
+    const file = gesturesPath(characterId);
+    try {
+        const parsed = JSON.parse(await fs.readFile(file, 'utf8'));
+        return {
+            version: parsed.version || SCHEMA_VERSION,
+            gestures: Array.isArray(parsed.gestures) ? parsed.gestures : [],
+            absent: false
+        };
+    } catch (err) {
+        if (err.code === 'ENOENT') return { version: SCHEMA_VERSION, gestures: [], absent: true };
+        throw new Error(`gestures.json is unreadable: ${err.message}`);
+    }
+}
+
+/**
+ * Serialize the vocabulary keeping the authored one-line-per-step style.
+ *
+ * These files are hand-edited, committed, and rsynced to every node. Plain
+ * two-space stringify explodes each step onto seven lines, so editing ONE
+ * capability produced a 164-line diff in which the real change was invisible.
+ * Collapsing innermost (non-nested) objects back onto one line keeps a save
+ * diff the size of the edit.
+ */
+function serializeVocabulary(payload) {
+    const pretty = JSON.stringify(payload, null, 2);
+    // Only objects containing no further braces or brackets are collapsed, so
+    // this can never join two structures onto one line.
+    const collapsed = pretty.replace(
+        /\{\s*\n\s*([^{}\[\]]+?)\n\s*\}/g,
+        (whole, inner) => {
+            const oneLine = '{ ' + inner.split('\n').map(l => l.trim()).join(' ') + ' }';
+            return oneLine.length <= 140 ? oneLine : whole;
+        }
+    );
+    return collapsed + '\n';
+}
+
+async function writeVocabulary(characterId, gestures) {
+    const file = gesturesPath(characterId);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+
+    // Preserve every other top-level key. These files carry a hand-written
+    // `_comment` block recording WHY a vocabulary is shaped the way it is —
+    // which parts were dead when it was authored, which share a fused rail —
+    // and rewriting the file as {version, gestures} silently deletes it. That
+    // note is the most expensive thing in the file; the recipes can be rebuilt
+    // from it, not the other way round.
+    let existing = {};
+    try {
+        existing = JSON.parse(await fs.readFile(file, 'utf8'));
+    } catch (_) {
+        // New file — nothing to preserve.
+    }
+    const payload = { ...existing, version: SCHEMA_VERSION, gestures };
+    await fs.writeFile(file, serializeVocabulary(payload), 'utf8');
+    // loadGestures() caches on mtime, so a fresh stat is enough to pick this up —
+    // but dropping the entry makes the next read deterministic rather than
+    // dependent on filesystem timestamp granularity.
+    cache.delete(characterId);
+    cache.delete(String(characterId));
+    cache.delete(Number(characterId));
+    return payload;
+}
+
+/**
+ * Create or replace one capability, refusing anything the RUNTIME would refuse.
+ *
+ * The save gate is validateGesture() itself — the same function loadGestures()
+ * applies — so the editor cannot persist a recipe that would then vanish at load
+ * time. That is the whole point: a saved capability is a performable capability.
+ *
+ * @returns {{ok:boolean, errors?:string[], gesture?:object, created?:boolean}}
+ */
+export async function saveGesture(characterId, gesture) {
+    if (!gesture || typeof gesture.id !== 'string' || !gesture.id.trim()) {
+        return { ok: false, errors: ['gesture is missing a string id'] };
+    }
+    const errors = await validateGesture(characterId, gesture);
+    if (errors.length) return { ok: false, errors };
+
+    const vocab = await readVocabulary(characterId);
+    const idx = vocab.gestures.findIndex(g => g.id === gesture.id);
+    const created = idx === -1;
+    if (created) vocab.gestures.push(gesture);
+    else vocab.gestures[idx] = gesture;
+
+    await writeVocabulary(characterId, vocab.gestures);
+    return { ok: true, gesture, created };
+}
+
+/** Remove one capability. Reports honestly when there was nothing to remove. */
+export async function deleteGesture(characterId, gestureId) {
+    const vocab = await readVocabulary(characterId);
+    const next = vocab.gestures.filter(g => g.id !== gestureId);
+    if (next.length === vocab.gestures.length) {
+        return { ok: false, errors: [`no capability with id "${gestureId}"`] };
+    }
+    await writeVocabulary(characterId, next);
+    return { ok: true, deleted: gestureId };
+}
+
+/**
+ * Dry-run a candidate recipe without saving it, so the editor can show why a
+ * recipe is refused before the operator commits to it.
+ */
+export async function validateGestureDraft(characterId, gesture) {
+    const errors = await validateGesture(characterId, gesture);
+    return { ok: errors.length === 0, errors };
+}
+
 /** The vocabulary a character can actually perform right now — for the UI and for tests. */
 export async function listGestures(characterId) {
     const entry = await loadGestures(characterId);
     return {
         available: [...entry.gestures.values()].map(g => ({
-            id: g.id, label: g.label, intent: g.intent, kidSafe: g.kidSafe !== false
+            id: g.id, label: g.label, intent: g.intent, kidSafe: g.kidSafe !== false,
+            // What a GUEST can say to ask for this capability. The agent matches on
+            // `intent`; a visitor matches on these. One record, two audiences.
+            phrases: Array.isArray(g.phrases) ? g.phrases : []
         })),
         rejected: entry.errors,
         enabled: !entry.absent
@@ -451,13 +576,35 @@ export function handleAgentToolCall(characterId, toolName, parameters = {}, opts
     if (toolName !== 'gesture') return { handled: false };
     const gestureId = parameters.gesture_id || parameters.gestureId;
     if (!gestureId) return { handled: false, reason: 'no gesture_id' };
-    performGesture(characterId, gestureId, opts).catch(() => { /* already logged */ });
+
+    // AI Motion owns "may this character move as it speaks". This is the
+    // agent-chosen trigger. Motion must never block speech, so the check is
+    // folded into the same fire-and-forget chain as the gesture itself rather
+    // than making the tool call await a file read.
+    import('./aiMotionSuperPowerService.js')
+        .then(async ({ readAiMotionConfig }) => {
+            const aiMotion = await readAiMotionConfig(characterId);
+            if (!aiMotion.enabled || !aiMotion.triggers.agentGesture) {
+                console.log(`[GestureEngine] ${gestureId} withheld — AI Motion agent-gesture trigger is off for character ${characterId}`);
+                return;
+            }
+            // kidSafeOnly is an operator-set floor: when it is on, a recipe
+            // flagged kidSafe:false is suppressed no matter who asked for it.
+            const kidMode = opts.kidMode || aiMotion.permissions.kidSafeOnly === true;
+            return performGesture(characterId, gestureId, { ...opts, kidMode });
+        })
+        .catch(() => { /* already logged */ });
+
     return { handled: true, gestureId };
 }
 
 export default {
     loadGestures,
     listGestures,
+    readVocabulary,
+    saveGesture,
+    deleteGesture,
+    validateGestureDraft,
     performGesture,
     handleAgentToolCall,
     startConversation,

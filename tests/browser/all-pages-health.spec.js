@@ -20,6 +20,7 @@ const PAGES = [
   { name: 'Dashboard', url: '/' },
   { name: 'Live', url: '/live' },
   { name: 'Setup home', url: '/setup' },
+  { name: 'Setup — AI Motion', url: '/setup/ai-motion' },
   { name: 'Setup — Audio', url: '/setup/audio' },
   { name: 'Setup — Calibration', url: '/setup/calibration' },
   { name: 'Setup — Unified calibration', url: '/setup/calibration/unified' },

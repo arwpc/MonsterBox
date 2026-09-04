@@ -79,6 +79,22 @@ export async function handleTranscript(characterId, text, meta = {}) {
     const config = await readFollowOrdersConfig(characterId);
     if (!config.enabled) return { considered: false, reason: 'disabled' };
 
+    // AI Motion owns "may this character move", whatever asked it to. This is
+    // the guest-command trigger. Follow Orders keeps its own enable bit — it is
+    // the ears, and an operator may want them off independently — but AI Motion
+    // is the outer authority, so a single fleet-wide AI Motion off is enough to
+    // stop every character moving on request.
+    try {
+      const { readAiMotionConfig } = await import('../aiMotionSuperPowerService.js');
+      const aiMotion = await readAiMotionConfig(characterId);
+      if (!aiMotion.enabled) return { considered: false, reason: 'ai-motion-disabled' };
+      if (!aiMotion.triggers.guestCommand) return { considered: false, reason: 'ai-motion-guest-command-off' };
+    } catch (err) {
+      // Refusing on an unreadable config keeps the guarantee one-directional:
+      // AI Motion can only ever withhold motion, never grant it.
+      return { considered: false, reason: `ai-motion-config-unreadable: ${err.message}` };
+    }
+
     const state = stateFor(characterId);
     const now = Date.now();
     if (now < state.suppressedUntil) {

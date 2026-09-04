@@ -294,6 +294,28 @@ class RandomPoseService {
      * This is the main integration point for TTS/ConvAI
      */
     async triggerDuringTTS(characterId, textLength = 0) {
+        // AI Motion owns "may this character move while it speaks". This path is
+        // the ambient trigger — the one that fired a random pose on EVERY
+        // utterance with no settings page, and that was found armed on four of
+        // six nodes including one whose neck tears its own head cabling on a
+        // full rotation. It now answers to a per-character switch that defaults
+        // off, and the operator can see it on the AI Motion page.
+        //
+        // Failing open would recreate exactly the bug this replaces, so an
+        // unreadable config means NO ambient motion.
+        try {
+            const { readAiMotionConfig } = await import('./aiMotionSuperPowerService.js');
+            const aiMotion = await readAiMotionConfig(characterId);
+            if (!aiMotion.enabled) {
+                return { success: false, reason: 'AI Motion is disabled for this character' };
+            }
+            if (!aiMotion.triggers.ambientDuringSpeech) {
+                return { success: false, reason: 'AI Motion ambient-during-speech is off' };
+            }
+        } catch (err) {
+            return { success: false, reason: `AI Motion config unreadable: ${err.message}` };
+        }
+
         // Only trigger if text is long enough (more than 50 characters)
         if (textLength < 50) {
             return { success: false, reason: 'Text too short for pose' };

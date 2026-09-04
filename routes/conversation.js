@@ -240,6 +240,67 @@ router.post('/api/follow-orders', express.json(), async (req, res) => {
   }
 });
 
+// ─── AI Motion ───────────────────────────────────────────────────────
+// One authority for motion that accompanies speech and motion a guest asks
+// for. Unlike head tracking, whose armed bit lives only in a Map and is lost on
+// restart, this one is PERSISTED to super-powers.json — an operator who arms a
+// character's motion for the evening should not find it silently disarmed by a
+// service restart, and the fleet view should be able to tell the truth after a
+// reboot. The fleet broadcast sends no characterId, so each node answers for
+// its own selected character (orchestrationService SUPERPOWER_ENDPOINTS).
+
+// GET /conversation/api/ai-motion
+router.get('/api/ai-motion', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No selected character' });
+    const aiMotionService = await import('../services/aiMotionSuperPowerService.js');
+    const gestureEngine = await import('../services/gestureEngineService.js').then(m => m.default || m);
+    const config = await aiMotionService.readAiMotionConfig(characterId);
+    const vocab = await gestureEngine.listGestures(characterId);
+    res.json({
+      success: true,
+      enabled: config.enabled,
+      triggers: config.triggers,
+      capabilities: vocab.available.length,
+      characterId
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/ai-motion { enabled }
+router.post('/api/ai-motion', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No selected character' });
+    const aiMotionService = await import('../services/aiMotionSuperPowerService.js');
+    const enabled = !!(req.body && req.body.enabled);
+    const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
+
+    if (enabled && !inTest) {
+      // Same honesty rule as the jaw and follow-orders toggles: never latch
+      // "on" for a character that has nothing it can move, because the fleet
+      // toggle summarizes from this response and would report a win.
+      const { loadPartsSafe } = await import('../services/followOrders/followOrdersSuperPowerService.js');
+      const { inferPartRoles } = await import('../services/followOrders/bodyRoles.js');
+      const parts = await loadPartsSafe(characterId);
+      const movable = inferPartRoles(parts.map(p => ({ ...p, partId: String(p.id ?? p.partId) })))
+        .filter(r => r.movable || r.role === 'light');
+      if (!movable.length) {
+        return res.json({ success: false, error: 'This character has no movable parts or lights' });
+      }
+    }
+
+    const config = await aiMotionService.readAiMotionConfig(characterId);
+    await aiMotionService.writeAiMotionConfig(characterId, { ...config, enabled });
+    res.json({ success: true, enabled });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
 // Head Tracking status for current character's webcam.
 // The dashboard polls this at 1 Hz; the webcam id it re-discovers only
 // changes when parts are edited, so the parts.json read is memoized briefly —

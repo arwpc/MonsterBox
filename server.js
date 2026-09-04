@@ -28,6 +28,7 @@ import setupPosesRoutes from './routes/setup/poses.js';
 import setupJawAnimationRoutes from './routes/setup/jaw-animation.js';
 import setupHeadAnimationRoutes from './routes/setup/head-animation.js';
 import setupFollowOrdersRoutes from './routes/setup/follow-orders.js';
+import setupAiMotionRoutes from './routes/setup/ai-motion.js';
 import setupSystemRoutes from './routes/setup/system.js';
 import calibrationApiRouter from './server/calibration/router.js';
 
@@ -362,10 +363,20 @@ app.use((req, res, next) => {
 
         // Render the content template first — include common variables
         // so content templates can access currentCharacter, config, etc.
+        // A route that resolved the character itself — through resolveCharacter(req),
+        // which honours ?characterId= — must not have that answer thrown away here.
+        // Spreading options and then unconditionally overwriting currentCharacter
+        // meant every setup page rendered the NODE's selected character no matter
+        // what the caller asked for, so ?characterId=5 silently showed character 3.
+        // Routes that pass nothing still fall back to res.locals exactly as before.
+        const resolvedCharacter = options.currentCharacter !== undefined
+            ? options.currentCharacter
+            : res.locals.currentCharacter;
+        layoutOptions.currentCharacter = resolvedCharacter;
         const contentOptions = {
             ...options,
             config: req.app.locals.config,
-            currentCharacter: res.locals.currentCharacter,
+            currentCharacter: resolvedCharacter,
             testMode: layoutOptions.testMode
         };
         res.render(contentTemplate, contentOptions, (err, html) => {
@@ -518,6 +529,7 @@ app.use('/setup/models', setupModelsRoutes);
 app.use('/setup/jaw-animation', setupJawAnimationRoutes);
 app.use('/setup/head-animation', setupHeadAnimationRoutes);
 app.use('/setup/follow-orders', setupFollowOrdersRoutes);
+app.use('/setup/ai-motion', setupAiMotionRoutes);
 app.use('/setup/super-powers', (req, res) => res.redirect(301, req.originalUrl.replace('/setup/super-powers', '/setup/jaw-animation')));
 app.use('/setup/system', setupSystemRoutes);
 app.use('/setup/poses', setupPosesRoutes);

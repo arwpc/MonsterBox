@@ -705,6 +705,9 @@ class OrchestrationService {
         mute: (on) => ({ method: 'post', path: '/conversation/api/speaker-mute', body: { muted: on } }),
         idle: (on) => ({ method: 'post', path: on ? '/api/movement/idle/start' : '/api/movement/idle/stop' }),
         orders: (on) => ({ method: 'post', path: '/conversation/api/follow-orders', body: { enabled: on } }),
+        // NOT the `motion` key above — that one is the PIR motion SENSOR. This is
+        // motion GENERATION: the character moving as it speaks and on request.
+        aiMotion: (on) => ({ method: 'post', path: '/conversation/api/ai-motion', body: { enabled: on } }),
     };
 
     /**
@@ -776,6 +779,10 @@ class OrchestrationService {
             // shouting "raise your arm" seconds after the operator hit stop
             // must find the ears switched off.
             disarm.orders(false),
+            // AI Motion is the broadest autonomous trigger of all — it moves the
+            // character on its own initiative whenever it speaks. It belongs here
+            // for the same reason as the rest: panic must leave nothing armed.
+            disarm.aiMotion(false),
         ];
         const results = await Promise.allSettled(targets.map(async (node) => {
             const outcomes = await Promise.allSettled(

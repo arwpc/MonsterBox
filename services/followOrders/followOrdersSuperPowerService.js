@@ -164,7 +164,7 @@ async function buildMatchContext(characterId) {
     try {
       const gestureEngine = await import('../gestureEngineService.js').then(m => m.default || m);
       const list = await gestureEngine.listGestures(characterId);
-      gestures = (list.available || []).map(g => ({ id: g.id, label: g.label || '', intent: g.intent || '' }));
+      gestures = (list.available || []).map(g => ({ id: g.id, label: g.label || '', intent: g.intent || '', phrases: g.phrases || [] }));
     } catch (err) {
       console.warn(`Follow orders: gesture load failed for character ${characterId}: ${err.message}`);
     }

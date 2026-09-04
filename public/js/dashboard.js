@@ -82,6 +82,7 @@
       sayStatus: null,
       jawToggle: null,
       headTrackToggle: null,
+    aiMotionToggle: null,
       parrotToggle: null,
       idleToggle: null,
       chatModeToggle: null,
@@ -628,6 +629,7 @@
       ui.sayStatus = $('sayStatus');
       ui.jawToggle = $('jawToggle');
       ui.headTrackToggle = $('headTrackToggle');
+    ui.aiMotionToggle = $('aiMotionToggle');
       ui.parrotToggle = $('parrotToggle');
       ui.idleToggle = $('idleToggle');
       ui.followOrdersToggle = $('followOrdersToggle');
@@ -645,6 +647,7 @@
       await loadWebcam();
       await loadJawSettings();
       await loadHeadTrackStatus();
+      await loadAiMotionStatus();
       await loadMotionSensorStatus();
       await loadFollowOrdersSettings();
       await loadLurkState();
@@ -688,6 +691,7 @@
       await loadWebcam();
       await loadJawSettings();
       await loadHeadTrackStatus();
+      await loadAiMotionStatus();
       await loadFollowOrdersSettings();
       await loadLurkCapabilities();
       await loadScenes();
@@ -715,6 +719,7 @@
 
       ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
       ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
+    ui.aiMotionToggle && ui.aiMotionToggle.addEventListener('change', saveAiMotionSettings);
       ui.followOrdersToggle && ui.followOrdersToggle.addEventListener('change', saveFollowOrdersSettings);
 
       ui.parrotToggle && ui.parrotToggle.addEventListener('change', function () {
@@ -1425,7 +1430,46 @@
       } catch { }
     }
 
-    async function saveHeadTrackSettings() {
+    /**
+ * AI Motion — one authority for motion that accompanies speech and motion a
+ * guest asks for. Unlike head tracking, whose armed bit lives only in a Map,
+ * this state is persisted server-side, so what the page shows after a restart
+ * is the truth rather than a default.
+ */
+async function loadAiMotionStatus() {
+  try {
+    const r = await fetch('/conversation/api/ai-motion');
+    const j = await r.json();
+    if (j && j.success && ui.aiMotionToggle) {
+      ui.aiMotionToggle.checked = !!j.enabled;
+    }
+  } catch { }
+}
+
+async function saveAiMotionSettings() {
+  const enabled = !!(ui.aiMotionToggle && ui.aiMotionToggle.checked);
+  try {
+    const r = await fetch('/conversation/api/ai-motion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
+    });
+    const j = await r.json();
+    if (j && j.success) {
+      showToast(enabled ? 'AI Motion enabled' : 'AI Motion disabled', 'success');
+    } else {
+      // The server refuses to latch "on" for a character with nothing to move,
+      // and says why. Reverting the checkbox keeps the UI honest about it.
+      showToast('AI Motion failed: ' + (j.error || 'Unknown error'), 'error');
+      ui.aiMotionToggle.checked = !enabled;
+    }
+  } catch (err) {
+    showToast('AI Motion error: ' + err.message, 'error');
+    ui.aiMotionToggle.checked = !enabled;
+  }
+}
+
+async function saveHeadTrackSettings() {
       const enabled = !!(ui.headTrackToggle && ui.headTrackToggle.checked);
       try {
         const r = await fetch('/conversation/api/head-tracking', {
@@ -2412,7 +2456,8 @@
 
     // Turn off every toggle that could be animating/speaking.
     ['lurkToggle', 'chatAiOnToggle', 'jawToggle', 'headTrackToggle',
-     'parrotToggle', 'idleToggle', 'motionSensorToggle', 'followOrdersToggle']
+     'parrotToggle', 'idleToggle', 'motionSensorToggle', 'followOrdersToggle',
+     'aiMotionToggle']
       .forEach(function (id) {
         var el = $(id);
         if (el && el.checked) {
