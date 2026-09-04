@@ -4,7 +4,12 @@
 > Organized by animatronic (for one-node-at-a-time work) plus cross-cutting software,
 > data-hygiene, and security items.
 >
-> **Last hardware verification:** 2026-08-30/31 (overnight bring-up) — **Groundbreaker**
+> **Last hardware verification:** 2026-09-04 — fleet-wide ear-check reached **6/6 AUDIBLE with
+> all six canonical voices confirmed** (first time every animatronic scored AUDIBLE in one
+> pass; Groundbreaker needed a sink-volume correction 0.65 → 1.00 mid-session, not a hardware
+> fix — see Recently Fixed). Same session also found and cleared a fleet-wide double-mute
+> (PipeWire sink + app flag, all six) and disarmed random poses that were live-firing during
+> TTS on four nodes. Previous: 2026-08-30/31 (overnight bring-up) — **Groundbreaker**
 > (char 5): speaker, microphone and webcam each proven by measurement (ear-check with idle
 > and positive controls, frames, and a full TTS→speaker→air→mic→STT transcript round trip),
 > and part 1's motor driven, measured, and found to have **died mid-test** — see its section.
@@ -17,6 +22,18 @@
 > re-verify on each node before relying on it. Update this file as issues are fixed (strike
 > them through and note the version).
 
+> 🟢 **CURRENT STATE, 2026-09-03/04 — all six nodes serve 10.5.0 over HTTPS. Read the version
+> from `package.json`, not from any number written into this file.** PumpkinHead and
+> Groundbreaker's "5.5.0 / plain HTTP" era (2026-08-30 and earlier, described in the three
+> layered notes immediately below) is fully closed — both were upgraded and rebooted onto
+> 10.5.0/HTTPS during the 2026-08-30/31 overnight bring-up, and the 2026-09-04 fleet ear-check
+> reached all six nodes over HTTPS with no scheme mismatch. If you see "5.5.0" or "plain HTTP"
+> anywhere below this line for PumpkinHead or Groundbreaker, it is retained **history**, not
+> current status — their per-node sections say so explicitly. The three-layer "CHANGED /
+> SUPERSEDED / SUPERSEDED FOR X" chain below is kept for the forensic trail (it shows exactly
+> what was wrong and when it was fixed); a reader who only needs *current* status can skip to
+> the per-animatronic sections.
+>
 > 🟠 **CHANGED 2026-08-30 — PumpkinHead and Groundbreaker are no longer unplugged.**
 > Both were powered up ~21:07 CDT and are reachable by ping, SSH, and HTTP. They are
 > **running MonsterBox 5.5.0 and serving plain HTTP, not HTTPS** — five majors behind the
@@ -1023,10 +1040,6 @@ so its wiring notes survive. `super-powers.json` pins `jawAnimation`, `headTrack
 `followOrders` all `false` with a written reason each — notably `followOrders` would otherwise
 start a boot listener that grabs the **same** XVF3800 capture device the conversation path
 needs, and only one holder can capture at a time.
-🔴 **Has never been on the network. Nothing about this character is hardware-verified.** His
-data, agent, fleet entry and placeholder image are complete and schema-valid; the Pi does not
-exist yet.
-
 - ⚪ **`config/animatronics.json` deliberately carries `ip: null`.** Measured on the Orlok node:
   `null` fails in **~126 ms** (`ENOTFOUND`, and it never passes `isValidHost()` so it is never
   dialled), a guessed `192.168.8.170` takes **~3100 ms** (`EHOSTUNREACH`, and could belong to
@@ -1132,6 +1145,52 @@ exist yet.
   entry silently vanishes** — re-arming autonomous code to select a part known to be
   broken. Decide which it is: either exclude it from rsync and treat it as node-local
   measurement, or require fault entries to be committed. Do not leave it as is.
+  **Correction:** `isTestSafePart()` is not the only enforcement — `python_wrappers/servo_daemon.py`
+  itself reads `physical-faults.json` (via `_broken_channels()`) and refuses to energize a
+  broken channel for **every caller**, not just suites/autonomous selection, so this has real
+  runtime teeth in the request path. The bug above is about the file getting overwritten and
+  the entry vanishing, not about it lacking enforcement once present — and PumpkinHead's
+  and Groundbreaker's own entries were landed in git in `1bbf0d67`, so those two casualties no
+  longer disappear on the next deploy.
+
+### Opened from the 2026-09-03/04 session
+
+- 🟡 **Each ephemeral ask-ai is memoryless — the greeting is gone, but conversation memory
+  still resets per question.** Fixing the double-turn-collector bug (see Recently Fixed,
+  `37434d4d`) removed the greeting from the answer, but every one-shot ask-ai still opens a
+  brand-new agent socket with no memory of the previous question in the same conversation —
+  Mina asked a guest's name again one turn later. The durable fix is a **live headless
+  session per character** kept open across turns (`setAgentEnabledForCharacter`), which is
+  gated on the known **agent-to-agent credit-burn loop** (two live sessions talking to each
+  other exhausts ElevenLabs credits fast) — do not enable a persistent session without a
+  guard against that loop. *Would prove it fixed:* two consecutive ask-ai turns in the same
+  conversation where the second correctly references a fact from the first.
+- 🔴 **Fleet found double-muted 2026-09-03 — muted at BOTH the PipeWire sink AND the app
+  `speaker-mute` flag, on all six nodes.** Either mute alone silences the show; both were set
+  simultaneously, so unmuting only one leaves it silent and reads as a mystery. `say` /
+  `sayThis` still return `success:true` while muted either way — this is the
+  `muted-playback-reports-success` trap, doubled. Both layers were cleared this session.
+  *Would prove it fixed:* a fleet ear-check scoring 6/6 AUDIBLE with nobody having manually
+  unmuted anything since the last legitimate mute.
+- 🔴 **Random poses were found ARMED on 4 of 6 nodes (PumpkinHead, Mina, Sir Dragomir,
+  Groundbreaker) and fire during TTS.** This is exactly the latent hazard already described
+  under `scripts/boot-init.sh fires a FLEET-WIDE command on every single boot` above — a peer
+  spoken to may fire a random pose, and on Sir Dragomir that means his 900° multi-turn neck
+  with zero calibration. **Disarmed on all six this session.** Root cause (the fleet-wide
+  boot-init fan-out) is still open — see that item. *Would prove it fixed:* record every
+  peer's `/api/random-poses/settings` before and after any one node's reboot; only the
+  rebooted node's entry should change.
+- 🟢 **Groundbreaker's ear-check `SILENT` score was purely a low sink-volume finding, not a
+  fault.** At the sink's found volume (0.65) he scored `SILENT` (riseDb 3.8, recall 0); at
+  volume 1.00 he scored `AUDIBLE`, **38.4 dB rise, 100% recall**, voice confirmed correct
+  both times. See the ear-check baseline entry under Recently Fixed for the raw numbers and
+  result files. Left at 1.00 — check this after any audio-stack change or reboot, the same as
+  every other node's speaker-balance item.
+- 🟡 **Express returns a raw 413 stack trace, with no user-facing message, for uploads over
+  10 MB.** No route-level `express.json()`/`multer` limit handler catches the
+  `PayloadTooLargeError` and turns it into a normal JSON error response — the client sees a
+  bare Node stack trace. *Would prove it fixed:* an upload just over the limit returns a
+  clean `{success:false, error:"..."}` with an appropriate status instead of a stack trace.
 
 ### Opened from the 2026-08-30/31 Groundbreaker bring-up
 
@@ -1220,7 +1279,11 @@ exist yet.
   the next deploy). **Decide deliberately which it is:** a fleet registry that travels with
   the code (then node edits must be committed to be durable) or node-local state (then it must
   be added to the excludes). *Proof it is fixed:* a deploy to a node with a local fault entry
-  either preserves it, or the entry is already in git.
+  either preserves it, or the entry is already in git. **PumpkinHead's and Groundbreaker's
+  entries were committed to git in `1bbf0d67`** (2026-09-03), closing this for those two
+  specific casualties; the general design question (exclude from rsync vs. require commits)
+  is still open for future finds. Note also that the file's *enforcement* was never in
+  question — `servo_daemon.py` refuses a listed channel for every caller, not just suites.
 - ⚪ **`data/character-*/character-*/scene-queues.json` — a nested duplicate directory ships in
   git HEAD, so every node gets it.** Observed as `data/character-5/character-5/` after the
   deploy. Pre-existing, not introduced by the bring-up; probably a path-join bug in whatever
@@ -2286,6 +2349,61 @@ Plus one that was not flake at all:
 ---
 
 ## Recently Fixed (for reference)
+
+### 2026-09-03/04 session (v10.5.0 — read the version from `package.json`, not from this prose)
+
+- ~~**Agent greeting replayed on every one-shot ask-ai.**~~ — **fixed `37434d4d`.** A fresh
+  ephemeral agent socket always opens with the agent's configured `first_message` as its own
+  turn before the reply, and the collector concatenated every fragment it saw — so the
+  greeting was glued onto the front of every answer, and its audio played first. Mina answered
+  "how did you know my name?" by re-asking "who are you?". Fixed by classifying turns on
+  `agent_response_event.in_response_to_ids` (empty = unprompted greeting, non-empty = reply to
+  our `user_message`) and staging audio chunks per `event_id` until the turn is classified.
+  **Tried and reverted, worth recording so it is not tried again:** overriding `first_message`
+  to empty via `conversation_config_override` does NOT work — the agent then returns no text
+  at all. **Proven:** Mina answered 3 consecutive turns with no greeting, audible in her room
+  at 21.8 dB rise with Scribe reading the answer back. All 6 nodes verified by grep on the
+  node. *Note: the fix only removes the greeting from the answer — each ask-ai call is still
+  memoryless; see the new open item under Cross-Cutting.*
+- ~~**Order matcher failed on split particle verbs.**~~ — **fixed `37434d4d`.** "turn off the
+  light" matched, but "turn the light off" refused as `no_verb`, and "shut the light off"
+  matched the bare verb "shut" (close) then refused against a light as `verb_object_mismatch`.
+  Fixed with a split-particle pass. 8 new unit tests in `tests/unit/order-matcher.test.js`.
+- ~~**Gesture reported 3/3 steps while a limb never moved.**~~ — **fixed `37434d4d`.**
+  `transitionServos` silently drops physically-broken parts and returns only what it actually
+  drove; `runStep` ignored that return value. Orlok's `hand_glow` gesture claimed
+  fault-listed part 5 and still scored a clean 3/3. `runStep` now returns `stepsOk`,
+  `partsRefused` and `partialFailure` so a caller can tell a refused part from a completed one.
+- ~~**Jaw animation API rejected the character's own jaw servo.**~~ — **fixed `8642d063`.**
+  `servos.find(s => s.id === jawConfig.servoPartId)` compared a string id against a numeric
+  body value, so a JSON caller got `400 "Selected servo not found"` even when the servo was
+  correctly configured. Fixed with `String()` on both sides of the comparison.
+- ~~**Two hardware faults known only to the finding node, erased by the next deploy.**~~ —
+  **fixed `1bbf0d67`.** PumpkinHead's dead PIR (char 1 part 5) and Groundbreaker's stalled 12 V
+  wiper motor (char 5 part 1) are now recorded in `config/physical-faults.json` **in git**, so
+  a deploy carries them forward instead of silently reverting `isTestSafePart()` to `true` for
+  a part already proven dead. *Reminder — this does not by itself resolve the broader
+  "physical-faults.json is tracked but not rsync-excluded" design question raised elsewhere in
+  this file; it lands the two known casualties in the source of truth.*
+- ~~**`npm audit` clean but Dependabot reporting alerts — discrepancy unresolved.**~~ —
+  **fixed `b5094d32`.** Both moderate Dependabot alerts were against the transitive `qs` dep;
+  patched via a top-level `overrides` bump to `qs 6.16.0`. `npm audit` → 0 vulnerabilities. See
+  the fuller writeup already recorded under Security / Ops.
+- ~~**`.github/workflows/ci.yml` on disk had silently reverted two v10.4.0 CI fixes.**~~ —
+  **fixed `d073ea08`.** The tracked copy of the workflow file had drifted back to a 2026-07-17
+  snapshot, undoing fixes landed after that date. Restored to match the intended workflow;
+  one codebase, one CI definition, no divergence between what's on disk and what CI actually
+  runs.
+
+**Ear-check baseline, 2026-09-04 run: 6/6 AUDIBLE, all six canonical voices confirmed.**
+Fleet pass in `scripts/fleet-audio/results/earcheck-2026-09-04T01-34-52.json` scored 5/6
+AUDIBLE with correct voice on all six (PumpkinHead 9.6 dB, Mina 13.5 dB, Orlok 26.4 dB, Sir
+Dragomir 18.6 dB, Renfield 35.3 dB) plus Groundbreaker `SILENT`/3.8 dB — voice confirmed
+correct, just too quiet at sink volume 0.65. A targeted re-check at volume 1.0
+(`earcheck-2026-09-04T01-36-09.json`) scored Groundbreaker `AUDIBLE`, 38.4 dB rise, 100%
+recall — see the new open item below. Combined, this is the first time every animatronic on
+the fleet has scored AUDIBLE with its correct voice. Treat this as the new floor: any future
+run scoring below 6/6 is a regression, not a baseline gap.
 
 ### 2026-08-20 late session (audio output, both XVF3800 nodes)
 
