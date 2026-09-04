@@ -34,6 +34,16 @@
     "getPhysicalFault() matches; a friendlier status like \"not-wired\" would silently guard nothing."
   ],
   "characters": {
+    "1": {
+      "_note": "PumpkinHead. Part 5 PIR is dead \u2014 GPIO16 follows its internal pull with no response to motion. Proven 2026-08-30/31 overnight bring-up.",
+      "parts": {
+        "5": {
+          "status": "broken",
+          "reason": "PumpkinHead PIR sensor \u2014 DEAD. GPIO16 reads only its internal pull-up/down state and never responds to motion. A wedged PIR watcher is indistinguishable from a quiet room, so autonomous motion-trigger code must not select it.",
+          "since": "2026-08-31"
+        }
+      }
+    },
     "3": {
       "_note": "Orlok is the only physically damaged rig as of 2026-08-21 (operator, verbatim: 'only orlock is physically hacked with bad back left arm forearm and elbow').",
       "parts": {
@@ -56,6 +66,16 @@
           "status": "broken",
           "reason": "Forearm Rotation \u2014 operator reports the forearm is physically damaged. Travel was never measured. Shares the fused rail with part 4.",
           "since": "2026-08-21"
+        }
+      }
+    },
+    "5": {
+      "_note": "Groundbreaker. Part 1's 12 V motor rail died DURING testing on 2026-08-30/31; the acoustic signature indicated current flowing with no rotation, i.e. a mechanical STALL. Pi-side control was proven good. Do not drive until the wiper mechanism is turned by hand through full travel and the jam cleared.",
+      "parts": {
+        "1": {
+          "status": "broken",
+          "reason": "Groundbreaker wiper motor (BTS7960) \u2014 12 V rail DEAD, motor suspected mechanically STALLED. It failed mid-test 2026-08-30/31. A stalled motor cooks until the fuse opens, and PWM outlives the process. His defaultSceneId (scene 1) opens by driving this part, so an unattended fleet queue loop will stall it repeatedly.",
+          "since": "2026-08-31"
         }
       }
     },
