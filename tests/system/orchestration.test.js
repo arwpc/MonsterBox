@@ -33,6 +33,15 @@ describe('Orchestration API (Fleet Command Center)', () => {
   // out of the speakers.
   let originalMuted = false;
   let originalOrdersEnabled = false;
+  // The other five fan-outs below ARM autonomous behaviour (lurk bundle, jaw
+  // follow, head tracking, motion sensor, idle poses) on every reachable node and
+  // used to be left ON after the suite: a full-suite run against the production
+  // listener walked away with the whole fleet tracking heads and twitching. Same
+  // capture-and-restore discipline as mute/orders, read from this node's own
+  // status endpoints. Lurk is restored first because disabling the bundle also
+  // disables its members; the individual restores then put each back.
+  const ARMING_FEATURES = ['lurk', 'jaw', 'head', 'motion', 'idle'];
+  const originalArmed = {};
 
   before(async function () {
     this.timeout(20000);
@@ -44,6 +53,23 @@ describe('Orchestration API (Fleet Command Center)', () => {
     // (or disarmed) fleet-wide after every suite run.
     const fo = await request(BASE_URL).get('/conversation/api/follow-orders');
     originalOrdersEnabled = !!(fo.body && fo.body.enabled === true);
+
+    const readers = {
+      lurk: async () => (await request(BASE_URL).get('/conversation/api/lurk-mode')).body.enabled === true,
+      jaw: async () => (await request(BASE_URL).get('/conversation/api/jaw-settings')).body.enabled === true,
+      head: async () => {
+        const r = await request(BASE_URL).get('/conversation/api/head-tracking-status');
+        return !!(r.body && r.body.headTracking && r.body.headTracking.enabled === true);
+      },
+      motion: async () => (await request(BASE_URL).get('/conversation/api/motion-sensor')).body.active === true,
+      idle: async () => {
+        const r = await request(BASE_URL).get('/api/movement/idle/status');
+        return !!(r.body && r.body.status && r.body.status.running === true);
+      }
+    };
+    for (const feature of ARMING_FEATURES) {
+      try { originalArmed[feature] = await readers[feature](); } catch (_) { originalArmed[feature] = false; }
+    }
   });
 
   after(async function () {
@@ -86,6 +112,17 @@ describe('Orchestration API (Fleet Command Center)', () => {
         .post('/api/orchestration/superpower/orders')
         .send({ enabled: originalOrdersEnabled });
     } catch (_) { /* peers restored on their next reachable run */ }
+
+    // The arming fan-outs: fleet-wide through the same broadcast that armed them
+    // (it includes this node), best effort per feature so one unreachable peer
+    // cannot leave the rest armed.
+    for (const feature of ARMING_FEATURES) {
+      try {
+        await request(BASE_URL)
+          .post(`/api/orchestration/superpower/${feature}`)
+          .send({ enabled: originalArmed[feature] === true });
+      } catch (_) { /* peers disarmed on their next reachable run */ }
+    }
   });
 
 

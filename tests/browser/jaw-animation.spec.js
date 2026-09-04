@@ -196,6 +196,35 @@ test.describe('Jaw Animation — single-viewport layout', () => {
     test('should save configuration via API', async () => {
         await page.waitForTimeout(1000);
 
+        // Against a live node this save is REAL: it enables the jaw and points it at
+        // whatever servo sits second in the list, and that stuck. Capture the active
+        // config first and put it back at the end (the servo it names is the
+        // character's own calibrated jaw, so the restore POST is accepted).
+        let priorCharId = null;
+        let priorConfig = null;
+        try {
+            const cfgRes = await page.request.get(`${BASE_URL}/api/config`);
+            const cfg = await cfgRes.json();
+            priorCharId = cfg && cfg.config ? cfg.config.selectedCharacter : null;
+            if (priorCharId) {
+                const jawRes = await page.request.get(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${priorCharId}`);
+                const jaw = await jawRes.json();
+                priorConfig = jaw && jaw.config ? jaw.config : null;
+            }
+        } catch (_) { /* no restore possible; the assertions below still run */ }
+
+        try {
+            await exerciseSave();
+        } finally {
+            if (priorCharId && priorConfig) {
+                await page.request.post(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${priorCharId}`, {
+                    data: priorConfig
+                });
+            }
+        }
+    });
+
+    async function exerciseSave() {
         // Ensure jaw is enabled
         const jawEnabled = page.locator('#jawEnabled');
         if (!(await jawEnabled.isChecked())) {
@@ -233,7 +262,7 @@ test.describe('Jaw Animation — single-viewport layout', () => {
             // Just verify no crash — the page should still be functional
             await expect(page.locator('#jawEnabled')).toBeAttached();
         }
-    });
+    }
 
     // ─── Removed UI Elements (should NOT exist) ─────────────────────
     test('should NOT have Current Character card', async () => {

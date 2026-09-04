@@ -80,12 +80,22 @@ test.describe('Head Tracking Dashboard', () => {
 
     test('head tracking toggle should POST to API', async () => {
         const toggle = page.locator('#headTrackToggle');
-        const responsePromise = page.waitForResponse(resp =>
+        const waitForPost = () => page.waitForResponse(resp =>
             resp.url().includes('/conversation/api/head-tracking') && resp.request().method() === 'POST'
         );
+        // Against a live node this click ARMS (or disarms) real head tracking and the
+        // test used to walk away from it. Put the toggle back where it was found.
+        const wasChecked = await toggle.isChecked();
+        const responsePromise = waitForPost();
         await toggle.click();
         const response = await responsePromise;
         expect(response.status()).toBeLessThan(500);
+
+        if ((await toggle.isChecked()) !== wasChecked) {
+            const restorePromise = waitForPost();
+            await toggle.click();
+            await restorePromise;
+        }
     });
 
     test('webcam image should be present', async () => {
