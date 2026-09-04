@@ -696,8 +696,11 @@ test.describe('Phase 3: Pose Editor', () => {
     await page.goto(`${BASE}/poses/editor`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
 
-    // Count sliders (servo angle controls)
-    const sliders = page.locator('input[type="range"]');
+    // Count sliders (servo angle controls). Scoped to the parts panel: the page-wide
+    // locator also matched the control bar's master-volume slider, which sits first
+    // in the DOM on a node with no servos — "set to 50" there is PUT /api/system/volume
+    // and it dropped PumpkinHead's speaker from 65% to 50% on the 2026-09-04 run.
+    const sliders = page.locator('#partsContainer input[type="range"]');
     const sliderCount = await sliders.count();
     console.log(`  Pose Editor: ${sliderCount} sliders`);
 
