@@ -12,6 +12,10 @@ describe('Dashboard API — Deep Functional Tests', () => {
   // ── Monster Features: Jaw Animation ──────────────────────────────
   describe('Jaw Animation Toggle', () => {
     let originalState;
+    // A character with no jaw servo is refused ("No jaw servo configured for this
+    // character") and that refusal is the correct behaviour, not a failure. The
+    // enable/confirm/persist steps only make sense where a jaw exists.
+    let noJawServo = false;
 
     before(async () => {
       const res = await request(BASE_URL).get('/conversation/api/jaw-settings');
@@ -31,16 +35,23 @@ describe('Dashboard API — Deep Functional Tests', () => {
       expect(res.body).to.have.property('enabled').that.is.a('boolean');
     });
 
-    it('POST should enable jaw animation', async () => {
+    it('POST should enable jaw animation', async function () {
       const res = await request(BASE_URL)
         .post('/conversation/api/jaw-settings')
         .send({ enabled: true })
         .expect(200);
+      if (res.body.success === false && /no jaw servo/i.test(String(res.body.error || ''))) {
+        noJawServo = true;
+        const check = await request(BASE_URL).get('/conversation/api/jaw-settings').expect(200);
+        expect(check.body.enabled, 'a refused enable must not arm the jaw').to.not.equal(true);
+        this.skip();
+      }
       expect(res.body).to.have.property('success', true);
       expect(res.body).to.have.property('enabled', true);
     });
 
-    it('GET should confirm jaw animation is enabled', async () => {
+    it('GET should confirm jaw animation is enabled', async function () {
+      if (noJawServo) this.skip();
       const res = await request(BASE_URL).get('/conversation/api/jaw-settings').expect(200);
       expect(res.body.enabled).to.equal(true);
     });
@@ -53,7 +64,8 @@ describe('Dashboard API — Deep Functional Tests', () => {
       expect(res.body).to.have.property('enabled', false);
     });
 
-    it('state should persist across reads', async () => {
+    it('state should persist across reads', async function () {
+      if (noJawServo) this.skip();
       await request(BASE_URL)
         .post('/conversation/api/jaw-settings')
         .send({ enabled: true });
