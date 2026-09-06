@@ -1183,12 +1183,28 @@ router.get('/api/lurk-mode/capabilities', async (req, res) => {
 async function enableLurkSuperpowers(characterId) {
   const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null };
 
-  // 1. Enable jaw animation
+  // 1. Enable jaw animation — but ONLY if this character actually has a jaw.
+  //
+  // This used to set enabled:true unconditionally, so turning on AI mode armed
+  // jaw animation on characters with no jaw servo at all (PumpkinHead has no
+  // servo parts whatsoever). That writes enabled:true into super-powers.json,
+  // where it sticks and reads as a configured feature the operator never asked
+  // for. Head tracking immediately below already gates on the character owning
+  // a webcam; jaw now follows the same rule.
   try {
     const jawConfig = await jawAnimationService.readJawConfig(characterId);
-    jawConfig.enabled = true;
-    await jawAnimationService.writeJawConfig(characterId, jawConfig);
-    results.jaw = { enabled: true };
+    const jawParts = await loadCharacterParts(characterId);
+    const jawServo = jawConfig.servoPartId
+      ? jawParts.find(p => String(p.id) === String(jawConfig.servoPartId))
+      : null;
+
+    if (!jawServo) {
+      results.jaw = { enabled: false, reason: 'no jaw servo configured for this character' };
+    } else {
+      jawConfig.enabled = true;
+      await jawAnimationService.writeJawConfig(characterId, jawConfig);
+      results.jaw = { enabled: true };
+    }
   } catch (e) {
     results.jaw = { enabled: false, error: e.message };
   }
