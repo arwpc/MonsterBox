@@ -4,7 +4,7 @@
 # WHY: PumpkinHead was inaudible with PipeWire at 1.00 and PCM,0 at 0 dB,
 # because a SECOND control — PCM,1 — sat at 40/60 = -20.00 dB. That is a 10x
 # amplitude cut living below PipeWire, so wpctl/the app volume slider cannot
-# see or fix it. Orlok (audible) had the same control at 0 dB.
+# see or fix it. An audible node had the same control at 0 dB.
 #
 # Usage:  pcm-max.sh            apply
 #         pcm-max.sh --dry-run  show only

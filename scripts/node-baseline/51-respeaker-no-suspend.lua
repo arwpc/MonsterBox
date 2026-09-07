@@ -13,8 +13,9 @@
 -- power-cycles, a wiped PipeWire state dir, camera removal and full reboots
 -- because none of those touch suspend behaviour.
 --
--- Orlok's identical array never showed the fault because his sink sits at
--- `idle` (stream still open) rather than `suspended`.
+-- A node whose sink happens to sit at `idle` (stream still open) rather than
+-- `suspended` never shows the fault, which is what made this look like flaky
+-- hardware on some nodes and not others.
 --
 -- WirePlumber here is 0.4.13, which reads Lua from main.lua.d — a 0.5-style
 -- SPA-JSON file in wireplumber.conf.d is silently ignored.
@@ -22,7 +23,7 @@
 --
 -- The fix is about keeping a PLAYBACK reference alive for the AEC pipeline, and
 -- only the output node needs pinning. A first version matched the input too and
--- broke Orlok, whose mic had been fine: PipeWire then held the capture
+-- broke a node whose mic had been fine: PipeWire then held the capture
 -- subdevice open permanently (`arecord -l` showed Subdevices: 0/1) and
 -- retire_capture_urb errors climbed while every capture returned zero bytes.
 -- Removing the input match restored him. Keep the source free to suspend.

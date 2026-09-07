@@ -269,8 +269,9 @@ async function applyCanonicalSinkVolume(opts) {
  * "intermittent microphone": it worked only while something happened to be
  * playing, which is why it survived VBUS power-cycles, a wiped PipeWire state
  * directory, removing the camera from the bus, and full reboots — none of those
- * touch suspend behaviour. Orlok's identical array never showed it because his
- * sink happens to sit at `idle`.
+ * touch suspend behaviour. A node whose sink happens to sit at `idle` rather
+ * than `suspended` never shows the fault at all, which is what made this look
+ * like flaky hardware on some nodes and not others.
  *
  * The companion half is a WirePlumber rule pinning
  * session.suspend-timeout-seconds = 0 for the XVF3800 nodes, which keeps the
