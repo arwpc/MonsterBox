@@ -252,6 +252,73 @@ async function applyCanonicalSinkVolume(opts) {
     }
 }
 
+/**
+ * Open the default sink once at startup so it settles at `idle` instead of
+ * `suspended`.
+ *
+ * WHY THIS EXISTS — it is a MICROPHONE fix, not a speaker one. The ReSpeaker
+ * XVF3800 is an echo-cancelling speakerphone: its capture pipeline only emits
+ * frames while a PLAYBACK stream is open on the device. Measured on PumpkinHead
+ * 2026-09-06, the same capture command seconds apart:
+ *
+ *   sink suspended                  ->       0 bytes
+ *   a playback stream running       -> 309,760 bytes (full 16 kHz rate)
+ *   sink primed once, then idle     -> 374,400 bytes, repeatable, no playback
+ *
+ * So a suspended sink means a DEAD MIC on these nodes. That was the whole
+ * "intermittent microphone": it worked only while something happened to be
+ * playing, which is why it survived VBUS power-cycles, a wiped PipeWire state
+ * directory, removing the camera from the bus, and full reboots — none of those
+ * touch suspend behaviour. Orlok's identical array never showed it because his
+ * sink happens to sit at `idle`.
+ *
+ * The companion half is a WirePlumber rule pinning
+ * session.suspend-timeout-seconds = 0 for the XVF3800 nodes, which keeps the
+ * device open once something has opened it. This function is what opens it, and
+ * it has to run on every boot because the node comes up suspended.
+ *
+ * One second of DIGITAL SILENCE: inaudible, and it cannot wake a household at
+ * 3am the way a tone would.
+ *
+ * Best-effort by design — a node with no sink, no pw-play, or no PipeWire yet
+ * must not hold up startup.
+ */
+async function primeAudioSink(opts) {
+    var options = opts || {};
+    var run = options.execImpl || execFileAsync;
+    var wavPath = path.join(os.tmpdir(), 'monsterbox-sink-prime.wav');
+
+    try {
+        // 1s, 16 kHz, stereo, 16-bit, all zero samples — built here rather than
+        // shipped so there is no binary asset to keep in sync.
+        var frames = 16000;
+        var dataBytes = frames * 2 * 2;
+        var header = Buffer.alloc(44);
+        header.write('RIFF', 0);
+        header.writeUInt32LE(36 + dataBytes, 4);
+        header.write('WAVE', 8);
+        header.write('fmt ', 12);
+        header.writeUInt32LE(16, 16);
+        header.writeUInt16LE(1, 20);          // PCM
+        header.writeUInt16LE(2, 22);          // stereo
+        header.writeUInt32LE(16000, 24);      // sample rate
+        header.writeUInt32LE(16000 * 2 * 2, 28); // byte rate
+        header.writeUInt16LE(4, 32);          // block align
+        header.writeUInt16LE(16, 34);         // bits
+        header.write('data', 36);
+        header.writeUInt32LE(dataBytes, 40);
+
+        await fs.writeFile(wavPath, Buffer.concat([header, Buffer.alloc(dataBytes)]));
+        await run('pw-play', [wavPath], { timeout: 8000 });
+        console.log('🔈 Audio sink primed (1s silence) — keeps XVF3800 capture alive');
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    } finally {
+        try { await fs.unlink(wavPath); } catch (_) { /* nothing to clean up */ }
+    }
+}
+
 // ─── Logs ──────────────────────────────────────────────────────────────────────
 
 function getAvailableServices() {
@@ -755,6 +822,7 @@ export default {
     startPerformanceCollector,
     stopPerformanceCollector,
     applyCanonicalSinkVolume,
+    primeAudioSink,
     getAvailableServices,
     getServiceLogs,
     getConsoleOutput,

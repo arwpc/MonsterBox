@@ -165,6 +165,19 @@ if (hostnameCharId !== null && hostnameCharId !== config.selectedCharacter) {
     attempt(6);
 })();
 
+// Open the sink once so it settles at `idle` rather than `suspended`. This is a
+// MICROPHONE fix: the ReSpeaker XVF3800 only emits capture frames while a
+// playback stream is open, so a suspended sink is a dead mic on those nodes
+// (measured: 0 bytes suspended vs 374,400 primed). Runs after the volume
+// restore so the prime plays at the canonical level, and is silent audio so it
+// cannot wake anyone. Best-effort — never blocks startup.
+(async function primeSink() {
+    const result = await systemService.primeAudioSink();
+    if (!result.success) {
+        console.warn(`Could not prime audio sink (XVF3800 capture may stay dead until something plays): ${result.error}`);
+    }
+})();
+
 // Restore the microphone input gain the operator calibrated. Source (capture)
 // volume is the same node-local PipeWire state as the sink volume above: a
 // reboot resets it, the calibration page persists the chosen gain to the mic
