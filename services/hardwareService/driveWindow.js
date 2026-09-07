@@ -38,7 +38,13 @@ function isWindow(w) {
 export function fullSpanFor(part) {
     const cfg = (part && part.config) || {};
     const declared = Number(cfg.rotationRangeDeg ?? part?.rotationRangeDeg ?? cfg.maxAngle ?? cfg.rangeDeg);
-    const span = Number.isFinite(declared) && declared > 0 ? declared : 180;
+    let span = Number.isFinite(declared) && declared > 0 ? declared : 180;
+    // A multi-turn servo (the knight's 900° neck) can wrap its own head cabling
+    // if swept through its whole range, so an UNCALIBRATED multi-turn part falls
+    // back to a single turn's worth of travel, not the full range. Calibration
+    // widens it deliberately.
+    const multiTurn = String(cfg.servoType || part?.servoType || '').toLowerCase().includes('multi') || span > 360;
+    if (multiTurn && span > 180) span = 180;
     return { minAngle: 0, maxAngle: span };
 }
 

@@ -1081,7 +1081,138 @@ router.get('/api/motion-sensor', async (req, res) => {
   }
 });
 
-// POST /conversation/api/motion-sensor { enabled } — start/stop motion sensor polling
+// ─── Motion mode ───────────────────────────────────────────────
+// "Motion" arms the character on its PIR. Operator direction 2026-09-07: when
+// Motion is enabled and the sensor fires, the AI agent, jaw animation and body
+// motion (head tracking, idle/random poses, AI-motion gestures) must all come
+// on; after the inactivity timeout they go back to sleep and the PIR re-arms
+// them. Before this the toggle only started the watcher with no callbacks —
+// it detected motion and did nothing with it.
+
+const DEFAULT_MOTION_INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
+
+async function persistMotionArmedState(characterId, state) {
+  try {
+    const dir = getDataDir(characterId);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.resolve(dir, 'motion-armed-state.json'),
+      JSON.stringify({ characterId, timestamp: Date.now(), ...state }, null, 2), 'utf8');
+  } catch (e) {
+    console.warn(`[MotionMode] could not persist state for character ${characterId}: ${e.message}`);
+  }
+}
+
+async function setAgentForMotion(characterId, enabled) {
+  try {
+    const result = await elevenLabsWebSocketService.setAgentEnabledForCharacter(characterId, enabled);
+    const effective = !!(result && result.success && result.enabled);
+    const dir = getDataDir(characterId);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.resolve(dir, 'ai_agent_state.json'),
+      JSON.stringify({ characterId, enabled: effective, timestamp: Date.now() }, null, 2), 'utf8');
+    return { enabled: effective, error: result && !result.success ? result.error : undefined };
+  } catch (e) {
+    return { enabled: false, error: e.message };
+  }
+}
+
+async function setAiMotionForMotion(characterId, enabled) {
+  try {
+    const aiMotionService = await import('../services/aiMotionSuperPowerService.js');
+    const config = await aiMotionService.readAiMotionConfig(characterId);
+    await aiMotionService.writeAiMotionConfig(characterId, { ...config, enabled });
+    return { enabled };
+  } catch (e) {
+    return { enabled: false, error: e.message };
+  }
+}
+
+/** PIR fired while armed: bring the whole character to life. */
+async function wakeOnMotion(characterId) {
+  console.log(`[MotionMode] motion detected for character ${characterId} — AI, jaw and body motion ON`);
+  const results = await enableLurkSuperpowers(characterId);
+  results.ai = await setAgentForMotion(characterId, true);
+  results.aiMotion = await setAiMotionForMotion(characterId, true);
+  await persistMotionArmedState(characterId, { enabled: true, awake: true, results });
+  return results;
+}
+
+/** Inactivity timeout: quiet everything, keep watching the PIR. */
+async function sleepOnMotion(characterId) {
+  console.log(`[MotionMode] no motion for the timeout on character ${characterId} — sleeping, PIR still armed`);
+  const results = await disableLurkSuperpowers(characterId);
+  results.ai = await setAgentForMotion(characterId, false);
+  results.aiMotion = await setAiMotionForMotion(characterId, false);
+  await persistMotionArmedState(characterId, { enabled: true, awake: false, results });
+  return results;
+}
+
+/**
+ * Arm motion mode for a character. Exported so server startup can re-arm a node
+ * that was armed when it went down — a Halloween-night reboot must not leave a
+ * character deaf to its own PIR.
+ */
+export async function armMotionMode(characterId, opts = {}) {
+  const parts = await loadCharacterParts(characterId);
+  const sensor = parts.find(p =>
+    String(p.type).toLowerCase() === 'motion_sensor' && p.pin != null && p.enabled !== false
+  );
+  if (!sensor) {
+    return { success: false, error: 'No motion sensor found for this character' };
+  }
+  const inactivityTimeoutMs = Number.isFinite(Number(opts.inactivityTimeoutMs)) && Number(opts.inactivityTimeoutMs) >= 0
+    ? Number(opts.inactivityTimeoutMs) : DEFAULT_MOTION_INACTIVITY_TIMEOUT_MS;
+  lurkMotionWatcher.start(characterId, {
+    sensorPart: sensor,
+    inactivityTimeoutMs,
+    pollIntervalMs: 1000,
+    startAsleep: true,
+    onWake: async (charId) => {
+      try { await wakeOnMotion(charId); } catch (e) {
+        console.error('[MotionMode] wake failed:', e.message);
+      }
+    },
+    onSleep: async (charId) => {
+      try { await sleepOnMotion(charId); } catch (e) {
+        console.error('[MotionMode] sleep failed:', e.message);
+      }
+    }
+  });
+  await persistMotionArmedState(characterId, { enabled: true, awake: false, sensorPartId: sensor.id, inactivityTimeoutMs });
+  return { success: true, enabled: true, armed: true, awake: false, sensorPartId: sensor.id, inactivityTimeoutMs };
+}
+
+/** Disarm motion mode; if the character is awake because of it, quiet it too. */
+export async function disarmMotionMode(characterId) {
+  const wasAwake = lurkMotionWatcher.isActive() && !lurkMotionWatcher.isSleeping();
+  lurkMotionWatcher.stop();
+  let results = null;
+  if (wasAwake) {
+    try { results = await sleepOnMotion(characterId); } catch (e) {
+      console.error('[MotionMode] disarm quiet-down failed:', e.message);
+    }
+  }
+  await persistMotionArmedState(characterId, { enabled: false, awake: false });
+  return { success: true, enabled: false, armed: false, results };
+}
+
+/**
+ * Re-arm motion mode at startup for the node's character if it was armed when
+ * the service last ran. Called from server.js; never throws.
+ */
+export async function restoreMotionModeOnStartup(characterId) {
+  try {
+    if (characterId == null) return;
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') return;
+    const file = path.resolve(getDataDir(characterId), 'motion-armed-state.json');
+    const state = JSON.parse(await fs.readFile(file, 'utf8'));
+    if (!state || state.enabled !== true) return;
+    const r = await armMotionMode(characterId, { inactivityTimeoutMs: state.inactivityTimeoutMs });
+    console.log(`[MotionMode] re-armed at startup for character ${characterId}: ${r.success ? 'ok' : r.error}`);
+  } catch (_) { /* no state file — nothing to restore */ }
+}
+
+// POST /conversation/api/motion-sensor { enabled, inactivityTimeoutMs? } — arm/disarm motion mode
 router.post('/api/motion-sensor', express.json(), async (req, res) => {
   try {
     const enabled = !!(req.body && req.body.enabled);
@@ -1092,21 +1223,9 @@ router.post('/api/motion-sensor', express.json(), async (req, res) => {
     }
 
     if (enabled) {
-      const parts = await loadParts();
-      const sensor = parts.find(p =>
-        String(p.type).toLowerCase() === 'motion_sensor' && p.pin != null && p.enabled !== false
-      );
-      if (!sensor) {
-        return res.json({ success: false, error: 'No motion sensor found for this character' });
-      }
-      lurkMotionWatcher.start(characterId, {
-        sensorPart: sensor,
-        inactivityTimeoutMs: 0 // No timeout in standalone mode — just detect
-      });
-      res.json({ success: true, enabled: true, sensorPartId: sensor.id });
+      res.json(await armMotionMode(characterId, { inactivityTimeoutMs: req.body && req.body.inactivityTimeoutMs }));
     } else {
-      lurkMotionWatcher.stop();
-      res.json({ success: true, enabled: false });
+      res.json(await disarmMotionMode(characterId));
     }
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });

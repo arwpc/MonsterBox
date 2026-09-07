@@ -45,7 +45,7 @@ import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
 import systemApiRoutes from './routes/api/systemRoutes.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
-import conversationRoutes from './routes/conversation.js';
+import conversationRoutes, { restoreMotionModeOnStartup } from './routes/conversation.js';
 import goblinManagementRoutes from './routes/goblinManagement.js';
 import orchestrationWebRoutes from './routes/orchestration.js';
 import posesRoutes from './routes/poses/index.js';
@@ -1088,6 +1088,15 @@ async function onServerReady(protocol) {
         console.log(`🦷 Jaw animation audio integration started`);
     } catch (error) {
         console.error(`❌ Failed to initialize jaw animation:`, error.message);
+    }
+
+    // Re-arm motion mode if this node was armed when it last went down. A
+    // Halloween-night reboot must leave the character listening to its PIR,
+    // not deaf until someone reopens the dashboard.
+    try {
+        await restoreMotionModeOnStartup(config && config.selectedCharacter);
+    } catch (error) {
+        console.error(`❌ Failed to restore motion mode:`, error.message);
     }
 
     // Start movement telemetry auto-flush and servo command buffer
