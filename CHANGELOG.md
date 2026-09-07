@@ -4,6 +4,13 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **`services/pipewireService.js` no longer leaks "pactl: not found" into the error log.** The Pulse
+  tool probes (`pactl`/`paplay`/`parec`, absent on every Bookworm node) ran through the shell without a
+  stderr redirect, so each service start wrote shell "not found" lines to `monsterbox.err` that read
+  like an audio fault.
+- **PumpkinHead OS baseline applied and proven (2026-09-07):** a fresh service start now writes a single
+  deliberate line to `.err`; ear-check AUDIBLE with verbatim transcript via the camera-mic witness.
+
 - **`scripts/motor_control.py` now honours the speed argument.** Any speed > 0 used to write the
   MDD10A PWM pin fully HIGH, so a "40 %" motor command drew 100 % current; on PumpkinHead that pulse
   browns out an already under-volted Pi and reboots it, which read as "the motor runs once and then

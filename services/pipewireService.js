@@ -44,18 +44,21 @@ class PipeWireService {
             tools.pwRecord = true;
         } catch (_) { }
 
+        // The Pulse tools are absent on every Bookworm node; without the
+        // redirect the shell's own "pactl: not found" landed in monsterbox.err
+        // at each start and read like an audio fault.
         try {
-            await pexec('pactl --version');
+            await pexec('pactl --version 2>/dev/null');
             tools.pactl = true;
         } catch (_) { }
 
         try {
-            await pexec('paplay --version');
+            await pexec('paplay --version 2>/dev/null');
             tools.paplay = true;
         } catch (_) { }
 
         try {
-            await pexec('parec --version');
+            await pexec('parec --version 2>/dev/null');
             tools.parec = true;
         } catch (_) { }
 
