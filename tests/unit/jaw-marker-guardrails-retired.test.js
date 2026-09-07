@@ -51,18 +51,27 @@ describe('Jaw guardrails — legacy markers are retired', function () {
   it('does not leak the marker values back as a usable window', async function () {
     const cal = await getCalibrationForPart(UNCALIBRATED_PART, '3');
     // The specific failure this guards: 63/131 reaching a caller as if measured.
-    expect(cal.minAngle, 'no min angle may be offered').to.equal(null);
-    expect(cal.maxAngle, 'no max angle may be offered').to.equal(null);
-    expect(cal.minAngle).to.not.equal(63);
-    expect(cal.maxAngle).to.not.equal(131);
+    // Since 2026-09-07 an uncalibrated jaw IS offered a window (the operator's
+    // jaw-config min/max, then the full span) — but never the marker values.
+    expect(cal.calibrated).to.equal(false);
+    expect(cal.minAngle, 'a drive window is offered').to.be.a('number');
+    expect(cal.maxAngle, 'a drive window is offered').to.be.a('number');
+    expect(cal.maxAngle).to.be.greaterThan(cal.minAngle);
+    expect([cal.minAngle, cal.maxAngle], 'marker values must not be the source').to.not.deep.equal([63, 131]);
+    expect(cal.source, 'the window must come from the jaw config or the full span').to.be.oneOf(['jaw-config', 'placeholder-span', 'full-span']);
   });
 
-  it('refuses a part with neither profile nor markers, rather than guessing 0-180', async function () {
+  it('drives a part with neither profile nor markers from a real window instead of refusing', async function () {
+    // Doctrine change 2026-09-07 (operator ruling: all hardware works, software
+    // must not refuse): the old behaviour returned null/null here and left every
+    // jaw on the fleet motionless after the calibration wipe.
     const bare = { id: 987655, name: 'Bare jaw', type: 'servo' };
     const cal = await getCalibrationForPart(bare, '3');
     expect(cal.calibrated).to.equal(false);
-    expect(cal.minAngle).to.equal(null);
-    expect(cal.maxAngle).to.equal(null);
+    expect(cal.minAngle).to.be.a('number');
+    expect(cal.maxAngle).to.be.a('number');
+    expect(cal.maxAngle).to.be.greaterThan(cal.minAngle);
+    expect(cal.minAngle).to.be.at.least(0);
   });
 
   it('still honours a REAL measured profile — the retirement must not disable a calibrated jaw', async function () {

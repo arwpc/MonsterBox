@@ -13,6 +13,7 @@ const {
   updateTrackingParamsForWebcam
 } = motionTrackingController;
 import hardwareService from '../../services/hardwareService/index.js';
+import { resolveDriveWindow } from '../../services/hardwareService/driveWindow.js';
 
 const router = express.Router();
 
@@ -475,15 +476,21 @@ router.post('/api/head-tracking/:charId/test-sweep', async (req, res) => {
     // range. Defaulting an uncalibrated servo to 0/180 is how a servo on a
     // fused rail got driven 0↔180 at full speed three times (see the part-5
     // history in config/hardware-safety.json). Refuse instead.
-    if (!servo.calibrated || servo.minAngle == null || servo.maxAngle == null) {
-      return res.status(409).json({
-        success: false,
-        error: `Pan servo ${servo.name || config.panServoId} has no measured calibration — ` +
-               `sweep refused. Calibrate it on /setup/calibration first.`
-      });
+    //
+    // 2026-09-07: an uncalibrated servo is swept through its drive window (the
+    // store's placeholder span, else 0..rotationRange) instead of being refused —
+    // operator ruling that software must not withhold working hardware. The
+    // response says which window was used so the page can still show
+    // "not calibrated".
+    let minAngle = servo.minAngle;
+    let maxAngle = servo.maxAngle;
+    let windowSource = 'calibration';
+    if (!servo.calibrated || minAngle == null || maxAngle == null) {
+      const win = await resolveDriveWindow(charId, { id: config.panServoId, name: servo.name, config: servo.config || {} });
+      minAngle = win.minAngle;
+      maxAngle = win.maxAngle;
+      windowSource = win.source;
     }
-    const minAngle = servo.minAngle;
-    const maxAngle = servo.maxAngle;
     const centerAngle = Math.round((minAngle + maxAngle) / 2);
 
     // Sweep: center -> min -> max -> center
