@@ -18,12 +18,19 @@
 --
 -- WirePlumber here is 0.4.13, which reads Lua from main.lua.d — a 0.5-style
 -- SPA-JSON file in wireplumber.conf.d is silently ignored.
+-- SINK ONLY. Do not add the alsa_input node here.
+--
+-- The fix is about keeping a PLAYBACK reference alive for the AEC pipeline, and
+-- only the output node needs pinning. A first version matched the input too and
+-- broke Orlok, whose mic had been fine: PipeWire then held the capture
+-- subdevice open permanently (`arecord -l` showed Subdevices: 0/1) and
+-- retire_capture_urb errors climbed while every capture returned zero bytes.
+-- Removing the input match restored him. Keep the source free to suspend.
 alsa_monitor.rules = alsa_monitor.rules or {}
 
 table.insert(alsa_monitor.rules, {
   matches = {
     { { "node.name", "matches", "alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800*" } },
-    { { "node.name", "matches", "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800*" } },
   },
   apply_properties = {
     ["session.suspend-timeout-seconds"] = 0,
