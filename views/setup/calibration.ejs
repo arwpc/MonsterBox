@@ -3205,17 +3205,23 @@
           }
         });
       } else if (part.type === 'motor') {
+        var motCfg = (part && part.config) || {};
+        var motDefaultSpeed = (Number(motCfg.defaultSpeed) > 0 && Number(motCfg.defaultSpeed) <= 100) ? Number(motCfg.defaultSpeed) : 90;
+        var motDefaultDur = (Number(motCfg.defaultDurationMs) > 0) ? Number(motCfg.defaultDurationMs) : 15000;
         el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
           '<select id="motDir" class="mb-select cal-select-inline" title="Select motor direction"><option value="forward">Forward</option><option value="reverse">Reverse</option></select>' +
-          '<input type="number" id="motSpd" class="mb-input cal-num" title="Motor speed percent" value="90">%' +
-          '<input type="number" id="motDur" class="mb-input cal-num" title="Run duration in milliseconds" value="15000"> ms' +
+          // Defaults come from the part when it declares them. The old fixed
+          // 90 % / 15 000 ms meant one click on a wiper motor was a fifteen-second
+          // full-power run; on PumpkinHead that browns out the Pi and reboots it.
+          '<input type="number" id="motSpd" class="mb-input cal-num" title="Motor speed percent" value="' + motDefaultSpeed + '">%' +
+          '<input type="number" id="motDur" class="mb-input cal-num" title="Run duration in milliseconds" value="' + motDefaultDur + '"> ms' +
           '<button id="motRun" class="mb-btn mb-btn-primary mb-btn-lg" title="Run the motor"><i class="bi bi-play-fill"></i> Run</button>' +
           '<button id="motStop" class="mb-btn mb-btn-danger mb-btn-lg" title="Stop the motor"><i class="bi bi-stop-circle"></i> Stop</button>' +
           '</div><div id="ctrlStatus" class="mt-2 small text-info"></div>';
         el.querySelector('#motRun').addEventListener('click', function () {
           var dir = document.getElementById('motDir').value;
-          var speed = parseInt(document.getElementById('motSpd').value || '90', 10);
-          var duration = parseInt(document.getElementById('motDur').value || '15000', 10);
+          var speed = parseInt(document.getElementById('motSpd').value || String(motDefaultSpeed), 10);
+          var duration = parseInt(document.getElementById('motDur').value || String(motDefaultDur), 10);
           var st = document.getElementById('ctrlStatus'); if (st) st.textContent = 'Running…';
           fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
