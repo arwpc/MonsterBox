@@ -322,6 +322,27 @@ top). No new physical work has been done on parts 2/3/4/5.
   the elbow component of any pose to do nothing until the rail is fixed.
 
 ### Mina — char 2 · `192.168.8.140`
+🟢 **2026-09-07 — "Jaw, Neck and Eyes don't move, nor does the coffin door" RESOLVED; it was software refusing
+uncalibrated servos.** Every direct command worked all along (PCA pulses followed each API move exactly;
+the actuator's PWM pin toggled on nudge/extend/retract). What did not move was every AUTOMATED mover,
+because after the 09-06 calibration wipe each one refused a servo without a measured window: jaw
+animation ("no usable calibration — refusing to move it blind"), head tracking ("no usable calibrated
+window", 36 refusals in her log), speech co-expression ("no configured safe window"), the head page's
+Test Sweep ("sweep refused") and the gesture engine (every raw-target recipe rejected). Fixed by
+`services/hardwareService/driveWindow.js`: measured window > the mover's own window (jaw config) >
+placeholder span > full span, logged once per part. **Proven on the node:** jaw test drove ch4
+1132.8→727.5 µs; Test Sweep drove the neck ch8 498→2397→1445 µs; `say` with jaw armed moved ch4 through
+the utterance; scene 1 "Coffin Awakening" extended the door 8.5 s and moved jaw and neck.
+- ✅ **Motion mode now does what the operator asked:** arming "Motion" waits on the PIR (part 9, GPIO26);
+  a detection turns on the AI agent, jaw animation, head tracking, idle/random poses and AI motion;
+  the 5-minute inactivity timeout quiets them and the PIR re-arms. Proven with the simulate endpoint:
+  ai-status enabled:true, jaw+aiMotion true, head tracking active → all false after the timeout →
+  PIR still armed. Re-armed automatically at service start (proven across a restart). Mina is left
+  ARMED. **Not yet proven: her physical PIR.** GPIO26 stayed LOW through a 20 s watch with nobody
+  in front of her — walk past her and look for `[MotionMode] motion detected` in the log.
+- ⚪ Her camera does not see her own jaw/neck, so judge her servos by PCA pulse (`servo_cli.py
+  reconcile`), not by frame difference.
+
 🟢 **Serving 10.1.0** (`/health` 2026-08-19 07:14; zero failed units, journal 56 MB — inside
 the 64 MB cap). *Previously recorded here as 9.3.0 — corrected by the 2026-08-19 log review.*
 (verified post-reboot 2026-08-18: zero failed units, boot-check READY,
@@ -412,6 +433,19 @@ diagnostic below still applies.
   drive time.
 
 ### Sir Dragomir — char 4 · `192.168.8.130`
+🟢 **2026-09-07 — on the drive-window code, all three servos proven through the app.** The operator
+had calibrated all three that day (head 349–900 of the 900° multi-turn, jaw 47–120, magic box 133–177),
+so his only software refusal was speech co-expression's "no configured safe window" (29 lines), which
+read the safety file instead of the calibration and is fixed by `driveWindow.js`. Proven after the
+restart: jaw test success within 47–120; magic box goto 150→170 moved ch11 2080→2290 µs; head goto
+600→620 moved ch7 1831→1875 µs (small moves inside his measured window — the neck is never swept
+on an agent's initiative); `say` with jaw armed moved ch3 through the line. An UNCALIBRATED multi-turn
+part now falls back to a single turn (0–180), never its full range, so a future wipe cannot make a sweep
+wrap his cabling. **He has no PIR part** — add one to `parts.json` (type `motion_sensor`, BCM pin)
+and arm Motion; the code path is the same as Mina's. Node dropped off Wi-Fi for stretches of the
+afternoon (SSH "No route to host" while the service was fine); baseline Wi-Fi power-save off is
+recommended (`apply-baseline.sh`).
+
 
 - 🟡 **Ear-check scores Sir Dragomir `CAPTURE-FAILED` because the app is already holding the
   microphone — not because his mics are broken (2026-08-30).** The ear-check's `scp` of

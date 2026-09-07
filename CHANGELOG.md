@@ -4,6 +4,20 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Uncalibrated servos are driven, not refused.** New `services/hardwareService/driveWindow.js`
+  resolves the angle window every runtime mover uses: measured calibration, else the mover's own
+  window (the jaw's operator-authored min/max), else the store's placeholder span, else the part's
+  full span (one turn for multi-turn parts). Jaw animation, head tracking, the head page's Test Sweep,
+  speech co-expression, the gesture engine and the conversation route's jaw toggle all use it. After the
+  2026-09-06 fleet-wide calibration wipe these had left every jaw, neck and eye motionless while direct
+  commands still worked. Proven on Mina, Sir Dragomir and Orlok by PCA pulse.
+- **Motion mode arms the character on its PIR.** `POST /conversation/api/motion-sensor {enabled}` now
+  starts the watcher asleep; a detection turns on the AI agent, jaw animation, head tracking,
+  idle/random poses and AI motion, and the inactivity timeout (default 5 min, `inactivityTimeoutMs`)
+  quiets them with the PIR still armed. State persists to `motion-armed-state.json` and is re-armed at
+  service start. `POST /conversation/api/motion-sensor/simulate` fires the armed watcher for testing.
+- **Calibration page motor panel** honours `config.defaultSpeed` / `config.defaultDurationMs`.
+
 - **Calibration page: motor speed/duration defaults come from the part.** A motor part may declare
   `config.defaultSpeed` and `config.defaultDurationMs`; the panel used a fixed 90 % / 15 000 ms, which on
   PumpkinHead's under-volted Pi turned every click into a reboot.
