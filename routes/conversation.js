@@ -176,9 +176,12 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
       if (!jawServo) {
         return res.json({ success: false, error: 'No jaw servo configured for this character' });
       }
+      // Uncalibrated is no longer a refusal (2026-09-07): getCalibrationForPart
+      // falls back to the jaw config window, then the full span. Only a jaw with
+      // no angle window at all cannot be armed.
       const cal = await jawAnimationService.getCalibrationForPart(jawServo, characterId);
-      if (!cal || !cal.calibrated) {
-        return res.json({ success: false, error: 'Jaw servo has no calibrated Min/Max window' });
+      if (!cal || cal.minAngle == null || cal.maxAngle == null) {
+        return res.json({ success: false, error: 'Jaw servo has no usable angle window' });
       }
     }
     config.enabled = enabled;

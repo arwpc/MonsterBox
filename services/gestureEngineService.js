@@ -28,6 +28,7 @@ import { fileURLToPath } from 'url';
 import { PRIORITY, claimServo, releaseServo } from './movement/priorityManager.js';
 import { transitionServos } from './movement/transitionEngine.js';
 import { getPoseById } from './movement/poseLibrary.js';
+import { resolveDriveWindow } from './hardwareService/driveWindow.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(__dirname, '..');
@@ -83,7 +84,22 @@ async function boundsFor(characterId, partId) {
         }
     } catch (_) { /* no safety file — bounds stay as calibrated */ }
 
-    if (minAngle == null || maxAngle == null) return null;
+    if (minAngle == null || maxAngle == null) {
+        // 2026-09-07: no measured window means "full span", not "reject the
+        // recipe". Rejection left every vocabulary on the fleet empty after the
+        // calibration wipe. A configured safety window (above) still narrows it.
+        try {
+            const parts = JSON.parse(await fs.readFile(path.join(APP_ROOT, 'data', `character-${characterId}`, 'parts.json'), 'utf8'));
+            const part = parts.find(p => String(p.id) === String(partId)) || { id: partId, config: {} };
+            const win = await resolveDriveWindow(characterId, part);
+            minAngle = minAngle == null ? win.minAngle : Math.max(minAngle, win.minAngle);
+            maxAngle = maxAngle == null ? win.maxAngle : Math.min(maxAngle, win.maxAngle);
+        } catch (_) {
+            return null;
+        }
+        if (minAngle == null || maxAngle == null) return null;
+        return { minAngle, maxAngle, fallback: true };
+    }
     return { minAngle, maxAngle };
 }
 

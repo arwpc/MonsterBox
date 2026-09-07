@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
 import { getCalibrationStore } from '../server/calibration/store.js';
+import { resolveDriveWindow } from '../services/hardwareService/driveWindow.js';
 import { claimServo, releaseServo, isAvailable, getOwner, PRIORITY } from '../services/movement/priorityManager.js';
 
 
@@ -650,6 +651,25 @@ async function loadHeadTrackingGuardrails(servoId, characterId) {
     let guardrails = null;
     if (Number.isFinite(minAngle) && Number.isFinite(maxAngle) && (maxAngle - minAngle) >= 1) {
       guardrails = { minAngle, maxAngle };
+    } else {
+      // 2026-09-07: an uncalibrated pan servo is driven through its full span
+      // instead of being refused. The refusal (comment above, kept for history)
+      // left every neck on the fleet pinned after the calibration wipe while
+      // the direct servo command still worked.
+      try {
+        const scopedPath = characterId != null
+          ? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', `character-${characterId}`, 'parts.json')
+          : await getPartsFilePath();
+        const parts = JSON.parse(await fs.readFile(scopedPath, 'utf8'));
+        const part = parts.find(p => String(p.id) === String(servoId)) || { id: servoId, name: 'pan servo', config: {} };
+        const win = await resolveDriveWindow(characterId, part);
+        if (Number.isFinite(win.minAngle) && Number.isFinite(win.maxAngle) && (win.maxAngle - win.minAngle) >= 1) {
+          guardrails = { minAngle: win.minAngle, maxAngle: win.maxAngle, fallback: win.source };
+          minAngle = win.minAngle; maxAngle = win.maxAngle;
+        }
+      } catch (fallbackErr) {
+        console.warn('Head tracking: fallback window lookup failed for servo ' + servoId + ': ' + fallbackErr.message);
+      }
     }
 
     // Cache for 60 seconds (null too — a missing calibration should not be
