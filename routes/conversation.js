@@ -1232,6 +1232,27 @@ router.post('/api/motion-sensor', express.json(), async (req, res) => {
   }
 });
 
+// POST /conversation/api/motion-sensor/simulate — fire the armed watcher as if the
+// PIR had triggered. Proves the wake path (AI + jaw + body motion) without a
+// person in front of the sensor; the same thing the dashboard's test action does.
+router.post('/api/motion-sensor/simulate', express.json(), async (req, res) => {
+  try {
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+      return res.json({ success: true, testMode: true, fired: false });
+    }
+    const fired = lurkMotionWatcher.simulateMotion();
+    if (!fired) {
+      return res.json({ success: false, fired: false, error: 'Motion mode is not armed on this character' });
+    }
+    // onWake runs asynchronously inside the watcher; give it a moment so the
+    // reply reflects the state the operator will see.
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    res.json({ success: true, fired: true, status: lurkMotionWatcher.getStatus() });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
 // ─── Lurk Mode ────────────────────────────────────────────────────────
 // head tracking, and random idle poses. One toggle to bring the character to life.
 //

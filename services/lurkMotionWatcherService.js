@@ -337,4 +337,15 @@ function onInactivityTimeout() {
   // The inactivity timer is NOT restarted — it only restarts on motion.
 }
 
-export default { start, stop, resetActivity, getStatus, isSleeping, isActive };
+/**
+ * Behave exactly as if the PIR had just fired. For the dashboard's "test motion"
+ * action and for proving the wake path on a node whose sensor nobody is standing
+ * in front of. Returns false when no watcher is armed.
+ */
+function simulateMotion() {
+  if (!watcherState.active) return false;
+  onMotionDetected();
+  return true;
+}
+
+export default { start, stop, resetActivity, getStatus, isSleeping, isActive, simulateMotion };
