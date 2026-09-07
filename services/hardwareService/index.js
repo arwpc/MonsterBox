@@ -27,6 +27,91 @@ const MJPG_STREAMER_URL = 'http://127.0.0.1:8090';
 const MJPG_STREAM_ENDPOINT = `${MJPG_STREAMER_URL}/?action=stream`;
 
 /**
+ * Terminate an in-flight H-bridge drive for ONE motor, identified by its pins.
+ *
+ * WHY THIS EXISTS: linear_actuator_control_v2.py claims its GPIOs and then
+ * `time.sleep(duration/1000)` while holding them. Every command is a separate
+ * process, so a second command arriving mid-drive cannot claim the pins and
+ * dies with "Failed to setup BTS7960 pins: 'GPIO busy'". STOP is one of those
+ * commands — measured on Groundbreaker: a stop sent 1.2 s into a 3 s move was
+ * refused and the motor ran the full 3.3 s anyway. A move you cannot interrupt
+ * is how a part parked against a mechanical end-stop gets damaged, and it is
+ * the "works intermittently" the operator reported: any command that overlaps
+ * a running one fails.
+ *
+ * So stop no longer waits politely for the pins — it ends the drive holding
+ * them, then drives them low.
+ *
+ * SCOPING: matches the running wrapper on the JSON config in its argv carrying
+ * THIS part's rpwm/lpwm pins, so stopping one motor cannot kill another part's
+ * move on the same node. Deliberately not `pkill -f`, which matches the calling
+ * shell and this very process (see routes/api/panicRoutes.js — that has killed
+ * a command mid-panic twice).
+ *
+ * @returns {Promise<number>} how many drives were ended
+ */
+async function killInFlightDrive({ rpwmPin, lpwmPin }) {
+    if (rpwmPin == null && lpwmPin == null) return 0;
+    let stdout = '';
+    try {
+        stdout = await new Promise((resolve, reject) => {
+            const ps = spawn('ps', ['-eo', 'pid,args', '--no-headers']);
+            let out = '';
+            ps.stdout.on('data', d => { out += d; });
+            ps.on('close', () => resolve(out));
+            ps.on('error', reject);
+        });
+    } catch (_) {
+        return 0;
+    }
+
+    const self = process.pid;
+    const victims = [];
+    for (const line of stdout.split('\n')) {
+        const m = line.trim().match(/^(\d+)\s+(.*)$/);
+        if (!m) continue;
+        const pid = Number(m[1]);
+        const args = m[2];
+        if (pid === self || pid === 1) continue;
+        if (!/python3?\s+\S*python_wrappers\/linear_actuator_control_v2\.py/.test(args)) continue;
+        // Only this part's drive: the config JSON is on the command line.
+        const mine = (rpwmPin != null && new RegExp(`"rpwmPin"\\s*:\\s*${Number(rpwmPin)}\\b`).test(args))
+            || (lpwmPin != null && new RegExp(`"lpwmPin"\\s*:\\s*${Number(lpwmPin)}\\b`).test(args));
+        if (mine) victims.push(pid);
+    }
+
+    for (const pid of victims) {
+        try { process.kill(pid, 'SIGTERM'); } catch (_) { /* already gone */ }
+    }
+    if (victims.length) {
+        // Latency budget matters here: this runs on the STOP path, and every
+        // millisecond is extra travel on a part that may be near a mechanical
+        // end-stop. A first pass used a flat 250 ms grace + 150 ms settle and
+        // measured 768 ms of stop latency, which is far too slow to be a real
+        // stop. So: poll for exit in short slices and escalate to SIGKILL fast.
+        //
+        // SIGKILL is safe for these wrappers. lgpio generates PWM from a thread
+        // inside the process and holds its GPIO lines on a per-process gpiochip
+        // handle, so process death both ends the PWM and releases the lines; the
+        // stop command that follows then drives them low explicitly.
+        const deadline = Date.now() + 120;
+        let alive = victims.slice();
+        while (alive.length && Date.now() < deadline) {
+            await new Promise(r => setTimeout(r, 20));
+            alive = alive.filter(pid => {
+                try { process.kill(pid, 0); return true; } catch (_) { return false; }
+            });
+        }
+        for (const pid of alive) {
+            try { process.kill(pid, 'SIGKILL'); } catch (_) { /* gone, good */ }
+        }
+        if (alive.length) await new Promise(r => setTimeout(r, 40));
+        console.warn(`🛑 stop: ended ${victims.length} in-flight drive(s) on GPIO ${rpwmPin}/${lpwmPin}: ${victims.join(', ')}`);
+    }
+    return victims.length;
+}
+
+/**
  * Did a Python wrapper report success?
  *
  * The wrappers emit one envelope on stdout: {ok, op, part, data, error, timing_ms,
@@ -172,6 +257,18 @@ const HARDWARE_CONTROLLERS = {
 
                 let out;
                 if (String(controlBoard || '').toUpperCase() === 'BTS7960' && rpwmPin != null && lpwmPin != null) {
+                    // A drive already holding these pins would make this command fail
+                    // with 'GPIO busy' — the intermittency the operator reported: press
+                    // a button while the previous move is still running and it simply
+                    // does nothing. Newest command wins, which is what a direction
+                    // button should do, and it makes the outcome deterministic instead
+                    // of dependent on timing. (stop() does the same thing.)
+                    try {
+                        await killInFlightDrive({ rpwmPin, lpwmPin });
+                    } catch (err) {
+                        console.error('🔧 motor: could not end in-flight drive:', err.message);
+                    }
+
                     // Use generic BTS7960 controller (same as linear actuator)
                     const btsDir = (normDir === 'backward') ? 'reverse' : (normDir === 'forward' ? 'forward' : 'forward');
                     const cfg = {
@@ -214,6 +311,16 @@ const HARDWARE_CONTROLLERS = {
 
         async stop({ directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard }) {
             try {
+                // End any drive currently holding this motor's pins, or the stop
+                // below cannot claim them and is refused with 'GPIO busy' while the
+                // motor keeps running. See killInFlightDrive().
+                let endedDrives = 0;
+                try {
+                    endedDrives = await killInFlightDrive({ rpwmPin, lpwmPin });
+                } catch (err) {
+                    console.error('🛑 stop: could not end in-flight drive:', err.message);
+                }
+
                 let out;
                 if (String(controlBoard || '').toUpperCase() === 'BTS7960' && rpwmPin != null && lpwmPin != null) {
                     const cfg = {
@@ -242,6 +349,7 @@ const HARDWARE_CONTROLLERS = {
                     pwmPin: pwmPin,
                     rpwmPin: rpwmPin,
                     lpwmPin: lpwmPin,
+                    endedDrives,
                     rawOutput: out,
                     message: parsed && parsed.message ? parsed.message : (success ? `Motor stopped` : 'Motor stop failed')
                 };
