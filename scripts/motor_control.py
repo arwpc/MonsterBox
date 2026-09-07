@@ -72,15 +72,35 @@ def control_motor(direction, speed, duration, dir_pin, pwm_pin):
             # Short delay after setting direction
             time.sleep(0.05)
             
-            # Motor control - Simple ON/OFF control for wiper motors
+            # Motor control. The speed argument used to be accepted and then
+            # ignored: any speed > 0 wrote the PWM pin fully HIGH, so a "40%"
+            # command drew the same current as 100%. On PumpkinHead that full
+            # pulse browns out the Pi (kernel "Undervoltage detected!", then a
+            # reboot) and the operator sees "it ran once and then stopped
+            # responding". Real PWM through the MDD10A lets a lower speed
+            # actually mean lower current. 2 kHz matches the BTS7960 path in
+            # python_wrappers/linear_actuator_control_v2.py; the MDD10A accepts
+            # up to 20 kHz.
             if speed_value > 0:
-                # Turn motor ON
-                lgpio.gpio_write(h, pwm_pin, 1)
-                
+                pwm_used = False
+                if speed_value < 100 and hasattr(lgpio, 'tx_pwm'):
+                    try:
+                        lgpio.tx_pwm(h, pwm_pin, 2000, speed_value)
+                        pwm_used = True
+                    except Exception:
+                        pwm_used = False
+                if not pwm_used:
+                    lgpio.gpio_write(h, pwm_pin, 1)
+
                 # Run for specified duration
                 time.sleep(duration_sec)
-                
-                # Stop the motor
+
+                # Stop the motor: end the PWM train, then hold the pin LOW
+                if pwm_used:
+                    try:
+                        lgpio.tx_pwm(h, pwm_pin, 2000, 0)
+                    except Exception:
+                        pass
                 lgpio.gpio_write(h, pwm_pin, 0)
             
             # Clean up GPIO resources

@@ -4,6 +4,20 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **`scripts/motor_control.py` now honours the speed argument.** Any speed > 0 used to write the
+  MDD10A PWM pin fully HIGH, so a "40 %" motor command drew 100 % current; on PumpkinHead that pulse
+  browns out an already under-volted Pi and reboots it, which read as "the motor runs once and then
+  says running". Real PWM via `lgpio.tx_pwm` at 2 kHz (the BTS7960 path's frequency); proven on the
+  node at 25 % by GPIO sampling and camera frame-difference with no reboot.
+- **PumpkinHead data straightened out (2026-09-07):** `stt-config.json` repointed from a
+  non-existent part 9 / `"pulse"` to mic part 8 and the XVF3800 input node; the stale
+  `data/character-1/characters.json` registry shadow (id 1 = "Orlok") and the junk
+  `data/character-1/character-1/parts.json` removed from the repo so deploys stop re-creating them;
+  all scenes and poses erased and `defaultSceneId` cleared at operator direction.
+- **Audio library purge (operator direction):** every entry whose title was a bare hex/UUID string
+  (53 of 133) removed from `library.json` and the files moved out of `data/audio-library/files/`
+  (kept under `~/audio-removed-20260907/` on each node). No surviving scene referenced them.
+
 - **One idempotent node-OS baseline script**, `scripts/node-baseline/apply-baseline.sh`
   (`sudo bash …` on a node, or piped over ssh from the node holding fleet trust). A deploy
   rsyncs the repo and cannot touch `/etc`, so nodes drift: the 2026-09-04 audit found
