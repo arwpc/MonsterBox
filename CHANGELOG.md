@@ -17,8 +17,8 @@ All notable changes to MonsterBox are documented in this file.
 
 - **`scripts/motor_control.py` now honours the speed argument.** Any speed > 0 used to write the
   MDD10A PWM pin fully HIGH, so a "40 %" motor command drew 100 % current; on PumpkinHead that pulse
-  browns out an already under-volted Pi and reboots it, which read as "the motor runs once and then
-  says running". Real PWM via `lgpio.tx_pwm` at 2 kHz (the BTS7960 path's frequency); proven on the
+  drags the Pi's 5 V converter down on the motor's DC inrush and reboots it, which read as "the motor
+  runs once and then says running". Real PWM via `lgpio.tx_pwm` at 2 kHz (the BTS7960 path's frequency); proven on the
   node at 25 % by GPIO sampling and camera frame-difference with no reboot.
 - **PumpkinHead data straightened out (2026-09-07):** `stt-config.json` repointed from a
   non-existent part 9 / `"pulse"` to mic part 8 and the XVF3800 input node; the stale

@@ -493,14 +493,18 @@ superpowers after a suite run that predates the `httpNode` guard.
 
 ### PumpkinHead — char 1 · `192.168.8.150`
 🟠 **2026-09-07 SESSION — the node has a POWER fault; software was straightened out around it.**
-- 🔴 **OPEN, HARDWARE — the Pi is under-volted at idle and reboots when the motor runs.** Kernel
-  `hwmon hwmon1: Undervoltage detected!` appears in **every** boot today (five boots between 10:17 and
-  11:21), `vcgencmd get_throttled` reads `0x50000` (under-voltage NOW and has occurred) with the motor
-  idle, and a 40 % / 800 ms test command rebooted the box outright at 11:21. That is the whole story
-  behind "Body Shakes runs once and then says running but nothing moves": the first pulse drops the
-  5 V rail, the Pi resets, and every later click lands on a rebooting node. **Software cannot fix
-  this.** Give the Pi its own 5.1 V / 3 A supply and the MDD10A its own 12 V supply (common ground
-  only); a cheap USB brick shared with the motor is the signature here.
+- 🟠 **UNDER-VOLTAGE, MEASURED PROPERLY (2026-09-07 afternoon) — it is a hard-start problem, not a bad
+  supply.** Operator: the motor has its own 12 V supply and the Pi's 5 V comes from a converter.
+  `get_throttled` = `0x50000` means under-voltage *has occurred since boot*, not now. The journal shows
+  exactly two kinds of dip: **(a)** a 2 s dip at every boot (`Undervoltage detected!` at +2 s, `Voltage
+  normalised` at +4 s — the USB/Wi-Fi power-up surge; it is why the flag is always set), and **(b)** a
+  dip the instant the motor was started **hard-on at 100 % DC**, which reset the Pi (11:21:29, reboot at
+  11:21:30). Before today every speed WAS 100 % DC (see next item), so every click was case (b). With
+  real PWM, pulses at 25/40/55/70/85 % for 600 ms and 70 % for 2000 ms all ran with the flag sampled at
+  20 Hz and **zero** new events, motion confirmed on camera each time. So: the converter rides through
+  PWM starts fine and only the DC inrush of a full-on wiper motor pulls the 5 V below 4.63 V. If the
+  Pi's converter is fed from the motor's 12 V rail, that is the coupling path; bulk capacitance on the
+  12 V side or a separate 12 V feed for the converter would remove it. **Do not command 100 %.**
 - ✅ **FIXED — `scripts/motor_control.py` ignored the speed argument.** Any speed > 0 wrote the PWM
   pin fully HIGH, so "40 %" drew the same current as 100 %. It now drives real PWM through
   `lgpio.tx_pwm` at 2 kHz (same as the BTS7960 path) and holds the pin LOW afterwards. Proven on the
@@ -543,7 +547,7 @@ superpowers after a suite run that predates the `httpNode` guard.
 - ✅ **FIXED — the calibration page's motor panel defaulted to 90 % for 15 000 ms.** One click was a
   fifteen-second full-power run, which on this Pi is a guaranteed reboot. The panel now takes
   `config.defaultSpeed` / `config.defaultDurationMs` from the part (falling back to the old values), and
-  this node's motor declares **25 % / 2000 ms**. You can still type any value.
+  this node's motor declares **60 % / 2000 ms**. You can still type any value; 100 % resets the Pi.
 - ✅ Junk `Min = 10` markers removed from the motor and the PIR (meaningless on those part types);
   `validate:schemas` clean on the node. The 100 ms mic level probe measures 0.4–0.5 s here, so its
   2 s timeout only trips under load; left alone.
