@@ -248,6 +248,51 @@ const HARDWARE_CONTROLLERS = {
             } catch (error) {
                 return { success: false, partType: 'motor', directionPin: directionPin, pwmPin: pwmPin, rpwmPin, lpwmPin, error: error.message };
             }
+        },
+
+        /**
+         * Timed jog in calibration's vocabulary.
+         *
+         * WHY: a motor part is given the openloop-linear capability, so the
+         * calibration layer drives it through OpenLoopLinearAdapter — and that
+         * adapter speaks 'jog' with extend/retract, not 'control' with
+         * forward/backward. The motor controller had only control() and stop(),
+         * so EVERY calibration motion on a motor died with
+         *   "Action 'jog' not supported for part type: motor"
+         * (Groundbreaker's log, on home and on nudge). Homing and set-min/max
+         * against a physical endstop were therefore impossible for this part
+         * type, which is a large part of why his motor "worked intermittently":
+         * the plain test button uses control() and moves, the calibration page
+         * uses jog() and never did.
+         *
+         * extend -> forward, retract -> backward, then straight into control(),
+         * so there is exactly one code path that actually drives the H-bridge.
+         * invertDirection is honoured the same way linear_actuator.jog does it,
+         * so wiring polarity is a config question rather than a rewiring job.
+         */
+        async jog({ directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, pwmFrequency,
+                    invertDirection, direction, speed = 50, duration = 1000 }) {
+            const requested = String(direction || '').toLowerCase();
+            const effective = invertDirection
+                ? (requested === 'extend' ? 'retract' : requested === 'retract' ? 'extend' : requested)
+                : requested;
+
+            const motorDir = (effective === 'extend' || effective === 'forward') ? 'forward'
+                : (effective === 'retract' || effective === 'backward' || effective === 'reverse') ? 'backward'
+                    : effective;
+
+            if (motorDir !== 'forward' && motorDir !== 'backward') {
+                return {
+                    success: false,
+                    partType: 'motor',
+                    error: `Unsupported jog direction '${direction}' for motor (expected extend/retract)`
+                };
+            }
+
+            return this.control({
+                directionPin, pwmPin, rpwmPin, lpwmPin, renPin, lenPin, controlBoard, pwmFrequency,
+                direction: motorDir, speed, duration
+            });
         }
     },
 
