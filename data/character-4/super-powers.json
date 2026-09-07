@@ -1,6 +1,6 @@
 {
   "jawAnimation": {
-    "enabled": false,
+    "enabled": true,
     "servoPartId": "2",
     "activeConfigId": "config-1",
     "configs": [
@@ -25,7 +25,7 @@
   "headTracking": {
     "opencvEnabled": true,
     "enabled": false,
-    "panServoId": null,
+    "panServoId": "",
     "webcamPartId": "4",
     "centerDeg": 90,
     "rangeDeg": 120,

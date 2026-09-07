@@ -16,7 +16,7 @@
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "modelId": "servo_gobilda_stingray2",
-    "updated": "2026-08-19T00:00:00.000Z"
+    "updated": "2026-03-29T23:30:00.000Z"
   },
   {
     "id": "2",
@@ -33,8 +33,8 @@
     },
     "created": "2025-10-12T06:00:01.000Z",
     "enabled": true,
-    "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-08-22T00:00:00.000Z"
+    "modelId": "servo_miuzei_25kg",
+    "updated": "2026-03-29T23:30:00.000Z"
   },
   {
     "id": "3",

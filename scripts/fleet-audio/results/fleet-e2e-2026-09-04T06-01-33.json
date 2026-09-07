@@ -1,0 +1,110 @@
+{
+  "ranAt": "2026-09-04T06:01:33.524Z",
+  "options": {
+    "audio": true,
+    "ai": true,
+    "drive": true
+  },
+  "results": [
+    {
+      "id": 6,
+      "name": "Renfield",
+      "ip": "192.168.8.224",
+      "pass": 15,
+      "fail": 0,
+      "skip": 3,
+      "rows": [
+        {
+          "name": "reachable",
+          "state": "PASS",
+          "detail": "v10.5.0 in 149ms"
+        },
+        {
+          "name": "version matches repo",
+          "state": "PASS",
+          "detail": "node 10.5.0 vs repo 10.5.0"
+        },
+        {
+          "name": "serving its own character",
+          "state": "PASS",
+          "detail": "selectedCharacter=6, expected 6 (Renfield)"
+        },
+        {
+          "name": "pages load (8)",
+          "state": "PASS",
+          "detail": "all 200"
+        },
+        {
+          "name": "parts load",
+          "state": "PASS",
+          "detail": "4 parts"
+        },
+        {
+          "name": "AI Motion config",
+          "state": "PASS",
+          "detail": "enabled=false"
+        },
+        {
+          "name": "AI Motion capabilities",
+          "state": "PASS",
+          "detail": "0 authored, 0 refused by the runtime"
+        },
+        {
+          "name": "AI Motion roles resolved",
+          "state": "PASS",
+          "detail": "no movable parts (audio-only character)"
+        },
+        {
+          "name": "AI Motion toggle honest",
+          "state": "PASS",
+          "detail": "refused as expected: This character has no movable parts or lights"
+        },
+        {
+          "name": "Follow Orders config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Jaw animation config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Head tracking status",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "guest phrases resolve to its own parts",
+          "state": "SKIP",
+          "detail": "nothing movable"
+        },
+        {
+          "name": "capability CRUD",
+          "state": "SKIP",
+          "detail": "no movable parts"
+        },
+        {
+          "name": "AI answers (not fallback)",
+          "state": "PASS",
+          "detail": "Name for the registry? Spell nothing. I never misfile. I am RENFIELD, "
+        },
+        {
+          "name": "greeting not replayed",
+          "state": "PASS",
+          "detail": "each turn opens differently"
+        },
+        {
+          "name": "real hardware driven",
+          "state": "SKIP",
+          "detail": "no safe light on this character"
+        },
+        {
+          "name": "speaker AUDIBLE by ear",
+          "state": "PASS",
+          "detail": "AUDIBLE rise 27.2dB recall 1% — \"The works are still open. Sign nothing tonight. I \""
+        }
+      ]
+    }
+  ]
+}

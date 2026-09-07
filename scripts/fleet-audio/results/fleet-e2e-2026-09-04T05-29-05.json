@@ -1,0 +1,110 @@
+{
+  "ranAt": "2026-09-04T05:29:05.621Z",
+  "options": {
+    "audio": true,
+    "ai": false,
+    "drive": false
+  },
+  "results": [
+    {
+      "id": 5,
+      "name": "Groundbreaker",
+      "ip": "192.168.8.200",
+      "pass": 13,
+      "fail": 0,
+      "skip": 5,
+      "rows": [
+        {
+          "name": "reachable",
+          "state": "PASS",
+          "detail": "v10.5.0 in 207ms"
+        },
+        {
+          "name": "version matches repo",
+          "state": "PASS",
+          "detail": "node 10.5.0 vs repo 10.5.0"
+        },
+        {
+          "name": "serving its own character",
+          "state": "PASS",
+          "detail": "selectedCharacter=5, expected 5 (Groundbreaker)"
+        },
+        {
+          "name": "pages load (8)",
+          "state": "PASS",
+          "detail": "all 200"
+        },
+        {
+          "name": "parts load",
+          "state": "PASS",
+          "detail": "4 parts"
+        },
+        {
+          "name": "AI Motion config",
+          "state": "PASS",
+          "detail": "enabled=false"
+        },
+        {
+          "name": "AI Motion capabilities",
+          "state": "PASS",
+          "detail": "0 authored, 0 refused by the runtime"
+        },
+        {
+          "name": "AI Motion roles resolved",
+          "state": "PASS",
+          "detail": "body"
+        },
+        {
+          "name": "AI Motion toggle honest",
+          "state": "PASS",
+          "detail": "latched=true"
+        },
+        {
+          "name": "Follow Orders config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Jaw animation config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Head tracking status",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "guest phrases resolve to its own parts",
+          "state": "PASS",
+          "detail": "do something→Groundbreaker Motor"
+        },
+        {
+          "name": "capability CRUD",
+          "state": "SKIP",
+          "detail": "needs a servo + a light to satisfy the concurrency rule"
+        },
+        {
+          "name": "AI answers (not fallback)",
+          "state": "SKIP",
+          "detail": "pass --ai"
+        },
+        {
+          "name": "greeting not replayed",
+          "state": "SKIP",
+          "detail": "pass --ai"
+        },
+        {
+          "name": "real hardware driven",
+          "state": "SKIP",
+          "detail": "pass --drive"
+        },
+        {
+          "name": "speaker AUDIBLE by ear",
+          "state": "SKIP",
+          "detail": "cannot verify — every microphone on this node is a dead-flat jack. Speaker UNPROVEN, not disproven. no speech detected on any mic (best rise 1.6 dB)"
+        }
+      ]
+    }
+  ]
+}

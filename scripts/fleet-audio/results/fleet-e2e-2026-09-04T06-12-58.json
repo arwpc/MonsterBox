@@ -1,0 +1,610 @@
+{
+  "ranAt": "2026-09-04T06:12:58.977Z",
+  "options": {
+    "audio": true,
+    "ai": true,
+    "drive": true
+  },
+  "results": [
+    {
+      "id": 1,
+      "name": "PumpkinHead",
+      "ip": "192.168.8.150",
+      "pass": 15,
+      "fail": 1,
+      "skip": 2,
+      "rows": [
+        {
+          "name": "reachable",
+          "state": "PASS",
+          "detail": "v10.5.0 in 290ms"
+        },
+        {
+          "name": "version matches repo",
+          "state": "PASS",
+          "detail": "node 10.5.0 vs repo 10.5.0"
+        },
+        {
+          "name": "serving its own character",
+          "state": "PASS",
+          "detail": "selectedCharacter=1, expected 1 (PumpkinHead)"
+        },
+        {
+          "name": "pages load (8)",
+          "state": "PASS",
+          "detail": "all 200"
+        },
+        {
+          "name": "parts load",
+          "state": "PASS",
+          "detail": "7 parts"
+        },
+        {
+          "name": "AI Motion config",
+          "state": "PASS",
+          "detail": "enabled=false"
+        },
+        {
+          "name": "AI Motion capabilities",
+          "state": "PASS",
+          "detail": "0 authored, 0 refused by the runtime"
+        },
+        {
+          "name": "AI Motion roles resolved",
+          "state": "PASS",
+          "detail": "body"
+        },
+        {
+          "name": "AI Motion toggle honest",
+          "state": "PASS",
+          "detail": "latched=true"
+        },
+        {
+          "name": "Follow Orders config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Jaw animation config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Head tracking status",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "guest phrases resolve to its own parts",
+          "state": "PASS",
+          "detail": "do something→Wiper Motor"
+        },
+        {
+          "name": "capability CRUD",
+          "state": "SKIP",
+          "detail": "needs a servo + a light to satisfy the concurrency rule"
+        },
+        {
+          "name": "AI answers (not fallback)",
+          "state": "PASS",
+          "detail": "Pumpkinhead is the shadow in the corn. Pumpkinhead belongs to the dark"
+        },
+        {
+          "name": "greeting not replayed",
+          "state": "PASS",
+          "detail": "each turn opens differently"
+        },
+        {
+          "name": "real hardware driven",
+          "state": "SKIP",
+          "detail": "no safe light on this character"
+        },
+        {
+          "name": "speaker AUDIBLE by ear",
+          "state": "FAIL",
+          "detail": "SILENT rise 0.7dB recall 0% — \"[pause]\""
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Mina",
+      "ip": "192.168.8.140",
+      "pass": 17,
+      "fail": 1,
+      "skip": 0,
+      "rows": [
+        {
+          "name": "reachable",
+          "state": "PASS",
+          "detail": "v10.5.0 in 136ms"
+        },
+        {
+          "name": "version matches repo",
+          "state": "PASS",
+          "detail": "node 10.5.0 vs repo 10.5.0"
+        },
+        {
+          "name": "serving its own character",
+          "state": "PASS",
+          "detail": "selectedCharacter=2, expected 2 (Mina)"
+        },
+        {
+          "name": "pages load (8)",
+          "state": "PASS",
+          "detail": "all 200"
+        },
+        {
+          "name": "parts load",
+          "state": "PASS",
+          "detail": "10 parts"
+        },
+        {
+          "name": "AI Motion config",
+          "state": "PASS",
+          "detail": "enabled=false"
+        },
+        {
+          "name": "AI Motion capabilities",
+          "state": "PASS",
+          "detail": "0 authored, 0 refused by the runtime"
+        },
+        {
+          "name": "AI Motion roles resolved",
+          "state": "PASS",
+          "detail": "jaw,head,eye,light,door"
+        },
+        {
+          "name": "AI Motion toggle honest",
+          "state": "PASS",
+          "detail": "latched=true"
+        },
+        {
+          "name": "Follow Orders config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Jaw animation config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Head tracking status",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "guest phrases resolve to its own parts",
+          "state": "PASS",
+          "detail": "look at me→Neck  open your mouth→Jaw  do something→Neck"
+        },
+        {
+          "name": "capability CRUD",
+          "state": "PASS",
+          "detail": "create + delete clean"
+        },
+        {
+          "name": "AI answers (not fallback)",
+          "state": "PASS",
+          "detail": "[breathes] I am Mina. I am kept here, in Warner Castle, in Iowa. The n"
+        },
+        {
+          "name": "greeting not replayed",
+          "state": "PASS",
+          "detail": "each turn opens differently"
+        },
+        {
+          "name": "real hardware driven",
+          "state": "PASS",
+          "detail": "Servo Channel Laser on/off"
+        },
+        {
+          "name": "speaker AUDIBLE by ear",
+          "state": "FAIL",
+          "detail": "SILENT rise 3.3dB recall 0.13% — \"I believe it was since 1963 when Douglas Scott\""
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Orlok",
+      "ip": "192.168.8.120",
+      "pass": 17,
+      "fail": 1,
+      "skip": 0,
+      "rows": [
+        {
+          "name": "reachable",
+          "state": "PASS",
+          "detail": "v10.5.0 in 19ms"
+        },
+        {
+          "name": "version matches repo",
+          "state": "PASS",
+          "detail": "node 10.5.0 vs repo 10.5.0"
+        },
+        {
+          "name": "serving its own character",
+          "state": "PASS",
+          "detail": "selectedCharacter=3, expected 3 (Orlok)"
+        },
+        {
+          "name": "pages load (8)",
+          "state": "PASS",
+          "detail": "all 200"
+        },
+        {
+          "name": "parts load",
+          "state": "PASS",
+          "detail": "12 parts"
+        },
+        {
+          "name": "AI Motion config",
+          "state": "PASS",
+          "detail": "enabled=false"
+        },
+        {
+          "name": "AI Motion capabilities",
+          "state": "PASS",
+          "detail": "7 authored, 0 refused by the runtime"
+        },
+        {
+          "name": "AI Motion roles resolved",
+          "state": "PASS",
+          "detail": "arm,torso,light,jaw,head"
+        },
+        {
+          "name": "AI Motion toggle honest",
+          "state": "PASS",
+          "detail": "latched=true"
+        },
+        {
+          "name": "Follow Orders config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Jaw animation config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Head tracking status",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "guest phrases resolve to its own parts",
+          "state": "PASS",
+          "detail": "look at me→Head on a Swivel  open your mouth→Jaw of Orlok  wave at me→Right Arm of Orlok"
+        },
+        {
+          "name": "capability CRUD",
+          "state": "PASS",
+          "detail": "create + delete clean"
+        },
+        {
+          "name": "AI answers (not fallback)",
+          "state": "PASS",
+          "detail": "[Romanian accent] [labored breath] I am Count Orlok. The master of thi"
+        },
+        {
+          "name": "greeting not replayed",
+          "state": "PASS",
+          "detail": "each turn opens differently"
+        },
+        {
+          "name": "real hardware driven",
+          "state": "PASS",
+          "detail": "Hand of Azura on/off"
+        },
+        {
+          "name": "speaker AUDIBLE by ear",
+          "state": "FAIL",
+          "detail": "SILENT rise 0.2dB recall 0% — \"[silence]\""
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "ip": "192.168.8.130",
+      "pass": 15,
+      "fail": 1,
+      "skip": 2,
+      "rows": [
+        {
+          "name": "reachable",
+          "state": "PASS",
+          "detail": "v10.5.0 in 193ms"
+        },
+        {
+          "name": "version matches repo",
+          "state": "PASS",
+          "detail": "node 10.5.0 vs repo 10.5.0"
+        },
+        {
+          "name": "serving its own character",
+          "state": "PASS",
+          "detail": "selectedCharacter=4, expected 4 (Sir Dragomir)"
+        },
+        {
+          "name": "pages load (8)",
+          "state": "PASS",
+          "detail": "all 200"
+        },
+        {
+          "name": "parts load",
+          "state": "PASS",
+          "detail": "6 parts"
+        },
+        {
+          "name": "AI Motion config",
+          "state": "PASS",
+          "detail": "enabled=false"
+        },
+        {
+          "name": "AI Motion capabilities",
+          "state": "PASS",
+          "detail": "0 authored, 0 refused by the runtime"
+        },
+        {
+          "name": "AI Motion roles resolved",
+          "state": "PASS",
+          "detail": "head,jaw,body"
+        },
+        {
+          "name": "AI Motion toggle honest",
+          "state": "PASS",
+          "detail": "latched=true"
+        },
+        {
+          "name": "Follow Orders config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Jaw animation config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Head tracking status",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "guest phrases resolve to its own parts",
+          "state": "PASS",
+          "detail": "look at me→Head Servo  open your mouth→Mouth Open  do something→Magic Box Servo"
+        },
+        {
+          "name": "capability CRUD",
+          "state": "SKIP",
+          "detail": "needs a servo + a light to satisfy the concurrency rule"
+        },
+        {
+          "name": "AI answers (not fallback)",
+          "state": "PASS",
+          "detail": "[Romanian accent] Bine. I am Sir Dragomir of Târgoviște. I hold the wa"
+        },
+        {
+          "name": "greeting not replayed",
+          "state": "PASS",
+          "detail": "each turn opens differently"
+        },
+        {
+          "name": "real hardware driven",
+          "state": "SKIP",
+          "detail": "no safe light on this character"
+        },
+        {
+          "name": "speaker AUDIBLE by ear",
+          "state": "FAIL",
+          "detail": "FAINT rise 1.9dB recall 1% — \"Stai, the watch of the castle holds this road, and\""
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Groundbreaker",
+      "ip": "192.168.8.200",
+      "pass": 15,
+      "fail": 0,
+      "skip": 3,
+      "rows": [
+        {
+          "name": "reachable",
+          "state": "PASS",
+          "detail": "v10.5.0 in 99ms"
+        },
+        {
+          "name": "version matches repo",
+          "state": "PASS",
+          "detail": "node 10.5.0 vs repo 10.5.0"
+        },
+        {
+          "name": "serving its own character",
+          "state": "PASS",
+          "detail": "selectedCharacter=5, expected 5 (Groundbreaker)"
+        },
+        {
+          "name": "pages load (8)",
+          "state": "PASS",
+          "detail": "all 200"
+        },
+        {
+          "name": "parts load",
+          "state": "PASS",
+          "detail": "4 parts"
+        },
+        {
+          "name": "AI Motion config",
+          "state": "PASS",
+          "detail": "enabled=false"
+        },
+        {
+          "name": "AI Motion capabilities",
+          "state": "PASS",
+          "detail": "0 authored, 0 refused by the runtime"
+        },
+        {
+          "name": "AI Motion roles resolved",
+          "state": "PASS",
+          "detail": "body"
+        },
+        {
+          "name": "AI Motion toggle honest",
+          "state": "PASS",
+          "detail": "latched=true"
+        },
+        {
+          "name": "Follow Orders config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Jaw animation config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Head tracking status",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "guest phrases resolve to its own parts",
+          "state": "PASS",
+          "detail": "do something→Groundbreaker Motor"
+        },
+        {
+          "name": "capability CRUD",
+          "state": "SKIP",
+          "detail": "needs a servo + a light to satisfy the concurrency rule"
+        },
+        {
+          "name": "AI answers (not fallback)",
+          "state": "PASS",
+          "detail": "GROUNDBREAKER! I AM GROUNDBREAKER! WHO ARE YOU?"
+        },
+        {
+          "name": "greeting not replayed",
+          "state": "PASS",
+          "detail": "each turn opens differently"
+        },
+        {
+          "name": "real hardware driven",
+          "state": "SKIP",
+          "detail": "no safe light on this character"
+        },
+        {
+          "name": "speaker AUDIBLE by ear",
+          "state": "SKIP",
+          "detail": "cannot verify — every microphone on this node is a dead-flat jack. Speaker UNPROVEN, not disproven. no speech detected on any mic (best rise 0.4 dB); default sink volume is low (0.2) — raise with wpctl"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Renfield",
+      "ip": "192.168.8.224",
+      "pass": 14,
+      "fail": 1,
+      "skip": 3,
+      "rows": [
+        {
+          "name": "reachable",
+          "state": "PASS",
+          "detail": "v10.5.0 in 143ms"
+        },
+        {
+          "name": "version matches repo",
+          "state": "PASS",
+          "detail": "node 10.5.0 vs repo 10.5.0"
+        },
+        {
+          "name": "serving its own character",
+          "state": "PASS",
+          "detail": "selectedCharacter=6, expected 6 (Renfield)"
+        },
+        {
+          "name": "pages load (8)",
+          "state": "PASS",
+          "detail": "all 200"
+        },
+        {
+          "name": "parts load",
+          "state": "PASS",
+          "detail": "4 parts"
+        },
+        {
+          "name": "AI Motion config",
+          "state": "PASS",
+          "detail": "enabled=false"
+        },
+        {
+          "name": "AI Motion capabilities",
+          "state": "PASS",
+          "detail": "0 authored, 0 refused by the runtime"
+        },
+        {
+          "name": "AI Motion roles resolved",
+          "state": "PASS",
+          "detail": "no movable parts (audio-only character)"
+        },
+        {
+          "name": "AI Motion toggle honest",
+          "state": "PASS",
+          "detail": "refused as expected: This character has no movable parts or lights"
+        },
+        {
+          "name": "Follow Orders config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Jaw animation config",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "Head tracking status",
+          "state": "PASS",
+          "detail": "readable"
+        },
+        {
+          "name": "guest phrases resolve to its own parts",
+          "state": "SKIP",
+          "detail": "nothing movable"
+        },
+        {
+          "name": "capability CRUD",
+          "state": "SKIP",
+          "detail": "no movable parts"
+        },
+        {
+          "name": "AI answers (not fallback)",
+          "state": "PASS",
+          "detail": "[chuckles] Name for the registry? Spell nothing. I never misfile. I am"
+        },
+        {
+          "name": "greeting not replayed",
+          "state": "PASS",
+          "detail": "each turn opens differently"
+        },
+        {
+          "name": "real hardware driven",
+          "state": "SKIP",
+          "detail": "no safe light on this character"
+        },
+        {
+          "name": "speaker AUDIBLE by ear",
+          "state": "FAIL",
+          "detail": "FAINT rise 1.6dB recall 1% — \"The works are still open. Sign nothing tonight, I \""
+        }
+      ]
+    }
+  ]
+}

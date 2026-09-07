@@ -1,0 +1,261 @@
+{
+  "ranAt": "2026-09-04T04:53:14.891Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 1,
+      "name": "PumpkinHead",
+      "hostname": "pumpkinhead",
+      "ip": "192.168.8.150",
+      "sink": "81. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.65]",
+      "sinkVolume": 0.65,
+      "phrase": "The garden is hungry tonight, and the soul quota is not yet filled.",
+      "sayOk": false,
+      "sayError": "500 {\"success\":false,\"error\":\"Failed to make animatronic speak\",\"message\":\"Invalid URL\"}",
+      "voiceUsed": null,
+      "voiceFallback": false,
+      "mics": [
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -45.1,
+          "castP90Db": -44.4,
+          "castPeakDb": -33.6,
+          "riseDb": 0.7,
+          "floorFlat": true,
+          "transcript": "[pause]",
+          "recall": 0
+        },
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:4,0",
+          "floorDb": -79.2,
+          "castP90Db": -78.6,
+          "castPeakDb": -66.2,
+          "riseDb": 0.6,
+          "floorFlat": false,
+          "transcript": "",
+          "recall": 0
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -45.1,
+      "castDb": -44.4,
+      "riseDb": 0.7,
+      "recall": 0,
+      "transcript": "[pause]",
+      "verdict": "SILENT",
+      "diagnosis": "the say/TTS call itself failed; default sink volume is low (0.65) — raise with wpctl; Streaming Camera shows a dead-flat floor (jack likely empty)"
+    },
+    {
+      "id": 2,
+      "name": "Mina",
+      "hostname": "mina",
+      "ip": "192.168.8.140",
+      "sink": "77. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "I have waited in these walls since fourteen sixty two for Thomas to come home.",
+      "sayOk": true,
+      "voiceUsed": "hkk1bPcdsxSQCLzLFMT2",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:3,0",
+          "floorDb": -57.7,
+          "castP90Db": -44.8,
+          "castPeakDb": -4.8,
+          "riseDb": 12.9,
+          "floorFlat": true,
+          "transcript": "They make things small since the full cage is 6 inches for dogs to come home.",
+          "recall": 0.33
+        },
+        {
+          "label": "USB Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -22,
+          "castP90Db": -6.9,
+          "castPeakDb": 0,
+          "riseDb": 15.1,
+          "floorFlat": false,
+          "transcript": "I have waited in these walls since 1462 for Thomas to come home",
+          "recall": 0.8
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -22,
+      "castDb": -6.9,
+      "riseDb": 15.1,
+      "recall": 0.8,
+      "transcript": "I have waited in these walls since 1462 for Thomas to come home",
+      "verdict": "AUDIBLE"
+    },
+    {
+      "id": 3,
+      "name": "Orlok",
+      "hostname": "orlok",
+      "ip": "192.168.8.120",
+      "sink": "81. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 1.30]",
+      "sinkVolume": 1.3,
+      "phrase": "You stand at my door uninvited. Mind your place, little one.",
+      "sayOk": true,
+      "voiceUsed": "Tj9l48J9AJbry5yCP5eW",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -40.6,
+          "castP90Db": -17,
+          "castPeakDb": 0,
+          "riseDb": 23.6,
+          "floorFlat": false,
+          "transcript": "You stand at my door uninvited. Mind your place, little one",
+          "recall": 1
+        },
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:4,0",
+          "floorDb": -46.7,
+          "castP90Db": -43.8,
+          "castPeakDb": -18.9,
+          "riseDb": 2.9,
+          "floorFlat": true,
+          "transcript": "[laughs]",
+          "recall": 0
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -40.6,
+      "castDb": -17,
+      "riseDb": 23.6,
+      "recall": 1,
+      "transcript": "You stand at my door uninvited. Mind your place, little one",
+      "verdict": "AUDIBLE"
+    },
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "hostname": "sirdragomir",
+      "ip": "192.168.8.130",
+      "sink": "81. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 0.55]",
+      "sinkVolume": 0.55,
+      "phrase": "Stai! The watch of the castle holds this road, and the road behind you is dark.",
+      "sayOk": true,
+      "voiceUsed": "wXvR48IpOq9HACltTmt7",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:2,0",
+          "floorDb": -57.3,
+          "castP90Db": -54.8,
+          "castPeakDb": -42,
+          "riseDb": 2.5,
+          "floorFlat": true,
+          "transcript": "[outro jingle]",
+          "recall": 0
+        },
+        {
+          "label": "USB Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -39.8,
+          "castP90Db": -21.2,
+          "castPeakDb": -2.1,
+          "riseDb": 18.5,
+          "floorFlat": false,
+          "transcript": "Stai! The watch of the castle holds this road, and the road behind you is dark",
+          "recall": 1
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -39.8,
+      "castDb": -21.2,
+      "riseDb": 18.5,
+      "recall": 1,
+      "transcript": "Stai! The watch of the castle holds this road, and the road behind you is dark",
+      "verdict": "AUDIBLE"
+    },
+    {
+      "id": 5,
+      "name": "Groundbreaker",
+      "hostname": "groundbreaker",
+      "ip": "192.168.8.200",
+      "sink": "64. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "THIS ROOF IS MINE. COME DOWN FROM THE STREET AND SEE.",
+      "sayOk": false,
+      "sayError": "500 {\"success\":false,\"error\":\"Failed to make animatronic speak\",\"message\":\"Request failed with status code 500\"}",
+      "voiceUsed": null,
+      "voiceFallback": false,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -83.9,
+          "castP90Db": -82.6,
+          "castPeakDb": -68.7,
+          "riseDb": 1.3,
+          "floorFlat": false,
+          "transcript": "[pause]",
+          "recall": 0
+        }
+      ],
+      "bestMic": "USB Audio Device",
+      "floorDb": -83.9,
+      "castDb": -82.6,
+      "riseDb": 1.3,
+      "recall": 0,
+      "transcript": "[pause]",
+      "verdict": "SILENT",
+      "diagnosis": "the say/TTS call itself failed"
+    },
+    {
+      "id": 6,
+      "name": "Renfield",
+      "hostname": "renfield",
+      "ip": "192.168.8.224",
+      "sink": "58. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "The works are still open! Sign nothing tonight, I beg you, sign nothing!",
+      "sayOk": true,
+      "voiceUsed": "zzG73sCjG25Zj6km5X4M",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:2,0",
+          "floorDb": -57.4,
+          "castP90Db": -34.9,
+          "castPeakDb": -6,
+          "riseDb": 22.5,
+          "floorFlat": true,
+          "transcript": "The works are still open. Sign nothing tonight, I beg you. Sign nothing",
+          "recall": 1
+        },
+        {
+          "label": "1080P Webcam",
+          "dev": "plughw:3,0",
+          "floorDb": -41.2,
+          "castP90Db": -9.4,
+          "castPeakDb": 0,
+          "riseDb": 31.8,
+          "floorFlat": false,
+          "transcript": "The works are still open. Sign nothing tonight. I beg you, sign nothing",
+          "recall": 1
+        }
+      ],
+      "bestMic": "1080P Webcam",
+      "floorDb": -41.2,
+      "castDb": -9.4,
+      "riseDb": 31.8,
+      "recall": 1,
+      "transcript": "The works are still open. Sign nothing tonight. I beg you, sign nothing",
+      "verdict": "AUDIBLE"
+    }
+  ]
+}

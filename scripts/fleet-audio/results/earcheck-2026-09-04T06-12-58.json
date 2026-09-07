@@ -1,0 +1,259 @@
+{
+  "ranAt": "2026-09-04T06:12:58.938Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 1,
+      "name": "PumpkinHead",
+      "hostname": "pumpkinhead",
+      "ip": "192.168.8.150",
+      "sink": "81. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.20]",
+      "sinkVolume": 0.2,
+      "phrase": "The garden is hungry tonight, and the soul quota is not yet filled.",
+      "sayOk": true,
+      "voiceUsed": "Z7RrOqZFTyLpIlzCgfsp",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -44.7,
+          "castP90Db": -44,
+          "castPeakDb": -32.7,
+          "riseDb": 0.7,
+          "floorFlat": false,
+          "transcript": "[pause]",
+          "recall": 0
+        },
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:4,0",
+          "floorDb": -79.1,
+          "castP90Db": -78.8,
+          "castPeakDb": -65.2,
+          "riseDb": 0.3,
+          "floorFlat": true,
+          "transcript": "[pause]",
+          "recall": 0
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -44.7,
+      "castDb": -44,
+      "riseDb": 0.7,
+      "recall": 0,
+      "transcript": "[pause]",
+      "verdict": "SILENT",
+      "diagnosis": "no speech detected on any mic (best rise 0.7 dB); default sink volume is low (0.2) — raise with wpctl; USB Audio Device shows a dead-flat floor (jack likely empty)"
+    },
+    {
+      "id": 2,
+      "name": "Mina",
+      "hostname": "mina",
+      "ip": "192.168.8.140",
+      "sink": "77. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 0.20]",
+      "sinkVolume": 0.2,
+      "phrase": "I have waited in these walls since fourteen sixty two for Thomas to come home.",
+      "sayOk": true,
+      "voiceUsed": "hkk1bPcdsxSQCLzLFMT2",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:3,0",
+          "floorDb": -56.1,
+          "castP90Db": -55.7,
+          "castPeakDb": -43.2,
+          "riseDb": 0.4,
+          "floorFlat": false,
+          "transcript": "[silence]",
+          "recall": 0
+        },
+        {
+          "label": "USB Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -19.8,
+          "castP90Db": -16.4,
+          "castPeakDb": -2.9,
+          "riseDb": 3.3,
+          "floorFlat": false,
+          "transcript": "I believe it was since 1963 when Douglas Scott",
+          "recall": 0.13
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -19.8,
+      "castDb": -16.4,
+      "riseDb": 3.3,
+      "recall": 0.13,
+      "transcript": "I believe it was since 1963 when Douglas Scott",
+      "verdict": "SILENT",
+      "diagnosis": "no speech detected on any mic (best rise 3.3 dB); default sink volume is low (0.2) — raise with wpctl"
+    },
+    {
+      "id": 3,
+      "name": "Orlok",
+      "hostname": "orlok",
+      "ip": "192.168.8.120",
+      "sink": "81. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 0.20]",
+      "sinkVolume": 0.2,
+      "phrase": "You stand at my door uninvited. Mind your place, little one.",
+      "sayOk": true,
+      "voiceUsed": "Tj9l48J9AJbry5yCP5eW",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Camera",
+          "dev": "plughw:3,0",
+          "floorDb": -41.8,
+          "castP90Db": -41.8,
+          "castPeakDb": -25.4,
+          "riseDb": 0,
+          "floorFlat": false,
+          "transcript": "[silence]",
+          "recall": 0
+        },
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:4,0",
+          "floorDb": -49.4,
+          "castP90Db": -49.2,
+          "castPeakDb": -38,
+          "riseDb": 0.2,
+          "floorFlat": true,
+          "transcript": "[silence]",
+          "recall": 0
+        }
+      ],
+      "bestMic": "reSpeaker XVF3800 4-Mic Array",
+      "floorDb": -49.4,
+      "castDb": -49.2,
+      "riseDb": 0.2,
+      "recall": 0,
+      "transcript": "[silence]",
+      "verdict": "SILENT",
+      "diagnosis": "no speech detected on any mic (best rise 0.2 dB); default sink volume is low (0.2) — raise with wpctl; reSpeaker XVF3800 4-Mic Array shows a dead-flat floor (jack likely empty)"
+    },
+    {
+      "id": 4,
+      "name": "Sir Dragomir",
+      "hostname": "sirdragomir",
+      "ip": "192.168.8.130",
+      "sink": "81. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 0.20]",
+      "sinkVolume": 0.2,
+      "phrase": "Stai! The watch of the castle holds this road, and the road behind you is dark.",
+      "sayOk": true,
+      "voiceUsed": "wXvR48IpOq9HACltTmt7",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:2,0",
+          "error": "Error: Command failed: scp -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=8 remote@192.168.8.130:/tmp/mb-earcheck-cast-c2.wav /home/remote/MonsterBox/scripts/fleet-audio/results/sirdra"
+        },
+        {
+          "label": "USB Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -40.2,
+          "castP90Db": -38.3,
+          "castPeakDb": -26.1,
+          "riseDb": 1.9,
+          "floorFlat": true,
+          "transcript": "Stai, the watch of the castle holds this road, and the road behind you is dark",
+          "recall": 1
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -40.2,
+      "castDb": -38.3,
+      "riseDb": 1.9,
+      "recall": 1,
+      "transcript": "Stai, the watch of the castle holds this road, and the road behind you is dark",
+      "verdict": "FAINT",
+      "diagnosis": "words were intelligible but the speaker only rose 1.9 dB over the mic floor — quiet for a yard; default sink volume is low (0.2) — raise with wpctl; USB Camera shows a dead-flat floor (jack likely empty)"
+    },
+    {
+      "id": 5,
+      "name": "Groundbreaker",
+      "hostname": "groundbreaker",
+      "ip": "192.168.8.200",
+      "sink": "79. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 0.20]",
+      "sinkVolume": 0.2,
+      "phrase": "THIS ROOF IS MINE. COME DOWN FROM THE STREET AND SEE.",
+      "sayOk": true,
+      "voiceUsed": "vfaqCOvlrKi4Zp7C2IAm",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -83.4,
+          "castP90Db": -83,
+          "castPeakDb": -69.5,
+          "riseDb": 0.4,
+          "floorFlat": false,
+          "transcript": "",
+          "recall": 0
+        }
+      ],
+      "bestMic": "USB Audio Device",
+      "floorDb": -83.4,
+      "castDb": -83,
+      "riseDb": 0.4,
+      "recall": 0,
+      "transcript": "",
+      "verdict": "SILENT",
+      "diagnosis": "no speech detected on any mic (best rise 0.4 dB); default sink volume is low (0.2) — raise with wpctl"
+    },
+    {
+      "id": 6,
+      "name": "Renfield",
+      "hostname": "renfield",
+      "ip": "192.168.8.224",
+      "sink": "58. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 0.20]",
+      "sinkVolume": 0.2,
+      "phrase": "The works are still open! Sign nothing tonight, I beg you, sign nothing!",
+      "sayOk": true,
+      "voiceUsed": "zzG73sCjG25Zj6km5X4M",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:2,0",
+          "floorDb": -58,
+          "castP90Db": -57.4,
+          "castPeakDb": -43.7,
+          "riseDb": 0.5,
+          "floorFlat": false,
+          "transcript": "",
+          "recall": 0
+        },
+        {
+          "label": "1080P Webcam",
+          "dev": "plughw:3,0",
+          "floorDb": -41.6,
+          "castP90Db": -40,
+          "castPeakDb": -5,
+          "riseDb": 1.6,
+          "floorFlat": false,
+          "transcript": "The works are still open. Sign nothing tonight, I beg you. Sign nothing",
+          "recall": 1
+        }
+      ],
+      "bestMic": "1080P Webcam",
+      "floorDb": -41.6,
+      "castDb": -40,
+      "riseDb": 1.6,
+      "recall": 1,
+      "transcript": "The works are still open. Sign nothing tonight, I beg you. Sign nothing",
+      "verdict": "FAINT",
+      "diagnosis": "words were intelligible but the speaker only rose 1.6 dB over the mic floor — quiet for a yard; default sink volume is low (0.2) — raise with wpctl"
+    }
+  ]
+}
