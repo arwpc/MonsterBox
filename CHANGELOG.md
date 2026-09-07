@@ -4,6 +4,10 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Calibration page: motor speed/duration defaults come from the part.** A motor part may declare
+  `config.defaultSpeed` and `config.defaultDurationMs`; the panel used a fixed 90 % / 15 000 ms, which on
+  PumpkinHead's under-volted Pi turned every click into a reboot.
+
 - **`services/pipewireService.js` no longer leaks "pactl: not found" into the error log.** The Pulse
   tool probes (`pactl`/`paplay`/`parec`, absent on every Bookworm node) ran through the shell without a
   stderr redirect, so each service start wrote shell "not found" lines to `monsterbox.err` that read

@@ -540,6 +540,10 @@ superpowers after a suite run that predates the `httpNode` guard.
   the camera mic (floor -44.1 → -10.1 dBFS, Scribe recall 100 %, verbatim transcript). The array's
   own mic hears its own speaker at 0 % recall by design (AEC), so judge this node's speaker by the
   camera mic, and its listening by the XVF3800 — which is what `stt-config.json` now selects.
+- ✅ **FIXED — the calibration page's motor panel defaulted to 90 % for 15 000 ms.** One click was a
+  fifteen-second full-power run, which on this Pi is a guaranteed reboot. The panel now takes
+  `config.defaultSpeed` / `config.defaultDurationMs` from the part (falling back to the old values), and
+  this node's motor declares **25 % / 2000 ms**. You can still type any value.
 - ✅ Junk `Min = 10` markers removed from the motor and the PIR (meaningless on those part types);
   `validate:schemas` clean on the node. The 100 ms mic level probe measures 0.4–0.5 s here, so its
   2 s timeout only trips under load; left alone.
