@@ -139,7 +139,12 @@ async function resolveHead(characterId) {
   // wipe). Any configured safety window still narrows it.
   let lo = null, hi = null;
   try {
-    const win = await resolveDriveWindow(characterId, part);
+    // The head page's own center ± range is the preferred uncalibrated window
+    // (on a multi-turn neck the span from zero is not where the head lives).
+    const c = Number(headCfg.centerDeg), r = Number(headCfg.rangeDeg);
+    const preferred = (Number.isFinite(c) && Number.isFinite(r) && r > 0)
+      ? { minAngle: Math.max(0, c - r / 2), maxAngle: c + r / 2 } : null;
+    const win = await resolveDriveWindow(characterId, part, { preferred, preferredSource: 'head-config' });
     lo = win.minAngle; hi = win.maxAngle;
   } catch (_) { /* fall through to the safety-only values */ }
   if (typeof safety.minAngle === 'number') lo = lo == null ? safety.minAngle : Math.max(lo, safety.minAngle);

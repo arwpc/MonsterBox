@@ -486,7 +486,13 @@ router.post('/api/head-tracking/:charId/test-sweep', async (req, res) => {
     let maxAngle = servo.maxAngle;
     let windowSource = 'calibration';
     if (!servo.calibrated || minAngle == null || maxAngle == null) {
-      const win = await resolveDriveWindow(charId, { id: config.panServoId, name: servo.name, config: servo.config || {} });
+      // Prefer the page's own center ± range window over a bare span — on a
+      // multi-turn neck the span from zero is not where the head lives.
+      const c = Number(config.centerDeg), r = Number(config.rangeDeg);
+      const preferred = (Number.isFinite(c) && Number.isFinite(r) && r > 0)
+        ? { minAngle: Math.max(0, c - r / 2), maxAngle: c + r / 2 } : null;
+      const win = await resolveDriveWindow(charId, { id: config.panServoId, name: servo.name, config: servo.config || {} },
+        { preferred, preferredSource: 'head-config' });
       minAngle = win.minAngle;
       maxAngle = win.maxAngle;
       windowSource = win.source;
