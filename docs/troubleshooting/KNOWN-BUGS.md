@@ -903,6 +903,16 @@ Code is byte-identical to Orlok after the 2026-09-07 sync.
   0.5 s window 284–325 RMS, identical to the floor). Pi-side control is proven good, as it was on
   08-31; the 12 V motor side is dead or the mechanism is jammed. The `physical-faults.json` entry stays
   until the motor is heard or seen turning.
+- 🔴 **OPEN, HARDWARE — the USB camera fell off the bus at 19:07 (2026-09-07) and will not re-enumerate.**
+  Kernel: `usb 1-1.1: device descriptor read/64, error -71`, `attempt power cycle`, `Device not responding
+  to setup address`, `unable to enumerate USB device` — repeated on every retry, including after a full
+  xhci controller reset. This boot has logged 16 USB over-current events; the drop coincided with a
+  full-volume ear-check through the bus-powered Unitek adapter on the same hub. Treat it as USB power:
+  a powered hub (or the camera on its own port) is the fix; a replug may bring it back until the next
+  surge. While the camera is absent, `/api/orchestration/animatronic/5/webcam-snapshot` returns 503 —
+  that is honest, not a relay bug. *Agent note:* de-authorizing the ROOT hubs to "re-enumerate" took the
+  audio adapter down with it; an xhci unbind/bind (`/sys/bus/pci/drivers/xhci_hcd`) brought hub + audio
+  back in 8 s. Do the xhci reset, never the root-hub `authorized` toggle.
 - ⚪ No PIR part defined — add one (type `motion_sensor`, BCM pin) to use Motion mode.
 
 🟢 **BROUGHT UP TO 10.5.0 AND FULLY JOINED TO THE FLEET, 2026-08-30/31 overnight.** Everything
