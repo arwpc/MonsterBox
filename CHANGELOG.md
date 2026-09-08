@@ -4,6 +4,12 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Fleet code sync 2026-09-07:** code, views, scripts, tests, docs, schemas, `animatronics.json`,
+  `physical-faults.json` and `data/models` rsynced from Orlok to all five peers (node-local data untouched),
+  every service restarted and re-verified (health, camera frames, mic frames, parts API, motion mode).
+- **Groundbreaker** gets a speaker canon (`sinkVolume 1.0`); **Renfield** finalized (ear-check AUDIBLE on
+  both mics, baseline applied).
+
 - **Uncalibrated servos are driven, not refused.** New `services/hardwareService/driveWindow.js`
   resolves the angle window every runtime mover uses: measured calibration, else the mover's own
   window (the jaw's operator-authored min/max), else the store's placeholder span, else the part's
