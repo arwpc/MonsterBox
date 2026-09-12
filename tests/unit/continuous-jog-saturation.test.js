@@ -25,6 +25,7 @@ import request from 'supertest';
 import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
+import { calibrationFilePath } from '../../server/calibration/store.js';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -54,7 +55,7 @@ describe('Continuous jog saturation (F8)', function () {
 
     partsPath = path.join(APP_ROOT, 'data', `character-${characterId}`, 'parts.json');
     for (const f of [partsPath,
-      path.join(APP_ROOT, 'data', 'calibration_profiles.json'),
+      calibrationFilePath(),
       path.join(APP_ROOT, 'data', 'actuator-positions.json')]) {
       try { savedFiles.set(f, await fs.readFile(f, 'utf8')); } catch (_) { savedFiles.set(f, null); }
     }
