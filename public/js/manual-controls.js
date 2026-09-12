@@ -149,11 +149,21 @@
 
   // ── Data Loading ──
 
+  // The poses list and the audio library are also loaded by dashboard.js and
+  // dashboard-v2.js on the same page; go through the shared fetch so all three
+  // ride one request each.
+  function sharedJson(url) {
+    if (window.MonsterBox && typeof window.MonsterBox.sharedJson === 'function') {
+      return window.MonsterBox.sharedJson(url);
+    }
+    return fetch(url).then(function (r) { return r.json(); });
+  }
+
   function fetchData(charId) {
     return Promise.allSettled([
-      fetch('/api/parts?characterId=' + encodeURIComponent(charId)).then(function (r) { return r.json(); }),
-      fetch('/poses/api/poses').then(function (r) { return r.json(); }),
-      fetch('/audio-library/api/library').then(function (r) { return r.json(); })
+      sharedJson('/api/parts?characterId=' + encodeURIComponent(charId)),
+      sharedJson('/poses/api/poses'),
+      sharedJson('/audio-library/api/library')
     ]);
   }
 
@@ -675,6 +685,43 @@
       .catch(function () {});
   }
 
+  // Say WHY a control failed.
+  //
+  // Every handler below used to collapse each failure to the bare word 'Failed':
+  // a 409 "position unknown — goto first", a 403 safety refusal, a 502 'GPIO
+  // busy' from an actuator still mid-drive. All six causes looked identical, and
+  // identical to dead hardware, so the whole panel read as "nothing works" with
+  // nothing to act on. The server already sends the operator-facing reason —
+  // print it.
+  function failureText(j) {
+    var reason = (j && (j.error || j.message)) || '';
+    // Wrapper failures arrive as a multi-line blob of JSON log lines whose FIRST
+    // line is often an info line ("GPIO initialized successfully"), which reads
+    // like success. Prefer an error-level line; otherwise take the last line that
+    // carries a message at all.
+    var lines = String(reason).split('\n');
+    var errorLine = null;
+    var lastMessage = null;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line) continue;
+      try {
+        var parsed = JSON.parse(line);
+        if (parsed && parsed.message) {
+          lastMessage = parsed.message;
+          if (!errorLine && parsed.level === 'error') errorLine = parsed.message;
+        }
+      } catch (e) {
+        lastMessage = line;
+      }
+    }
+    if (errorLine) reason = errorLine;
+    else if (lastMessage) reason = lastMessage;
+    if (!reason) return 'Failed';
+    if (reason.length > 140) reason = reason.slice(0, 137) + '...';
+    return 'Failed: ' + reason;
+  }
+
   function nudgePart(partId, delta, speedPct, durationMs) {
     setCtrlStatus('Moving...');
     var body = { delta: delta };
@@ -692,9 +739,9 @@
         if (slider && j.currentP != null) slider.value = Math.round(j.currentP * 100);
         if (disp && j.currentP != null) disp.textContent = Number(j.currentP).toFixed(2);
       } else {
-        setCtrlStatus('Failed');
+        setCtrlStatus(failureText(j));
       }
-    }).catch(function () { setCtrlStatus('Error'); });
+    }).catch(function (e) { setCtrlStatus('Error: ' + (e && e.message ? e.message : 'request failed')); });
   }
 
   function gotoPart(partId, p) {
@@ -712,9 +759,9 @@
         if (slider) slider.value = Math.round(pos * 100);
         if (disp) disp.textContent = Number(pos).toFixed(2);
       } else {
-        setCtrlStatus('Failed');
+        setCtrlStatus(failureText(j));
       }
-    }).catch(function () { setCtrlStatus('Error'); });
+    }).catch(function (e) { setCtrlStatus('Error: ' + (e && e.message ? e.message : 'request failed')); });
   }
 
   function stopPart(partId) {
@@ -724,7 +771,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({})
     }).then(function (r) { return r.json(); }).then(function (j) {
-      setCtrlStatus(j.success ? 'Stopped' : 'Failed');
+      setCtrlStatus(j.success ? 'Stopped' : failureText(j));
     }).catch(function () { setCtrlStatus('Error'); });
   }
 
@@ -735,7 +782,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'control', params: { direction: direction, speed: 50, duration: 1000 } })
     }).then(function (r) { return r.json(); }).then(function (j) {
-      setCtrlStatus(j.success ? 'Done' : 'Failed');
+      setCtrlStatus(j.success ? 'Done' : failureText(j));
     }).catch(function () { setCtrlStatus('Error'); });
   }
 
@@ -746,7 +793,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'toggle' })
     }).then(function (r) { return r.json(); }).then(function (j) {
-      setCtrlStatus(j.success ? 'Toggled' : 'Failed');
+      setCtrlStatus(j.success ? 'Toggled' : failureText(j));
     }).catch(function () { setCtrlStatus('Error'); });
   }
 

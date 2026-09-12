@@ -37,13 +37,13 @@ process.env.NODE_ENV = 'test';
  * with the node's real content so anything asserting on real calibration still
  * sees it. However the run dies, the node's file is untouched.
  */
-function sandboxCalibrationStore() {
+function sandboxStore(envVar, liveRelPath) {
   // An explicit override wins — a caller who set this knows what they want.
-  if (process.env.MB_CALIBRATION_FILE) return;
+  if (process.env[envVar]) return;
 
-  const live = path.resolve(process.cwd(), 'data/calibration_profiles.json');
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-cal-'));
-  const sandbox = path.join(dir, 'calibration_profiles.json');
+  const live = path.resolve(process.cwd(), liveRelPath);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-store-'));
+  const sandbox = path.join(dir, path.basename(liveRelPath));
 
   try {
     fs.copyFileSync(live, sandbox);
@@ -54,10 +54,15 @@ function sandboxCalibrationStore() {
     fs.writeFileSync(sandbox, '{}', 'utf8');
   }
 
-  process.env.MB_CALIBRATION_FILE = sandbox;
-  console.log(`Calibration store sandboxed for this run: ${sandbox}`);
+  process.env[envVar] = sandbox;
+  console.log(`Sandboxed for this run: ${liveRelPath} -> ${sandbox}`);
 }
 
-sandboxCalibrationStore();
+sandboxStore('MB_CALIBRATION_FILE', 'data/calibration_profiles.json');
+// Same hazard, same class: two unit tests snapshot and restore the live actuator
+// position file, and a run that dies before after() leaves the node believing an
+// actuator is somewhere it is not. An actuator with a wrong "known" position gets
+// homed into an endstop it is already sitting on.
+sandboxStore('MB_ACTUATOR_POSITIONS_FILE', 'data/actuator-positions.json');
 
 console.log('Global test setup loaded: Environment variables configured.');

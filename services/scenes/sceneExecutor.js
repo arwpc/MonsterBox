@@ -873,6 +873,12 @@ export async function executeStep(step, characterId, emit, options) {
     case 'part':
       return executePartStep(step, characterId, emit);
     case 'wait':
+    // `delay` is the spelling the scene editor has written into saved scenes;
+    // only `wait` was ever dispatched here, so those scenes threw "Unknown step
+    // type: delay". Because `delay` is not in NON_FATAL_STEP_TYPES either, the
+    // throw aborted the whole scene — Mina's scene 100 (Halloween Audio Loop)
+    // died on its second step every single time it was played.
+    case 'delay':
       return executeWaitStep(step, emit);
     case 'sayThis':
       return executeSayThisStep(step, characterId, emit);

@@ -23,7 +23,18 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const STATE_FILE = path.resolve(__dirname, '..', 'data', 'actuator-positions.json');
+// MB_ACTUATOR_POSITIONS_FILE redirects the store, for the same reason
+// MB_CALIBRATION_FILE exists on the calibration store: unit tests snapshot this
+// file and write it back in an after() hook, so any run that does not reach
+// after() leaves the node believing an actuator is somewhere it is not — and an
+// actuator with a wrong "known" position is homed into an endstop it is already
+// sitting on. tests/setup.js points this at a throwaway copy.
+const STATE_FILE = process.env.MB_ACTUATOR_POSITIONS_FILE
+  ? path.resolve(process.env.MB_ACTUATOR_POSITIONS_FILE)
+  : path.resolve(__dirname, '..', 'data', 'actuator-positions.json');
+
+/** Where the position store actually reads and writes — see STATE_FILE. */
+function statePath() { return STATE_FILE; }
 const CONFIG_FILE = path.resolve(__dirname, '..', 'config', 'app-config.json');
 
 let _cache = null; // in-memory cache: { key: state }, key = `${characterId}:${partId}`
@@ -222,8 +233,10 @@ function clearCache() {
   _selCache = { id: undefined, at: 0 };
 }
 
+export { statePath };
+
 export default {
-  load, loadAll, save, update,
+  load, loadAll, save, update, statePath,
   markMoving, markStopped, markHomed, markUnknown,
   markCleanShutdown, recoverFromCrash, clearCache
 };

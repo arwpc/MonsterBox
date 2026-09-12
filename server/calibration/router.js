@@ -32,6 +32,9 @@ try {
     if (state.currentP != null) {
       positionState.set(partId, {
         currentP: state.currentP,
+        // Servos persist the angle they were driven to; it is the authoritative
+        // value and getOrCreateAdapter prefers it over the derived currentP.
+        ...(Number.isFinite(state.currentAngle) ? { currentAngle: state.currentAngle } : {}),
         positionKnown: state.positionKnown !== false,
         confidence: state.confidence || 'tracked',
         lastUpdated: state.lastUpdatedAt || new Date().toISOString()
@@ -120,6 +123,46 @@ function persistPosition(partId, currentP, extra = {}) {
   positionState.set(key, state);
   // Persist to disk for open-loop parts
   actuatorPositionStore.markStopped(key, currentP);
+}
+
+/**
+ * Record where a servo was just driven — in memory AND on disk.
+ *
+ * Absolute servos used to be recorded only in `positionState`, a plain Map that
+ * dies with the process. getOrCreateAdapter() already knows how to seed
+ * `initialAngle` from actuatorPositionStore, but nothing ever wrote a servo
+ * angle there, so that recovery path was unreachable: after every restart a
+ * servo's position was unknown, and because a relative nudge deliberately
+ * refuses an unknown position (it is bounds-free, and guessing 90° once drove a
+ * jaw past its calibrated minimum), EVERY ± button answered 409 until someone
+ * issued an absolute goto through this router first. On the dashboard that
+ * surfaced as a bare "Failed", which reads as dead hardware.
+ *
+ * Introduced by ae638b07 (v10.1.0), which correctly removed the invented 90°
+ * stand-in but did not add the persistence that made the honest answer
+ * survivable.
+ *
+ * The angle is stored alongside currentP because it is the authoritative value
+ * for a servo — currentP is derived from it, and deriving it back loses the
+ * distinction on a part whose span is not 180°.
+ */
+function persistServoPosition(partId, angle, maxDeg, characterId) {
+  const key = parseInt(partId, 10);
+  const currentP = angleToP(angle, maxDeg);
+  positionState.set(key, {
+    currentAngle: angle,
+    currentP,
+    positionKnown: true,
+    confidence: 'tracked',
+    lastUpdated: new Date().toISOString()
+  });
+  try {
+    actuatorPositionStore.markStopped(key, currentP, characterId);
+    actuatorPositionStore.update(key, { currentAngle: angle }, characterId);
+  } catch (err) {
+    // A failed SD write must not fail the move the operator just watched happen.
+    console.warn(`[Calibration] Could not persist position for part ${key}: ${err.message}`);
+  }
 }
 
 // Auto-create a default calibration profile based on part type.
@@ -489,7 +532,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         // so by here currentAngle is a real number - no 90° stand-in.
         const currentAngle = adapter.currentAngle;
         const drivenAngle = Number.isFinite(adapter.lastDrivenAngle) ? adapter.lastDrivenAngle : currentAngle;
-        positionState.set(partId, { currentAngle, currentP: angleToP(currentAngle, maxAngleOf(profile)), lastUpdated: new Date().toISOString() });
+        persistServoPosition(partId, currentAngle, maxAngleOf(profile), nudgeCharOpt.characterId);
         res.json({ success: true, message: `Nudged ${dir} at ${scale} — ${describeServoMove('now at', currentAngle, drivenAngle, profile)}`, currentAngle, drivenAngle, currentP: angleToP(currentAngle, maxAngleOf(profile)) });
       } else {
         const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
@@ -523,7 +566,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         // stopped at the old ceiling while trying to measure past it.
         const newAngle = Math.max(0, Math.min(maxAngleOf(profile), currentAngle + delta));
         const drivenAngle = await adapter.gotoAngle(newAngle, { speedPct, durationMs, calibrationOverride: true, ...nudgeCharOpt });
-        positionState.set(partId, { currentAngle: newAngle, currentP: angleToP(newAngle, maxAngleOf(profile)), lastUpdated: new Date().toISOString() });
+        persistServoPosition(partId, newAngle, maxAngleOf(profile), nudgeCharOpt.characterId);
         res.json({ success: true, message: `Nudged by ${delta}° — ${describeServoMove('now at', newAngle, drivenAngle, profile)}`, currentAngle: newAngle, drivenAngle, currentP: angleToP(newAngle, maxAngleOf(profile)) });
       } else {
         const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
@@ -750,7 +793,7 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
         console.warn(`🛡️  goto clamped part ${partId}: ${angle}° → ${targetAngle}° (calibrated bounds)`);
       }
       const drivenAngle = await adapter.gotoAngle(targetAngle, { speedPct, calibrationOverride: calOverride, ...gotoCharOpt });
-      positionState.set(partId, { currentAngle: targetAngle, currentP: angleToP(targetAngle, maxDeg), lastUpdated: new Date().toISOString() });
+      persistServoPosition(partId, targetAngle, maxDeg, gotoCharOpt.characterId);
       res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle, profile), targetAngle, drivenAngle, targetP: angleToP(targetAngle, maxDeg), requestedAngle: angle, clamped: targetAngle !== angle });
     } else {
       const { p, speedPct } = req.body;
@@ -769,15 +812,32 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
         actuatorPositionStore.markMoving(partId, clampedP > (adapter.currentP || 0.5) ? 'extend' : 'retract');
       }
 
+      // OpenLoopLinearAdapter.gotoNormalized returns without commanding anything
+      // when the move is under 0.001 of travel, and says nothing about it. The
+      // reply was still "Moved to 0", so the body map's Retract button (which
+      // targets p=0) reported success while the coffin door sat at p=0 and never
+      // twitched — an operator pressing it gets a green message and no motion,
+      // which is indistinguishable from dead hardware. Notice it here, where the
+      // starting position is still known, and say so.
+      const startP = (adapter.currentP !== undefined && adapter.currentP !== null) ? adapter.currentP : null;
+      const alreadyThere = !isAbsoluteServo(profile) && startP !== null && Math.abs(clampedP - startP) < 0.001;
+
       const drivenAngle = await adapter.gotoNormalized(clampedP, { speedPct, ...gotoCharOpt });
 
       if (isAbsoluteServo(profile)) {
         const targetAngle = pToAngle(clampedP, maxAngleOf(profile));
-        positionState.set(partId, { currentAngle: targetAngle, currentP: clampedP, lastUpdated: new Date().toISOString() });
+        persistServoPosition(partId, targetAngle, maxAngleOf(profile), gotoCharOpt.characterId);
         res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle, profile), targetP: clampedP, targetAngle, drivenAngle });
       } else {
         persistPosition(partId, clampedP);
-        res.json({ success: true, message: `Moved to ${clampedP}`, targetP: clampedP });
+        res.json({
+          success: true,
+          alreadyThere,
+          message: alreadyThere
+            ? `Already at ${clampedP} — no motion commanded`
+            : `Moved to ${clampedP}`,
+          targetP: clampedP
+        });
       }
     }
   } catch (err) {

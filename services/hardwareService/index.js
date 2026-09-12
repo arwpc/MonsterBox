@@ -50,8 +50,20 @@ const MJPG_STREAM_ENDPOINT = `${MJPG_STREAMER_URL}/?action=stream`;
  *
  * @returns {Promise<number>} how many drives were ended
  */
-async function killInFlightDrive({ rpwmPin, lpwmPin }) {
-    if (rpwmPin == null && lpwmPin == null) return 0;
+async function killInFlightDrive({ rpwmPin, lpwmPin, directionPin, pwmPin }) {
+    // Two wiring shapes reach this, and only one used to be handled.
+    //
+    // BTS7960 parts carry rpwmPin/lpwmPin and drive through
+    // linear_actuator_control_v2.py, which takes a JSON config on its argv.
+    // MDD10A/Cytron parts (Mina's Coffin Door: directionPin 5, pwmPin 13) carry
+    // NEITHER, so the old `if (rpwmPin == null && lpwmPin == null) return 0`
+    // made this a no-op for them — and they do not run the v2 script either, so
+    // the process match missed them twice over. Their drive holds GPIO 5/13 for
+    // the full duration via lgpio.gpio_claim_output, one process per command, so
+    // every overlapping command was refused with "Failed to set up pins: 'GPIO
+    // busy'" (54 of them in /var/log/monsterbox.err) and no drive could be cut
+    // short. Mina's scenes 1 and 3 drive that part for 8500 ms at a stretch.
+    if (rpwmPin == null && lpwmPin == null && directionPin == null && pwmPin == null) return 0;
     let stdout = '';
     try {
         stdout = await new Promise((resolve, reject) => {
@@ -73,10 +85,24 @@ async function killInFlightDrive({ rpwmPin, lpwmPin }) {
         const pid = Number(m[1]);
         const args = m[2];
         if (pid === self || pid === 1) continue;
-        if (!/python3?\s+\S*python_wrappers\/linear_actuator_control_v2\.py/.test(args)) continue;
-        // Only this part's drive: the config JSON is on the command line.
-        const mine = (rpwmPin != null && new RegExp(`"rpwmPin"\\s*:\\s*${Number(rpwmPin)}\\b`).test(args))
-            || (lpwmPin != null && new RegExp(`"lpwmPin"\\s*:\\s*${Number(lpwmPin)}\\b`).test(args));
+        const isV2 = /python3?\s+\S*python_wrappers\/linear_actuator_control_v2\.py/.test(args);
+        // The MDD10A/Cytron path: actuator_cli.py shells into
+        // linear_actuator_control.py, and either process may be the one holding
+        // the pins depending on where in the drive it is.
+        const isMdd = /python3?\s+\S*python_wrappers\/(actuator_cli|linear_actuator_control)\.py/.test(args);
+        if (!isV2 && !isMdd) continue;
+
+        let mine = false;
+        if (isV2) {
+            // Only this part's drive: the config JSON is on the command line.
+            mine = (rpwmPin != null && new RegExp(`"rpwmPin"\\s*:\\s*${Number(rpwmPin)}\\b`).test(args))
+                || (lpwmPin != null && new RegExp(`"lpwmPin"\\s*:\\s*${Number(lpwmPin)}\\b`).test(args));
+        } else if (directionPin != null && pwmPin != null) {
+            // `actuator_cli.py control <dirPin> <pwmPin> <direction> <speed> ...`
+            // — the two pins are positional and adjacent, which is specific
+            // enough that another part's drive on different pins cannot match.
+            mine = new RegExp(`\\b${Number(directionPin)}\\s+${Number(pwmPin)}\\b`).test(args);
+        }
         if (mine) victims.push(pid);
     }
 
@@ -581,6 +607,21 @@ const HARDWARE_CONTROLLERS = {
             try {
                 const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
                 const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
+
+                // End any drive still holding these pins first. The motor
+                // controller has done this since v9.3.0; the linear actuator —
+                // the part that actually runs 8.5-second drives — never did, so
+                // its stop had to claim GPIOs the in-flight drive was holding and
+                // was refused with 'GPIO busy' while the actuator kept running to
+                // the end of its duration. A stop that cannot stop anything is
+                // the one control an operator needs to trust. See
+                // killInFlightDrive().
+                try {
+                    const ended = await killInFlightDrive({ directionPin: dirPin, pwmPin: pwm });
+                    if (ended) console.log(`🛑 linear actuator stop: ended ${ended} in-flight drive(s) holding GPIO ${dirPin}/${pwm}`);
+                } catch (err) {
+                    console.error('🛑 linear actuator stop: could not end in-flight drive:', err.message);
+                }
 
                 const out = await actuatorService.stopActuator({ directionPin: dirPin, pwmPin: pwm });
                 const parsed = (() => {
