@@ -68,12 +68,30 @@ def read_off(channel):
         return None
 
 
+def _direct_write(channel, off):
+    """Write the channel ourselves. Used whenever the daemon is not up.
+
+    The daemon only runs while jaw animation is active, so on most nodes most of
+    the time it simply is not there — and this tool must still work. The direct
+    path adopts an already-configured chip instead of resetting it, so it does
+    not blank the other fifteen channels on the way in.
+    """
+    import pca9685_control
+    bus = pca9685_control.pca9685_get_bus(ADDRESS)
+    pca9685_control.pca9685_set_pwm(bus, ADDRESS, channel, 0, int(off))
+
+
 def set_off(channel, off):
-    daemon({'cmd': 'set_raw', 'channel': channel, 'off': int(off), 'address': ADDRESS})
+    if daemon({'cmd': 'set_raw', 'channel': channel,
+               'off': int(off), 'address': ADDRESS}) is None:
+        _direct_write(channel, int(off))
 
 
 def set_angle(channel, angle):
-    daemon({'cmd': 'set_angle', 'channel': channel, 'angle': float(angle), 'address': ADDRESS})
+    if daemon({'cmd': 'set_angle', 'channel': channel,
+               'angle': float(angle), 'address': ADDRESS}) is None:
+        import pca9685_control
+        _direct_write(channel, pca9685_control.angle_to_off(float(angle)))
 
 
 def mapped_channels(character_id):
@@ -107,10 +125,19 @@ def main():
                         help='character id, for naming channels in the output')
     args = parser.parse_args()
 
-    if daemon({'cmd': 'ping'}) is None:
-        print("The servo daemon is not answering on " + SOCKET_PATH)
-        print("Start the app (sudo systemctl start monsterbox.service) and try again.")
-        return 1
+    via_daemon = daemon({'cmd': 'ping'}) is not None
+    if not via_daemon:
+        # Not an error. The daemon is only up while jaw animation is running.
+        try:
+            # A pure READ probe — confirm the bus answers without disturbing
+            # a single channel. Nothing should move until the sweep says so.
+            import pca9685_control  # noqa: F401
+            if read_off(0) is None:
+                raise RuntimeError('no answer from the PCA9685 at 0x%02x' % ADDRESS)
+        except Exception as exc:
+            print(f"Cannot reach the PCA9685: {exc}")
+            print("Check I2C is enabled and the chip answers: i2cdetect -y 1")
+            return 1
 
     names = mapped_channels(args.character) if args.character else {}
     if args.mapped:
@@ -131,6 +158,7 @@ def main():
     print("  PCA9685 CHANNEL FINDER — watch the rig, not this screen")
     print("=" * 68)
     print(f"  {len(channels)} channel(s), {args.cycles} sweeps each, {low:.0f}deg <-> {high:.0f}deg")
+    print(f"  Driving via: {'the servo daemon' if via_daemon else 'direct I2C (daemon not running - fine)'}")
     print(f"  About {len(channels) * (args.cycles * 0.6 + args.gap):.0f} seconds total.")
     print("  Write down WHICH PART MOVES on WHICH CHANNEL NUMBER. Ctrl-C to stop.")
     print("=" * 68)
