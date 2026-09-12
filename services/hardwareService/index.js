@@ -132,7 +132,13 @@ async function killInFlightDrive({ rpwmPin, lpwmPin, directionPin, pwmPin }) {
             try { process.kill(pid, 'SIGKILL'); } catch (_) { /* gone, good */ }
         }
         if (alive.length) await new Promise(r => setTimeout(r, 40));
-        console.warn(`🛑 stop: ended ${victims.length} in-flight drive(s) on GPIO ${rpwmPin}/${lpwmPin}: ${victims.join(', ')}`);
+        // Name the pins this call actually matched on. Logging rpwmPin/lpwmPin
+        // unconditionally printed "GPIO undefined/undefined" for every MDD10A
+        // part, which reads like the kill was unscoped when it was not.
+        const pinLabel = (rpwmPin != null || lpwmPin != null)
+            ? `${rpwmPin}/${lpwmPin}`
+            : `${directionPin}/${pwmPin}`;
+        console.warn(`🛑 stop: ended ${victims.length} in-flight drive(s) on GPIO ${pinLabel}: ${victims.join(', ')}`);
     }
     return victims.length;
 }
