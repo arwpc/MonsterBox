@@ -109,7 +109,7 @@
         function createAvatar(c, size) {
           size = size || 40;
           var initials = getInitials(c.name || 'Character ' + c.id);
-          var imageUrl = c.activeImage ? '/api/characters/' + c.id + '/images/' + c.activeImage : '';
+          var imageUrl = c.activeImage ? '/api/characters/' + c.id + '/images/' + encodeURIComponent(c.activeImage) + '?w=' + (size > 64 ? 128 : 64) : '';
           var avatarHtml = '<div class="character-avatar rounded-circle overflow-hidden d-inline-flex align-items-center justify-content-center" ' +
             'style="width:' + size + 'px;height:' + size + 'px;min-width:' + size + 'px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-weight:bold;font-size:' + Math.floor(size * 0.4) + 'px;border:2px solid rgba(255,255,255,0.2);vertical-align:middle;">';
           if (imageUrl) {
@@ -149,7 +149,7 @@
                 '<td class="text-end">' +
                 '<button class="btn btn-sm btn-outline-secondary me-1" onclick="__chars.select(' + c.id + ')" title="Set as current character"><i class="bi bi-check2-circle"></i></button>' +
                 '<button class="btn btn-sm btn-outline-warning me-1" onclick="__chars.edit(' + c.id + ')" title="Edit character"><i class="bi bi-pencil"></i></button>' +
-                '<a class="btn btn-sm btn-outline-info me-1" href="/setup/characters/images?charId=' + c.id + '" title="Manage images"><i class="bi bi-image"></i></a>' +
+                '<a class="btn btn-sm btn-outline-info me-1" href="/setup/characters/images?characterId=' + c.id + '" title="Manage images"><i class="bi bi-image"></i></a>' +
                 '<button class="btn btn-sm btn-outline-danger" onclick="__chars.remove(' + c.id + ')" title="Delete character"><i class="bi bi-trash"></i></button>' +
                 '</td>' +
                 '</tr>';

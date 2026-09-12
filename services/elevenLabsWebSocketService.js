@@ -44,6 +44,28 @@ const MIC_GATE_HANGOVER_MS = 900;
 // Set MB_MIC_VOICE_GATE=0 to stream the raw microphone regardless.
 const MIC_VOICE_GATE_ENABLED = process.env.MB_MIC_VOICE_GATE !== '0';
 
+/**
+ * Is an agent turn a REPLY to something we asked, or the agent's unprompted
+ * opening greeting?
+ *
+ * A fresh agent socket always opens with the configured first_message as its own
+ * turn, before the answer to the question just sent. ElevenLabs distinguishes
+ * them: a reply names the message it answers in `in_response_to_ids`; the
+ * unprompted greeting carries an empty list.
+ *
+ * Absent field => ANSWER, deliberately. An agent or API version that does not
+ * report the field must keep behaving exactly as it did before rather than
+ * having every one of its turns discarded as a greeting, which would make the
+ * character fall silent. This layer may only ever suppress a greeting; it must
+ * never be able to suppress a real answer.
+ *
+ * Pure and exported for tests.
+ */
+export function isAnswerTurn(agentResponseEvent) {
+    const ids = agentResponseEvent && agentResponseEvent.in_response_to_ids;
+    return !Array.isArray(ids) || ids.length > 0;
+}
+
 // Set MB_WS_DEBUG=1 to dump per-message WebSocket payload previews. Default
 // silent: every conversation message otherwise lands in monsterbox.log and
 // wears the SD card.
@@ -2377,6 +2399,28 @@ class ElevenLabsWebSocketService extends EventEmitter {
             let responseText = '';
             let connection = null;
 
+            // A brand-new agent socket always opens with the agent's configured
+            // first_message — its walk-up greeting — as its own turn, BEFORE the
+            // reply to the question we just sent. The collector below used to
+            // concatenate every fragment, so the greeting was glued onto the front
+            // of every answer and the greeting audio played first. Guests heard the
+            // character re-introduce itself and ask "who are you?" on every turn,
+            // including turns where it had just used their name.
+            //
+            // ElevenLabs tags each agent turn: the greeting carries an EMPTY
+            // in_response_to_ids, a real reply carries the id of our user_message.
+            // Audio chunks carry the matching event_id but arrive before the turn
+            // is classified, so they are staged per event and only released once we
+            // know which turn they belong to.
+            const stagedAudio = new Map();   // event_id -> [base64 chunk]
+            const eventVerdict = new Map();  // event_id -> 'greeting' | 'answer'
+            let repliedText = '';            // text from turns that answer US
+            const releaseStaged = (eid) => {
+                const chunks = stagedAudio.get(eid);
+                stagedAudio.delete(eid);
+                if (chunks && chunks.length) connection.audioBuffer.push(...chunks);
+            };
+
             try {
                 // Create a temporary connection
                 sessionId = this.generateSessionId();
@@ -2451,9 +2495,18 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 text
                             }));
                         } else if (message.type === 'audio' && message.audio_event) {
-                            // Collect audio chunks (will play all at once when connection closes)
                             if (message.audio_event.audio_base_64) {
-                                connection.audioBuffer.push(message.audio_event.audio_base_64);
+                                const eid = message.audio_event.event_id;
+                                const verdict = eventVerdict.get(eid);
+                                if (verdict === 'answer') {
+                                    // Turn already cleared — stream it straight through.
+                                    connection.audioBuffer.push(message.audio_event.audio_base_64);
+                                } else if (verdict === 'greeting') {
+                                    // Drop it: this is the walk-up greeting, not the answer.
+                                } else {
+                                    if (!stagedAudio.has(eid)) stagedAudio.set(eid, []);
+                                    stagedAudio.get(eid).push(message.audio_event.audio_base_64);
+                                }
                             }
                             // Accumulate response text from audio events - check all possible fields
                             const textFragment = message.audio_event.agent_response ||
@@ -2468,12 +2521,29 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             }
                         } else if (message.type === 'agent_response' || message.type === 'agent_response_event') {
                             // Extract text from agent_response_event wrapper
-                            const textFragment = message.agent_response_event?.agent_response || 
+                            const evt = message.agent_response_event;
+                            const textFragment = evt?.agent_response ||
                                                 message.agent_response || 
                                                 message.text || 
                                                 message.message;
+                            // A turn that answers us names the message it answers.
+                            // An unprompted turn (the greeting) has an empty list.
+                            // If the field is absent entirely — an agent or API
+                            // version that does not report it — treat the turn as
+                            // an answer so we can never fall silent.
+                            const isAnswer = isAnswerTurn(evt);
+                            if (evt && evt.event_id !== undefined) {
+                                eventVerdict.set(evt.event_id, isAnswer ? 'answer' : 'greeting');
+                                if (isAnswer) releaseStaged(evt.event_id);
+                                else stagedAudio.delete(evt.event_id);
+                            }
                             if (textFragment) {
                                 responseText = responseText ? (responseText + ' ' + textFragment) : textFragment;
+                                if (isAnswer) {
+                                    repliedText = repliedText ? (repliedText + ' ' + textFragment) : textFragment;
+                                } else {
+                                    console.log(`🔇 Suppressed agent greeting (unprompted turn): "${String(textFragment).substring(0, 60)}..."`);
+                                }
                                 console.log(`📝 Captured agent response: "${textFragment.substring(0, 100)}${textFragment.length > 100 ? '...' : ''}"`);
                             }
                         } else if (message.type === 'ping' && message.ping_event) {
@@ -2490,15 +2560,45 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 elevenLabsWs.on('close', async () => {
                     console.log(`🔌 Agent connection closed`);
 
+                    // Anything still unclassified never got its agent_response turn.
+                    // Releasing it keeps a quiet-but-working agent audible rather
+                    // than swallowing a reply we simply could not label.
+                    if (stagedAudio.size) {
+                        for (const eid of [...stagedAudio.keys()]) releaseStaged(eid);
+                        await new Promise(r => setTimeout(r, 400));
+                    }
+
                     // Stop the streaming playback loop
                     connection.isActive = false;
 
                     // Give streaming a moment to finish any remaining chunks
                     await new Promise(r => setTimeout(r, 1000));
 
-                    console.log(`📝 Final response text: "${responseText || 'Response received'}"`);
+                    // Reap the PCM player. serverPlaybackService keeps ONE
+                    // persistent pw-play per character for ConvAI audio, and until
+                    // now stopPcmStream had exactly one caller — a manual
+                    // audio-stop route — so every one-shot question left a player
+                    // running forever with the sink open. They accumulated silently
+                    // and then a node simply stopped being able to speak:
+                    // generate-and-play returned playback_timeout and the ear-check
+                    // scored it SILENT while the speaker was perfectly fine.
+                    // Measured before this fix: one orphan per node aged 15-18
+                    // minutes, and one on the dev seat aged 1h52m.
+                    try {
+                        const sp = await import('./serverPlaybackService.js').then(m => m.default || m);
+                        await sp.stopPcmStream({ characterId });
+                    } catch (err) {
+                        console.warn(`⚠️  could not stop PCM stream for character ${characterId}: ${err.message}`);
+                    }
+
+                    // Prefer the turns that actually answered the question. Fall back
+                    // to the full transcript when nothing was ever labelled, so an
+                    // agent that does not report in_response_to_ids behaves exactly
+                    // as it did before.
+                    const finalText = repliedText || responseText;
+                    console.log(`📝 Final response text: "${finalText || 'Response received'}"`);
                     this.activeConnections.delete(sessionId);
-                    resolve({ success: true, response: responseText || 'Response received' });
+                    resolve({ success: true, response: finalText || 'Response received' });
                 });
 
                 elevenLabsWs.on('error', (error) => {

@@ -13,12 +13,21 @@
   function createAvatar(c, size) {
     size = size || 32;
     var initials = getInitials(c.name || 'Character ' + c.id);
-    var imageUrl = c.activeImage ? '/api/characters/' + c.id + '/images/' + c.activeImage : '';
+    // Same URL scheme as the control bar and nav avatar, so the current
+    // character's portrait is one cache entry, not one download per scheme.
+    var imageUrl = c.avatar || (c.activeImage
+      ? '/api/characters/' + c.id + '/images/' + encodeURIComponent(c.activeImage) + '?w=96'
+      : '');
     var avatarHtml = '<div class="character-avatar rounded-circle overflow-hidden d-flex align-items-center justify-content-center me-2" ' +
       'style="width:' + size + 'px;height:' + size + 'px;min-width:' + size + 'px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;font-weight:bold;font-size:' + Math.floor(size * 0.4) + 'px;border:2px solid rgba(255,255,255,0.2);">';
     if (imageUrl) {
-      avatarHtml += '<img src="' + esc(imageUrl) + '" alt="' + esc(c.name || '') + '" class="w-100 h-100" style="object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">';
-      avatarHtml += '<div class="w-100 h-100 d-none align-items-center justify-content-center" style="display:none!important;">' + initials + '</div>';
+      // The menu is closed on load; loading="lazy" stops six full-size
+      // portraits (one was 200 KB) from competing with the page's own requests.
+      // The initials fallback must not carry d-none / display:none!important —
+      // neither yields to the onerror handler's style.display='flex', so a
+      // missing portrait used to leave an empty circle.
+      avatarHtml += '<img src="' + esc(imageUrl) + '" alt="' + esc(c.name || '') + '" loading="lazy" decoding="async" class="w-100 h-100" style="object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">';
+      avatarHtml += '<div class="w-100 h-100 align-items-center justify-content-center" style="display:none;">' + initials + '</div>';
     } else {
       avatarHtml += initials;
     }
@@ -102,6 +111,17 @@
     });
   }
   function init() {
+    // The layout inlines the list and the selection (window.__MB_CHARACTERS /
+    // __MB_CHAR_ID), so the menu paints synchronously with no round trips. The
+    // fetch path stays for pages rendered without the layout locals.
+    var inline = window.__MB_CHARACTERS;
+    if (inline && Object.prototype.toString.call(inline) === '[object Array]') {
+      var selected = (typeof window.__MB_CHAR_ID === 'number') ? window.__MB_CHAR_ID
+        : (window.__MB_CHAR_ID ? parseInt(window.__MB_CHAR_ID, 10) : null);
+      var name = null; for (var j = 0; j < inline.length; j++) { if (inline[j].id === selected) { name = inline[j].name; break; } }
+      setLabel(name); populateMenu(inline, selected);
+      return;
+    }
     var p1 = fetch('/setup/characters/api/current').then(function (r) { return r.json(); }).catch(function () { return { selectedCharacter: null }; });
     var p2 = fetch('/setup/characters/api/characters').then(function (r) { return r.json(); }).catch(function () { return { success: false, characters: [] }; });
     Promise.all([p1, p2]).then(function (arr) {

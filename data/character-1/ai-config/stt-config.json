@@ -4,8 +4,8 @@
   "format": "mp3",
   "sampleRate": 16000,
   "channels": 1,
-  "microphonePartId": "9",
-  "microphoneDeviceId": "pulse",
+  "microphonePartId": "8",
+  "microphoneDeviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200206-00.analog-stereo",
   "vadEnabled": true,
   "vadThreshold": 0.35,
   "vadSilenceDuration": 500,
@@ -17,5 +17,5 @@
   "validateEnglish": true,
   "minLetterRatio": 55,
   "requireVowels": true,
-  "deviceId": "pulse"
+  "deviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200206-00.analog-stereo"
 }

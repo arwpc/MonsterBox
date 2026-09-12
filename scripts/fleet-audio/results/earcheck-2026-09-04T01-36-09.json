@@ -1,0 +1,50 @@
+{
+  "ranAt": "2026-09-04T01:36:09.084Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 5,
+      "name": "Groundbreaker",
+      "hostname": "groundbreaker",
+      "ip": "192.168.8.200",
+      "sink": "81. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "THIS ROOF IS MINE. COME DOWN FROM THE STREET AND SEE.",
+      "sayOk": true,
+      "voiceUsed": "vfaqCOvlrKi4Zp7C2IAm",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -83.6,
+          "castP90Db": -81.8,
+          "castPeakDb": -68.7,
+          "riseDb": 1.8,
+          "floorFlat": true,
+          "transcript": "This one is not coming down from the streets and saying",
+          "recall": 0.55
+        },
+        {
+          "label": "USB Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -39.8,
+          "castP90Db": -1.4,
+          "castPeakDb": 0,
+          "riseDb": 38.4,
+          "floorFlat": false,
+          "transcript": "This roof is mine. Come down from the street and see.",
+          "recall": 1
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -39.8,
+      "castDb": -1.4,
+      "riseDb": 38.4,
+      "recall": 1,
+      "transcript": "This roof is mine. Come down from the street and see.",
+      "verdict": "AUDIBLE"
+    }
+  ]
+}

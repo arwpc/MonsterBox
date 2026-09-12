@@ -41,7 +41,8 @@ uses so untrusted/invalid nodes are shown but never driven.
 | `POST /emergency-stop` | Halt everything: queue emergency-stop + stop-all-audio + disable random poses + mute. |
 | `PUT /volume` | `{volume, ids?}` — master speaker volume (0–100). |
 | `POST /say-all`, `POST /animatronic/:id/{say,ask-ai,play-audio,stop-audio}` | Speech / audio. |
-| `GET /animatronic/:id/webcam-stream` | Same-origin MJPEG proxy (see below). |
+| `GET /animatronic/:id/webcam-snapshot` | ONE JPEG from `services/mjpegFrameCache.js` — what the node wall polls (see below). |
+| `GET /animatronic/:id/webcam-stream` | Same-origin MJPEG proxy — the modal only (see below). |
 | `POST /reboot/animatronics`, `POST /restart-services` | SSH lifecycle (host-validated). |
 
 Broadcast responses are `{success, total, successful, failed, results}` — `success` is
@@ -58,12 +59,42 @@ boundary matches the bytes on the wire, and uses `timeout: 0` for the endless st
 (cleanup on `req.on('close')`). Serving the page over HTTPS and proxying same-origin also
 avoids the mixed-content block that a direct `http://node:8090` `<img>` would hit.
 
+**The wall does not stream.** An MJPEG response never ends, so six live `<img>` streams held
+all six of the browser's per-host HTTP/1.1 connections and every `fetch()` queued behind
+them — the fleet pill read "1 / 6 online" while `curl` got `fleet-health` in 0.3 s. Cards
+poll `GET /animatronic/:id/webcam-snapshot` instead: one JPEG, served from
+`services/mjpegFrameCache.js`, which keeps ONE upstream stream per node, answers from the
+newest frame in RAM (~20 ms warm), idles out after 30 s, and remembers a failed camera for
+15 s so a dead input fails in a millisecond rather than re-probing for ~4 s. The page keeps
+at most **two** snapshot requests in flight (12 s watchdog), leaving four connections for
+actions and the health poll. Only the click-to-expand modal opens a true live stream — one
+card, one connection.
+
+## Latency
+
+Every node handles a fleet request in 2–5 ms; the seconds operators saw were connection
+setup. Fixed 2026-09-04 (measurements in `CHANGELOG.md`):
+
+- **Keep-alive 65 s** on every listener (`server.js` `tuneKeepAlive`). Node's default of
+  5 s closed the orchestrator's sockets to the peers between the 15 s health poll and
+  between clicks, so each fan-out paid six TCP+TLS handshakes over Wi-Fi (200–1230 ms)
+  instead of reusing warm sockets (56–65 ms). The orchestrator's `https.Agent` honours the
+  server's `Keep-Alive: timeout=` hint, so the fix is server-side and needs every node on it.
+- **Fleet-health memo** (`FLEET_HEALTH_MEMO_MS = 1500`, keyed by id-set) with in-flight
+  coalescing, and a **prewarm** kicked off by `GET /orchestration` as the HTML is sent, so
+  the page's first `fleet-health` is answered from the collection already in flight.
+  The three per-node probes (`info`, `memory`, `telemetry`) leave together.
+- **Paint from the roster first**: `/nodes` is local; the wall draws six named cards in a
+  "checking…" state immediately and health lights the dots as it lands.
+- **Wi-Fi power-save off** on every node (`scripts/node-baseline/wifi-powersave-off.sh`);
+  the radio's doze added 10–100 ms to the first packet after any idle gap.
+
 ## UI (`views/orchestration/index.ejs`)
 
 Self-contained: inline `<style>` + one ES6 controller. Sticky command bar (fleet-health
 pill, six superpower masters, master volume, Start/Stop loops, Say-to-all, node-subset
-targeting, **EMERGENCY STOP**), a responsive **node wall** of cockpit cards (streaming
-webcam, source/trust chip, health line, Say/Ask/audio/Auto-AI), a click-to-expand webcam
+targeting, **EMERGENCY STOP**), a responsive **node wall** of cockpit cards (webcam
+snapshot, source/trust chip, health line, Say/Ask/audio/Auto-AI), a click-to-expand webcam
 modal, a goblin row, a rolling command log, and a **Discovery panel** (mDNS state +
 pin-a-node form). Cards **patch incrementally** on the 15s poll so webcam `<img>` elements
 and focused inputs are never destroyed. Destructive actions confirm first.

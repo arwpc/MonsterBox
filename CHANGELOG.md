@@ -43,6 +43,50 @@ itself — a distinct, still-open hazard that deletes measured calibration with 
 - **Fixed:** the GPIO light toggle trusted per-process memory, which resets on every service
   restart, so the first toggle after a restart was a dead click. It now reads the pin's real
   state back with `pinctrl` before deciding which way to toggle.
+- **Fleet code sync 2026-09-07:** code, views, scripts, tests, docs, schemas, `animatronics.json`,
+  `physical-faults.json` and `data/models` rsynced from Orlok to all five peers (node-local data untouched),
+  every service restarted and re-verified (health, camera frames, mic frames, parts API, motion mode).
+- **Groundbreaker** gets a speaker canon (`sinkVolume 1.0`); **Renfield** finalized (ear-check AUDIBLE on
+  both mics, baseline applied).
+
+- **Uncalibrated servos are driven, not refused.** New `services/hardwareService/driveWindow.js`
+  resolves the angle window every runtime mover uses: measured calibration, else the mover's own
+  window (the jaw's operator-authored min/max), else the store's placeholder span, else the part's
+  full span (one turn for multi-turn parts). Jaw animation, head tracking, the head page's Test Sweep,
+  speech co-expression, the gesture engine and the conversation route's jaw toggle all use it. After the
+  2026-09-06 fleet-wide calibration wipe these had left every jaw, neck and eye motionless while direct
+  commands still worked. Proven on Mina, Sir Dragomir and Orlok by PCA pulse.
+- **Motion mode arms the character on its PIR.** `POST /conversation/api/motion-sensor {enabled}` now
+  starts the watcher asleep; a detection turns on the AI agent, jaw animation, head tracking,
+  idle/random poses and AI motion, and the inactivity timeout (default 5 min, `inactivityTimeoutMs`)
+  quiets them with the PIR still armed. State persists to `motion-armed-state.json` and is re-armed at
+  service start. `POST /conversation/api/motion-sensor/simulate` fires the armed watcher for testing.
+- **Calibration page motor panel** honours `config.defaultSpeed` / `config.defaultDurationMs`.
+
+- **Calibration page: motor speed/duration defaults come from the part.** A motor part may declare
+  `config.defaultSpeed` and `config.defaultDurationMs`; the panel used a fixed 90 % / 15 000 ms, which on
+  PumpkinHead's under-volted Pi turned every click into a reboot.
+
+- **`services/pipewireService.js` no longer leaks "pactl: not found" into the error log.** The Pulse
+  tool probes (`pactl`/`paplay`/`parec`, absent on every Bookworm node) ran through the shell without a
+  stderr redirect, so each service start wrote shell "not found" lines to `monsterbox.err` that read
+  like an audio fault.
+- **PumpkinHead OS baseline applied and proven (2026-09-07):** a fresh service start now writes a single
+  deliberate line to `.err`; ear-check AUDIBLE with verbatim transcript via the camera-mic witness.
+
+- **`scripts/motor_control.py` now honours the speed argument.** Any speed > 0 used to write the
+  MDD10A PWM pin fully HIGH, so a "40 %" motor command drew 100 % current; on PumpkinHead that pulse
+  drags the Pi's 5 V converter down on the motor's DC inrush and reboots it, which read as "the motor
+  runs once and then says running". Real PWM via `lgpio.tx_pwm` at 2 kHz (the BTS7960 path's frequency); proven on the
+  node at 25 % by GPIO sampling and camera frame-difference with no reboot.
+- **PumpkinHead data straightened out (2026-09-07):** `stt-config.json` repointed from a
+  non-existent part 9 / `"pulse"` to mic part 8 and the XVF3800 input node; the stale
+  `data/character-1/characters.json` registry shadow (id 1 = "Orlok") and the junk
+  `data/character-1/character-1/parts.json` removed from the repo so deploys stop re-creating them;
+  all scenes and poses erased and `defaultSceneId` cleared at operator direction.
+- **Audio library purge (operator direction):** every entry whose title was a bare hex/UUID string
+  (53 of 133) removed from `library.json` and the files moved out of `data/audio-library/files/`
+  (kept under `~/audio-removed-20260907/` on each node). No surviving scene referenced them.
 
 - **One idempotent node-OS baseline script**, `scripts/node-baseline/apply-baseline.sh`
   (`sudo bash …` on a node, or piped over ssh from the node holding fleet trust). A deploy

@@ -40,6 +40,7 @@ import { claimServo, releaseServo, isAvailable, getOwner, PRIORITY } from './mov
 import { getPartSafety } from './hardwareService/safetyLimits.js';
 import jawServoDaemon from './jawServoDaemon.js';
 import { readHeadTrackingConfig } from './headAnimationSuperPowerService.js';
+import { resolveDriveWindow } from './hardwareService/driveWindow.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -132,13 +133,25 @@ async function resolveHead(characterId) {
 
   if (safety.blockAllMotion) return null;
 
-  const lo = typeof safety.minAngle === 'number' ? safety.minAngle : null;
-  const hi = typeof safety.maxAngle === 'number' ? safety.maxAngle : null;
+  // The drive window: measured calibration when it exists, otherwise the
+  // part's full span (2026-09-07 — an uncalibrated head is driven, not refused;
+  // the old refusal disabled co-expression on every node after the calibration
+  // wipe). Any configured safety window still narrows it.
+  let lo = null, hi = null;
+  try {
+    // The head page's own center ± range is the preferred uncalibrated window
+    // (on a multi-turn neck the span from zero is not where the head lives).
+    const c = Number(headCfg.centerDeg), r = Number(headCfg.rangeDeg);
+    const preferred = (Number.isFinite(c) && Number.isFinite(r) && r > 0)
+      ? { minAngle: Math.max(0, c - r / 2), maxAngle: c + r / 2 } : null;
+    const win = await resolveDriveWindow(characterId, part, { preferred, preferredSource: 'head-config' });
+    lo = win.minAngle; hi = win.maxAngle;
+  } catch (_) { /* fall through to the safety-only values */ }
+  if (typeof safety.minAngle === 'number') lo = lo == null ? safety.minAngle : Math.max(lo, safety.minAngle);
+  if (typeof safety.maxAngle === 'number') hi = hi == null ? safety.maxAngle : Math.min(hi, safety.maxAngle);
 
-  // Without a real safe window we do not invent one. Refusing to move an
-  // unbounded head is the correct outcome; guessing bounds is how servos strip.
   if (lo == null || hi == null || !(hi > lo)) {
-    console.warn(`[speech-expression] character ${cid} pan servo ${panServoId} has no configured safe window — co-expression disabled`);
+    console.warn(`[speech-expression] character ${cid} pan servo ${panServoId} has no usable angle window — co-expression disabled`);
     return null;
   }
 

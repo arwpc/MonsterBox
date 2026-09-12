@@ -20,6 +20,7 @@ const PAGES = [
   { name: 'Dashboard', url: '/' },
   { name: 'Live', url: '/live' },
   { name: 'Setup home', url: '/setup' },
+  { name: 'Setup — AI Motion', url: '/setup/ai-motion' },
   { name: 'Setup — Audio', url: '/setup/audio' },
   { name: 'Setup — Calibration', url: '/setup/calibration' },
   { name: 'Setup — Unified calibration', url: '/setup/calibration/unified' },
@@ -62,7 +63,13 @@ function attachCollectors(page) {
   const errors = { console: [], pageErrors: [], network: [] };
   page.on('pageerror', (err) => errors.pageErrors.push(err.message));
   page.on('console', (msg) => {
-    if (msg.type() === 'error' && !isIgnorable(msg.text())) errors.console.push(msg.text());
+    // "Failed to load resource: ... 503" carries no URL in its text; the URL is in
+    // location(). Without it a webcam stream the network collector ignores still
+    // fails the page through the console collector (Groundbreaker, no camera).
+    const where = (msg.location() && msg.location().url) || '';
+    if (msg.type() === 'error' && !isIgnorable(msg.text()) && !isIgnorable(where)) {
+      errors.console.push(where ? `${msg.text()} (${where})` : msg.text());
+    }
   });
   page.on('response', (resp) => {
     if (resp.status() >= 400 && !isIgnorable(resp.url())) {

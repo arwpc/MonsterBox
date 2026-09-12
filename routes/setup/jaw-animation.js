@@ -151,7 +151,10 @@ router.post('/api/jaw-animation/:characterId', async (req, res) => {
     // Get servo calibration data if servo is selected
     if (jawConfig.servoPartId) {
       const servos = await jawAnimationService.getAvailableServos(characterId);
-      const selectedServo = servos.find(s => s.id === jawConfig.servoPartId);
+      // Part ids are strings in the parts store but arrive as numbers from any
+      // JSON caller that isn't the <select> in the UI. A strict === then reports
+      // the character's real jaw servo as "Selected servo not found".
+      const selectedServo = servos.find(s => String(s.id) === String(jawConfig.servoPartId));
 
       if (!selectedServo) {
         return res.status(400).json({

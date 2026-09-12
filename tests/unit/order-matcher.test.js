@@ -265,6 +265,51 @@ describe('Order matcher', function () {
     });
   });
 
+  describe('split particle verbs (the particle slides to the end)', function () {
+    // English lets the particle move: "turn the light off" is as natural as
+    // "turn off the light", and a child says it both ways. Only the contiguous
+    // form used to match; the shifted form refused as no_verb and the part
+    // never moved while the refusal read clean.
+    it('"turn the light off" matches the light, verb off', function () {
+      const m = matchOrder('turn the light off', volkarCtx());
+      expect(m).to.nested.include({ matched: true, kind: 'part', 'part.partId': '8', verb: 'off' });
+    });
+    it('"turn the light on" matches the light, verb on', function () {
+      const m = matchOrder('turn the light on', volkarCtx());
+      expect(m).to.nested.include({ matched: true, kind: 'part', 'part.partId': '8', verb: 'on' });
+    });
+    it('"switch the light on" matches', function () {
+      const m = matchOrder('switch the light on', volkarCtx());
+      expect(m).to.nested.include({ matched: true, verb: 'on', 'part.partId': '8' });
+    });
+    it('"shut the light off" reads as off, not as the close verb "shut"', function () {
+      // Regression: the contiguous pass found the bare verb "shut" (close),
+      // then refused it against a light as verb_object_mismatch.
+      const m = matchOrder('shut the light off', volkarCtx());
+      expect(m).to.nested.include({ matched: true, verb: 'off', 'part.partId': '8' });
+    });
+    it('the contiguous form still resolves through the lexicon', function () {
+      const m = matchOrder('turn off the light', volkarCtx());
+      expect(m).to.nested.include({ matched: true, verb: 'off', 'part.partId': '8' });
+    });
+    it('fillers around a split particle order do not break it', function () {
+      const m = matchOrder('hey can you turn the light off please', volkarCtx());
+      expect(m).to.nested.include({ matched: true, verb: 'off', 'part.partId': '8' });
+    });
+    it('a head verb with no particle is untouched by the split pass', function () {
+      // "raise" is a split-pass head word ("raise ... up"), so with no particle
+      // present the split pass must decline and let the normal ladder run.
+      const m = matchOrder('extend the right arm', volkarCtx());
+      expect(m).to.nested.include({ matched: true, kind: 'part', verb: 'open', 'part.partId': '1' });
+    });
+    it('head and particle adjacent is NOT treated as split (needs an object between)', function () {
+      // "turn off the light" must go through the contiguous lexicon, so the
+      // split pass must refuse to fire when nothing sits between the two words.
+      const m = matchOrder('turn off the light', volkarCtx());
+      expect(m.verb).to.equal('off');
+    });
+  });
+
   describe('refusal hygiene', function () {
     it('empty transcript refuses as empty', function () {
       expect(matchOrder('', volkarCtx()).reason).to.equal('empty');

@@ -33,7 +33,7 @@ prefix matters). MonsterBox has no authentication — every route is open on the
 | GET | /characters/:id/images |
 | POST | /characters/:id/images/upload |
 | POST | /characters/:id/images/active |
-| GET | /characters/:id/images/:filename |
+| GET | /characters/:id/images/:filename — `?w=64\|96\|128\|256` serves a cached thumbnail rendition, or a 200 initials SVG when this node does not hold the portrait (bare URL keeps the no-404 placeholder contract) |
 | DELETE | /characters/:id/images/:filename |
 
 ## /api/configRoutes.js

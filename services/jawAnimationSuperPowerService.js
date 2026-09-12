@@ -7,6 +7,7 @@ import jawServoDaemon from './jawServoDaemon.js';
 import { readConfig } from './configService.js';
 import { loadParts as loadPartsFromController } from '../controllers/partsController.js';
 import { getCalibrationStore, isPlaceholderProfile, isDegenerateWindow } from '../server/calibration/store.js';
+import { resolveDriveWindow } from './hardwareService/driveWindow.js';
 import { writeJsonAtomic, updateJsonUnderLock } from './atomicStore.js';
 import speechExpression from './speechExpressionService.js';
 
@@ -499,11 +500,25 @@ async function getCalibrationForPart(part, characterId) {
       logRetiredMarkers(part);
     }
   } catch (e) {
-    console.warn(`⚠️  Jaw calibration lookup failed for part ${part && part.id}: ${e.message} — refusing to drive it`);
-    return { calibrated: false, minAngle: null, maxAngle: null };
+    console.warn(`⚠️  Jaw calibration lookup failed for part ${part && part.id}: ${e.message} — falling back to the jaw config window`);
   }
   logRetiredMarkers(part);
-  return { calibrated: false, minAngle: null, maxAngle: null };
+
+  // Not calibrated. Since 2026-09-07 that means "drive from the best window we
+  // have", not "refuse": the operator-authored min/max in the ACTIVE jaw config
+  // (visible and editable on /setup/jaw-animation) first, then the part's full
+  // span. The old refusal left every jaw on the fleet motionless after the
+  // 2026-09-06 calibration wipe while the direct servo command still worked.
+  let preferred = null;
+  try {
+    const jaw = await readRawJawSection(characterId);
+    const flat = flattenJawConfig(jaw);
+    if (typeof flat.minAngle === 'number' && typeof flat.maxAngle === 'number' && flat.maxAngle > flat.minAngle) {
+      preferred = { minAngle: flat.minAngle, maxAngle: flat.maxAngle };
+    }
+  } catch (_) { /* no config window — full span below */ }
+  const win = await resolveDriveWindow(characterId, part, { preferred, preferredSource: 'jaw-config' });
+  return { calibrated: false, minAngle: win.minAngle, maxAngle: win.maxAngle, source: win.source };
 }
 
 /**
@@ -891,8 +906,8 @@ async function testJawMovement(characterId) {
     // store first, markers as fallback) — markers-only reads gave a character
     // calibrated through /setup/calibration a 0..180 test sweep here.
     const cal = await getCalibrationForPart(jawServo, characterId);
-    if (!cal.calibrated || cal.minAngle == null || cal.maxAngle == null) {
-      return { success: false, message: 'Jaw servo has no usable calibration — refusing to move it blind' };
+    if (cal.minAngle == null || cal.maxAngle == null) {
+      return { success: false, message: 'Jaw servo has no usable angle window' };
     }
     const minAngle = cal.minAngle;
     const maxAngle = cal.maxAngle;
@@ -1160,8 +1175,8 @@ async function moveJawToAngle(characterId, angleDeg) {
     // minimum into the mechanical stop — via the daemon, which only re-clamps
     // to 0-180.
     const cal = await getCalibrationForPart(jawServo, characterId);
-    if (!cal.calibrated || cal.minAngle == null || cal.maxAngle == null) {
-      return { success: false, message: 'Jaw servo has no usable calibration — refusing to move it blind' };
+    if (cal.minAngle == null || cal.maxAngle == null) {
+      return { success: false, message: 'Jaw servo has no usable angle window' };
     }
     const clamped = Math.max(cal.minAngle, Math.min(cal.maxAngle, angleDeg));
 

@@ -1,0 +1,14 @@
+{
+  "ranAt": "2026-08-31T04:56:16.575Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 6,
+      "name": "Renfield",
+      "hostname": "renfield",
+      "ip": null,
+      "verdict": "OFFLINE",
+      "note": "no ssh/shell reachability"
+    }
+  ]
+}

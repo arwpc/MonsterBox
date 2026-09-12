@@ -79,6 +79,22 @@ export async function handleTranscript(characterId, text, meta = {}) {
     const config = await readFollowOrdersConfig(characterId);
     if (!config.enabled) return { considered: false, reason: 'disabled' };
 
+    // AI Motion owns "may this character move", whatever asked it to. This is
+    // the guest-command trigger. Follow Orders keeps its own enable bit — it is
+    // the ears, and an operator may want them off independently — but AI Motion
+    // is the outer authority, so a single fleet-wide AI Motion off is enough to
+    // stop every character moving on request.
+    try {
+      const { readAiMotionConfig } = await import('../aiMotionSuperPowerService.js');
+      const aiMotion = await readAiMotionConfig(characterId);
+      if (!aiMotion.enabled) return { considered: false, reason: 'ai-motion-disabled' };
+      if (!aiMotion.triggers.guestCommand) return { considered: false, reason: 'ai-motion-guest-command-off' };
+    } catch (err) {
+      // Refusing on an unreadable config keeps the guarantee one-directional:
+      // AI Motion can only ever withhold motion, never grant it.
+      return { considered: false, reason: `ai-motion-config-unreadable: ${err.message}` };
+    }
+
     const state = stateFor(characterId);
     const now = Date.now();
     if (now < state.suppressedUntil) {
@@ -203,7 +219,13 @@ export async function startStandaloneListener(characterId) {
 
   const listener = await import('../serverSTTListener.js').then(m => m.default || m);
   const deviceId = await microphoneDeviceFor(characterId);
-  const sessionId = listener.startSession({
+  // startSession returns { success, sessionId } -- NOT a bare id. Assigning the whole
+  // object here meant stopStandaloneListener() later called stopSession(<object>) on a
+  // Map keyed by string, which always missed: turning Follow Orders OFF left the
+  // session running and the microphone held. On a ReSpeaker XVF3800 only one holder
+  // can capture at a time, so that orphan blocks the conversation path outright, and
+  // _cleanupOldSessions() cannot reap a session whose id was never recorded.
+  const started = listener.startSession({
     deviceId,
     model: 'scribe_v2',
     language: 'en',
@@ -211,6 +233,11 @@ export async function startStandaloneListener(characterId) {
       handleTranscript(characterId, text, { source: 'standalone' }).catch(() => { });
     }
   });
+  const sessionId = started && started.sessionId ? started.sessionId : null;
+  if (!sessionId) {
+    console.warn(`[FollowOrders] STT listener did not return a session id for character ${characterId}; not tracking a session we cannot stop`);
+    return { started: false, reason: 'no-session-id' };
+  }
   state.standaloneSessionId = sessionId;
   console.log(`[FollowOrders] standalone listener up for character ${characterId} (device ${deviceId}, session ${sessionId})`);
   return { started: true, sessionId };
@@ -222,7 +249,11 @@ export async function stopStandaloneListener(characterId, { keepWanted = false }
   if (!state.standaloneSessionId) return { stopped: false };
   try {
     const listener = await import('../serverSTTListener.js').then(m => m.default || m);
-    listener.stopSession(state.standaloneSessionId);
+    const res = listener.stopSession(state.standaloneSessionId);
+    if (!res || res.success !== true) {
+      // Say so loudly rather than logging "listener down" over a mic that is still open.
+      console.warn(`[FollowOrders] stopSession(${state.standaloneSessionId}) did not confirm: ${res && res.error ? res.error : 'unknown'} — the microphone may still be held`);
+    }
   } catch (err) {
     console.warn(`[FollowOrders] failed stopping standalone session: ${err.message}`);
   }

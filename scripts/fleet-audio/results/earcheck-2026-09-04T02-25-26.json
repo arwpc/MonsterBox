@@ -1,0 +1,40 @@
+{
+  "ranAt": "2026-09-04T02:25:26.474Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 5,
+      "name": "Groundbreaker",
+      "hostname": "groundbreaker",
+      "ip": "192.168.8.200",
+      "sink": "80. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "THIS ROOF IS MINE. COME DOWN FROM THE STREET AND SEE.",
+      "sayOk": false,
+      "sayError": "500 {\"success\":false,\"error\":\"Failed to make animatronic speak\",\"message\":\"Request failed with status code 500\"}",
+      "voiceUsed": null,
+      "voiceFallback": false,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -83.6,
+          "castP90Db": -83.1,
+          "castPeakDb": -70.3,
+          "riseDb": 0.4,
+          "floorFlat": false,
+          "transcript": "",
+          "recall": 0
+        }
+      ],
+      "bestMic": "USB Audio Device",
+      "floorDb": -83.6,
+      "castDb": -83.1,
+      "riseDb": 0.4,
+      "recall": 0,
+      "transcript": "",
+      "verdict": "SILENT",
+      "diagnosis": "the say/TTS call itself failed"
+    }
+  ]
+}

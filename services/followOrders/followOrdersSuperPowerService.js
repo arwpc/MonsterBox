@@ -164,7 +164,7 @@ async function buildMatchContext(characterId) {
     try {
       const gestureEngine = await import('../gestureEngineService.js').then(m => m.default || m);
       const list = await gestureEngine.listGestures(characterId);
-      gestures = (list.available || []).map(g => ({ id: g.id, label: g.label || '', intent: g.intent || '' }));
+      gestures = (list.available || []).map(g => ({ id: g.id, label: g.label || '', intent: g.intent || '', phrases: g.phrases || [] }));
     } catch (err) {
       console.warn(`Follow orders: gesture load failed for character ${characterId}: ${err.message}`);
     }
@@ -181,12 +181,29 @@ async function buildMatchContext(characterId) {
       markers: Array.isArray(p.markers) ? p.markers : []
     }));
 
+  // Which of this character's parts the operator has declared physically
+  // broken. The body-role interpreter uses it to pick the arm that still works
+  // when a role has more than one candidate; the executor still enforces the
+  // refusal, so a miss here costs nothing.
+  let brokenPartIds = [];
+  try {
+    const { getPhysicalFault } = await import('../hardwareService/safetyLimits.js');
+    const checked = await Promise.all(parts.map(async p => {
+      const fault = await getPhysicalFault(characterId, p.partId);
+      return fault && fault.broken ? p.partId : null;
+    }));
+    brokenPartIds = checked.filter(Boolean);
+  } catch (err) {
+    console.warn(`Follow orders: physical-fault lookup failed for character ${characterId}: ${err.message}`);
+  }
+
   return {
     characterName: (character && character.name) || '',
     config,
     poses,
     gestures,
-    parts
+    parts,
+    brokenPartIds
   };
 }
 

@@ -28,6 +28,7 @@ import setupPosesRoutes from './routes/setup/poses.js';
 import setupJawAnimationRoutes from './routes/setup/jaw-animation.js';
 import setupHeadAnimationRoutes from './routes/setup/head-animation.js';
 import setupFollowOrdersRoutes from './routes/setup/follow-orders.js';
+import setupAiMotionRoutes from './routes/setup/ai-motion.js';
 import setupSystemRoutes from './routes/setup/system.js';
 import calibrationApiRouter from './server/calibration/router.js';
 
@@ -44,7 +45,7 @@ import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
 import systemApiRoutes from './routes/api/systemRoutes.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
-import conversationRoutes from './routes/conversation.js';
+import conversationRoutes, { restoreMotionModeOnStartup } from './routes/conversation.js';
 import goblinManagementRoutes from './routes/goblinManagement.js';
 import orchestrationWebRoutes from './routes/orchestration.js';
 import posesRoutes from './routes/poses/index.js';
@@ -58,6 +59,9 @@ import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
 import goblinManagerService from './services/goblinManagerService.js';
 import orchestrationService from './services/orchestrationService.js';
+import { jsonCompression } from './services/jsonCompression.js';
+import { staticCompression } from './services/staticCompression.js';
+import { avatarUrl } from './services/characterImageService.js';
 import nodeDiscoveryService from './services/nodeDiscoveryService.js';
 import * as jawAnimationAudioIntegration from './services/jawAnimationAudioIntegration.js';
 import jawServoDaemon from './services/jawServoDaemon.js';
@@ -161,6 +165,19 @@ if (hostnameCharId !== null && hostnameCharId !== config.selectedCharacter) {
     attempt(6);
 })();
 
+// Open the sink once so it settles at `idle` rather than `suspended`. This is a
+// MICROPHONE fix: the ReSpeaker XVF3800 only emits capture frames while a
+// playback stream is open, so a suspended sink is a dead mic on those nodes
+// (measured: 0 bytes suspended vs 374,400 primed). Runs after the volume
+// restore so the prime plays at the canonical level, and is silent audio so it
+// cannot wake anyone. Best-effort — never blocks startup.
+(async function primeSink() {
+    const result = await systemService.primeAudioSink();
+    if (!result.success) {
+        console.warn(`Could not prime audio sink (XVF3800 capture may stay dead until something plays): ${result.error}`);
+    }
+})();
+
 // Restore the microphone input gain the operator calibrated. Source (capture)
 // volume is the same node-local PipeWire state as the sink volume above: a
 // reboot resets it, the calibration page persists the chosen gain to the mic
@@ -256,7 +273,10 @@ app.locals.gitCommit = (function () {
         return execSync('git rev-parse --short HEAD', {
             cwd: path.resolve(__dirname),
             encoding: 'utf8',
-            timeout: 2000
+            timeout: 2000,
+            // rsync-deployed nodes have no .git; the catch below already answers
+            // 'unknown', so git's own "fatal:" line has no business in .err.
+            stdio: ['ignore', 'pipe', 'ignore']
         }).trim();
     } catch (_) {
         return 'unknown';
@@ -330,12 +350,33 @@ app.get('/health', (req, res) => {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// JSON bodies over 1 KB go out gzipped (built-in zlib; the audio library is
+// 233 KB plain, 27 KB compressed). Streams and proxies are untouched.
+app.use(jsonCompression());
+// Third-party bundles only change when someone upgrades them, so they can sit
+// in the browser for a week. App CSS/JS stays at 5 minutes because deploys are
+// frequent and nothing versions the URLs.
+app.use('/vendor', staticCompression(path.join(__dirname, 'public', 'vendor'), { maxAgeSeconds: 7 * 24 * 3600 }));
+app.use('/vendor', express.static(path.join(__dirname, 'public', 'vendor'), { maxAge: '7d' }));
 // maxAge lets the operator's browser reuse big assets (bootstrap alone is
 // 233KB over software-TLS on this CPU) instead of re-paying them on every
 // navigation; ETag revalidation still catches a deploy within 5 minutes.
+// Gzip in front of both mounts (built-in zlib, compressed once per file, held in
+// memory): the dashboard's ~750 KB of CSS+JS is ~190 KB on the wire.
+app.use(staticCompression(path.join(__dirname, 'public'), { maxAgeSeconds: 300 }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '5m' }));
 // Serve character/data assets for images and media
-app.use('/data', express.static(path.join(__dirname, 'data'), { maxAge: '1m' }));
+app.use('/data', express.static(path.join(__dirname, 'data'), {
+    maxAge: '1m',
+    setHeaders(res, filePath) {
+        // A character portrait is ~300 KB and rides on every page; a same-name
+        // re-upload shows within the hour (or on a hard refresh). JSON under
+        // /data keeps the one-minute window.
+        if (/\.(png|jpe?g|gif|webp|svg)$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+        }
+    }
+}));
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -362,10 +403,20 @@ app.use((req, res, next) => {
 
         // Render the content template first — include common variables
         // so content templates can access currentCharacter, config, etc.
+        // A route that resolved the character itself — through resolveCharacter(req),
+        // which honours ?characterId= — must not have that answer thrown away here.
+        // Spreading options and then unconditionally overwriting currentCharacter
+        // meant every setup page rendered the NODE's selected character no matter
+        // what the caller asked for, so ?characterId=5 silently showed character 3.
+        // Routes that pass nothing still fall back to res.locals exactly as before.
+        const resolvedCharacter = options.currentCharacter !== undefined
+            ? options.currentCharacter
+            : res.locals.currentCharacter;
+        layoutOptions.currentCharacter = resolvedCharacter;
         const contentOptions = {
             ...options,
             config: req.app.locals.config,
-            currentCharacter: res.locals.currentCharacter,
+            currentCharacter: resolvedCharacter,
             testMode: layoutOptions.testMode
         };
         res.render(contentTemplate, contentOptions, (err, html) => {
@@ -434,9 +485,23 @@ app.use(async (req, res, next) => {
                 res.locals.currentCharacterImage = (currentChar && currentChar.activeImage)
                     ? `/data/character-${currentChar.id}/images/${currentChar.activeImage}`
                     : null;
+                // The 96px rendition for the 28–48px avatars in the chrome. The full
+                // portrait (one live node's is 800x800, 316 KB) was downloaded and decoded
+                // on every page for a thumbnail-sized slot.
+                res.locals.currentCharacterAvatar = (currentChar && currentChar.activeImage)
+                    ? avatarUrl(currentChar.id, currentChar.activeImage)
+                    : null;
+                // The character menu used to fetch this list (and /api/current) on
+                // every page load; the layout already has it in memory.
+                res.locals.characterMenu = characters.map(c => ({
+                    id: c.id, name: c.name, activeImage: c.activeImage || null,
+                    avatar: c.activeImage ? avatarUrl(c.id, c.activeImage) : null
+                }));
             } catch (e) {
                 res.locals.currentCharacterName = null;
                 res.locals.currentCharacterObject = null;
+                res.locals.currentCharacterAvatar = null;
+                res.locals.characterMenu = null;
             }
         } else {
             res.locals.currentCharacterName = null;
@@ -518,6 +583,7 @@ app.use('/setup/models', setupModelsRoutes);
 app.use('/setup/jaw-animation', setupJawAnimationRoutes);
 app.use('/setup/head-animation', setupHeadAnimationRoutes);
 app.use('/setup/follow-orders', setupFollowOrdersRoutes);
+app.use('/setup/ai-motion', setupAiMotionRoutes);
 app.use('/setup/super-powers', (req, res) => res.redirect(301, req.originalUrl.replace('/setup/super-powers', '/setup/jaw-animation')));
 app.use('/setup/system', setupSystemRoutes);
 app.use('/setup/poses', setupPosesRoutes);
@@ -903,10 +969,28 @@ try {
     console.log(`   Generate certs: openssl req -x509 -newkey rsa:2048 -nodes -keyout certs/server.key -out certs/server.cert -days 3650 -subj "/CN=monsterbox"`);
 }
 
+// Keep idle client connections open well past Node's 5 s default.
+//
+// Measured from the dev seat, 2026-09-04: the fleet mute fan-out took 56-65 ms when the
+// orchestrator's sockets to the five peers were warm and 200-1230 ms when they
+// had gone cold — with Keep-Alive: timeout=5 they went cold between every 15 s
+// health poll and every pair of operator clicks, so nearly every click paid six
+// TCP+TLS handshakes over Wi-Fi radios that also have to wake from power-save.
+// Each node's own request handling is 2-5 ms; the handshakes WERE the latency.
+// 65 s outlasts the poll and the pauses between clicks; browsers' pooled
+// connections benefit the same way. headersTimeout must stay above it or Node
+// may tear down a kept-alive socket mid-request.
+const KEEP_ALIVE_TIMEOUT_MS = 65000;
+function tuneKeepAlive(srv) {
+    srv.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
+    srv.headersTimeout = KEEP_ALIVE_TIMEOUT_MS + 1000;
+    return srv;
+}
+
 // Start primary server: HTTPS if certs available, HTTP otherwise
 let server;
 if (sslOptions) {
-    httpsServer = https.createServer(sslOptions, app);
+    httpsServer = tuneKeepAlive(https.createServer(sslOptions, app));
     server = httpsServer;
     httpsServer.listen(PORT, '0.0.0.0', async () => {
         await onServerReady('https');
@@ -915,9 +999,9 @@ if (sslOptions) {
         console.error(`❌ HTTPS server failed:`, e.message);
     });
 } else {
-    server = app.listen(PORT, '0.0.0.0', async () => {
+    server = tuneKeepAlive(app.listen(PORT, '0.0.0.0', async () => {
         await onServerReady('http');
-    });
+    }));
 }
 
 async function onServerReady(protocol) {
@@ -1006,6 +1090,15 @@ async function onServerReady(protocol) {
         console.error(`❌ Failed to initialize jaw animation:`, error.message);
     }
 
+    // Re-arm motion mode if this node was armed when it last went down. A
+    // Halloween-night reboot must leave the character listening to its PIR,
+    // not deaf until someone reopens the dashboard.
+    try {
+        await restoreMotionModeOnStartup(config && config.selectedCharacter);
+    } catch (error) {
+        console.error(`❌ Failed to restore motion mode:`, error.message);
+    }
+
     // Start movement telemetry auto-flush and servo command buffer
     try {
         const { startAutoFlush } = await import('./services/movement/movementTelemetry.js');
@@ -1070,7 +1163,7 @@ try {
     for (const tp of testPorts) {
         if (tp === PORT) continue;
         import('http').then(({ default: http }) => {
-            const testServer = http.createServer(app);
+            const testServer = tuneKeepAlive(http.createServer(app));
             // Bind to loopback only. This listener serves the ENTIRE app over
             // plaintext HTTP; on a production RPi (HTTPS on the main port) binding
             // to 0.0.0.0 silently re-exposed every hardware/calibration endpoint

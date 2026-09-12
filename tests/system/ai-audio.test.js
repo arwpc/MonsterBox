@@ -288,14 +288,21 @@ describe('AI Audio System Tests', function() {
         });
 
         it('POST adjust-calibration should adjust and return new value', async () => {
+            // Against a live node this nudge is REAL and persisted: +1° on the servo's
+            // calibrated Min every run, with nothing putting it back. Undo it with the
+            // mirror-image nudge whenever the first one was accepted.
+            const url = `${BASE_URL}/setup/jaw-animation/api/jaw-animation/${charId}/adjust-calibration`;
+            const nudge = (delta) => fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ servoPartId: '14', marker: 'Min', delta })
+            });
+            let applied = false;
             try {
-                const res = await fetch(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${charId}/adjust-calibration`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ servoPartId: '14', marker: 'Min', delta: 1 })
-                });
+                const res = await nudge(1);
                 // May be 200 or 404 depending on parts config
                 if (res.status === 200) {
+                    applied = true;
                     const data = await res.json();
                     expect(data).to.have.property('success', true);
                     expect(data).to.have.property('newValue');
@@ -304,6 +311,10 @@ describe('AI Audio System Tests', function() {
                 }
             } catch (e) {
                 console.warn('Server not running, skipping route test:', e.message);
+            } finally {
+                if (applied) {
+                    try { await nudge(-1); } catch (_) { /* server went away between the two calls */ }
+                }
             }
         });
 

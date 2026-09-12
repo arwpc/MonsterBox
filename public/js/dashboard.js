@@ -38,6 +38,15 @@
     setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 4500);
   }
 
+  // Shared with manual-controls.js and dashboard-v2.js, which ask for the same
+  // scenes/poses on the same page load; see MonsterBox.sharedJson.
+  function sharedJson(url) {
+    if (window.MonsterBox && typeof window.MonsterBox.sharedJson === 'function') {
+      return window.MonsterBox.sharedJson(url);
+    }
+    return fetch(url).then(function (r) { return r.json(); });
+  }
+
   function mbConfirm(opts) {
     return new Promise(function (resolve) {
       var backdrop = document.createElement('div');
@@ -82,6 +91,7 @@
       sayStatus: null,
       jawToggle: null,
       headTrackToggle: null,
+    aiMotionToggle: null,
       parrotToggle: null,
       idleToggle: null,
       chatModeToggle: null,
@@ -628,6 +638,7 @@
       ui.sayStatus = $('sayStatus');
       ui.jawToggle = $('jawToggle');
       ui.headTrackToggle = $('headTrackToggle');
+    ui.aiMotionToggle = $('aiMotionToggle');
       ui.parrotToggle = $('parrotToggle');
       ui.idleToggle = $('idleToggle');
       ui.followOrdersToggle = $('followOrdersToggle');
@@ -639,21 +650,27 @@
 
       setCharName();
       bindEvents();
-      await loadSpeakers();
-      await initChat();
 
-      await loadWebcam();
-      await loadJawSettings();
-      await loadHeadTrackStatus();
-      await loadMotionSensorStatus();
-      await loadFollowOrdersSettings();
-      await loadLurkState();
-      await loadScenes();
-      await loadPoses();
-
-      if (typeof ManualControls !== 'undefined') {
-        await ManualControls.init({ characterId: currentCharacterId });
-      }
+      // Every loader owns one endpoint and one control and catches its own
+      // errors, so nothing here depends on order. Awaited one after another
+      // this was fourteen sequential round trips — a full second of waterfall
+      // over Wi-Fi before the manual controls even began to load.
+      await Promise.allSettled([
+        loadSpeakers(),
+        initChat(),
+        loadWebcam(),
+        loadJawSettings(),
+        loadHeadTrackStatus(),
+        loadAiMotionStatus(),
+        loadMotionSensorStatus(),
+        loadFollowOrdersSettings(),
+        loadLurkState(),
+        loadScenes(),
+        loadPoses(),
+        (typeof ManualControls !== 'undefined')
+          ? ManualControls.init({ characterId: currentCharacterId })
+          : Promise.resolve()
+      ]);
 
       // Initialize Bootstrap tooltips
       document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
@@ -684,14 +701,17 @@
 
     async function refreshPageState() {
       setCharName();
-      await loadSpeakers();
-      await loadWebcam();
-      await loadJawSettings();
-      await loadHeadTrackStatus();
-      await loadFollowOrdersSettings();
-      await loadLurkCapabilities();
-      await loadScenes();
-      await loadPoses();
+      await Promise.allSettled([
+        loadSpeakers(),
+        loadWebcam(),
+        loadJawSettings(),
+        loadHeadTrackStatus(),
+        loadAiMotionStatus(),
+        loadFollowOrdersSettings(),
+        loadLurkCapabilities(),
+        loadScenes(),
+        loadPoses()
+      ]);
 
       // Update chat panel for new character
       const chatCharNameEl = $('chatCharacterName');
@@ -715,6 +735,7 @@
 
       ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
       ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
+    ui.aiMotionToggle && ui.aiMotionToggle.addEventListener('change', saveAiMotionSettings);
       ui.followOrdersToggle && ui.followOrdersToggle.addEventListener('change', saveFollowOrdersSettings);
 
       ui.parrotToggle && ui.parrotToggle.addEventListener('change', function () {
@@ -1425,7 +1446,46 @@
       } catch { }
     }
 
-    async function saveHeadTrackSettings() {
+    /**
+ * AI Motion — one authority for motion that accompanies speech and motion a
+ * guest asks for. Unlike head tracking, whose armed bit lives only in a Map,
+ * this state is persisted server-side, so what the page shows after a restart
+ * is the truth rather than a default.
+ */
+async function loadAiMotionStatus() {
+  try {
+    const r = await fetch('/conversation/api/ai-motion');
+    const j = await r.json();
+    if (j && j.success && ui.aiMotionToggle) {
+      ui.aiMotionToggle.checked = !!j.enabled;
+    }
+  } catch { }
+}
+
+async function saveAiMotionSettings() {
+  const enabled = !!(ui.aiMotionToggle && ui.aiMotionToggle.checked);
+  try {
+    const r = await fetch('/conversation/api/ai-motion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
+    });
+    const j = await r.json();
+    if (j && j.success) {
+      showToast(enabled ? 'AI Motion enabled' : 'AI Motion disabled', 'success');
+    } else {
+      // The server refuses to latch "on" for a character with nothing to move,
+      // and says why. Reverting the checkbox keeps the UI honest about it.
+      showToast('AI Motion failed: ' + (j.error || 'Unknown error'), 'error');
+      ui.aiMotionToggle.checked = !enabled;
+    }
+  } catch (err) {
+    showToast('AI Motion error: ' + err.message, 'error');
+    ui.aiMotionToggle.checked = !enabled;
+  }
+}
+
+async function saveHeadTrackSettings() {
       const enabled = !!(ui.headTrackToggle && ui.headTrackToggle.checked);
       try {
         const r = await fetch('/conversation/api/head-tracking', {
@@ -1703,8 +1763,7 @@
       const container = $('scenesContainer');
 
       try {
-        const r = await fetch('/scenes/api/');
-        const j = await r.json();
+        const j = await sharedJson('/scenes/api/');
 
         if (j && j.success && j.scenes && j.scenes.length > 0) {
           dashboardScenes = j.scenes;
@@ -1876,8 +1935,7 @@
       var container = $('posesContainer');
 
       try {
-        var r = await fetch('/poses/api/poses');
-        var j = await r.json();
+        var j = await sharedJson('/poses/api/poses');
 
         if (j && Array.isArray(j) && j.length > 0) {
           dashboardPoses = j;
@@ -2386,7 +2444,8 @@
     // Use the server-resolved active image for the current character. The old
     // hardcoded '/images/characters/character-<id>.png' path did not exist and
     // 404'd on every dashboard load (broken avatar + console error).
-    var url = window.__MB_CHAR_IMAGE;
+    // 38px slot: the avatar rendition, not the full portrait.
+    var url = window.__MB_CHAR_AVATAR || window.__MB_CHAR_IMAGE;
     if (!url) return;
     var img = new Image();
     img.onload = function () {
@@ -2412,7 +2471,8 @@
 
     // Turn off every toggle that could be animating/speaking.
     ['lurkToggle', 'chatAiOnToggle', 'jawToggle', 'headTrackToggle',
-     'parrotToggle', 'idleToggle', 'motionSensorToggle', 'followOrdersToggle']
+     'parrotToggle', 'idleToggle', 'motionSensorToggle', 'followOrdersToggle',
+     'aiMotionToggle']
       .forEach(function (id) {
         var el = $(id);
         if (el && el.checked) {

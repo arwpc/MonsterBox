@@ -176,9 +176,12 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
       if (!jawServo) {
         return res.json({ success: false, error: 'No jaw servo configured for this character' });
       }
+      // Uncalibrated is no longer a refusal (2026-09-07): getCalibrationForPart
+      // falls back to the jaw config window, then the full span. Only a jaw with
+      // no angle window at all cannot be armed.
       const cal = await jawAnimationService.getCalibrationForPart(jawServo, characterId);
-      if (!cal || !cal.calibrated) {
-        return res.json({ success: false, error: 'Jaw servo has no calibrated Min/Max window' });
+      if (!cal || cal.minAngle == null || cal.maxAngle == null) {
+        return res.json({ success: false, error: 'Jaw servo has no usable angle window' });
       }
     }
     config.enabled = enabled;
@@ -234,6 +237,67 @@ router.post('/api/follow-orders', express.json(), async (req, res) => {
     } else {
       await listener.stopStandaloneListener(characterId);
     }
+    res.json({ success: true, enabled });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// ─── AI Motion ───────────────────────────────────────────────────────
+// One authority for motion that accompanies speech and motion a guest asks
+// for. Unlike head tracking, whose armed bit lives only in a Map and is lost on
+// restart, this one is PERSISTED to super-powers.json — an operator who arms a
+// character's motion for the evening should not find it silently disarmed by a
+// service restart, and the fleet view should be able to tell the truth after a
+// reboot. The fleet broadcast sends no characterId, so each node answers for
+// its own selected character (orchestrationService SUPERPOWER_ENDPOINTS).
+
+// GET /conversation/api/ai-motion
+router.get('/api/ai-motion', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No selected character' });
+    const aiMotionService = await import('../services/aiMotionSuperPowerService.js');
+    const gestureEngine = await import('../services/gestureEngineService.js').then(m => m.default || m);
+    const config = await aiMotionService.readAiMotionConfig(characterId);
+    const vocab = await gestureEngine.listGestures(characterId);
+    res.json({
+      success: true,
+      enabled: config.enabled,
+      triggers: config.triggers,
+      capabilities: vocab.available.length,
+      characterId
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/ai-motion { enabled }
+router.post('/api/ai-motion', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No selected character' });
+    const aiMotionService = await import('../services/aiMotionSuperPowerService.js');
+    const enabled = !!(req.body && req.body.enabled);
+    const inTest = (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
+
+    if (enabled && !inTest) {
+      // Same honesty rule as the jaw and follow-orders toggles: never latch
+      // "on" for a character that has nothing it can move, because the fleet
+      // toggle summarizes from this response and would report a win.
+      const { loadPartsSafe } = await import('../services/followOrders/followOrdersSuperPowerService.js');
+      const { inferPartRoles } = await import('../services/followOrders/bodyRoles.js');
+      const parts = await loadPartsSafe(characterId);
+      const movable = inferPartRoles(parts.map(p => ({ ...p, partId: String(p.id ?? p.partId) })))
+        .filter(r => r.movable || r.role === 'light');
+      if (!movable.length) {
+        return res.json({ success: false, error: 'This character has no movable parts or lights' });
+      }
+    }
+
+    const config = await aiMotionService.readAiMotionConfig(characterId);
+    await aiMotionService.writeAiMotionConfig(characterId, { ...config, enabled });
     res.json({ success: true, enabled });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -1017,7 +1081,138 @@ router.get('/api/motion-sensor', async (req, res) => {
   }
 });
 
-// POST /conversation/api/motion-sensor { enabled } — start/stop motion sensor polling
+// ─── Motion mode ───────────────────────────────────────────────
+// "Motion" arms the character on its PIR. Operator direction 2026-09-07: when
+// Motion is enabled and the sensor fires, the AI agent, jaw animation and body
+// motion (head tracking, idle/random poses, AI-motion gestures) must all come
+// on; after the inactivity timeout they go back to sleep and the PIR re-arms
+// them. Before this the toggle only started the watcher with no callbacks —
+// it detected motion and did nothing with it.
+
+const DEFAULT_MOTION_INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
+
+async function persistMotionArmedState(characterId, state) {
+  try {
+    const dir = getDataDir(characterId);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.resolve(dir, 'motion-armed-state.json'),
+      JSON.stringify({ characterId, timestamp: Date.now(), ...state }, null, 2), 'utf8');
+  } catch (e) {
+    console.warn(`[MotionMode] could not persist state for character ${characterId}: ${e.message}`);
+  }
+}
+
+async function setAgentForMotion(characterId, enabled) {
+  try {
+    const result = await elevenLabsWebSocketService.setAgentEnabledForCharacter(characterId, enabled);
+    const effective = !!(result && result.success && result.enabled);
+    const dir = getDataDir(characterId);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.resolve(dir, 'ai_agent_state.json'),
+      JSON.stringify({ characterId, enabled: effective, timestamp: Date.now() }, null, 2), 'utf8');
+    return { enabled: effective, error: result && !result.success ? result.error : undefined };
+  } catch (e) {
+    return { enabled: false, error: e.message };
+  }
+}
+
+async function setAiMotionForMotion(characterId, enabled) {
+  try {
+    const aiMotionService = await import('../services/aiMotionSuperPowerService.js');
+    const config = await aiMotionService.readAiMotionConfig(characterId);
+    await aiMotionService.writeAiMotionConfig(characterId, { ...config, enabled });
+    return { enabled };
+  } catch (e) {
+    return { enabled: false, error: e.message };
+  }
+}
+
+/** PIR fired while armed: bring the whole character to life. */
+async function wakeOnMotion(characterId) {
+  console.log(`[MotionMode] motion detected for character ${characterId} — AI, jaw and body motion ON`);
+  const results = await enableLurkSuperpowers(characterId);
+  results.ai = await setAgentForMotion(characterId, true);
+  results.aiMotion = await setAiMotionForMotion(characterId, true);
+  await persistMotionArmedState(characterId, { enabled: true, awake: true, results });
+  return results;
+}
+
+/** Inactivity timeout: quiet everything, keep watching the PIR. */
+async function sleepOnMotion(characterId) {
+  console.log(`[MotionMode] no motion for the timeout on character ${characterId} — sleeping, PIR still armed`);
+  const results = await disableLurkSuperpowers(characterId);
+  results.ai = await setAgentForMotion(characterId, false);
+  results.aiMotion = await setAiMotionForMotion(characterId, false);
+  await persistMotionArmedState(characterId, { enabled: true, awake: false, results });
+  return results;
+}
+
+/**
+ * Arm motion mode for a character. Exported so server startup can re-arm a node
+ * that was armed when it went down — a Halloween-night reboot must not leave a
+ * character deaf to its own PIR.
+ */
+export async function armMotionMode(characterId, opts = {}) {
+  const parts = await loadCharacterParts(characterId);
+  const sensor = parts.find(p =>
+    String(p.type).toLowerCase() === 'motion_sensor' && p.pin != null && p.enabled !== false
+  );
+  if (!sensor) {
+    return { success: false, error: 'No motion sensor found for this character' };
+  }
+  const inactivityTimeoutMs = Number.isFinite(Number(opts.inactivityTimeoutMs)) && Number(opts.inactivityTimeoutMs) >= 0
+    ? Number(opts.inactivityTimeoutMs) : DEFAULT_MOTION_INACTIVITY_TIMEOUT_MS;
+  lurkMotionWatcher.start(characterId, {
+    sensorPart: sensor,
+    inactivityTimeoutMs,
+    pollIntervalMs: 1000,
+    startAsleep: true,
+    onWake: async (charId) => {
+      try { await wakeOnMotion(charId); } catch (e) {
+        console.error('[MotionMode] wake failed:', e.message);
+      }
+    },
+    onSleep: async (charId) => {
+      try { await sleepOnMotion(charId); } catch (e) {
+        console.error('[MotionMode] sleep failed:', e.message);
+      }
+    }
+  });
+  await persistMotionArmedState(characterId, { enabled: true, awake: false, sensorPartId: sensor.id, inactivityTimeoutMs });
+  return { success: true, enabled: true, armed: true, awake: false, sensorPartId: sensor.id, inactivityTimeoutMs };
+}
+
+/** Disarm motion mode; if the character is awake because of it, quiet it too. */
+export async function disarmMotionMode(characterId) {
+  const wasAwake = lurkMotionWatcher.isActive() && !lurkMotionWatcher.isSleeping();
+  lurkMotionWatcher.stop();
+  let results = null;
+  if (wasAwake) {
+    try { results = await sleepOnMotion(characterId); } catch (e) {
+      console.error('[MotionMode] disarm quiet-down failed:', e.message);
+    }
+  }
+  await persistMotionArmedState(characterId, { enabled: false, awake: false });
+  return { success: true, enabled: false, armed: false, results };
+}
+
+/**
+ * Re-arm motion mode at startup for the node's character if it was armed when
+ * the service last ran. Called from server.js; never throws.
+ */
+export async function restoreMotionModeOnStartup(characterId) {
+  try {
+    if (characterId == null) return;
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') return;
+    const file = path.resolve(getDataDir(characterId), 'motion-armed-state.json');
+    const state = JSON.parse(await fs.readFile(file, 'utf8'));
+    if (!state || state.enabled !== true) return;
+    const r = await armMotionMode(characterId, { inactivityTimeoutMs: state.inactivityTimeoutMs });
+    console.log(`[MotionMode] re-armed at startup for character ${characterId}: ${r.success ? 'ok' : r.error}`);
+  } catch (_) { /* no state file — nothing to restore */ }
+}
+
+// POST /conversation/api/motion-sensor { enabled, inactivityTimeoutMs? } — arm/disarm motion mode
 router.post('/api/motion-sensor', express.json(), async (req, res) => {
   try {
     const enabled = !!(req.body && req.body.enabled);
@@ -1028,22 +1223,31 @@ router.post('/api/motion-sensor', express.json(), async (req, res) => {
     }
 
     if (enabled) {
-      const parts = await loadParts();
-      const sensor = parts.find(p =>
-        String(p.type).toLowerCase() === 'motion_sensor' && p.pin != null && p.enabled !== false
-      );
-      if (!sensor) {
-        return res.json({ success: false, error: 'No motion sensor found for this character' });
-      }
-      lurkMotionWatcher.start(characterId, {
-        sensorPart: sensor,
-        inactivityTimeoutMs: 0 // No timeout in standalone mode — just detect
-      });
-      res.json({ success: true, enabled: true, sensorPartId: sensor.id });
+      res.json(await armMotionMode(characterId, { inactivityTimeoutMs: req.body && req.body.inactivityTimeoutMs }));
     } else {
-      lurkMotionWatcher.stop();
-      res.json({ success: true, enabled: false });
+      res.json(await disarmMotionMode(characterId));
     }
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/motion-sensor/simulate — fire the armed watcher as if the
+// PIR had triggered. Proves the wake path (AI + jaw + body motion) without a
+// person in front of the sensor; the same thing the dashboard's test action does.
+router.post('/api/motion-sensor/simulate', express.json(), async (req, res) => {
+  try {
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+      return res.json({ success: true, testMode: true, fired: false });
+    }
+    const fired = lurkMotionWatcher.simulateMotion();
+    if (!fired) {
+      return res.json({ success: false, fired: false, error: 'Motion mode is not armed on this character' });
+    }
+    // onWake runs asynchronously inside the watcher; give it a moment so the
+    // reply reflects the state the operator will see.
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    res.json({ success: true, fired: true, status: lurkMotionWatcher.getStatus() });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -1122,12 +1326,28 @@ router.get('/api/lurk-mode/capabilities', async (req, res) => {
 async function enableLurkSuperpowers(characterId) {
   const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null };
 
-  // 1. Enable jaw animation
+  // 1. Enable jaw animation — but ONLY if this character actually has a jaw.
+  //
+  // This used to set enabled:true unconditionally, so turning on AI mode armed
+  // jaw animation on characters with no jaw servo at all (PumpkinHead has no
+  // servo parts whatsoever). That writes enabled:true into super-powers.json,
+  // where it sticks and reads as a configured feature the operator never asked
+  // for. Head tracking immediately below already gates on the character owning
+  // a webcam; jaw now follows the same rule.
   try {
     const jawConfig = await jawAnimationService.readJawConfig(characterId);
-    jawConfig.enabled = true;
-    await jawAnimationService.writeJawConfig(characterId, jawConfig);
-    results.jaw = { enabled: true };
+    const jawParts = await loadCharacterParts(characterId);
+    const jawServo = jawConfig.servoPartId
+      ? jawParts.find(p => String(p.id) === String(jawConfig.servoPartId))
+      : null;
+
+    if (!jawServo) {
+      results.jaw = { enabled: false, reason: 'no jaw servo configured for this character' };
+    } else {
+      jawConfig.enabled = true;
+      await jawAnimationService.writeJawConfig(characterId, jawConfig);
+      results.jaw = { enabled: true };
+    }
   } catch (e) {
     results.jaw = { enabled: false, error: e.message };
   }

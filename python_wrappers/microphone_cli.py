@@ -56,8 +56,22 @@ def _get_default_input_device(pa):
     nothing connected. Measured on Mina: "default" -> RMS 0.0001 (dead dongle)
     while "pulse" -> 0.0066 (the actual room) with the same routing requested.
     Going through pipewire/pulse is also what makes PULSE_SOURCE work at all.
+
+    BUT only the "pulse" device actually honours PULSE_SOURCE — it is a
+    PulseAudio variable, and PortAudio's "pipewire" host device ignores it and
+    always hands back the node's DEFAULT source. Preferring "pipewire"
+    unconditionally therefore made per-part mic selection silently do nothing:
+    every microphone captured from whatever happened to be default. On
+    PumpkinHead the default source is an XVF3800 whose capture side is dead, so
+    selecting his working webcam mic still hung on the dead array — which reads
+    as the two devices "fighting" over one another.
+
+    So: when a specific source was requested, ask for "pulse" first so the
+    request is actually obeyed. With no request, keep preferring "pipewire",
+    which is what the Mina measurement above was about.
     """
-    for wanted in ('pipewire', 'pulse'):
+    order = ('pulse', 'pipewire') if os.environ.get('PULSE_SOURCE') else ('pipewire', 'pulse')
+    for wanted in order:
         try:
             for i in range(pa.get_device_count()):
                 info = pa.get_device_info_by_index(i)

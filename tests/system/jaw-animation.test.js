@@ -4,6 +4,7 @@ import request from 'supertest';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 let CHARACTER_ID;
 let HAS_JAW_SERVOS = false;
+let ORIGINAL_ACTIVE_CONFIG_ID = null;
 
 describe('Jaw Animation Super Power API', () => {
   before(async () => {
@@ -15,6 +16,10 @@ describe('Jaw Animation Super Power API', () => {
       .get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`);
     const jawCandidate = (jawRes.body.availableServos || []).find(s => s.isJawCandidate);
     HAS_JAW_SERVOS = !!(jawCandidate && jawRes.body.config && jawRes.body.config.servoPartId);
+    // The config the operator had active. The CRUD block below switches back to
+    // THIS, not to a hardcoded 'config-1': a character whose active config is a
+    // tuned one would otherwise leave the suite playing on the wrong config.
+    ORIGINAL_ACTIVE_CONFIG_ID = jawRes.body.activeConfigId || null;
   });
 
   // ─── Page serving ──────────────────────────────────────────────────
@@ -257,6 +262,28 @@ describe('Jaw Animation Super Power API', () => {
   describe('Multi-Config CRUD', () => {
     let createdConfigId = null;
 
+    // A character with no jaw servo stores NO configs (the per-character contract
+    // requires numeric angles on every stored config, and there is no window to
+    // seed one from). The API refuses to delete the last config, so a config this
+    // block creates on such a character can never be removed again: the suite
+    // left a schema-invalid 'Renamed Config' on three audio-only nodes, which
+    // then failed validate:schemas at every start. Nothing to exercise here.
+    before(function () {
+      if (!ORIGINAL_ACTIVE_CONFIG_ID) this.skip();
+    });
+
+    // Belt and braces: whatever failed mid-block, put the operator's config back
+    // and remove ours, so a red run cannot leave residue in super-powers.json.
+    after(async () => {
+      if (!ORIGINAL_ACTIVE_CONFIG_ID || !createdConfigId) return;
+      try {
+        await request(BASE_URL)
+          .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${ORIGINAL_ACTIVE_CONFIG_ID}/activate`);
+        await request(BASE_URL)
+          .delete(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${createdConfigId}`);
+      } catch (_) { /* best-effort cleanup */ }
+    });
+
     it('GET /configs should return configs list with activeConfigId', async () => {
       const res = await request(BASE_URL)
         .get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs`)
@@ -294,7 +321,7 @@ describe('Jaw Animation Super Power API', () => {
     it('POST /configs with cloneFrom should copy tuning params', async () => {
       const res = await request(BASE_URL)
         .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs`)
-        .send({ name: 'Cloned Config', cloneFrom: 'config-1' })
+        .send({ name: 'Cloned Config', cloneFrom: ORIGINAL_ACTIVE_CONFIG_ID })
         .expect(200);
       expect(res.body).to.have.property('success', true);
       expect(res.body.config).to.have.property('sensitivity');
@@ -383,7 +410,7 @@ describe('Jaw Animation Super Power API', () => {
     it('should switch back to original config before cleanup', async function() {
       if (!createdConfigId) this.skip();
       await request(BASE_URL)
-        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/config-1/activate`)
+        .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}/configs/${ORIGINAL_ACTIVE_CONFIG_ID}/activate`)
         .expect(200);
     });
 

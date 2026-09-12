@@ -44,18 +44,21 @@ class PipeWireService {
             tools.pwRecord = true;
         } catch (_) { }
 
+        // The Pulse tools are absent on every Bookworm node; without the
+        // redirect the shell's own "pactl: not found" landed in monsterbox.err
+        // at each start and read like an audio fault.
         try {
-            await pexec('pactl --version');
+            await pexec('pactl --version 2>/dev/null');
             tools.pactl = true;
         } catch (_) { }
 
         try {
-            await pexec('paplay --version');
+            await pexec('paplay --version 2>/dev/null');
             tools.paplay = true;
         } catch (_) { }
 
         try {
-            await pexec('parec --version');
+            await pexec('parec --version 2>/dev/null');
             tools.parec = true;
         } catch (_) { }
 
@@ -65,12 +68,57 @@ class PipeWireService {
     /**
      * Enumerate PipeWire sinks (audio outputs)
      */
+    /**
+     * Map PipeWire object id -> stable node.name, via pw-dump.
+     *
+     * WHY: `wpctl status` only exposes the numeric object id, and those are
+     * reassigned on every reboot, replug and WirePlumber restart. A part that
+     * stored one silently points at the wrong device (or nothing) next boot —
+     * see the PumpkinHead reSpeaker, configured as sink 76 / source 94 and
+     * reading 80 / 81 a reboot later. node.name is stable across all of that,
+     * and is accepted anywhere the numeric id is (PULSE_SINK/PULSE_SOURCE,
+     * pw-play --target, wpctl), so it is the right thing to persist.
+     *
+     * Best-effort: on any failure the caller keeps the numeric id, which is
+     * exactly the previous behaviour.
+     *
+     * @returns {Promise<Map<string,string>>} object id -> node.name
+     */
+    async _nodeNamesById() {
+        const names = new Map();
+        try {
+            const { stdout } = await pexec('pw-dump', { maxBuffer: 32 * 1024 * 1024 });
+            const objects = JSON.parse(stdout);
+            for (const obj of objects) {
+                const nodeName = obj?.info?.props?.['node.name'];
+                if (obj?.id != null && nodeName) names.set(String(obj.id), String(nodeName));
+            }
+        } catch (err) {
+            console.warn('⚠️ pw-dump unavailable, keeping numeric device ids:', err.message);
+        }
+        return names;
+    }
+
+    /**
+     * Attach the stable node.name to each enumerated device as `nodeName`.
+     * Leaves `id` alone so existing callers that resolve numeric ids still work.
+     */
+    async _withNodeNames(items) {
+        if (!Array.isArray(items) || items.length === 0) return items;
+        const names = await this._nodeNamesById();
+        if (names.size === 0) return items;
+        return items.map(item => {
+            const nodeName = names.get(String(item.id));
+            return nodeName ? { ...item, nodeName } : item;
+        });
+    }
+
     async listSinks() {
         try {
             // Try wpctl first (native PipeWire)
             try {
                 const { stdout } = await pexec('wpctl status');
-                return this.parseWpctlSinks(stdout);
+                return await this._withNodeNames(this.parseWpctlSinks(stdout));
             } catch (wpErr) {
                 console.log('wpctl not available, falling back to pactl');
             }
@@ -97,7 +145,7 @@ class PipeWireService {
             // Try wpctl first (native PipeWire)
             try {
                 const { stdout } = await pexec('wpctl status');
-                return this.parseWpctlSources(stdout);
+                return await this._withNodeNames(this.parseWpctlSources(stdout));
             } catch (wpErr) {
                 console.log('wpctl not available, falling back to pactl');
             }

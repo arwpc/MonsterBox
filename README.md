@@ -16,6 +16,31 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
 
+## What's New — v10.5.1 (September 2026) — The fleet answers in milliseconds, not seconds
+
+"The communication takes full seconds — these are not slow computers." Each node
+handles a fleet request in 2–5 ms; the seconds were spent getting to it. Details and
+the measurements in `CHANGELOG.md`.
+
+- **Idle connections stay open for 65 s** (Node's default closed them after 5 s), so
+  the orchestrator's sockets to the peers are warm between health polls and clicks:
+  fleet mute fan-out **56–65 ms** on warm sockets vs **200–1230 ms** cold.
+- **Fleet Command Center**: fleet-health starts collecting as the page HTML is sent
+  (first answer 10 ms, was 430–480 ms), results shared across concurrent callers for
+  1.5 s, six named cards paint from the roster at once and light up as health lands,
+  and snapshots are capped at two in flight so actions never queue behind pictures.
+- **Gzip from Node's built-in `zlib`** for JSON over 1 KB and static text (audio
+  library 233 KB → 27 KB; dashboard CSS+JS 782 KB → 159 KB), with a real cache
+  policy (vendor 7 d, app assets 5 min, images 1 h) and 304s.
+- **Avatar thumbnails** (Pillow, `?w=96`): the 316 KB portrait no longer rides on
+  every page for a 32 px slot; the dashboard no longer fetches the same pose list
+  and audio library three times; `/api/system/volume` is memoised (57 → 4–8 ms).
+- **Wi-Fi power-save off** on the nodes (`scripts/node-baseline/wifi-powersave-off.sh`,
+  now an `install.sh` step) — the radio's doze added 10–100 ms to every first packet.
+- **Conversation audio on PipeWire 1.4 nodes** (Debian 13 / Pi 5): `pw-play` there needs
+  `--raw` for headerless PCM on stdin or it exits silently on the first chunk; the flag is
+  probed per node, so Renfield speaks in conversation and Bookworm nodes are unchanged.
+
 ## What's New — v10.5.0 (August 2026) — Follow Orders: the animatronics obey spoken commands
 
 Tell any character to "raise your arm", "open the box", or "close your coffin door"
@@ -752,6 +777,38 @@ voice is a `WRONG-VOICE` failure. It records *every* microphone on a node, becau
 adapter jack returns a dead-flat floor that reads as a silent speaker. Requires passwordless
 SSH to each node and an ElevenLabs key. More:
 `scripts/fleet-audio/README.md`, `scripts/yard-theater/README.md`.
+
+### Whole-fleet end-to-end — `scripts/fleet-e2e.mjs`
+
+The ear-check proves audio. This proves everything else, on every animatronic, and prints one
+matrix: reachability and version, that each node is serving **its own** character, the eight
+main pages, parts, every super power, the conversational AI, spoken-motion resolution, and
+capability CRUD.
+
+```bash
+node scripts/fleet-e2e.mjs                 # structural only — no noise, no hardware, no credits
+node scripts/fleet-e2e.mjs --nodes 3,6     # a subset, by animatronic id
+node scripts/fleet-e2e.mjs --audio         # + ear-check (makes noise, spends credits)
+node scripts/fleet-e2e.mjs --ai            # + a live agent round trip (spends credits)
+node scripts/fleet-e2e.mjs --drive         # + ONE small real movement per node
+node scripts/fleet-e2e.mjs --full          # all of the above
+```
+
+Three properties worth knowing, because they are the reason it is trustworthy:
+
+- **Nothing is hardcoded to a character.** Each node is asked what IT has — its parts, its
+  roles, its capabilities — and every check adapts or skips. A character with no movable parts
+  is not a failure; it is an audio-only character, and the matrix says so.
+- **It refuses to drive dangerous hardware.** Parts listed in `config/physical-faults.json` are
+  excluded, and so are the parts that are dangerous but deliberately *not* fault-listed (the
+  900-degree multi-turn neck). `--drive` only ever exercises a light: no travel, no shared rail,
+  nothing that can stall.
+- **It cleans up after itself.** The AI Motion toggle is restored to whatever it was, and the
+  capability it creates is deleted again — verified by the vocabulary file being byte-identical
+  afterwards. A run that leaves state behind is a failed run.
+
+Results land in `scripts/fleet-audio/results/fleet-e2e-<stamp>.json`, and the process exits
+non-zero if any check failed, so it can gate a release.
 
 ## AI Management (ElevenLabs)
 

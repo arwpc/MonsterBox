@@ -1,0 +1,25 @@
+{
+  "ranAt": "2026-09-04T04:41:12.536Z",
+  "options": {
+    "audio": false,
+    "ai": false,
+    "drive": false
+  },
+  "results": [
+    {
+      "id": 3,
+      "name": "Orlok",
+      "ip": "192.168.8.120",
+      "pass": 0,
+      "fail": 1,
+      "skip": 0,
+      "rows": [
+        {
+          "name": "reachable",
+          "state": "FAIL",
+          "detail": "fetch failed"
+        }
+      ]
+    }
+  ]
+}

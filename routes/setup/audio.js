@@ -45,9 +45,14 @@ router.get('/api/outputs', async (req, res) => {
         console.log('🔊 Enumerating PipeWire audio outputs...');
         const sinks = await pipewireService.listSinks();
 
-        // Transform to match expected format
+        // Transform to match expected format.
+        // `id` is what the Add-Part form persists into config.audioDeviceId, so it
+        // MUST be the stable node.name — PipeWire's numeric object ids are reassigned
+        // on every reboot/replug and silently stale the part (PumpkinHead's reSpeaker
+        // was saved as sink 76 and read 80 a reboot later). Fall back to the numeric
+        // id only when pw-dump could not supply a name.
         const outputs = sinks.map(sink => ({
-            id: sink.id,
+            id: sink.nodeName || sink.id,
             name: sink.name,
             description: sink.description
         }));
@@ -81,9 +86,10 @@ router.get('/api/inputs', async (req, res) => {
         console.log('🎤 Enumerating PipeWire audio inputs...');
         const sources = await pipewireService.listSources();
 
-        // Transform to match expected format
+        // `id` is persisted into a mic part's config.deviceId — see the note on
+        // /api/outputs above for why that must be the stable node.name.
         const inputs = sources.map(source => ({
-            id: source.id,
+            id: source.nodeName || source.id,
             name: source.name,
             description: source.description
         }));

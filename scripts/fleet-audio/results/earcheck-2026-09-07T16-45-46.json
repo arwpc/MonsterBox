@@ -1,0 +1,50 @@
+{
+  "ranAt": "2026-09-07T16:45:46.092Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 1,
+      "name": "PumpkinHead",
+      "hostname": "pumpkinhead",
+      "ip": "192.168.8.150",
+      "sink": "80. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "The garden is hungry tonight, and the soul quota is not yet filled.",
+      "sayOk": true,
+      "voiceUsed": "Z7RrOqZFTyLpIlzCgfsp",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:3,0",
+          "floorDb": -19.1,
+          "castP90Db": -15.9,
+          "castPeakDb": -2,
+          "riseDb": 3.2,
+          "floorFlat": true,
+          "transcript": "[outro jingle]",
+          "recall": 0
+        },
+        {
+          "label": "Streaming Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -44.1,
+          "castP90Db": -10.1,
+          "castPeakDb": 0,
+          "riseDb": 34,
+          "floorFlat": false,
+          "transcript": "The garden is hungry tonight and the soul quota is not yet filled.",
+          "recall": 1
+        }
+      ],
+      "bestMic": "Streaming Camera",
+      "floorDb": -44.1,
+      "castDb": -10.1,
+      "riseDb": 34,
+      "recall": 1,
+      "transcript": "The garden is hungry tonight and the soul quota is not yet filled.",
+      "verdict": "AUDIBLE"
+    }
+  ]
+}

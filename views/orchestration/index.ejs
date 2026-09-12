@@ -16,6 +16,24 @@
 
 <!-- ============ STICKY COMMAND BAR ============ -->
 <div class="fcc-bar">
+  <!-- Mobile-only compact strip. The full toolbar measured 433px of an 844px phone
+       viewport -- 51% of the screen, permanently, because .fcc-bar is sticky. It also
+       intercepted taps aimed at the cards underneath it. On narrow screens the toolbar
+       collapses to this strip; EMERGENCY STOP stays visible at all times because a
+       panic control you have to expand a menu to reach is not a panic control. -->
+  <div class="fcc-mobile-strip">
+    <span class="mb-badge" title="Nodes currently online / total in the fleet">
+      <span class="mb-dot mb-dot-idle" id="fleetDotMini"></span>
+      <span id="fleetCountMini" class="mb-mono">— / —</span>
+    </span>
+    <button class="mb-btn mb-btn-sm mb-btn-secondary" id="toolbarToggle" type="button"
+      aria-expanded="false" aria-controls="fccBarRows" title="Show or hide the fleet controls">
+      <i class="bi bi-sliders"></i> Controls</button>
+    <button class="mb-btn mb-btn-sm mb-btn-danger fcc-estop ms-auto" id="estopMini" type="button"
+      title="Immediately halt every animatronic">
+      <i class="bi bi-exclamation-octagon-fill"></i> STOP</button>
+  </div>
+  <div id="fccBarRows">
   <div class="fcc-row">
     <!-- Fleet health rollup -->
     <span class="mb-badge" id="fleetPill" title="Nodes currently online / total in the fleet">
@@ -30,6 +48,7 @@
       <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="lurk" title="Toggle Lurk mode on every animatronic">Lurk</button>
       <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="jaw" title="Toggle jaw animation fleet-wide">Jaw</button>
       <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="head" title="Toggle head tracking fleet-wide">Head</button>
+        <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="aiMotion" title="Toggle AI Motion fleet-wide — the characters move as they speak and obey spoken movement requests">AI Motion</button>
       <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="motion" title="Toggle PIR motion sensor fleet-wide">Motion</button>
       <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="idle" title="Toggle idle movement loop fleet-wide">Idle</button>
       <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="mute" title="Mute / unmute all speakers">Mute</button>
@@ -62,11 +81,20 @@
 
   <div class="fcc-row">
     <!-- Say to all -->
+    <!-- One box, two behaviours. "say <words>" speaks those exact words. Anything else
+         is handed to each animatronic's ElevenLabs agent as an instruction, and the
+         agents are already well enough developed to interpret it in character. -->
     <div class="mb-input-group fcc-say">
-      <input type="text" class="mb-input mb-serif" id="sayAllText" placeholder="Say to targeted nodes…"
-        title="Broadcast this text as speech" aria-label="Text to speak on the targeted nodes">
-      <button class="mb-btn mb-btn-sm mb-btn-secondary" id="sayAllBtn" title="Speak on the targeted nodes (all if none selected)">
-        <i class="bi bi-megaphone"></i> Say</button>
+      <input type="text" class="mb-input mb-serif" id="sayAllText"
+        placeholder="say Welcome to Warner Castle"
+        title="Two ways to use this:&#10;  say <words>  — speaks those exact words, quotes optional&#10;  anything else — an instruction for their AI agents to interpret&#10;Examples:&#10;  say Welcome to Warner Castle&#10;  make them all howl at the moon&#10;  everyone greet our guest by name&#10;  run a short welcome ceremony together"
+        aria-describedby="promptHint"
+        aria-label="Tell the targeted animatronics what to say or do">
+      <button class="mb-btn mb-btn-sm mb-btn-secondary" id="sayAllBtn" title="Send to the targeted nodes (all if none selected)">
+        <i class="bi bi-megaphone"></i> Send</button>
+    </div>
+    <div class="fcc-prompt-hint" id="promptHint" aria-live="polite">
+      <b>say</b> <i>words</i> speaks them exactly · anything else is an instruction their agents interpret
     </div>
 
     <span class="fcc-sep"></span>
@@ -85,16 +113,29 @@
     <button class="mb-btn mb-btn-sm mb-btn-danger" id="rebootAll" title="Reboot targeted animatronics (SSH)">
       <i class="bi bi-power"></i> Reboot</button>
   </div>
+  </div><!-- /#fccBarRows -->
 </div>
 
 <!-- ============ NODE WALL ============ -->
 <div class="row g-3" id="nodeWall">
-  <div class="col-12" id="wallLoading">
-    <div class="mb-empty">
-      <span class="mb-spinner mb-spinner-lg"></span>
-      <p class="mb-empty-body">Loading fleet…</p>
-    </div>
+  <%
+    // Reserve the real grid's footprint before any fetch returns. The old placeholder
+    // was a single 177px spinner row, so when the six cards arrived everything below
+    // jumped down by 838-3257px depending on viewport (CLS 0.18 desktop / 0.45 tablet,
+    // "poor" above 0.25). These skeletons carry the SAME column classes and card
+    // height as the real cards, so the swap is close to shift-free. Count comes from
+    // the animatronics registry, so adding a seventh animatronic reserves seven.
+    const skeletonCount = (typeof nodeCount === 'number' && nodeCount > 0) ? nodeCount : 6;
+  %>
+  <div class="col-12" id="wallLoading" aria-live="polite" aria-busy="true">
+    <span class="mb-spinner"></span>
+    <span class="mb-text-sm mb-text-secondary">Loading fleet…</span>
   </div>
+  <% for (let i = 0; i < skeletonCount; i++) { %>
+  <div class="col-sm-6 col-lg-4 col-xxl-3 fcc-skeleton-col" aria-hidden="true">
+    <div class="mb-card fcc-card fcc-skeleton"></div>
+  </div>
+  <% } %>
 </div>
 
 <!-- ============ GOBLINS ============ -->
@@ -220,9 +261,18 @@
   $('#fccConfirmBackdrop').addEventListener('click', () => closeConfirm(false));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && confirmResolve) closeConfirm(false); });
 
+  // Reading scrollHeight forces a synchronous layout of the whole page, and log()
+  // is called for every node as the wall fills — profiled at 233ms of main thread
+  // during load. Scroll once per frame instead, when layout is happening anyway.
+  let logScrollQueued = false;
+  function scrollLogSoon(box) {
+    if (logScrollQueued) return;
+    logScrollQueued = true;
+    requestAnimationFrame(() => { logScrollQueued = false; box.scrollTop = box.scrollHeight; });
+  }
   function log(msg, type) {
     const line = el('div', type || 'muted', '<span class="muted">' + new Date().toLocaleTimeString() + '</span> ' + esc(msg));
-    const box = $('#commandLog'); box.appendChild(line); box.scrollTop = box.scrollHeight;
+    const box = $('#commandLog'); box.appendChild(line); scrollLogSoon(box);
     while (box.children.length > 300) box.removeChild(box.firstChild);
   }
   // Per-node failures already travel in results[] and were being thrown away, so
@@ -232,7 +282,7 @@
     r.results.filter(x => x && x.success === false).forEach(x => {
       const who = x.animatronic || x.goblin || x.id || 'node';
       const line = el('div', 'err detail', '↳ ' + esc(who) + ': ' + esc(x.error || 'failed'));
-      const box = $('#commandLog'); box.appendChild(line); box.scrollTop = box.scrollHeight;
+      const box = $('#commandLog'); box.appendChild(line); scrollLogSoon(box);
     });
   }
   function summarize(r) {
@@ -247,6 +297,13 @@
     if (!res.ok) throw new Error((body && (body.error || body.message)) || ('HTTP ' + res.status));
     return body;
   }
+  // Run non-urgent work once the browser is not busy, with a hard fallback so it
+  // always happens even on engines without requestIdleCallback.
+  function whenIdle(fn) {
+    if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(fn, { timeout: 3000 });
+    else setTimeout(fn, 1200);
+  }
+
   function targetIds() { return state.targets.size ? Array.from(state.targets) : undefined; }
   function targetLabel() {
     if (!state.targets.size) return 'All';
@@ -257,22 +314,250 @@
   // ---------- node cards ----------
   function cardId(id) { return 'node-' + String(id).replace(/[^a-z0-9]/gi, '_'); }
 
-  // Cache-buster so a retry is a real new request, not a replay of the failed one.
+  // ---------- camera wall: snapshots, not six endless streams ----------
+  //
+  // The wall used to open one live MJPEG <img> per node. An MJPEG response never
+  // ends, so six cards permanently held all SIX of the browser's per-host HTTP/1.1
+  // connections and every fetch the page made queued behind them. Measured on a node,
+  // identical page, the only difference being whether the streams ran:
+  //
+  //     cameras ON : fleet-health 9146ms max, pill read "1 / 6 online"
+  //     cameras OFF: fleet-health 3621ms max, pill read "6 / 6 online"
+  //
+  // Those nodes were never offline — the health poll just never got a connection in
+  // time. The wall now pulls single frames, which release their connection on
+  // arrival. The modal still opens a true live stream: one card, one connection.
+  const SNAP_MS = 200;                                   // target wall cadence
+  const SNAP_BACKOFF = [500, 1000, 2000, 5000, 10000];   // per consecutive failure
+  const CAM_RETRY_LIMIT = 3;                             // failures before the card says "no webcam"
+  const camTimers = new WeakMap();
+
+  // At most TWO snapshot requests in flight page-wide. Six cards each polling at
+  // 200 ms still filled the six-connection pool whenever a node was slow — one
+  // dead camera alone pinned a connection for ~4 s per attempt — and every toggle
+  // the operator pressed queued behind pictures. Two slots keep the wall moving
+  // (a warm snapshot is ~20 ms) and leave four connections for the actions and
+  // the health poll, which is what "the fleet is slow" was actually made of.
+  const CAM_MAX_INFLIGHT = 2;
+  const CAM_PROBE_TIMEOUT_MS = 12000;   // a slot is never held forever by a hung request
+  let camInflight = 0;
+  const camQueue = [];
+
+  function camAcquire(img) {
+    if (camInflight < CAM_MAX_INFLIGHT) { camInflight++; return true; }
+    if (camQueue.indexOf(img) === -1) camQueue.push(img);
+    return false;
+  }
+  function camRelease() {
+    camInflight = Math.max(0, camInflight - 1);
+    while (camQueue.length && camInflight < CAM_MAX_INFLIGHT) {
+      const next = camQueue.shift();
+      if (camRunnable(next)) { camInflight++; camFetch(next); }
+    }
+  }
+
+  // The loop is CHAINED, never on an interval: the next frame is requested only
+  // after the previous one resolves, so a slow node degrades to a lower frame rate
+  // instead of piling up requests it will never catch up on.
+  function camRunnable(img) {
+    return !document.hidden
+      && !img.dataset.camOffscreen
+      && !img.dataset.camCollapsed
+      && img.dataset.camWanted === '1';
+  }
+
+  function camSchedule(img, delay) {
+    const prev = camTimers.get(img);
+    if (prev) clearTimeout(prev);
+    camTimers.set(img, setTimeout(function () { camTick(img); }, delay));
+  }
+
+  function camTick(img) {
+    if (!camRunnable(img)) return;   // camResume() restarts the loop
+    if (!camAcquire(img)) return;    // queued; camRelease() fetches it when a slot frees
+    camFetch(img);
+  }
+
+  function camFetch(img) {
+    const id = img.dataset.camNodeId;
+    const off = img.parentNode && img.parentNode.querySelector('.fcc-cam-off');
+    const url = API + '/animatronic/' + id + '/webcam-snapshot?_=' + Date.now();
+
+    // Decode offscreen first, then hand the SAME url to the visible <img>. The
+    // browser serves it from memory, so the swap never blanks the card.
+    const probe = new Image();
+    let settled = false;
+    const settle = function () {
+      if (settled) return false;
+      settled = true;
+      clearTimeout(watchdog);
+      camRelease();
+      return true;
+    };
+    const watchdog = setTimeout(function () {
+      if (!settle()) return;
+      probe.onload = probe.onerror = null;
+      probe.src = '';
+      if (camRunnable(img)) camSchedule(img, SNAP_BACKOFF[0]);
+    }, CAM_PROBE_TIMEOUT_MS);
+    probe.onload = function () {
+      if (!settle()) return;
+      if (!camRunnable(img)) return;
+      img.src = url;
+      img.dataset.camFails = '0';
+      delete img.dataset.camGaveUp;
+      if (off) off.classList.add('fcc-hidden');
+      img.classList.remove('fcc-invisible');
+      camSchedule(img, SNAP_MS);
+    };
+    probe.onerror = function () {
+      if (!settle()) return;
+      if (!camRunnable(img)) return;
+      const fails = (parseInt(img.dataset.camFails || '0', 10) || 0) + 1;
+      img.dataset.camFails = String(fails);
+      if (off) {
+        off.textContent = fails >= CAM_RETRY_LIMIT
+          ? 'No webcam — click to retry'
+          : 'Webcam unavailable…';
+        off.classList.remove('fcc-hidden');
+      }
+      if (fails >= CAM_RETRY_LIMIT) img.dataset.camGaveUp = '1';
+      img.classList.add('fcc-invisible');
+      // Never give up entirely: a snapshot is one small request, so a camera that
+      // gets plugged in later heals on its own at the slow end of the backoff.
+      camSchedule(img, SNAP_BACKOFF[Math.min(fails - 1, SNAP_BACKOFF.length - 1)]);
+    };
+    probe.src = url;
+  }
+
+  // Cards start their loops staggered rather than all at once. Six simultaneous
+  // first-frames landed on top of the page's own fleet-health/nodes/audio calls and
+  // pushed them into the connection queue — audio-files measured 6471ms in the
+  // browser for work the server finished in 240ms.
+  let camStagger = 0;
+  function camStart(img, id) {
+    img.dataset.camNodeId = String(id);
+    img.dataset.camWanted = '1';
+    const delay = camStagger;
+    camStagger = (camStagger + 120) % 720;
+    camSchedule(img, delay);
+  }
+  function camStop(img) {
+    img.dataset.camWanted = '';
+    delete img.dataset.camWanted;
+    const t = camTimers.get(img);
+    if (t) { clearTimeout(t); camTimers.delete(img); }
+    const qi = camQueue.indexOf(img);
+    if (qi !== -1) camQueue.splice(qi, 1);
+  }
+  function camResume(img) {
+    if (img.dataset.camNodeId && camRunnable(img)) camSchedule(img, 0);
+  }
+
+  // Live MJPEG — the modal only. One card at a time is one connection, which the
+  // per-host pool can always afford.
   function startCam(img, id) { img.src = API + '/animatronic/' + id + '/webcam-stream?_=' + Date.now(); }
 
-  // A hidden Fleet Command Center tab held one full MJPEG stream PER NODE
-  // open forever (2026-08-23 perf audit). Pause every card's stream while
-  // hidden; resume each with a fresh connection when the tab returns.
+  // A hidden tab should cost the yard nothing. Snapshot loops simply stop asking.
   document.addEventListener('visibilitychange', () => {
-    document.querySelectorAll('img[data-cam-paused], img[src*="/webcam-stream"]').forEach(img => {
-      if (document.hidden) {
-        if (img.src) { img.dataset.camPaused = img.src; img.removeAttribute('src'); }
-      } else if (img.dataset.camPaused) {
-        img.src = img.dataset.camPaused.replace(/([?&]_=)\d+/, '$1' + Date.now());
-        delete img.dataset.camPaused;
-      }
+    document.querySelectorAll('.fcc-cam-wrap img').forEach(img => {
+      if (document.hidden) { const t = camTimers.get(img); if (t) clearTimeout(t); }
+      else camResume(img);
     });
   });
+
+  // Only pull frames for the cards the operator can actually see. A card scrolled
+  // off the bottom of the wall is pure waste — network, decode and yard bandwidth.
+  const camVisibility = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      const img = e.target;
+      if (e.isIntersecting) { delete img.dataset.camOffscreen; camResume(img); }
+      else { img.dataset.camOffscreen = '1'; const t = camTimers.get(img); if (t) clearTimeout(t); }
+    }
+  }, { rootMargin: '200px' }) : null;   // 200px so a card wakes just before it scrolls in
+
+  function isNarrow() { return window.matchMedia('(max-width: 767.98px)').matches; }
+
+  // Mobile toolbar strip. The real controls live in #fccBarRows; on a phone they start
+  // hidden and the strip carries the online count, a Controls toggle, and STOP.
+  (function wireMobileToolbar() {
+    const toggle = document.getElementById('toolbarToggle');
+    const rows = document.getElementById('fccBarRows');
+    const estopMini = document.getElementById('estopMini');
+    if (toggle && rows) {
+      toggle.addEventListener('click', () => {
+        const open = rows.classList.toggle('fcc-rows-open');
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+    }
+    // Reuse the real handler rather than duplicating panic logic.
+    if (estopMini) {
+      estopMini.addEventListener('click', () => {
+        const real = document.getElementById('estop');
+        if (real) real.click();
+      });
+    }
+  })();
+
+  // Keep the compact strip's count in step with the main pill.
+  function mirrorFleetPill() {
+    const src = document.getElementById('fleetCount');
+    const dst = document.getElementById('fleetCountMini');
+    if (src && dst) dst.textContent = src.textContent;
+    const sd = document.getElementById('fleetDot');
+    const dd = document.getElementById('fleetDotMini');
+    if (sd && dd) dd.className = sd.className;
+  }
+
+  // Roll up the whole lower half of the page on a phone. The operator's words: "super
+  // long and mountains of scrolling with no categories that roll up." These three
+  // blocks (Goblins, Command Log, Discovery) are reference panels, not things you
+  // steer with, so they start closed on narrow screens and stay open on desktop.
+  function makeSectionsCollapsible() {
+    if (!isNarrow()) return;
+    const targets = [
+      { head: document.querySelector('#goblinRow')?.closest('.mt-4')?.querySelector('h2'), body: document.querySelector('#goblinRow') },
+      { head: document.querySelector('#commandLog')?.closest('.mb-panel')?.querySelector('.mb-panel-title'), body: document.querySelector('#commandLog') },
+      { head: document.querySelector('#discoveryState')?.closest('.mb-panel')?.querySelector('.mb-panel-title'), body: document.querySelector('#discoveryState')?.closest('.mb-panel-body') },
+    ];
+    for (const t of targets) {
+      if (!t.head || !t.body || t.head.dataset.collapsible) continue;
+      t.head.dataset.collapsible = '1';
+      t.head.classList.add('fcc-section-toggle');
+      t.head.setAttribute('role', 'button');
+      t.head.setAttribute('tabindex', '0');
+      t.body.classList.add('fcc-section-body', 'fcc-section-closed');
+      t.head.setAttribute('aria-expanded', 'false');
+      const toggle = () => {
+        const closed = t.body.classList.toggle('fcc-section-closed');
+        t.head.setAttribute('aria-expanded', String(!closed));
+      };
+      t.head.addEventListener('click', toggle);
+      t.head.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+    }
+  }
+
+  // Collapsing must also stop the stream, and must survive the poll: updateCard()
+  // restarts any src-less camera, so without its own flag a collapsed card would
+  // quietly keep decoding video behind a hidden panel -- exactly the cost we are
+  // trying to remove on a phone.
+  function setCardCollapsed(card, collapsed) {
+    card.classList.toggle('fcc-collapsed', collapsed);
+    const btn = card.querySelector('[data-role="collapse"]');
+    if (btn) { btn.setAttribute('aria-expanded', String(!collapsed)); btn.textContent = collapsed ? '\u25B8' : '\u25BE'; }
+    const img = card.querySelector('.fcc-cam-wrap img');
+    if (!img) return;
+    if (collapsed) {
+      img.dataset.camCollapsed = '1';
+      const t = camTimers.get(img);
+      if (t) clearTimeout(t);
+    } else {
+      delete img.dataset.camCollapsed;
+      camResume(img);
+    }
+  }
 
   function buildCard(node) {
     const col = el('div', 'col-sm-6 col-lg-4 col-xxl-3');
@@ -283,13 +568,26 @@
     const head = el('div', 'fcc-card-head');
     head.innerHTML =
       '<span class="mb-dot ' + (node.online ? 'mb-dot-live' : 'mb-dot-idle') + '" data-role="dot" title="' +
-        (node.online ? 'Online' : 'Offline') + '"></span>' +
+        (node.pending ? 'Checking…' : (node.online ? 'Online' : 'Offline')) + '"></span>' +
       '<span class="fcc-card-name mb-serif" title="' + esc(node.name) + '">' + esc(node.name) + '</span>' +
       '<span class="fcc-chip ' + (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '" data-role="chip" title="Discovery source / trust">' +
         (node.trusted === false ? 'untrusted' : (node.source || 'config')) + '</span>' +
       '<label class="mb-check" title="Target this node for global actions">' +
-        '<input type="checkbox" data-role="target" aria-label="Target ' + esc(node.name) + '"></label>';
+        '<input type="checkbox" data-role="target" aria-label="Target ' + esc(node.name) + '"></label>' +
+      '<button class="fcc-collapse-btn" data-role="collapse" type="button" aria-expanded="true" ' +
+        'aria-label="Collapse ' + esc(node.name) + '" title="Collapse / expand this node">\u25BE</button>';
     card.appendChild(head);
+
+    // On a phone the six cards stacked to 3434px -- the whole page was 5164px, about
+    // six full screens of scrolling with nothing that rolled up. Cards now start
+    // COLLAPSED on narrow viewports: the header row still carries name, status dot and
+    // discovery chip, and one tap opens the camera and controls. Desktop is unchanged.
+    if (isNarrow()) card.classList.add('fcc-collapsed');
+    const collapseBtn = head.querySelector('[data-role="collapse"]');
+    collapseBtn.onclick = function (ev) {
+      ev.stopPropagation();
+      setCardCollapsed(card, !card.classList.contains('fcc-collapsed'));
+    };
 
     // Double-click the node's name → that node's own dashboard in a new tab.
     // The IP is resolved at click time from state, not from this closure: mDNS
@@ -309,19 +607,26 @@
     // No loading="lazy" here: this is an endless multipart MJPEG response, and a
     // lazily-deferred stream may never be started at all.
     const img = el('img'); img.alt = esc(node.name) + ' webcam';
+    // Tell the browser the frame size up front. Streams are served at 320x240
+    // (/etc/default/monsterbox-cam) since 2026-08-31; without intrinsic dimensions the
+    // first frame of each of six streams triggers its own layout pass. decoding=async
+    // keeps JPEG decode off the critical path -- six concurrent MJPEG decodes were the
+    // bulk of ~4s of long tasks per load.
+    img.width = 320; img.height = 240;
+    img.decoding = 'async';
     const off = el('div', 'fcc-cam-off fcc-hidden', 'Webcam unavailable');
-    if (node.online) { startCam(img, node.id); }
-    else { off.textContent = 'Node offline'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); }
-    // A dead stream must FORGET its src. updateCard() only restarts a camera whose
-    // img has no src, so leaving the failed URL in place latched that guard off
-    // forever and a recovered camera was never shown again.
-    img.onerror = function () {
-      img.removeAttribute('src');
-      off.textContent = 'Webcam unavailable — click to retry';
-      off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible');
+    if (node.online && !isNarrow()) { camStart(img, node.id); }
+    else { off.textContent = node.pending ? 'Checking node…' : 'Node offline'; off.classList.remove('fcc-hidden'); img.classList.add('fcc-invisible'); }
+    // A manual click always overrides the give-up latch — the operator may have just
+    // plugged a camera in, and should not have to reload the page to find out.
+    off.onclick = function (ev) {
+      ev.stopPropagation();
+      img.dataset.camFails = '0';
+      delete img.dataset.camGaveUp;
+      off.textContent = 'Reconnecting…';
+      camStart(img, node.id);
     };
-    img.onload = function () { off.classList.add('fcc-hidden'); img.classList.remove('fcc-invisible'); };
-    off.onclick = function (ev) { ev.stopPropagation(); off.textContent = 'Reconnecting…'; startCam(img, node.id); };
+    if (camVisibility) camVisibility.observe(img);
     cam.appendChild(img); cam.appendChild(off);
     cam.onclick = function () { openCam(node); };
     card.appendChild(cam);
@@ -376,13 +681,13 @@
   const NODE_CONTROLS = ['text', 'say', 'ask', 'audioSel', 'playAudio', 'loopAudio',
                          'stopAudio', 'autoInterval', 'autoStart', 'autoStop'];
 
-  function setCardEnabled(col, online) {
+  function setCardEnabled(col, online, pending) {
     NODE_CONTROLS.forEach(role => {
       const control = col.querySelector('[data-role="' + role + '"]');
       if (control) control.disabled = !online;
     });
     const note = col.querySelector('[data-role="offlineNote"]');
-    if (note) note.classList.toggle('fcc-hidden', !!online);
+    if (note) note.classList.toggle('fcc-hidden', !!online || !!pending);
     const cam = col.querySelector('.fcc-cam-wrap');
     if (cam) cam.setAttribute('aria-disabled', online ? 'false' : 'true');
   }
@@ -402,16 +707,18 @@
     q('stopAudio').addEventListener('click', () => doNode(id, '/stop-audio', {}, node.name + ' audio stopped'));
     q('autoStart').addEventListener('click', () => doNode(id, '/auto-ai/start', { interval: parseInt(q('autoInterval').value, 10) || 30 }, node.name + ' Auto-AI on'));
     q('autoStop').addEventListener('click', () => doNode(id, '/auto-ai/stop', {}, node.name + ' Auto-AI off'));
-    setCardEnabled(col, node.online);
+    setCardEnabled(col, node.online, node.pending);
     // lazy-load audio list once the node is known online
-    if (node.online) loadAudio(id, col);
+    // Deferred: the picker is not usable until the operator reaches for it, and
+    // during page load these six proxied calls only crowded the fleet poll.
+    if (node.online) { col.dataset.audioLoaded = '1'; whenIdle(() => loadAudio(id, col)); }
   }
 
   function patchCard(col, node) {
     const dot = col.querySelector('[data-role="dot"]');
     if (dot) {
       dot.className = 'mb-dot ' + (node.online ? 'mb-dot-live' : 'mb-dot-idle');
-      dot.title = node.online ? 'Online' : 'Offline';
+      dot.title = node.pending ? 'Checking…' : (node.online ? 'Online' : 'Offline');
     }
     const chip = col.querySelector('[data-role="chip"]');
     if (chip) { const c = node.trusted === false ? 'untrusted' : (node.source || 'config'); chip.className = 'fcc-chip ' + c; chip.textContent = c; }
@@ -425,19 +732,35 @@
         if (node.servoLatencyMs != null) bits.push(node.servoLatencyMs + 'ms');
         if (node.cpuCount != null) bits.push(node.cpuCount + ' cpu');
         h.textContent = bits.join(' · ') || (node.ip || '');
+      } else if (node.pending) {
+        h.textContent = 'checking… (' + (node.ip || '?') + ')';
       } else {
         h.textContent = (node.error ? node.error : 'offline') + ' (' + (node.ip || '?') + ')';
       }
     }
-    setCardEnabled(col, node.online);
+    setCardEnabled(col, node.online, node.pending);
+    // A card built from the roster (before health) has no audio list yet; fetch it
+    // the first time the node is known to be online. loadAudio appends, so once.
+    if (node.online && !col.dataset.audioLoaded) {
+      col.dataset.audioLoaded = '1';
+      whenIdle(() => loadAudio(node.id, col));
+    }
     // Restart the stream on every poll where the img has no src — that covers both
     // "node just came online" and "the stream died and onerror cleared it", so a
     // camera that recovers comes back on its own without a page reload.
     const img = col.querySelector('.fcc-cam-wrap img');
-    const camOff = col.querySelector('.fcc-cam-off');
-    if (img && node.online && !img.getAttribute('src')) {
-      if (camOff) camOff.textContent = 'Reconnecting…';
-      startCam(img, node.id);
+    if (img) {
+      // The snapshot loop is self-healing, so a poll only needs to start or stop it:
+      // start when a node comes online, stop the moment it goes away so an offline
+      // node is not polled for pictures it cannot take.
+      if (node.online && !isNarrow()) {
+        if (img.dataset.camWanted !== '1') camStart(img, node.id);
+      } else if (img.dataset.camWanted === '1') {
+        camStop(img);
+        const camOff = col.querySelector('.fcc-cam-off');
+        if (camOff && !node.online) { camOff.textContent = 'Node offline'; camOff.classList.remove('fcc-hidden'); }
+        img.classList.add('fcc-invisible');
+      }
     }
   }
 
@@ -483,11 +806,48 @@
   $('#fccCamModal').addEventListener('hidden.bs.modal', () => { $('#fccCamModalImg').src = ''; });
 
   // ---------- fleet health poll ----------
+  // A poll that is still in flight must not be joined by the next one. The interval
+  // is 15s but a slow fleet made refresh() take longer than that, and the overlapping
+  // polls competed for the same connections and made each other slower still.
+  let refreshInFlight = false;
   async function refresh() {
-    let health, nodesInfo;
-    try { health = await api('/fleet-health'); }
-    catch (e) { log('Fleet health failed: ' + e.message, 'err'); showWallError(e.message); return; }
-    try { nodesInfo = await api('/nodes'); } catch (_) { nodesInfo = { nodes: [], avahiAvailable: null }; }
+    if (refreshInFlight) return;
+    refreshInFlight = true;
+    try { await refreshOnce(); } finally { refreshInFlight = false; }
+  }
+
+  async function refreshOnce() {
+    // Independent calls, issued together: serially these cost two round trips and
+    // left the wall stale for the sum of both.
+    const healthP = api('/fleet-health');
+    const nodesP = api('/nodes');
+
+    // The roster is local and answers in milliseconds; fleet-health has to hear
+    // back from every node. On first load the wall is painted from the roster
+    // straight away — six named cards in a "checking" state — and health lights
+    // the dots when it lands. Nothing waits on the slowest node to show a name.
+    let nodesInfo = { nodes: [], avahiAvailable: null };
+    try {
+      nodesInfo = await nodesP;
+      if (!$('#nodeWall').querySelector('.fcc-card')) {
+        renderWall((nodesInfo.nodes || []).map(n => Object.assign({}, n, { online: undefined, pending: true })));
+      }
+    } catch (_) { /* the health render below still covers the wall */ }
+
+    let health;
+    try { health = await healthP; }
+    catch (err) {
+      const msg = err && err.message || 'unknown error';
+      log('Fleet health failed: ' + msg, 'err');
+      // Cards painted from the roster must not sit on "checking…" forever.
+      state.nodes.forEach((node, id) => {
+        if (!node.pending) return;
+        const col = $('#' + cardId(id)); if (!col) return;
+        const settled = Object.assign({}, node, { online: false, pending: false, error: msg });
+        state.nodes.set(id, settled); patchCard(col, settled); col.classList.add('fcc-ghost');
+      });
+      showWallError(msg); return;
+    }
 
     // merge /nodes provenance (source/trust) into health cards by id
     const prov = new Map();
@@ -504,6 +864,8 @@
 
   function renderWall(nodes) {
     const loading = $('#wallLoading'); if (loading) loading.remove();
+    // Drop the reserved skeletons the moment real cards are about to be appended.
+    document.querySelectorAll('.fcc-skeleton-col').forEach(sk => sk.remove());
     const wall = $('#nodeWall');
     // online first, then offline; stable by id within group
     nodes.sort((a, b) => (b.online === a.online) ? String(a.id).localeCompare(String(b.id)) : (b.online ? 1 : -1));
@@ -512,7 +874,7 @@
       let col = $('#' + cardId(node.id));
       if (!col) { col = buildCard(node); wall.appendChild(col); }
       patchCard(col, node); // populate health/dot immediately on first render too
-      col.classList.toggle('fcc-ghost', !node.online);
+      col.classList.toggle('fcc-ghost', !node.pending && !node.online);
     }
     refreshTargetSummary();
   }
@@ -596,11 +958,91 @@
     });
   });
 
+  // ---------- fleet prompt ----------
+  // Short, clear English. The first is deliberately the literal form: the word `say`
+  // followed by the words, no quotes needed.
+  const PROMPT_EXAMPLES = [
+    'say Welcome to Warner Castle',
+    'make them all howl at the moon',
+    'everyone greet our guest by name',
+    'run a short welcome ceremony together',
+  ];
+
+  // Quotes are optional around what you want said. If they are there, drop them --
+  // otherwise the animatronic dutifully pronounces them. Handles straight, curly and
+  // guillemet pairs.
+  function stripWrappingQuotes(str) {
+    const pairs = [['"', '"'], ["'", "'"], ['\u201C', '\u201D'], ['\u2018', '\u2019'], ['\u00AB', '\u00BB']];
+    let out = String(str || '').trim();
+    for (const [open, close] of pairs) {
+      if (out.length >= 2 && out[0] === open && out[out.length - 1] === close) {
+        return out.slice(1, -1).trim();
+      }
+    }
+    return out;
+  }
+
+  // `say <words>` -> speak those words verbatim. Anything else -> hand the whole thing
+  // to the agents as an instruction. Exported onto window for testing.
+  function parseFleetPrompt(raw) {
+    const text = String(raw || '').trim();
+    if (!text) return null;
+    const literal = text.match(/^say\b\s*([\s\S]*)$/i);
+    if (literal) {
+      const words = stripWrappingQuotes(literal[1]);
+      // "say" with nothing after it is not a literal command; let the agents field it.
+      if (words) return { mode: 'say', text: words };
+    }
+    return { mode: 'agent', text: stripWrappingQuotes(text) };
+  }
+  window.parseFleetPrompt = parseFleetPrompt;
+
+  (function wirePromptExamples() {
+    const input = $('#sayAllText');
+    const hint = $('#promptHint');
+    if (!input) return;
+    let i = 0;
+    // Cycle the greyed example while the box is empty; it disappears the moment they
+    // type, because that is what a placeholder does.
+    const cycle = setInterval(() => {
+      if (input.value || document.activeElement === input) return;
+      i = (i + 1) % PROMPT_EXAMPLES.length;
+      input.placeholder = PROMPT_EXAMPLES[i];
+    }, 4000);
+    window.addEventListener('beforeunload', () => clearInterval(cycle));
+    const syncHint = () => { if (hint) hint.classList.toggle('fcc-hidden', !!input.value); };
+    input.addEventListener('input', syncHint);
+    syncHint();
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#sayAllBtn').click(); });
+  })();
+
   $('#sayAllBtn').addEventListener('click', async () => {
-    const text = $('#sayAllText').value.trim(); if (!text) return;
-    // targeted say uses per-node say when a subset is chosen, else say-all
-    if (state.targets.size) { for (const id of state.targets) doNode(id, '/say', { text }, (state.nodes.get(String(id)) || {}).name + ' speaking'); }
-    else fleetAction('Say-all', '/say-all', { method: 'POST', body: JSON.stringify({ text }) });
+    const parsed = parseFleetPrompt($('#sayAllText').value);
+    if (!parsed) return;
+    const { mode, text } = parsed;
+    const names = () => (state.targets.size ? targetLabel() : 'the fleet');
+
+    if (mode === 'say') {
+      // Literal speech — unchanged behaviour, just with the `say` prefix removed.
+      log('Say to ' + names() + ': "' + text + '"', 'ok');
+      if (state.targets.size) { for (const id of state.targets) doNode(id, '/say', { text }, (state.nodes.get(String(id)) || {}).name + ' speaking'); }
+      else fleetAction('Say-all', '/say-all', { method: 'POST', body: JSON.stringify({ text }) });
+      return;
+    }
+
+    // Agent instruction. There is no fleet-wide ask endpoint, so fan out per node the
+    // same way a targeted say already does. Each node's /ask-ai forwards to its own
+    // ElevenLabs agent with its own characterId, so every character answers in its own
+    // voice and personality rather than reciting one shared line.
+    const ids = state.targets.size
+      ? Array.from(state.targets)
+      : Array.from(state.nodes.values()).filter(n => n.online).map(n => n.id);
+    if (!ids.length) { log('No online nodes to instruct', 'warn'); return; }
+    log('Instruction to ' + names() + ' (' + ids.length + ' agent' + (ids.length === 1 ? '' : 's') + '): ' + text, 'ok');
+    for (const id of ids) {
+      const node = state.nodes.get(String(id)) || {};
+      doNode(id, '/ask-ai', { text }, (node.name || id) + ' interpreting');
+    }
   });
 
   $('#startLoops').addEventListener('click', () => fleetAction('Start queue loops', '/start-all-queue-loops', { method: 'POST' }));
@@ -644,6 +1086,12 @@
   // ---------- boot ----------
   log('Fleet Command Center ready', 'muted');
   refresh(); loadGoblins();
+  setInterval(mirrorFleetPill, 2000);
+  // Goblins render asynchronously, so wire the roll-ups after that has had a chance to
+  // paint; the helper is idempotent (it skips anything already marked collapsible).
+  makeSectionsCollapsible();
+  setTimeout(makeSectionsCollapsible, 1500);
+  window.addEventListener('resize', makeSectionsCollapsible);
   setInterval(refresh, POLL_MS);
 })();
 </script>

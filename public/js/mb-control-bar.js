@@ -32,13 +32,21 @@
     var avatarEl = $('mbControlBarAvatar');
     var charId = window.__MB_CHAR_ID;
 
-    if (window.__MB_CHAR_IMAGE && avatarEl) {
-      avatarEl.src = window.__MB_CHAR_IMAGE;
+    var avatarSrc = window.__MB_CHAR_AVATAR || window.__MB_CHAR_IMAGE;
+    if (avatarSrc && avatarEl) {
+      avatarEl.src = avatarSrc;
       avatarEl.style.display = '';
     }
 
     if (charId == null) {
       if (nameEl) nameEl.textContent = 'No character';
+      return;
+    }
+
+    // The layout inlines the name; the round trip below is only for pages
+    // rendered without it.
+    if (window.__MB_CHAR_NAME) {
+      if (nameEl) nameEl.textContent = window.__MB_CHAR_NAME;
       return;
     }
 

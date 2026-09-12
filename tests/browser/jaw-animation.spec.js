@@ -3,12 +3,49 @@
  * Validates /setup/jaw-animation page UI layout and controls
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, request } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 test.describe('Jaw Animation — single-viewport layout', () => {
     let page;
+
+    // Against a live node every form change on this page is REAL: the page
+    // auto-saves 600 ms after any slider/toggle/select change
+    // (public/js/jaw-animation.js scheduleAutoSave) and the save test enables the
+    // jaw outright. Capture the operator's active config before the first test
+    // touches the page and put it back after the LAST page has closed — a restore
+    // issued while a page is still open lost the race to its own debounced
+    // auto-save and left a node with the jaw enabled on default tuning.
+    let priorCharId = null;
+    let priorConfig = null;
+
+    test.beforeAll(async () => {
+        const rc = await request.newContext();
+        try {
+            const cfg = await (await rc.get(`${BASE_URL}/api/config`)).json();
+            priorCharId = cfg && cfg.config ? cfg.config.selectedCharacter : null;
+            if (priorCharId) {
+                const jaw = await (await rc.get(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${priorCharId}`)).json();
+                priorConfig = jaw && jaw.config ? jaw.config : null;
+            }
+        } catch (_) { /* no restore possible; the tests still run */ }
+        await rc.dispose();
+    });
+
+    test.afterAll(async () => {
+        if (!priorCharId || !priorConfig) return;
+        const rc = await request.newContext();
+        try {
+            await rc.post(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${priorCharId}`, { data: priorConfig });
+            const after = await (await rc.get(`${BASE_URL}/setup/jaw-animation/api/jaw-animation/${priorCharId}`)).json();
+            // Loud, not silent: a restore that did not stick is residue on a show node.
+            expect(after && after.config ? after.config.enabled : undefined).toBe(priorConfig.enabled);
+            expect(after && after.config ? String(after.config.servoPartId) : undefined).toBe(String(priorConfig.servoPartId));
+        } finally {
+            await rc.dispose();
+        }
+    });
 
     test.beforeEach(async ({ browser }) => {
         page = await browser.newPage();
@@ -195,7 +232,15 @@ test.describe('Jaw Animation — single-viewport layout', () => {
     // ─── Save Configuration ─────────────────────────────────────────
     test('should save configuration via API', async () => {
         await page.waitForTimeout(1000);
+        // This save is REAL on a live node (enables the jaw, re-points the servo);
+        // the afterAll hook restores the operator's config once the page is gone.
+        await exerciseSave();
+        // Let the page's debounced auto-save land inside this test rather than
+        // racing whatever runs next.
+        await page.waitForTimeout(1200);
+    });
 
+    async function exerciseSave() {
         // Ensure jaw is enabled
         const jawEnabled = page.locator('#jawEnabled');
         if (!(await jawEnabled.isChecked())) {
@@ -233,7 +278,7 @@ test.describe('Jaw Animation — single-viewport layout', () => {
             // Just verify no crash — the page should still be functional
             await expect(page.locator('#jawEnabled')).toBeAttached();
         }
-    });
+    }
 
     // ─── Removed UI Elements (should NOT exist) ─────────────────────
     test('should NOT have Current Character card', async () => {

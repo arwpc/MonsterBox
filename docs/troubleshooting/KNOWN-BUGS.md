@@ -499,6 +499,16 @@ and arm Motion; the code path is the same as Mina's. Node dropped off Wi-Fi for 
 afternoon (SSH "No route to host" while the service was fine); baseline Wi-Fi power-save off is
 recommended (`apply-baseline.sh`).
 
+- 🔴 **OPEN 2026-09-07 evening — operator: "Dragomir's head does NOT move".** Everything the software
+  controls is verified correct: the calibration `goto` path wrote exactly the expected PCA9685 pulses
+  (380→1342.8 µs, 480→1562.5, 430→1455.1, 720→2099.6, 450→1499.0, i.e. 500 + angle/900 × 2000), the
+  chip is awake (MODE1 0x20, no SLEEP), PRESCALE 0x79 = 50 Hz, ch7 not full-off, the daemon owns the bus,
+  no claim was DENIED, and earlier head tracking commanded a moving target inside [365..449]. The operator
+  then DELETED the 349–900 profile (19:04) and pressed Release twice, so the profile is a placeholder
+  again; head tracking/sweep/co-expression now fall back to the head page's centre ± range (407 ± 42) via
+  `driveWindow.js`, no longer to 0–180. If the head still does not follow a 2099 µs command, the fault is
+  on the servo side of channel 7 (power to the Stingray-2, its programmed mode — a unit in continuous
+  mode ignores pulses near 1500 µs — or the mechanism); the Pi is producing the right signal.
 
 - 🟡 **Ear-check scores Sir Dragomir `CAPTURE-FAILED` because the app is already holding the
   microphone — not because his mics are broken (2026-08-30).** The ear-check's `scp` of
@@ -931,6 +941,33 @@ scored it `SILENT`, and that "silence" was **never evidence about its speaker**.
 `/api/characters`) now return 200. Prior to that: 🔴 offline long-term, hardware state unknown.
 
 ### Groundbreaker — char 5 · `192.168.8.200`
+🟢 **2026-09-07 pass — software 100 %, motor still a hardware question.** OS baseline applied (avahi handed
+to the service user, journald cap, logrotate, Wi-Fi power-save off, drop-ins); he now runs at nice -5 and
+a fresh start writes only the deliberate SSH-password notice. **Speaker canon set to `sinkVolume 1.0`** in
+`config/animatronics.json` — he had NO canon, so `applyCanonicalSinkVolume` had nothing to restore and a
+fleet fan-out left him parked at 0.20; the 08-31 ear-check had already shown 0.65 = SILENT, 1.00 = AUDIBLE.
+At 1.00 today the camera-mic witness rose 37.8 dB but clipped (p90 -2.5 dBFS → "GARBLED"); at 0.85 the
+witness heard nothing at all, so the Unitek/amp has a hard threshold and 1.00 stays canon — the speaker
+is loud and the witness mic is simply too close. Camera serves frames; mic (the camera's) captures.
+Code is byte-identical to Orlok after the 2026-09-07 sync.
+- 🔴 **STILL OPEN, HARDWARE — the wiper motor does not run.** Through the app the BTS7960 pins behave
+  exactly as commanded (RPWM GPIO27 pulses on forward, LPWM GPIO22 on backward, 25 % PWM visible on
+  the pin), `get_throttled` stays 0x0, and his own mic hears NOTHING during a 60 % / 1.5 s run (every
+  0.5 s window 284–325 RMS, identical to the floor). Pi-side control is proven good, as it was on
+  08-31; the 12 V motor side is dead or the mechanism is jammed. The `physical-faults.json` entry stays
+  until the motor is heard or seen turning.
+- 🔴 **OPEN, HARDWARE — the USB camera fell off the bus at 19:07 (2026-09-07) and will not re-enumerate.**
+  Kernel: `usb 1-1.1: device descriptor read/64, error -71`, `attempt power cycle`, `Device not responding
+  to setup address`, `unable to enumerate USB device` — repeated on every retry, including after a full
+  xhci controller reset. This boot has logged 16 USB over-current events; the drop coincided with a
+  full-volume ear-check through the bus-powered Unitek adapter on the same hub. Treat it as USB power:
+  a powered hub (or the camera on its own port) is the fix; a replug may bring it back until the next
+  surge. While the camera is absent, `/api/orchestration/animatronic/5/webcam-snapshot` returns 503 —
+  that is honest, not a relay bug. *Agent note:* de-authorizing the ROOT hubs to "re-enumerate" took the
+  audio adapter down with it; an xhci unbind/bind (`/sys/bus/pci/drivers/xhci_hcd`) brought hub + audio
+  back in 8 s. Do the xhci reset, never the root-hub `authorized` toggle.
+- ⚪ No PIR part defined — add one (type `motion_sensor`, BCM pin) to use Motion mode.
+
 🟢 **BROUGHT UP TO 10.5.0 AND FULLY JOINED TO THE FLEET, 2026-08-30/31 overnight.** Everything
 in the superseded entry below is stale. Verified from Orlok this session: `curl -sk
 https://192.168.8.200:3000/health` → `{"status":"OK","version":"10.5.0"}`; plain `http://` to
@@ -1099,6 +1136,13 @@ verified. Still offline for the entire v9.2.0 session." Also the historical v9.2
 line above scoring Groundbreaker `OFFLINE — untestable, not passing` is now obsolete.
 
 ### Renfield — char 6 · *no address (`ip: null` by design)*
+🟢 **2026-09-07 — finalized.** Pi 5 / Debian 13 / PipeWire 1.4, `pw-play --raw` present and used.
+Ear-check AUDIBLE with a verbatim transcript on BOTH his mics (XVF3800 recall 100 %, webcam recall 100 %).
+Camera serves frames; mic captures; agent resolves; sink at canon 1.00. Passwordless sudo now works
+(`010_pi-nopasswd` present), baseline applied (journald cap + Wi-Fi power-save off were the only changes).
+Code byte-identical to Orlok after the sync. Shake motor stays fault-listed as NOT WIRED (operator, 08-30).
+No PIR part — audio-only character.
+
 
 🟢 **BUILT AND ONLINE 2026-08-30/31 — first time ever.** `192.168.8.224`, serving
 `https://192.168.8.224:3000/health` at **10.5.0**, advertising `_monsterbox._tcp`, and listed

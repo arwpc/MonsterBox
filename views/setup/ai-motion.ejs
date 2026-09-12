@@ -1,0 +1,193 @@
+<% if (error) { %>
+  <div class="mb-alert mb-alert-warning" role="alert">
+    <i class="bi bi-exclamation-triangle"></i> <%= error %>
+  </div>
+<% } %>
+
+<% if (currentCharacter) { %>
+<div class="mb-card ai-motion-page" data-character-id="<%= currentCharacter %>">
+  <div class="mb-card-header">
+    <h2 class="mb-card-title"><i class="bi bi-activity"></i> AI Motion — <%= currentCharacterName %></h2>
+    <p class="mb-text-sm mb-text-muted">
+      Motion that accompanies speech and answers spoken requests, from one vocabulary.
+      The agent picking a gesture mid-sentence, a guest asking for one out loud, and the
+      ambient motion during speech all draw on the capabilities below.
+    </p>
+  </div>
+
+  <div class="mb-card-body">
+    <div id="amStatusAlert" class="mb-alert mb-alert-info" style="display:none"></div>
+
+    <!-- 1. Motion authority -->
+    <section class="am-section">
+      <h3 class="am-section-title">Motion authority</h3>
+      <div class="am-grid">
+        <label class="mb-switch">
+          <input type="checkbox" id="amEnabled">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Enabled for this character</span>
+        </label>
+      </div>
+      <p class="mb-text-sm mb-text-muted">Which triggers may move this character:</p>
+      <div class="am-grid">
+        <label class="mb-switch">
+          <input type="checkbox" id="amTrigAgentGesture">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Moves as it speaks</span>
+        </label>
+        <label class="mb-switch">
+          <input type="checkbox" id="amTrigGuestCommand">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Obeys spoken requests</span>
+        </label>
+        <label class="mb-switch">
+          <input type="checkbox" id="amTrigAmbient">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Ambient motion during speech</span>
+        </label>
+      </div>
+      <p class="mb-text-sm mb-text-muted am-caution">
+        <i class="bi bi-exclamation-triangle"></i>
+        "Moves as it speaks" lets the agent pick a capability that suits what it is saying;
+        "obeys spoken requests" lets a guest ask for one out loud. Ambient motion is the behaviour
+        that used to fire a random pose on every single utterance with no settings page at all —
+        it was found armed on four of six nodes. It defaults off deliberately.
+      </p>
+    </section>
+
+    <!-- 2. Permissions -->
+    <section class="am-section">
+      <h3 class="am-section-title">Permissions <span class="mb-text-sm mb-text-muted">(what this character may move on its own initiative)</span></h3>
+      <p class="mb-text-sm mb-text-muted">
+        Body roles this character is allowed to use. Roles it has no parts for are shown unavailable.
+      </p>
+      <div id="amRolesList" class="am-checklist"></div>
+
+      <div class="am-grid">
+        <label class="mb-field">
+          <span class="mb-label">Cooldown between motions (ms)</span>
+          <input type="number" id="amCooldownMs" class="mb-input" min="0" step="100">
+        </label>
+        <label class="mb-field">
+          <span class="mb-label">Max per conversation (0 = unlimited)</span>
+          <input type="number" id="amMaxPerConversation" class="mb-input" min="0" step="1">
+        </label>
+        <label class="mb-field">
+          <span class="mb-label">Min confidence (0-1)</span>
+          <input type="number" id="amMinConfidence" class="mb-input" min="0" max="1" step="0.05">
+        </label>
+        <label class="mb-field">
+          <span class="mb-label">Ambient min amplitude (0-1)</span>
+          <input type="number" id="amAmbientMin" class="mb-input" min="0" max="1" step="0.05">
+        </label>
+        <label class="mb-field">
+          <span class="mb-label">Ambient max amplitude (0-1)</span>
+          <input type="number" id="amAmbientMax" class="mb-input" min="0" max="1" step="0.05">
+        </label>
+      </div>
+
+      <div class="am-grid">
+        <label class="mb-switch">
+          <input type="checkbox" id="amKidSafeOnly">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Kid-safe capabilities only</span>
+        </label>
+        <label class="mb-switch">
+          <input type="checkbox" id="amRequireAddress">
+          <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+          <span>Require address by name</span>
+        </label>
+      </div>
+
+      <p class="mb-text-sm mb-text-muted">
+        Never drive these parts — a deny-list overrides every role above.
+      </p>
+      <div id="amDeniedParts" class="am-checklist"></div>
+
+      <div class="am-actions">
+        <button id="amSaveBtn" class="mb-btn mb-btn-primary"><i class="bi bi-save"></i> Save Config</button>
+        <span id="amSaveStatus" class="mb-text-sm mb-text-muted"></span>
+      </div>
+    </section>
+
+    <!-- 3. Capabilities -->
+    <section class="am-section">
+      <h3 class="am-section-title">
+        Capabilities <span class="mb-text-sm mb-text-muted">(the motion vocabulary)</span>
+        <button id="amCapRefreshBtn" class="mb-btn mb-btn-secondary mb-btn-sm" title="Reload capabilities"><i class="bi bi-arrow-clockwise"></i></button>
+        <button id="amCapNewBtn" class="mb-btn mb-btn-secondary mb-btn-sm"><i class="bi bi-plus-lg"></i> New capability</button>
+      </h3>
+
+      <div id="amRejectedAlert" class="mb-alert mb-alert-warning" style="display:none"></div>
+      <div id="amCapEmpty" class="mb-alert mb-alert-info" style="display:none">
+        <i class="bi bi-info-circle"></i> No capabilities authored yet. Create the first one to give this
+        character something to do while it speaks.
+      </div>
+      <div id="amCapabilityList" class="am-list"></div>
+
+      <div id="amCapEditor" class="am-editor" style="display:none">
+        <h4 class="am-editor-title" id="amCapEditorTitle">New capability</h4>
+        <div class="am-grid">
+          <label class="mb-field">
+            <span class="mb-label">Id (stable key, no spaces)</span>
+            <input type="text" id="amCapId" class="mb-input" placeholder="menacing_lean">
+          </label>
+          <label class="mb-field">
+            <span class="mb-label">Label</span>
+            <input type="text" id="amCapLabel" class="mb-input" placeholder="Menacing lean">
+          </label>
+          <label class="mb-field am-wide">
+            <span class="mb-label">Intent (when the agent should choose this)</span>
+            <input type="text" id="amCapIntent" class="mb-input" placeholder="threats and slow warnings">
+          </label>
+          <label class="mb-field am-wide">
+            <span class="mb-label">Phrases (comma-separated — what a GUEST can say to ask for this)</span>
+            <input type="text" id="amCapPhrases" class="mb-input" placeholder="lean in, come closer, menace me">
+          </label>
+          <label class="mb-field">
+            <span class="mb-label">Cooldown (ms)</span>
+            <input type="number" id="amCapCooldownMs" class="mb-input" min="0" step="100">
+          </label>
+          <label class="mb-field">
+            <span class="mb-label">Max per conversation</span>
+            <input type="number" id="amCapMaxPerConversation" class="mb-input" min="0" step="1">
+          </label>
+          <label class="mb-field">
+            <span class="mb-label">Hold (ms)</span>
+            <input type="number" id="amCapHoldMs" class="mb-input" min="0" step="100">
+          </label>
+          <label class="mb-switch">
+            <input type="checkbox" id="amCapKidSafe">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span>Kid safe</span>
+          </label>
+        </div>
+
+        <h4 class="am-editor-title">Steps
+          <span class="mb-text-sm mb-text-muted">(a recipe must move at least two distinct parts, or one part plus a light)</span>
+        </h4>
+        <div id="amStepList" class="am-list"></div>
+        <div class="am-builder">
+          <button id="amAddServoStep" class="mb-btn mb-btn-secondary mb-btn-sm"><i class="bi bi-plus-lg"></i> Servo step</button>
+          <button id="amAddLightStep" class="mb-btn mb-btn-secondary mb-btn-sm"><i class="bi bi-plus-lg"></i> Light step</button>
+          <button id="amAddPoseStep" class="mb-btn mb-btn-secondary mb-btn-sm"><i class="bi bi-plus-lg"></i> Pose step</button>
+        </div>
+
+        <div class="am-actions">
+          <button id="amCapCheckBtn" class="mb-btn mb-btn-secondary"><i class="bi bi-search"></i> Check</button>
+          <button id="amCapSaveBtn" class="mb-btn mb-btn-primary"><i class="bi bi-save"></i> Save capability</button>
+          <button id="amCapCancelBtn" class="mb-btn mb-btn-secondary"><i class="bi bi-x-lg"></i> Cancel</button>
+          <span id="amCapStatus" class="mb-text-sm mb-text-muted"></span>
+        </div>
+        <div id="amCapResult" class="am-result" style="display:none"></div>
+      </div>
+    </section>
+  </div>
+</div>
+<% } else { %>
+  <div class="mb-alert mb-alert-info" role="alert">
+    <i class="bi bi-info-circle"></i> Select a character from the navigation menu to configure AI Motion.
+  </div>
+<% } %>
+
+<script src="/js/ai-motion.js?v=<%= Date.now() %>"></script>

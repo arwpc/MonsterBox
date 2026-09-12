@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import hardwareService from '../services/hardwareService/index.js';
 import { readConfig } from '../services/configService.js';
 import { getCalibrationStore } from '../server/calibration/store.js';
+import { resolveDriveWindow } from '../services/hardwareService/driveWindow.js';
 import { claimServo, releaseServo, isAvailable, getOwner, PRIORITY } from '../services/movement/priorityManager.js';
 
 
@@ -650,6 +651,36 @@ async function loadHeadTrackingGuardrails(servoId, characterId) {
     let guardrails = null;
     if (Number.isFinite(minAngle) && Number.isFinite(maxAngle) && (maxAngle - minAngle) >= 1) {
       guardrails = { minAngle, maxAngle };
+    } else {
+      // 2026-09-07: an uncalibrated pan servo is driven through its full span
+      // instead of being refused. The refusal (comment above, kept for history)
+      // left every neck on the fleet pinned after the calibration wipe while
+      // the direct servo command still worked.
+      try {
+        const scopedPath = characterId != null
+          ? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', `character-${characterId}`, 'parts.json')
+          : await getPartsFilePath();
+        const parts = JSON.parse(await fs.readFile(scopedPath, 'utf8'));
+        const part = parts.find(p => String(p.id) === String(servoId)) || { id: servoId, name: 'pan servo', config: {} };
+        // The operator's own head config (centerDeg ± rangeDeg/2, edited on the
+        // head page) is the best uncalibrated window — for a 900° multi-turn
+        // neck it is the ONLY sane one, since one turn from zero (0-180) misses
+        // where the head actually lives (the knight: center 407, range 84).
+        let preferred = null;
+        try {
+          const headCfg = await import('../services/headAnimationSuperPowerService.js')
+            .then(m => m.readHeadTrackingConfig(characterId)).catch(() => null);
+          const c = headCfg && Number(headCfg.centerDeg), r = headCfg && Number(headCfg.rangeDeg);
+          if (Number.isFinite(c) && Number.isFinite(r) && r > 0) preferred = { minAngle: Math.max(0, c - r / 2), maxAngle: c + r / 2 };
+        } catch (_) { /* no head config — span fallback */ }
+        const win = await resolveDriveWindow(characterId, part, { preferred, preferredSource: 'head-config' });
+        if (Number.isFinite(win.minAngle) && Number.isFinite(win.maxAngle) && (win.maxAngle - win.minAngle) >= 1) {
+          guardrails = { minAngle: win.minAngle, maxAngle: win.maxAngle, fallback: win.source };
+          minAngle = win.minAngle; maxAngle = win.maxAngle;
+        }
+      } catch (fallbackErr) {
+        console.warn('Head tracking: fallback window lookup failed for servo ' + servoId + ': ' + fallbackErr.message);
+      }
     }
 
     // Cache for 60 seconds (null too — a missing calibration should not be

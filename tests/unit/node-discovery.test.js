@@ -169,3 +169,23 @@ describe('nodeDiscoveryService — advertiseSelf', () => {
     await fs.unlink(tmp).catch(() => {});
   });
 });
+
+describe('parseAvahiBrowse — loopback records', () => {
+    it('ignores the 127.0.0.1 record avahi emits for the local host', () => {
+        // Shape of real `avahi-browse -rpt` output: the LOCAL node resolves to both
+        // loopback and its LAN address, one record each. Taking the last one made every
+        // node publish itself to the fleet as 127.0.0.1.
+        const out = [
+            '=;eth0;IPv4;MonsterBox\\032testnode;_monsterbox._tcp;local;testnode.local;127.0.0.1;3000;"id=42" "character=TestNode"',
+            '=;eth0;IPv4;MonsterBox\\032testnode;_monsterbox._tcp;local;testnode.local;10.1.2.3;3000;"id=42" "character=TestNode"',
+        ].join('\n');
+        const nodes = parseAvahiBrowse(out);
+        expect(nodes).to.have.lengthOf(1);
+        expect(nodes[0].ip).to.equal('10.1.2.3');
+    });
+
+    it('drops a node that only advertises loopback rather than publishing an unreachable address', () => {
+        const out = '=;lo;IPv4;MonsterBox\\032solo;_monsterbox._tcp;local;solo.local;127.0.0.1;3000;"id=9"';
+        expect(parseAvahiBrowse(out)).to.have.lengthOf(0);
+    });
+});

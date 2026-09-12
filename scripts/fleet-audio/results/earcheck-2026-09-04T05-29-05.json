@@ -1,0 +1,40 @@
+{
+  "ranAt": "2026-09-04T05:29:05.315Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 5,
+      "name": "Groundbreaker",
+      "hostname": "groundbreaker",
+      "ip": "192.168.8.200",
+      "sink": "77. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "THIS ROOF IS MINE. COME DOWN FROM THE STREET AND SEE.",
+      "sayOk": true,
+      "voiceUsed": "vfaqCOvlrKi4Zp7C2IAm",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -83.5,
+          "castP90Db": -81.9,
+          "castPeakDb": -68,
+          "riseDb": 1.6,
+          "floorFlat": false,
+          "transcript": "As you enter his mind, you will find the halls and streets of the city",
+          "recall": 0.18
+        }
+      ],
+      "bestMic": "USB Audio Device",
+      "floorDb": -83.5,
+      "castDb": -81.9,
+      "riseDb": 1.6,
+      "recall": 0.18,
+      "transcript": "As you enter his mind, you will find the halls and streets of the city",
+      "verdict": "SILENT",
+      "diagnosis": "no speech detected on any mic (best rise 1.6 dB)"
+    }
+  ]
+}

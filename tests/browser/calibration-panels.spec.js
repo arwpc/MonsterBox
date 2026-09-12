@@ -34,11 +34,9 @@ test.describe('Calibration Panel Visibility', () => {
     test('should show calibration panel when selecting a servo part', async () => {
         // Find a servo part in the list
         const servoPart = page.locator('#deviceList .list-group-item').filter({ hasText: /servo/i }).first();
-        if (await servoPart.count() === 0) {
-            // Try clicking any part and check — might be named differently
-            const anyPart = page.locator('#deviceList .list-group-item').first();
-            if (await anyPart.count() === 0) { test.skip(); return; }
-        }
+        // Audio-only characters (PumpkinHead, Groundbreaker, Renfield) list no servo at
+        // all; clicking a zero-count locator just times out. Nothing to assert here.
+        if (await servoPart.count() === 0) { test.skip(); return; }
 
         await servoPart.click();
         await page.waitForTimeout(500);

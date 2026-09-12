@@ -73,7 +73,10 @@ function start(characterId, opts = {}) {
   watcherState.inactivityTimeoutMs = opts.inactivityTimeoutMs != null ? opts.inactivityTimeoutMs : 5 * 60 * 1000;
   watcherState.lastMotionAt = Date.now();
   watcherState.lastPollAt = null;
-  watcherState.sleeping = false;
+  // startAsleep: the "Motion" toggle arms a node that waits for the PIR — the
+  // first detection fires onWake (AI + jaw + body motion come on), then the
+  // inactivity timer runs as usual. Lurk mode starts awake and sleeps later.
+  watcherState.sleeping = !!opts.startAsleep;
   watcherState.motionDetectedCount = 0;
   watcherState.onSleep = opts.onSleep || null;
   watcherState.onWake = opts.onWake || null;
@@ -86,8 +89,9 @@ function start(characterId, opts = {}) {
   watcherState.watcherFailures = 0;
   startMotionWatch();
 
-  // Start inactivity timer
-  resetInactivityTimer();
+  // Start inactivity timer — an armed-but-asleep watcher has nothing to time
+  // out; the first wake starts the timer.
+  if (!watcherState.sleeping) resetInactivityTimer();
 }
 
 /**
@@ -333,4 +337,15 @@ function onInactivityTimeout() {
   // The inactivity timer is NOT restarted — it only restarts on motion.
 }
 
-export default { start, stop, resetActivity, getStatus, isSleeping, isActive };
+/**
+ * Behave exactly as if the PIR had just fired. For the dashboard's "test motion"
+ * action and for proving the wake path on a node whose sensor nobody is standing
+ * in front of. Returns false when no watcher is armed.
+ */
+function simulateMotion() {
+  if (!watcherState.active) return false;
+  onMotionDetected();
+  return true;
+}
+
+export default { start, stop, resetActivity, getStatus, isSleeping, isActive, simulateMotion };

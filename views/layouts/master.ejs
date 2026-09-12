@@ -98,8 +98,16 @@ var __mbShowControlBar = (typeof includeControlBar === 'undefined')
     : !!includeControlBar;
 %>
 <body data-ws-port="8795"<%= __mbShowControlBar ? ' class="mb-has-control-bar"' : '' %>>
+    <%
+    // JSON inside a <script> must not be able to close the tag: names are
+    // operator-entered, so "<" is emitted as \u003c.
+    var __mbInline = function (v) { return JSON.stringify(v === undefined ? null : v).replace(/</g, '\\u003c'); };
+    %>
     <script>window.__MB_CHAR_ID = <%= currentCharacter ? JSON.stringify(currentCharacter) : 'null' %>;
-    window.__MB_CHAR_IMAGE = <%- (typeof currentCharacterImage !== 'undefined' && currentCharacterImage) ? JSON.stringify(currentCharacterImage) : 'null' %>;</script>
+    window.__MB_CHAR_IMAGE = <%- (typeof currentCharacterImage !== 'undefined' && currentCharacterImage) ? JSON.stringify(currentCharacterImage) : 'null' %>;
+    window.__MB_CHAR_AVATAR = <%- __mbInline(typeof currentCharacterAvatar !== 'undefined' ? currentCharacterAvatar : null) %>;
+    window.__MB_CHAR_NAME = <%- __mbInline(typeof currentCharacterName !== 'undefined' ? currentCharacterName : null) %>;
+    window.__MB_CHARACTERS = <%- __mbInline(typeof characterMenu !== 'undefined' ? characterMenu : null) %>;</script>
     <!-- Navigation - Automatically included on ALL pages (can be disabled with includeNavigation=false) -->
     <% if (typeof includeNavigation==='undefined' || includeNavigation !==false) { %>
         <%- include('../components/unified-navigation', { page: page || 'dashboard' , currentCharacter:

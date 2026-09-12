@@ -71,6 +71,14 @@ export function parseAvahiBrowse(output) {
     }
 
     if (!address) continue;
+    // Avahi resolves the LOCAL host to several addresses and emits one record per
+    // address — 127.0.0.1 as well as the real LAN IP. Whichever landed last won, so
+    // every node ended up publishing its own IP to the fleet registry as 127.0.0.1.
+    // Harmless for a self-call, wrong for everything else: the Fleet Command Center
+    // offers "open this node's dashboard", and on an operator's laptop that link
+    // pointed at the laptop. A peer is never reachable on loopback, so drop it and
+    // let the node's routable record (or config/animatronics.json) stand.
+    if (/^127\./.test(address)) continue;
     const id = txt.id !== undefined ? String(txt.id) : (hostname || rawName);
     nodes.push({
       id,
@@ -277,6 +285,15 @@ export class NodeDiscoveryService {
       if (base) {
         byId.set(key, {
           ...base,
+          // Credit mDNS for what mDNS actually supplied. Spreading `base` kept
+          // source:'config' even when the live address, hostname, version and status
+          // all came from discovery — so the Fleet Command Center's Discovery panel
+          // read "6 config · 0 discovered" while mDNS was working perfectly, and that
+          // panel is precisely where an operator looks to decide whether mDNS is up.
+          // Renfield made it undeniable: his config ip is null by design, yet he was
+          // reported at 192.168.8.224 labelled source:'config' — an address config
+          // could not possibly have provided.
+          source: 'discovered',
           ip: node.status === 'online' ? node.ip : base.ip,
           hostname: node.hostname || base.hostname,
           version: node.version || base.version,

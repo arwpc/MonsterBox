@@ -13,7 +13,7 @@
     {
       "pattern": "orlok-reference",
       "file": "public/js/character-menu.js",
-      "line": 43,
+      "line": 52,
       "snippet": "var wanted = ['PumpkinHead', 'Mina', 'Orlok', 'Sir Dragomir'];",
       "reason": "Client-side character menu may reference character names in labels."
     },
@@ -43,13 +43,6 @@
       "file": "tests/browser/webcam-capture.spec.js",
       "line": 3,
       "snippet": "* Verifies that the Arducam B0205 (Eye of Orlok, part 9) captures a real image",
-      "reason": "Browser test with hardcoded character references \u2014 migrate to pact-style iteration."
-    },
-    {
-      "pattern": "orlok-reference",
-      "file": "tests/browser/webcam-capture.spec.js",
-      "line": 94,
-      "snippet": "expect(res.part.name).toBe('Eye of Orlok');",
       "reason": "Browser test with hardcoded character references \u2014 migrate to pact-style iteration."
     },
     {

@@ -1,66 +1,177 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "MonsterBox super-powers.json",
-  "description": "Per-character superpower configuration. All top-level subsystems are optional — a missing file or empty object is valid (the service layer supplies defaults). When jawAnimation.configs[] is present, each entry must name itself and provide an angle range.",
+  "description": "Per-character superpower configuration. All top-level subsystems are optional \u2014 a missing file or empty object is valid (the service layer supplies defaults). When jawAnimation.configs[] is present, each entry must name itself and provide an angle range.",
   "type": "object",
   "properties": {
     "jawAnimation": {
       "type": "object",
       "properties": {
-        "enabled": { "type": "boolean" },
-        "servoPartId": { "type": ["string", "number", "null"] },
-        "activeConfigId": { "type": ["string", "number", "null"] },
+        "enabled": {
+          "type": "boolean"
+        },
+        "servoPartId": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
+        "activeConfigId": {
+          "type": [
+            "string",
+            "number",
+            "null"
+          ]
+        },
         "configs": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "name", "minAngle", "maxAngle"],
+            "required": [
+              "id",
+              "name",
+              "minAngle",
+              "maxAngle"
+            ],
             "properties": {
-              "id": { "type": ["string", "number"] },
-              "name": { "type": "string" },
-              "minAngle": { "type": "number", "description": "Seed/display value only — calibration_profiles.json is canonical. readJawConfig overlays the calibrated window on every read and writeJawConfig never updates this field." },
-              "maxAngle": { "type": "number", "description": "Seed/display value only — calibration_profiles.json is canonical. readJawConfig overlays the calibrated window on every read and writeJawConfig never updates this field." }
+              "id": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "minAngle": {
+                "type": "number",
+                "description": "Seed/display value only \u2014 calibration_profiles.json is canonical. readJawConfig overlays the calibrated window on every read and writeJawConfig never updates this field."
+              },
+              "maxAngle": {
+                "type": "number",
+                "description": "Seed/display value only \u2014 calibration_profiles.json is canonical. readJawConfig overlays the calibrated window on every read and writeJawConfig never updates this field."
+              }
             }
           }
         }
       }
     },
-    "headTracking": { "type": "object" },
+    "headTracking": {
+      "type": "object"
+    },
     "followOrders": {
       "type": "object",
       "properties": {
-        "enabled": { "type": "boolean" },
-        "requireAddressByName": { "type": "boolean" },
-        "addressAliases": { "type": "array", "items": { "type": "string" } },
-        "ackMode": { "type": "string", "enum": ["speak", "silent"] },
-        "ackPhrases": { "type": "array", "items": { "type": "string" } },
-        "refusalPhrases": { "type": "array", "items": { "type": "string" } },
-        "minConfidence": { "type": "number" },
-        "cooldownMs": { "type": "number" },
-        "defaultDurationMs": { "type": "number" },
-        "maxDurationMs": { "type": "number" },
-        "enablePoseMatching": { "type": "boolean" },
-        "enableGestureMatching": { "type": "boolean" },
-        "enablePartMatching": { "type": "boolean" },
+        "enabled": {
+          "type": "boolean"
+        },
+        "requireAddressByName": {
+          "type": "boolean"
+        },
+        "addressAliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ackMode": {
+          "type": "string",
+          "enum": [
+            "speak",
+            "silent"
+          ]
+        },
+        "ackPhrases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "refusalPhrases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "minConfidence": {
+          "type": "number"
+        },
+        "cooldownMs": {
+          "type": "number"
+        },
+        "defaultDurationMs": {
+          "type": "number"
+        },
+        "maxDurationMs": {
+          "type": "number"
+        },
+        "enablePoseMatching": {
+          "type": "boolean"
+        },
+        "enableGestureMatching": {
+          "type": "boolean"
+        },
+        "enablePartMatching": {
+          "type": "boolean"
+        },
         "commands": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["phrases", "action"],
+            "required": [
+              "phrases",
+              "action"
+            ],
             "properties": {
-              "phrases": { "type": "array", "items": { "type": "string" } },
+              "phrases": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
               "action": {
                 "type": "object",
-                "required": ["kind"],
+                "required": [
+                  "kind"
+                ],
                 "properties": {
-                  "kind": { "type": "string", "enum": ["pose", "gesture", "part", "stop"] },
-                  "poseId": { "type": ["string", "number"] },
-                  "gestureId": { "type": "string" },
-                  "partId": { "type": ["string", "number"] },
-                  "verb": { "type": "string" },
-                  "durationMs": { "type": "number" },
-                  "angle": { "type": "number" },
-                  "sound": { "type": "string" }
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "pose",
+                      "gesture",
+                      "part",
+                      "stop"
+                    ]
+                  },
+                  "poseId": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  },
+                  "gestureId": {
+                    "type": "string"
+                  },
+                  "partId": {
+                    "type": [
+                      "string",
+                      "number"
+                    ]
+                  },
+                  "verb": {
+                    "type": "string"
+                  },
+                  "durationMs": {
+                    "type": "number"
+                  },
+                  "angle": {
+                    "type": "number"
+                  },
+                  "sound": {
+                    "type": "string"
+                  }
                 }
               }
             }
@@ -70,11 +181,113 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["alias", "partId"],
+            "required": [
+              "alias",
+              "partId"
+            ],
             "properties": {
-              "alias": { "type": "string" },
-              "partId": { "type": ["string", "number"] },
-              "invertOpenClose": { "type": "boolean" }
+              "alias": {
+                "type": "string"
+              },
+              "partId": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              },
+              "invertOpenClose": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "aiMotion": {
+      "type": "object",
+      "description": "AI Motion \u2014 one authority for motion that accompanies speech and motion a guest asks for. Capabilities themselves live in gestures.json; this section holds the enable bit, which triggers are live, and what the character is permitted to move on its own initiative.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "triggers": {
+          "type": "object",
+          "properties": {
+            "agentGesture": {
+              "type": "boolean",
+              "description": "The agent picks a capability that suits what it is saying."
+            },
+            "guestCommand": {
+              "type": "boolean",
+              "description": "A guest asks out loud and the character performs it."
+            },
+            "ambientDuringSpeech": {
+              "type": "boolean",
+              "description": "Fallback motion on every utterance when nothing more specific fired. This is the old random-pose behaviour; it defaults OFF because defaulting it on is how it came to be armed fleet-wide."
+            }
+          }
+        },
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "allowedRoles": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "head",
+                  "jaw",
+                  "eye",
+                  "arm",
+                  "torso",
+                  "wing",
+                  "tail",
+                  "leg",
+                  "door",
+                  "light",
+                  "body"
+                ]
+              }
+            },
+            "deniedPartIds": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              }
+            },
+            "kidSafeOnly": {
+              "type": "boolean"
+            },
+            "cooldownMs": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 600000
+            },
+            "maxPerConversation": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "minConfidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "requireAddressByName": {
+              "type": "boolean"
+            },
+            "ambientMinAmplitude": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "ambientMaxAmplitude": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
             }
           }
         }

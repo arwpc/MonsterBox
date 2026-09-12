@@ -13,8 +13,20 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import nodeDiscoveryService from './nodeDiscoveryService.js';
 
-// HTTPS agent that accepts self-signed certificates (all MonsterBox nodes use self-signed SSL)
-const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+// HTTPS agent that accepts self-signed certificates (all MonsterBox nodes use self-signed SSL).
+//
+// keepAlive matters more here than it looks. Without it every inter-node call
+// opens a fresh TCP connection AND does a full TLS handshake, and fleet-health
+// alone makes up to three calls per node (system/info, resource/memory,
+// movement/telemetry) every 15 s poll. On a six-node fleet that is ~18 handshakes
+// per poll, on Pi-class CPUs, forever. Reusing sockets measured a fan-out at
+// 410ms -> 250ms with the fleet idle, and the gap widens under load.
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+    keepAlive: true,
+    keepAliveMsecs: 15000,
+    maxSockets: 64,
+});
 const axiosHttps = axios.create({ httpsAgent });
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +37,9 @@ const execAsync = promisify(exec);
 // discovery (untrusted), and several control paths interpolate the host into a
 // shell string for SSH — validate before any such use to close command injection.
 const HOST_RE = /^[A-Za-z0-9.\-]{1,253}$/;
+// How long one fleet-health answer serves repeat callers (page paint + first
+// poll, or two browsers). Well under the 15 s poll, so nothing reads stale.
+const FLEET_HEALTH_MEMO_MS = 1500;
 // Matches the convention used across the app and in routes/api/orchestrationRoutes.js.
 function isTestMode() {
     return process.env.MB_TEST_MODE === '1'
@@ -41,6 +56,7 @@ class OrchestrationService {
         const config = this.loadAnimatronicsConfig();
         this.animatronics = config.animatronics;
         this.goblins = config.goblins;
+        this._fleetHealthMemo = new Map();
 
         this.sshUser = 'remote';
         // Inter-node control credential. The ONLY source is MONSTERBOX_SSH_PASSWORD in
@@ -693,6 +709,9 @@ class OrchestrationService {
         mute: (on) => ({ method: 'post', path: '/conversation/api/speaker-mute', body: { muted: on } }),
         idle: (on) => ({ method: 'post', path: on ? '/api/movement/idle/start' : '/api/movement/idle/stop' }),
         orders: (on) => ({ method: 'post', path: '/conversation/api/follow-orders', body: { enabled: on } }),
+        // NOT the `motion` key above — that one is the PIR motion SENSOR. This is
+        // motion GENERATION: the character moving as it speaks and on request.
+        aiMotion: (on) => ({ method: 'post', path: '/conversation/api/ai-motion', body: { enabled: on } }),
     };
 
     /**
@@ -764,6 +783,10 @@ class OrchestrationService {
             // shouting "raise your arm" seconds after the operator hit stop
             // must find the ears switched off.
             disarm.orders(false),
+            // AI Motion is the broadest autonomous trigger of all — it moves the
+            // character on its own initiative whenever it speaks. It belongs here
+            // for the same reason as the rest: panic must leave nothing armed.
+            disarm.aiMotion(false),
         ];
         const results = await Promise.allSettled(targets.map(async (node) => {
             const outcomes = await Promise.allSettled(
@@ -829,17 +852,52 @@ class OrchestrationService {
      * unreachable nodes report online:false. Powers the command-center health cards.
      */
     async getFleetHealth(ids = null) {
+        // Coalesce: the Fleet Command Center's first paint and its first poll can
+        // overlap, and two operators' browsers ask the same question of the same
+        // six nodes. One fan-out in flight per id-set, answer reused for a beat.
+        const key = Array.isArray(ids) ? ids.map(String).sort().join(',') : '*';
+        const cached = this._fleetHealthMemo.get(key);
+        if (cached && (cached.inflight || (Date.now() - cached.at) < FLEET_HEALTH_MEMO_MS)) {
+            return cached.promise;
+        }
+        const entry = { promise: null, inflight: true, at: Date.now() };
+        entry.promise = this._collectFleetHealth(ids).then(
+            (result) => { entry.inflight = false; entry.at = Date.now(); return result; },
+            (error) => { this._fleetHealthMemo.delete(key); throw error; }
+        );
+        this._fleetHealthMemo.set(key, entry);
+        return entry.promise;
+    }
+
+    async _collectFleetHealth(ids) {
         const targets = this.getControllableAnimatronics(ids);
         const results = await Promise.allSettled(targets.map(async (node) => {
             const card = { id: node.id, name: node.name, ip: node.ip, port: node.port, source: node.source, trusted: node.trusted !== false };
+            // All three probes leave together. Waiting for /api/system/info before
+            // asking for memory and telemetry made every card cost two round
+            // trips to that node — and the page's refresh is paced by the slowest.
+            const infoP = this.httpNode(node, { path: '/api/system/info', timeout: 5000 });
+            const enrichP = Promise.allSettled([
+                this.httpNode(node, { path: '/api/resource/memory', timeout: 4000 }),
+                this.httpNode(node, { path: '/api/movement/telemetry', timeout: 4000 }),
+            ]);
             try {
                 // /api/system/info carries version + uptime + cpu in one lightweight call.
-                const info = await this.httpNode(node, { path: '/api/system/info', timeout: 5000 });
+                const info = await infoP;
                 card.online = true;
                 card.version = info?.version || null;
                 card.uptimeSec = typeof info?.uptime === 'number' ? Math.round(info.uptime) : null;
                 card.cpuCount = info?.cpuCount ?? null;
                 card.hostname = info?.hostname || node.hostname || null;
+                // What the node says its OWN address is. The roster and mDNS have both
+                // been wrong in production (a null ip that silently excluded a node from
+                // deploy:all; avahi resolving every node's own record to 127.0.0.1), and
+                // nothing surfaced either. Reporting both makes a stale roster visible
+                // instead of leaving it to be discovered by something failing.
+                card.reportedIp = info?.ip || null;
+                if (card.reportedIp && node.ip && card.reportedIp !== node.ip) {
+                    card.ipMismatch = { configured: node.ip, reported: card.reportedIp };
+                }
             } catch (error) {
                 // Fall back to the bare /health ping so a node without /api/system/info
                 // still reads as online.
@@ -854,10 +912,7 @@ class OrchestrationService {
                 }
             }
             // Best-effort enrichment; a node may lack a given endpoint on older builds.
-            const [mem, movement] = await Promise.allSettled([
-                this.httpNode(node, { path: '/api/resource/memory', timeout: 4000 }),
-                this.httpNode(node, { path: '/api/movement/telemetry', timeout: 4000 }),
-            ]);
+            const [mem, movement] = await enrichP;
             if (mem.status === 'fulfilled' && mem.value?.memory) {
                 card.rssMb = mem.value.memory.rssMB ?? null;
                 card.memLevel = mem.value.memory.level ?? null;
