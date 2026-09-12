@@ -1,6 +1,6 @@
 {
   "name": "monsterbox",
-  "version": "10.5.0",
+  "version": "10.5.1",
   "description": "MonsterBox - Animatronic Control System with ElevenLabs AI, Character Independence, and Dynamic Versioning",
   "main": "server.js",
   "type": "module",
@@ -30,6 +30,7 @@
     "test:system:movement": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/movement.test.js --reporter spec --exit --timeout 10000",
     "test:system:orchestration": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/orchestration.test.js --reporter spec --exit --timeout 15000",
     "test:system:follow-orders": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/follow-orders.test.js --reporter spec --exit --timeout 10000",
+    "test:system:ai-motion": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/system/ai-motion.test.js --reporter spec --exit --timeout 15000",
     "test:ai": "MB_TEST_MODE=1 BASE_URL=http://localhost:3100 mocha tests/ai --reporter spec --exit --timeout 10000",
     "test:browser": "MB_TEST_MODE=1 TEST_PORT=3200 BASE_URL=http://localhost:3200 playwright test tests/browser --reporter=list",
     "test:browser:quick": "MB_TEST_MODE=1 TEST_PORT=3200 BASE_URL=http://localhost:3200 playwright test tests/browser/setup-parts.spec.js tests/browser/audio-library.spec.js --reporter=list",
@@ -62,11 +63,14 @@
     "test:hardware:stepper": "MONSTERBOX_HARDWARE_AVAILABLE=1 BASE_URL=http://localhost:3100 mocha tests/hardware/stepper.test.js --reporter spec --exit --timeout 30000",
     "test:hardware:mic": "MONSTERBOX_HARDWARE_AVAILABLE=1 BASE_URL=http://localhost:3100 mocha tests/hardware/microphone-crud-mocha.test.js --reporter spec --exit --timeout 30000",
     "earcheck": "node scripts/fleet-audio/earcheck.mjs",
+    "test:e2e": "node scripts/fleet-e2e.mjs",
+    "test:e2e:full": "node scripts/fleet-e2e.mjs --full",
     "verify": "npm run test:system && npm run test:unit && npm run test:browser",
     "verify:quick": "npm run test:quick",
     "verify:mcp": "npm run test:system && npm run test:unit && npm run test:mcp",
     "setup": "bash install.sh",
     "setup:webcam": "bash scripts/setup-webcam.sh",
+    "find:channels": "python3 scripts/find-servo-channels.py",
     "advertise-node": "node scripts/advertise-node.mjs",
     "deploy:all": "bash scripts/deploy-all.sh",
     "check:discovery": "node scripts/check-discovery.mjs",
@@ -114,6 +118,7 @@
     "supertest": "^7.1.4"
   },
   "overrides": {
+    "qs": "^6.16.0",
     "mocha": {
       "serialize-javascript": "^7.0.3"
     }
