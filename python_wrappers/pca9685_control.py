@@ -487,6 +487,71 @@ def pca9685_set_pulse_width(channel, pulse_us, i2c_address=PCA9685_DEFAULT_ADDRE
         raise
 
 
+def duty_to_off(duty_pct):
+    """Duty cycle percent -> PCA9685 off-count.
+
+    A SWITCH, not a servo. 0% parks the line low (off-count 0, no pulse at all);
+    100% holds it high for 4095 of 4096 slots, which a relay coil or an LED sees
+    as a steady logic HIGH. The chip's true full-ON bit (bit 12) is deliberately
+    not used: the servo daemon clamps off-counts to 0-4095, so 4095 is the
+    highest value that survives every path to the chip, and the ~24us gap it
+    leaves per 20ms frame is far below anything a relay or an eye can resolve.
+    """
+    duty = max(0.0, min(100.0, float(duty_pct)))
+    return int(round((duty / 100.0) * 4095))
+
+
+def pca9685_set_duty(channel, duty_pct, i2c_address=PCA9685_DEFAULT_ADDRESS):
+    """Drive one channel as a DUTY CYCLE — the path for lights, relays and LEDs.
+
+    Why this exists: PCA9685-attached lights used to be switched by asking the
+    SERVO helper for 180 deg (on) and 0 deg (off). Those are servo pulse widths,
+    2400us and 500us in a 20ms frame, i.e. 12% and 2.5% duty. Mina's eye laser is
+    a 3V relay driven straight off the signal pin, and it never latched at 12%
+    and never fully released at 2.5% — the register readback showed ch0 parked at
+    498us in BOTH states while every layer above reported "light on". A switch
+    needs a steady level, so it gets one here.
+    """
+    channel = validate_channel(channel)
+    off = duty_to_off(duty_pct)
+
+    reply = daemon_request({
+        "cmd": "set_raw",
+        "channel": channel,
+        "off": off,
+        "address": int(i2c_address)
+    })
+    if reply is not None:
+        if reply.get('status') != 'ok':
+            raise RuntimeError(reply.get('message', 'servo daemon rejected command'))
+        log_message({"status": "success",
+                     "message": f"Set channel {channel} to {duty_pct}% duty"})
+        return
+
+    bus = pca9685_get_bus(i2c_address)
+    pca9685_set_pwm(bus, i2c_address, channel, 0, off)
+    log_message({"status": "success",
+                 "message": f"Set channel {channel} to {duty_pct}% duty"})
+
+
+def pca9685_get_duty(channel, i2c_address=PCA9685_DEFAULT_ADDRESS):
+    """Read back one channel's duty cycle percent, straight from the registers.
+
+    The chip is the only honest record of what a light is doing. Node used to
+    track light state in a plain in-memory object, so every service restart reset
+    it to "off" and the next toggle re-sent "on" to a lamp that was already on —
+    one dead click every time, blamed on the hardware.
+    """
+    channel = validate_channel(channel)
+    bus = pca9685_get_bus(i2c_address)
+    on, off = read_channel(bus, i2c_address, channel)
+    if on >= 4096:          # full-ON bit set by some other writer
+        return 100.0
+    if off >= 4096:         # full-OFF bit set
+        return 0.0
+    return round((off / 4095.0) * 100.0, 1)
+
+
 def pca9685_continuous_rotation(channel, direction, speed, duration_ms, i2c_address=PCA9685_DEFAULT_ADDRESS):
     """
     Control continuous rotation servo via PCA9685
