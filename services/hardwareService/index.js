@@ -690,6 +690,39 @@ const HARDWARE_CONTROLLERS = {
             return null;
         },
 
+        /**
+         * Read a GPIO light's real state off the pin.
+         *
+         * The PCA9685 branch got a chip readback in v10.5.1; the GPIO branch was
+         * left trusting HARDWARE_CONTROLLERS._lightState, which is per-process
+         * memory that resets to 'off' on every service restart. So the first
+         * toggle after a restart re-sent 'on' to a lamp that was already on —
+         * one dead click, every time, blamed on the hardware.
+         *
+         * scripts/light_control.py drives these pins with `pinctrl` precisely so
+         * the level survives the wrapper process exiting, which means pinctrl is
+         * also the honest place to read it back from. libgpiod (`gpioinfo`) is
+         * not: it reports the kernel's line requests, and a pinctrl-driven pin
+         * shows there as an unused input while it is in fact driving high.
+         */
+        async _readGpioState({ pin }) {
+            try {
+                const text = await new Promise((resolve, reject) => {
+                    const ps = spawn('pinctrl', ['get', String(pin)]);
+                    let out = '';
+                    ps.stdout.on('data', d => { out += d; });
+                    ps.on('close', () => resolve(out));
+                    ps.on('error', reject);
+                });
+                // e.g. "16: op -- pd | hi // GPIO16 = output"
+                const m = String(text).match(/\|\s*(hi|lo)\b/);
+                if (m) return m[1] === 'hi' ? 'on' : 'off';
+            } catch (e) {
+                console.warn(`⚠️  light: could not read GPIO ${pin} state (${e.message}) — using cached state`);
+            }
+            return null;
+        },
+
         async turnOn({ pin, channel, controllerType, address, brightness = 100, duration = 0 }) {
             try {
                 if (controllerType === 'pca9685' && channel != null) {
@@ -758,7 +791,9 @@ const HARDWARE_CONTROLLERS = {
                     return { success, partType: 'light', channel, state: newState, action: 'toggle', rawOutput: out,
                         message: success ? `PCA9685 ch${channel} light ${newState}` : 'Light toggle failed' };
                 }
-                const currentState = HARDWARE_CONTROLLERS._lightState[pin] || 'off';
+                // The pin is the only honest record — see _readGpioState().
+                const liveGpio = await this._readGpioState({ pin });
+                const currentState = liveGpio || HARDWARE_CONTROLLERS._lightState[pin] || 'off';
                 const newState = currentState === 'on' ? 'off' : 'on';
                 const out = await runWrapper('light_cli.py', [String(pin), newState, '0']);
                 const parsed = parsePythonJSON(out);
@@ -2444,8 +2479,18 @@ export async function batchMoveServos(commands, options = {}) {
         // multi-turn wrapper scale. Costs that one part its sub-ms batch sync;
         // correctness wins.
         const svType = String(partCfg.servoType || '').toLowerCase();
+        // `> 0` alone called EVERY ordinary servo multi-turn: 180 is the declared
+        // rotationRangeDeg of a plain hobby servo (Mina's MG90S model carries it),
+        // so all three of his servos fell out of the batch into the per-part
+        // fallback and every multi-part pose lost its synchronisation — the jaw
+        // and neck arriving one sequential Python call apart instead of together.
+        // The single-part seam has always had this right (declaredRange !== 180
+        // at the moveToAngle dispatch); the two now agree. A part is multi-turn
+        // when it says so, or when its range is genuinely something other than
+        // the standard 180.
+        const declaredRange = Number(partCfg.rotationRangeDeg);
         const isMultiTurn = ['multi-turn', 'multi_turn', 'multi', 'positional', 'position', 'feedback'].includes(svType)
-            || Number(partCfg.rotationRangeDeg) > 0;
+            || (Number.isFinite(declaredRange) && declaredRange > 0 && declaredRange !== 180);
         // A continuous servo NEVER rides the batch path either: the daemon's
         // set_angles writes a HELD positional pulse, which on a continuous
         // servo is an indefinite spin at whatever speed that pulse maps to —
