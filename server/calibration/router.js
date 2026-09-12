@@ -1148,21 +1148,18 @@ router.post('/clear-all', express.json(), async (req, res) => {
     const ctx = await resolveCharacter(req);
     const characterId = ctx && ctx.id;
 
-    let cleared = 0;
-    for (const partId of partIds) {
-      try {
-        await store.delete(parseInt(partId, 10), characterId);
-        // NOTE: the adapter cache is still keyed by bare partId, so it is only
-        // correct while a node serves one character. Keying it per character
-        // means threading characterId through getOrCreateAdapter and all eight
-        // cache sites — tracked in KNOWN-BUGS rather than done untested here.
-        adapterCache.delete(parseInt(partId, 10));
-        // Preserve position state
-        cleared++;
-      } catch (err) {
-        console.warn(`Failed to clear calibration for part ${partId}:`, err);
-      }
-    }
+    // One write for the whole clear, so the store snapshots the untouched file
+    // exactly once (see JsonCalibrationStore.deleteMany) and the pre-clear copy
+    // cannot be rotated out by the clear's own per-part snapshots.
+    const ids = partIds.map((partId) => parseInt(partId, 10)).filter(Number.isFinite);
+    const removed = await store.deleteMany(ids, characterId);
+    // NOTE: the adapter cache is still keyed by bare partId, so it is only
+    // correct while a node serves one character. Keying it per character
+    // means threading characterId through getOrCreateAdapter and all eight
+    // cache sites — tracked in KNOWN-BUGS rather than done untested here.
+    // Position state is deliberately preserved.
+    for (const partId of ids) adapterCache.delete(partId);
+    const cleared = removed.length;
 
     // Destructive op — must be visible in .err (see the single-part DELETE above).
     console.warn(`🧹 clear-all: ${cleared} calibration profile(s) DELETED for character ${characterId}: parts ${partIds.join(', ')}`);

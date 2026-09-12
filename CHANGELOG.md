@@ -4,6 +4,34 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+### Fixed — deleted calibration can be recovered now, a new actuator command replaces the one still running, and scene queues are saved to the right folder
+
+- **Fixed:** the loss snapshot added earlier the same day never fired. It compared the
+  new data with `load()`'s cached object — the very object `delete()`/`upsert()` had just
+  mutated — so it never saw a loss. Proven: the old comparison detected nothing and wrote 0
+  snapshots on a warm-cache delete, and the corrected one writes 1. It now reads the file
+  from disk. Mina's measured 28–84° jaw window had been cleared through the single-part
+  Clear endpoint at 12:17 with nothing left to restore from. The window has been put back
+  and verified through the API and on disk.
+- **Fixed:** `clear-all` deleted part by part, one write and one snapshot per part. With
+  ten snapshots kept, clearing more than ten measured parts rotated the only complete
+  pre-clear copy away before the clear had finished. `JsonCalibrationStore.deleteMany()`
+  does it in one write, which leaves one snapshot of the untouched file.
+  `tests/unit/calibration-loss-snapshot.test.js` (4) covers both.
+- **Fixed:** a linear-actuator extend, retract or jog sent while an earlier drive still held
+  the pins was refused with "GPIO busy", and the first drive ran to the end of its
+  duration. Pressing Retract in the middle of an extend did nothing. The newest command now
+  ends the in-flight drive first, using the same pin-scoped kill as `stop()`, so another
+  part's drive is never touched. Proven against a fake in-flight process on unused pins:
+  it was ended by SIGTERM before the new command ran.
+- **Fixed:** `queueLibrary.js` and `queueTemplates.js` joined `character-N` onto the
+  character-scoped `dataPath`, which put scene queues in a nested
+  `data/character-N/character-N/` folder. They now use the data root. A library saved at
+  the old path is still read, and nothing at the old path is moved or deleted.
+  `tests/unit/queue-library-path.test.js` (2).
+- **Merged:** Mina's 8 unpushed commits with the 72 on `origin/main`, dropping nothing. See
+  the `[sync]` merge commit for how each conflict was resolved.
+
 ### Fixed — Mina's second calibration wipe, and five control-path defects that made her controls do nothing (and say nothing)
 
 All verified on the node, at the chip registers or the GPIO pin — not by API success alone.

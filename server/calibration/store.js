@@ -251,9 +251,14 @@ export class JsonCalibrationStore {
    * like. Ten snapshots are kept.
    */
   async _snapshotIfLosingMeasurements(next) {
+    // Read the file from disk, NOT through load(). load() hands back its cached
+    // object, and delete()/upsert() mutate that very object before calling save(),
+    // so comparing against it compared the new data with itself: nothing was ever
+    // "lost" and no snapshot was ever written — including for the single-part
+    // Clear that erased Mina's measured jaw window at 12:17 on 2026-09-12.
     let current;
     try {
-      current = await this.load();
+      current = JSON.parse((await fs.readFile(this.filePath, 'utf8')) || '{}');
     } catch (_) {
       return; // nothing readable to lose
     }
@@ -367,6 +372,29 @@ export class JsonCalibrationStore {
       delete all[key];
       await this.save(all);
       return true;
+    });
+  }
+
+  /**
+   * Delete several profiles in ONE write, so a clear-all produces exactly one
+   * snapshot of the untouched file. Deleting part by part wrote one snapshot per
+   * part, and with ten kept, clearing more than ten measured parts rotated the
+   * only complete pre-clear copy away before the clear had even finished.
+   */
+  async deleteMany(partIds, characterId) {
+    return withFileLock(`calibration:${this.filePath}`, async () => {
+      const cid = await this._resolveCharacter(characterId);
+      const all = Object.assign({}, await this.load());
+      const removed = [];
+      for (const partId of partIds) {
+        const scoped = cid != null ? scopedKey(cid, partId) : null;
+        const key = (scoped && all[scoped]) ? scoped : String(partId);
+        if (!all[key]) continue;
+        delete all[key];
+        removed.push(partId);
+      }
+      if (removed.length > 0) await this.save(all);
+      return removed;
     });
   }
 }

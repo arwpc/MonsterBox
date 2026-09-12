@@ -138,9 +138,29 @@ async function killInFlightDrive({ rpwmPin, lpwmPin, directionPin, pwmPin }) {
         const pinLabel = (rpwmPin != null || lpwmPin != null)
             ? `${rpwmPin}/${lpwmPin}`
             : `${directionPin}/${pwmPin}`;
-        console.warn(`🛑 stop: ended ${victims.length} in-flight drive(s) on GPIO ${pinLabel}: ${victims.join(', ')}`);
+        console.warn(`🛑 ended ${victims.length} in-flight drive(s) on GPIO ${pinLabel}: ${victims.join(', ')}`);
     }
     return victims.length;
+}
+
+/**
+ * End a drive still holding this part's pins before starting a new one.
+ *
+ * A second extend/retract/jog used to claim the pins while the first drive still
+ * held them, so it was refused with 'GPIO busy' and the first drive ran on to the
+ * end of its duration: pressing Retract mid-extend did nothing, and there was no
+ * way to reverse the coffin door (seen again after the 2026-09-12 12:18 restart).
+ * The newest command now wins, through the same pin-scoped kill stop() uses, so
+ * another part's move is never touched. Never throws: if the kill fails, the new
+ * command meets the old refusal rather than an exception.
+ */
+async function supersedeInFlightDrive(pins) {
+    try {
+        return await killInFlightDrive(pins);
+    } catch (err) {
+        console.error('🦴 could not end the in-flight drive before a new command:', err.message);
+        return 0;
+    }
 }
 
 /**
@@ -483,6 +503,7 @@ const HARDWARE_CONTROLLERS = {
                         speed,
                         duration: dur
                     });
+                    await supersedeInFlightDrive({ rpwmPin, lpwmPin });
                     out = await runWrapper('linear_actuator_control_v2.py', [config]);
                 } else {
                     console.log(`🦴 extend() using MDD10A/Cytron path...`);
@@ -491,6 +512,7 @@ const HARDWARE_CONTROLLERS = {
                     const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
 
                     console.log(`🦴 extend() calling actuatorService.controlActuator with dirPin=${dirPin}, pwm=${pwm}, speed=${speed}, duration=${dur}`);
+                    await supersedeInFlightDrive({ directionPin: dirPin, pwmPin: pwm });
                     out = await actuatorService.controlActuator({
                         directionPin: dirPin,
                         pwmPin: pwm,
@@ -560,12 +582,14 @@ const HARDWARE_CONTROLLERS = {
                         speed,
                         duration: dur
                     });
+                    await supersedeInFlightDrive({ rpwmPin, lpwmPin });
                     out = await runWrapper('linear_actuator_control_v2.py', [config]);
                 } else {
                     // Use legacy script for MDD10A/Cytron
                     const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
                     const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
 
+                    await supersedeInFlightDrive({ directionPin: dirPin, pwmPin: pwm });
                     out = await actuatorService.controlActuator({
                         directionPin: dirPin,
                         pwmPin: pwm,

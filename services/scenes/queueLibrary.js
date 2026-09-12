@@ -1,7 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
-import { readConfig } from '../configService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,10 +8,19 @@ const __dirname = path.dirname(__filename);
 // Hard cap for any looping duration: 48 hours in seconds
 const MAX_SECONDS = 48 * 60 * 60;
 
+// The data ROOT — never cfg.dataPath. dataPath is character-scoped
+// ("data/character-2"), so joining character-N onto it put this file in a
+// nested data/character-2/character-2/ that nothing else reads.
 async function getDataDir(){
-  const cfg = await readConfig();
-  const appRoot = path.resolve(__dirname, '..', '..');
-  return path.resolve(appRoot, cfg && cfg.dataPath ? cfg.dataPath : 'data');
+  return path.resolve(__dirname, '..', '..', 'data');
+}
+
+// Where that double join used to put the file. Read-only fallback, so a library
+// saved before the fix is still found; the next save lands in the real
+// directory and the legacy copy is left exactly where it is.
+function legacyPath(characterId, fileName){
+  const dir = `character-${characterId}`;
+  return path.resolve(__dirname, '..', '..', 'data', dir, dir, fileName);
 }
 
 async function getCharacterDir(characterId){
@@ -77,14 +85,17 @@ export function validateQueueDefinition(def){
 }
 
 export async function loadQueues(characterId){
-  try {
-    const p = await getQueuesPath(characterId);
-    const raw = await fs.readFile(p, 'utf8');
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : [];
-  } catch(_) {
-    return [];
+  const candidates = [await getQueuesPath(characterId), legacyPath(characterId, 'scene-queues.json')];
+  for (const p of candidates) {
+    try {
+      const data = JSON.parse(await fs.readFile(p, 'utf8'));
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      if (err && err.code === 'ENOENT') continue;
+      return [];
+    }
   }
+  return [];
 }
 
 export async function saveQueues(characterId, queues){
