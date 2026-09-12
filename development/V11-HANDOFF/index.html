@@ -1,0 +1,3668 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Aaron Warner">
+      
+      
+        <link rel="canonical" href="https://arwpc.github.io/MonsterBox/development/V11-HANDOFF/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>v11 — Project Plan & Session Handoff - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#v11-project-plan-session-handoff" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              v11 — Project Plan &amp; Session Handoff
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directory Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ / Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Character Sheets
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Character Sheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_mina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mina
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_sir_dragomir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sir Dragomir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_groundbreaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/PUMPKINHEAD_COMPLETE_PARTS_LIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead Parts List
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/GROUNDBREAKER_SETUP_INSTRUCTIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/GROUNDBREAKER_INSTALLATION_PACKAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronic Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSH Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/NODE-DISCOVERY-VALIDATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/HEAD-TRACKING-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/LINEAR_ACTUATOR_CALIBRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linear Actuator Calibration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/STT_TUNING_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STT Tuning Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/Noisy_Environment_Preset_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Noisy Environment Preset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/CENTRALIZED-PORT-MANAGEMENT-SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/PORT-MANAGEMENT-INTERFACE-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/HTTPS_DEPLOYMENT_HANDOFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTPS Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/secure-remote-access-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Secure Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/AUDIO-MICROPHONE-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audio & Microphone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ECHO-SUPPRESSION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Echo Suppression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/SCENE-CONCURRENCY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scene Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Log Collection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/head-tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/ORLOK_BTS7960_WIRING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok BTS7960 Wiring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/legacy_hardware_config_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Hardware Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs TTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/ELEVENLABS_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs Full Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/MJPG-STREAMER-INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MJPG-Streamer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/GOBLIN_VIDEO_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Video
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/Hardware-Integration-Layer-Interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Layer Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/api-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V9-RETROSPECTIVE-AND-ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Retrospective & Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V9-PERSONA-REVIEWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Persona Reviews
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GESTURE-ENGINE-SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gesture Engine Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NODE-DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery (mDNS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orchestration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-integration-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Integration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AI-Management-Feature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Management Feature
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../goblin-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../middleware-audit-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Middleware Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Setup Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/api-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/conversation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conversation Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/DEEP-TESTING-FRAMEWORK-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Testing Framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/KNOWN-BUGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known Bugs & Open Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/head-tracking-troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronics Workshop
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Animatronics Workshop
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Familiarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simple Steps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hands-On Activities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Final Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_19" >
+        
+          
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../v6-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Audit Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../v6-final-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Final Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="v11-project-plan-session-handoff">v11 — Project Plan &amp; Session Handoff</h1>
+<p><strong>Written:</strong> 2026-08-20
+<strong>Repo state at handoff:</strong> <code>d0dd60b5</code>, pushed, working tree clean apart from node-local
+<code>config/app-config.json</code> and an untracked <code>ARCHIVE/</code>.
+<strong>Version in <code>package.json</code>:</strong> still <code>10.4.0</code>. Bump to <code>11.0.0</code> only at the release tag.</p>
+<hr />
+<h2 id="0-the-one-paragraph-brief">0. The one-paragraph brief</h2>
+<p>Aaron has three live animatronics — <strong>Mina (2)</strong>, <strong>Orlok (3)</strong>, <strong>Sir Dragomir (4)</strong> — and wants
+them to reliably perform a show. He is explicitly tired of chasing individual faults and wants a
+<strong>stable, verified v11</strong> rather than more improvements. Ship a small release you can trust; defer
+anything that does not stop a show. His words: <em>"I want this codebase rock solid and stable and every
+part of it working before I make any other changes."</em></p>
+<p><strong>Do not expand scope.</strong> If you find something new, write it down and finish the plan.</p>
+<hr />
+<h2 id="1-scope-as-agreed">1. Scope, as agreed</h2>
+<h3 id="in-v11">In v11</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wipe the garbage poses and scenes</td>
+<td>not started</td>
+</tr>
+<tr>
+<td>Calibrate the parts those poses need (operator session)</td>
+<td><strong>blocked on Aaron at the rigs</strong></td>
+</tr>
+<tr>
+<td>Author <strong>7 poses + 5 scenes per character</strong>, working parts only</td>
+<td>not started</td>
+</tr>
+<tr>
+<td>Dashboard: freshness fixes + <strong>audio input/output dropdowns with persistence</strong></td>
+<td>audit done, fixes not started</td>
+</tr>
+<tr>
+<td><strong>Continuous / multi-turn head tracking</strong> (both servo kinds)</td>
+<td>designed, not built</td>
+</tr>
+<tr>
+<td>Verification: validate + gate + pact + hardware spot-check</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Tag <code>v11.0.0</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="explicitly-deferred-aarons-call-2026-08-20">Explicitly deferred (Aaron's call, 2026-08-20)</h3>
+<ul>
+<li><strong>Safety-system teardown</strong> — removing <code>hardware-safety.json</code>, <code>safetyLimits.js</code>, the Safety tab.
+  Touches ~28 files including poses, gestures, idle loop, transitions and speech expression. He asked
+  for it earlier, then deferred it: <em>"We can put off the safety teardown and removal of advanced tab."</em></li>
+<li><strong>Advanced tab removal</strong> in <code>views/setup/calibration.ejs</code> (duplicates <code>/setup/head-animation</code>).</li>
+<li>Moving the knight's neck to direct GPIO PWM — investigated, and he closed it: <em>"Forget it -
+  unnecessary."</em></li>
+</ul>
+<h3 id="verification-bar-he-chose">Verification bar he chose</h3>
+<p><strong>Validate + spot-check.</strong> Schemas, gate, pact, plus a few poses per character driven on real
+hardware. Not every pose. He wanted the faster path.</p>
+<hr />
+<h2 id="2-hard-safety-constraints-read-before-commanding-anything">2. Hard safety constraints — read before commanding anything</h2>
+<p>These are not style preferences. Each one is backed by a real incident.</p>
+<ol>
+<li><strong>NEVER command Orlok parts 3, 4, or 5.</strong></li>
+<li><code>3</code> Bow At The Waist — <code>blockAllMotion</code>; <code>parts.json</code> and the part description contradict each
+     other on the BTS7960 wiring, so "extend" may physically retract.</li>
+<li><code>4</code> Elbow — <code>blockAllMotion</code>; electrically dead; shares a fused rail.</li>
+<li>
+<p><code>5</code> Forearm Rotation — travel <strong>never measured</strong>; deliberately guarded to a narrow 95–125°
+     window centred on its resting position. Do not widen, do not sweep. The rail has blown a fuse.</p>
+</li>
+<li>
+<p><strong>NEVER command Sir Dragomir part 1 (neck) until it is calibrated with eyes on it.</strong>
+   goBILDA Stingray-2, 900° multi-turn. A full rotation <strong>tears the head cabling</strong>.</p>
+</li>
+<li>
+<p><strong>A <code>servoType: "continuous"</code> part turns an ANGLE command into a timed SPIN.</strong>
+   <code>hardwareService/index.js</code> rewrites it to <code>rotate_continuous_pca &lt;ch&gt; &lt;dir&gt; &lt;speed&gt; 1000</code> and
+   discards the requested position. Always check <code>config.servoType</code> before sending an angle. This is
+   how the knight's neck accumulated 99 spin commands.</p>
+</li>
+<li>
+<p><strong>Do not relabel Orlok part 15 as multi-turn.</strong> See §4.3 — it is the mirror-image trap.</p>
+</li>
+<li>
+<p><strong>PumpkinHead (1), Groundbreaker (5) and Renfield (6) are in storage.</strong> Offline is expected and is
+   never a finding. Do not ping, deploy to, test, or report them as failures.</p>
+</li>
+</ol>
+<hr />
+<h2 id="3-ground-truth-what-actually-works">3. Ground truth: what actually works</h2>
+<p>Gathered from each node's <strong>own</strong> files. <code>parts.json</code> and <code>calibration_profiles.json</code> are node-local
+and excluded from deploy — <strong>never read one node's copy to reason about another.</strong></p>
+<h3 id="calibrated-and-safe-to-move">Calibrated and safe to move</h3>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>Part</th>
+<th>Window</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mina (2)</td>
+<td>1 Jaw</td>
+<td>22–91°</td>
+<td>real calibration</td>
+</tr>
+<tr>
+<td>Orlok (3)</td>
+<td>10 Jaw</td>
+<td>46–92°</td>
+<td>real calibration</td>
+</tr>
+<tr>
+<td>Orlok (3)</td>
+<td>15 Head on a Swivel</td>
+<td>3–169°</td>
+<td>calibrated by Aaron 2026-08-19 23:45</td>
+</tr>
+<tr>
+<td>Dragomir (4)</td>
+<td>2 Jaw</td>
+<td>97–151°</td>
+<td>real calibration</td>
+</tr>
+</tbody>
+</table>
+<p>Lights are trivially safe: Mina 5 (Burning Rose) and 10 (Laser), Orlok 8 (Hand of Azura).</p>
+<h3 id="placeholder-bounds-not-usable-for-poses-until-calibrated">Placeholder bounds — NOT usable for poses until calibrated</h3>
+<p>Mina 2 Neck (ch8), 3 Eye (ch12), 4 Coffin Door; Orlok 1 Right Arm, 2 Left Arm (documented dead);
+Dragomir 1 Neck (see above), 3 Magic Box.</p>
+<p><code>autoGenerated: true</code> means the store stamped a placeholder span; the read path deliberately withholds
+it. <strong>A pose may only use a part with a real measured window.</strong></p>
+<h3 id="the-blocker-for-the-whole-pose-rebuild">The blocker for the whole pose rebuild</h3>
+<p><strong>Only Orlok has more than one calibrated movable part.</strong> Mina and Dragomir have a jaw and nothing
+else. Aaron chose <strong>"Calibrate first, then author"</strong> — so authoring cannot start until a calibration
+session happens. A hardware probe was written to produce a prioritised checklist for that session; it
+was still running at handoff (see §6).</p>
+<hr />
+<h2 id="4-what-this-session-changed-and-why">4. What this session changed, and why</h2>
+<p>All 16 commits are on <code>origin/main</code>. Full messages carry the reasoning; summary:</p>
+<h3 id="41-fixed-faults">4.1 Fixed faults</h3>
+<ul>
+<li><strong>Playback truncated every line over 15 seconds.</strong> Three call sites in
+  <code>serverPlaybackService.js</code> used a flat <code>15000</code> ms watchdog, so a 16.3 s line was <code>SIGTERM</code>ed
+  mid-sentence and returned <code>playback_timeout</code>. Now <code>_playbackTimeoutMs(buffer, contentType)</code> scales
+  to payload duration, 15 s <strong>floor</strong>, 300 s ceiling.</li>
+<li><strong>Sir Dragomir's neck was mislabelled <code>continuous</code>.</strong> See §2.3. Corrected to <code>multi-turn</code> +
+  <code>rotationRangeDeg: 900</code>. <strong>Config only — no motion was ever commanded.</strong> His calibration profile is
+  deliberately left <code>kind: continuous-servo</code> and uncalibrated, so the drive path still refuses him.
+  Re-kinding it decides which adapter runs and belongs in the supervised session.</li>
+<li><strong>Jaw sync slider capped at ±500 ms</strong> while the engine already clamped to ±1000. Widened.</li>
+<li><strong>Orlok's jaw was binary open/closed.</strong> <code>sensitivity: 2.8</code> saturated the perceptual mapping — 57%
+  fully-open, 34% shut, <strong>7% in between</strong>, only 14 of 19 quantisation levels reachable. Measured on
+  his own voice; <code>sensitivity: 1.0</code> gives 8/34/<strong>56%</strong> and all 19 levels. Also <code>smoothing</code> 0.4→0.65,
+  <code>releaseTime</code> 108→150. <strong>Applied at runtime via the API, not committed</strong> — <code>super-powers.json</code> is
+  node-local.</li>
+<li><strong>Two fleet-audio tools reported healthy nodes as dead</strong> because they shelled out to bare <code>ssh</code> and
+  only worked from a node with outbound key trust. New <code>scripts/fleet-audio/ssh-auth.mjs</code>.</li>
+<li><strong>The release gate was generating SSH keys.</strong> <code>tests/unit/system-admin-guard.test.js</code> probes the
+  guard via <code>/api/system/ssh/keys/generate</code>; five cases pass the guard and reach the real handler, so
+  every <code>npm run gate</code> wrote 5 keypairs to <code>~/.ssh</code>. Found at <strong>760 keys / 3.1 MB</strong>. Now cleaned up
+  per-run; the strays were swept.</li>
+<li><strong>A suite could leave the fleet permanently silent.</strong> Mute persists to <code>data/speaker-state.json</code> and
+  reapplies at boot. The test now snapshots and restores the operator's real value.</li>
+<li><strong>Deploy shipped one node's telemetry to every other node</strong> — <code>startup-health.json</code>,
+  <code>performance-history.json</code>, <code>scene-analytics.json</code>, <code>manual-nodes.json</code> were gitignored as
+  node-local but missing from the rsync excludes.</li>
+</ul>
+<h3 id="42-documentation-corrected">4.2 Documentation corrected</h3>
+<ul>
+<li>Sir Dragomir's head servo channel was recorded <strong>three different ways</strong>: ch0 in docs, ch1 in the
+  repo, <strong>ch4</strong> on the node. ch4 is truth. Jaw is ch0, not ch1. <em>(Historical — superseded
+  2026-08-22: the operator physically moved the jaw to </em><em>ch1</em><em>; verdict procedure in
+  BENCH-CHECKLIST K1. The head remains ch4.)</em></li>
+<li>His "Continuous Servo Gotchas" section said the neck must never be used for head tracking or poses.
+  With position control it can be both.</li>
+<li><code>OPERATOR-TODO.md</code> gained the USB over-current finding.</li>
+</ul>
+<h3 id="43-a-deliberate-non-change-worth-understanding">4.3 A deliberate non-change worth understanding</h3>
+<p>Orlok part 15 is named "Head on a Swivel", and the Stingray-2 model note says <em>"Used for 'Head on a
+Swivel' and similar applications"</em>. Aaron used a goBILDA in the first build and cannot easily see
+what is in there now. <strong>It was left alone</strong>, because his calibration is the proof: a Stingray swept
+across 500–2500 µs travels ~830° (2.3 rotations); he measured a clean 3–169° window and has a working
+head. Relabelling it <code>multi-turn</code> would remap 0–180 onto 0–1800 and silently break a working
+calibration. <strong>Same class of uncertainty as the knight, opposite correct action</strong> — there a wrong
+label was actively causing harm; here the label is harmless and changing it would cause harm.</p>
+<hr />
+<h2 id="5-known-findings-not-yet-fixed">5. Known findings not yet fixed</h2>
+<h3 id="51-dashboard-audit-complete-23-verified-findings">5.1 Dashboard — audit complete, 23 verified findings</h3>
+<p>Root causes, not 23 separate bugs:</p>
+<ol>
+<li><strong>Nothing refreshes.</strong> Chips read once at page load and never poll: jaw
+   <code>public/js/dashboard.js:641</code>, mute <code>:833</code>, lurk <code>:464</code>, motion <code>:1509</code>, audio device lists
+   <code>:2229</code>. <code>refreshBadges()</code> polls every 1.5 s but only mirrors the <strong>checkbox</strong> into the badge — it
+   never asks the server, so a stale checkbox is reflected forever. <code>refreshPageState()</code> at <code>:679</code>
+   already calls every server-truth loader and <strong>is never invoked on a timer</strong>. That is the fix.</li>
+<li><strong>Failures are swallowed.</strong> <code>saveJawSettings()</code> at <code>:1535</code> discards the POST response entirely; the
+   server returns <code>200 {"success":false,"error":"Jaw servo has no calibrated Min/Max window"}</code> and the
+   switch stays lit. <strong>This is Aaron's "it doesn't deploy to the dashboard when I enable jaw
+   animation".</strong> Same shape at <code>:321</code> (Lurk latches Head and Idle ON after both failed) and <code>:730</code>
+   (mute ignores its own response).</li>
+<li><strong>The audio info he asked for is not rendered.</strong> <code>views/conversation/showtime.ejs:98</code> — no
+   microphone shown at all. <code>:134</code> — no output level. <code>dashboard.js:1264</code> — the speaker selector shows
+   a part name, never the device it resolves to.</li>
+<li><strong>Capability is not applied to the chips.</strong> <code>dashboard.js:450</code> — per-node capability reaches only
+   the command-bar badges, so <strong>Mina offers a head-tracking toggle she structurally cannot do</strong>
+   (<code>capabilities.headTracking === false</code>).</li>
+</ol>
+<p>His feature request, verbatim: <em>a dropdown on the dashboard to select current input and output on the
+live animatronic, saved behind the scenes so it is not lost when you leave the page.</em></p>
+<p>Useful existing pieces: <code>showToast(message, type)</code> at <code>dashboard.js:1341</code>; loaders <code>loadJawSettings</code>
+(<code>:1525</code>), <code>loadHeadTrackStatus</code> (<code>:1389</code>), <code>loadLurkCapabilities</code> (<code>:436</code>).</p>
+<h3 id="52-head-tracking-must-support-two-servo-kinds-and-two-camera-mounts">5.2 Head tracking must support two servo kinds AND two camera mounts</h3>
+<p>These are <strong>independent</strong> axes. Dispatch servo kind on <code>profile.capability.kind</code> (already read into
+<code>servoKind</code> at <code>headAnimationSuperPowerService.js:153</code> and then <strong>thrown away</strong> — nothing branches on
+it). Camera mount must become a <strong>head-tracking setting</strong>, <code>cameraMount: 'head' | 'fixed'</code>.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Orlok</th>
+<th>Sir Dragomir</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pan servo</td>
+<td>absolute 3–169°</td>
+<td>multi-turn 900°, ch4</td>
+</tr>
+<tr>
+<td>Camera</td>
+<td><strong>in his eye, moves with the head</strong></td>
+<td><strong>fixed to the body</strong></td>
+</tr>
+<tr>
+<td>Loop</td>
+<td>closed — vision sees the result; this is why his offset setting exists</td>
+<td>open — no feedback on head position</td>
+</tr>
+</tbody>
+</table>
+<p>The current gate is purely angle-based (<code>bounds</code> → parts.json markers → placeholder), so a servo with
+<code>bounds: null</code> can never satisfy it. That is why the knight logs <em>"no usable calibrated window —
+refusing to drive it"</em>.</p>
+<h3 id="53-poses">5.3 Poses</h3>
+<ul>
+<li><strong>9 of Orlok's 35 poses command the dead Elbow (part 4)</strong>, including "Neutral Standing", the
+  idle/home pose. Only the safety quarantine stops them —
+  <code>[poseLibrary] Idle pose "Neutral Standing" (1) excluded — Elbow is quarantined</code>. <strong>If the safety
+  teardown ever happens, wipe these first</strong>, or nine poses immediately start driving a dead servo on a
+  fuse-blown rail.</li>
+<li><strong><code>poses.schema.json</code> validates nothing</strong>: <code>parts: {"type": "array"}</code> with no item schema. That is
+  how poses referencing forbidden parts got written. Worth tightening — it is author-time data
+  validation, not a runtime nanny, so it does not conflict with the deferred teardown.</li>
+<li><strong>The pose engine already supports continuous/velocity targets</strong>: <code>poseEngine.js:185</code> reads
+  <code>target.continuous: { direction, durationMs, speedPct }</code>. Angle targets use <code>target.angleDeg</code>.</li>
+</ul>
+<h3 id="54-hardware-operator-only-tracked-in-docshardwareoperator-todomd">5.4 Hardware — operator only, tracked in <code>docs/hardware/OPERATOR-TODO.md</code></h3>
+<ul>
+<li>Orlok ch4/ch5 need dedicated 10 A circuits.</li>
+<li>Dead servo channels: Mina ch8 Neck, ch11/12 Eye; Orlok part 2 Left Arm.</li>
+<li><strong>Mina's USB 5 V rail trips over-current</strong> — 24 events, camera re-enumerated 3× (<code>1-1.4</code>, dev 5→6→7),
+  everything behind two cascaded hubs. <strong>This may be faking the "dead" Unitek capture input</strong> at
+  <code>1-1.2</code> rather than the adapter being broken. Try a powered hub before replacing anything. It also
+  threatens calibration accuracy: a part measured through a sagging rail may not measure the same twice.</li>
+</ul>
+<hr />
+<h2 id="6-in-flight-at-handoff">6. In flight at handoff</h2>
+<p>Three background workflows were running. <strong>Check them before redoing their work</strong> —
+<code>/home/remote/.claude/projects/-home-remote-MonsterBox/572cbccc-6dde-5ec2-86ed-616def2d00c6/subagents/workflows/</code>,
+read <code>journal.jsonl</code> in each.</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Purpose</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wf_07f3949c-dd6</code></td>
+<td>Dashboard freshness audit</td>
+<td><strong>complete</strong> — 23 findings, summarised in §5.1</td>
+</tr>
+<tr>
+<td><code>wf_fc3e77c5-82b</code></td>
+<td>Prove which parts physically respond → calibration checklist</td>
+<td><strong>FAILED — see below</strong></td>
+</tr>
+<tr>
+<td><code>wf_1016f48c-bb4</code></td>
+<td>v11 regression judge over this session's changes</td>
+<td>unknown at handoff</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-part-probe-failed-re-run-it-do-not-trust-its-checklist">The part probe failed. Re-run it. Do NOT trust its checklist.</h3>
+<p>Three of its four agents errored (<code>529 Overloaded</code>, a stalled response, one that gave up after six
+attempts). It returned <code>reports: []</code> — <strong>there is no hardware aliveness data for any node.</strong></p>
+<p>Its synthesis agent handled the empty set correctly and refused to issue a checklist, saying <em>"Do not
+walk out to the rigs on this data."</em> That part was right. But it then fell back to reading
+<code>calibration_profiles.json</code> <strong>from Mina for every character</strong>, which is the node-local trap in §9.
+Verified against each node's own copy, its numbers are wrong:</p>
+<table>
+<thead>
+<tr>
+<th>Claim in that checklist</th>
+<th>Reality on the owning node</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Orlok <code>3:15</code> Head = 60–180</td>
+<td><strong>3–169</strong></td>
+</tr>
+<tr>
+<td>Orlok <code>3:10</code> Jaw = 0–180 placeholder, unusable</td>
+<td><strong>46–92, <code>autoGenerated: false</code> — genuinely calibrated</strong></td>
+</tr>
+<tr>
+<td>Dragomir <code>4:2</code> Jaw = 97–166</td>
+<td><strong>97–151</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The second one matters most: it would have sent Aaron to recalibrate the Orlok jaw he had just tuned.
+<strong>Use the table in §3 of this document instead — that one was read from each node's own files.</strong></p>
+<p>Two findings from that agent ARE real and verified, and are worth keeping:</p>
+<ol>
+<li><strong>A hardware test can report success while doing nothing.</strong> <code>services/hardwareService/exec.js</code>
+   returns <code>status: 'success'</code> with <strong><code>simulated: true</code></strong> when it falls back to simulation, and logs
+   the reason with <code>console.warn</code> — which lands <strong>only</strong> in <code>/var/log/monsterbox.err</code>. A <code>.log</code>-only
+   read looks clean. <strong>Any re-run of the probe must reject <code>simulated: true</code></strong> and score aliveness on
+   driver reach or observed motion, never on a <code>success</code> field. Same family as muted playback
+   returning <code>played: true</code>.</li>
+<li><strong>Orlok part 14 "Sensor for Orlok" is a data bug, not a calibration job.</strong> <code>parts.json</code> types it
+   <code>motion_sensor</code>, but it carries an <code>absolute-servo</code> profile with a hand-set (<code>autoGenerated:
+   false</code>) 12–180 window. A motion sensor has no angle window. Calibrating it moves nothing. Fix the
+   data; do not send anyone to a rig for it.</li>
+</ol>
+<p><strong>Requirements for the re-run:</strong> drive each candidate via <code>POST /api/parts/:id/test</code> on the node that
+OWNS the part, passing <code>characterId</code> explicitly (part ids are only unique within a character); reject
+<code>simulated: true</code>; exclude 192.168.8.150 and .200 rather than letting them zero out the run; and keep
+every safety rule in §2, especially the exclusions for Orlok 3/4/5 and Dragomir part 1.</p>
+<hr />
+<h2 id="7-suggested-order">7. Suggested order</h2>
+<ol>
+<li><strong>Read the probe result</strong>; hand Aaron a short, ruthlessly prioritised calibration checklist. Include
+   the knight's neck (supervised, cable-safe window) and, if his tracking is wanted, timing a known
+   rotation to replace the <code>autoGenerated</code> <code>unitsPerSec: 0.3</code> guess with a measurement.</li>
+<li><strong>Dashboard fixes</strong> — highest user-visible value, no hardware dependency, can proceed while he is
+   at the rigs. Fix the cause (server-truth refresh + honour POST responses), not 23 symptoms. Add the
+   input/output dropdowns with persistence.</li>
+<li><strong>Head tracking</strong> — two servo kinds × two camera mounts, <code>cameraMount</code> setting.</li>
+<li><strong>Wipe</strong> poses/scenes (backup already exists — see §8), then <strong>author</strong> 7 poses + 5 scenes per
+   character against proven parts only.</li>
+<li><strong>Spot-check on hardware</strong>, run the gate, update docs, bump <code>package.json</code> to <code>11.0.0</code>, tag.</li>
+</ol>
+<hr />
+<h2 id="8-rollback">8. Rollback</h2>
+<ul>
+<li>Tag <strong><code>pre-pose-scene-reset-2026-08-20</code></strong> — tree state before any pose/scene destruction.</li>
+<li><strong><code>ARCHIVE/pre-reset-2026-08-20/</code></strong> — a copy of every character's <code>poses.json</code> and <code>scenes.json</code>
+  (12 files, untracked).</li>
+<li>Every change is a separate commit with its reasoning in the message; <code>git revert</code> is viable per
+  change.</li>
+</ul>
+<hr />
+<h2 id="9-working-practices-that-earned-their-place">9. Working practices that earned their place</h2>
+<ul>
+<li><strong>Audio is proven by ear-check, never by an API success field.</strong> <code>generate-and-play</code> returns
+  <code>{"success":true,"played":true}</code> <strong>while muted</strong> — a nine-line conversation across three nodes
+  reported success on every call and made no sound. Confirm <code>muted:false</code> first, or record and measure.</li>
+<li><strong>Read BOTH logs.</strong> <code>console.warn</code>/<code>console.error</code> go <strong>only</strong> to <code>/var/log/monsterbox.err</code>. The
+  refusal reason is there while <code>.log</code> still reads healthy.</li>
+<li><strong>Establish the boot boundary before reading a log tail.</strong> <code>/var/log/monsterbox.err</code> has no
+  timestamps of its own. This session raised a false alarm about a servo being spun by comparing
+  against a timestamp-less tail; the spins were historical.</li>
+<li><strong>Node-local files lie across nodes.</strong> <code>parts.json</code>, <code>calibration_profiles.json</code>,
+  <code>super-powers.json</code>, <code>app-config.json</code> are all excluded from deploy and drift independently. Orlok
+  was found holding a stale copy of the knight's part definition.</li>
+<li><strong><code>/health</code> version and git HEAD both lie about deployed code.</strong> rsync excludes <code>.git</code>, so peer nodes
+  show HEAD at <code>609245f5</code> (v9.3.0) with ~150 dirty files while running current code. Grep the node for
+  the actual symbol.</li>
+<li><strong>Other Claude sessions drive the same fleet.</strong> Six were live during this session and one muted all
+  three nodes mid-task. If a setting reverts, suspect a peer session before suspecting the code —
+  <code>ListAgents</code> shows them.</li>
+<li><strong>Never stage a service-written data file while a suite is driving that service.</strong> This session
+  committed <code>jawAnimation.enabled: false</code> — a test's transient state — and had to correct it.</li>
+<li>The deploy password is at <strong><code>/etc/monsterbox/env</code></strong> as <code>MONSTERBOX_SSH_PASSWORD</code>. Read it; do not ask.</li>
+</ul>
+<hr />
+<h2 id="10-aaron">10. Aaron</h2>
+<p>Warm, fun, emoji-friendly. Dictation arrives noisy — interpret charitably ("Orock" = Orlok, "knight"
+= Sir Dragomir, "go builder" = goBILDA). He is a capable hardware engineer: give him real numbers and
+the reasoning, not reassurance. He will tell you plainly when something is unnecessary — believe him
+and drop it.</p>
+<p>He is close to having three working animatronics and has been close for a while. <strong>Finishing beats
+improving.</strong></p>
+<hr />
+<h2 id="11-mina-hardware-upgrade-2026-08-20-and-the-one-thing-left-to-check">11. Mina hardware upgrade — 2026-08-20, and the one thing left to check</h2>
+<p>Aaron removed the USB hub and the old sound card, and fitted a <strong>reSpeaker XVF3800 4-Mic Array</strong>
+(the same model Orlok uses) plus a <strong>new webcam</strong> replacing the failing SONix unit.</p>
+<p><strong>Confirmed working:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Before</th>
+<th>Now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>USB topology</td>
+<td>2 cascaded hubs (VIA + Genesys)</td>
+<td>one hub; <strong><code>dmesg over-current</code> = 0</strong> (was 40)</td>
+</tr>
+<tr>
+<td>Audio device</td>
+<td>C-Media Unitek Y-247A (capture side dead)</td>
+<td>reSpeaker XVF3800, serial <code>...217</code></td>
+</tr>
+<tr>
+<td>Camera</td>
+<td>SONix Streaming Camera (re-enumerating)</td>
+<td>HHWei <code>1c45:6200</code>, stable at <code>/dev/video0</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Changes applied:</strong></p>
+<ul>
+<li><code>data/character-2/parts.json</code> — part 6 speaker and part 8 mic both repointed at the XVF3800
+  PipeWire nodes (<code>alsa_output/alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200217-00.analog-stereo</code>),
+  models set to <code>speaker_respeaker_xvf3800</code> / <code>mic_respeaker_xvf3800</code>, mirroring Orlok. Part 7 webcam
+  now <code>/dev/video0</code>, <code>deviceId: 0</code>. Removed the stale <code>sourceName</code> pointing at the SONix mic.</li>
+<li>PipeWire defaults: XVF3800 set as <strong>both</strong> default sink and default source.</li>
+<li><code>scripts/apply-audio-nosuspend.sh</code> re-run — the WirePlumber rule had been pinned to the removed
+  C-Media <code>node.name</code> and was matching nothing, which would have brought back the cold-start jaw
+  desync. Now <code>session.suspend-timeout-seconds=0</code> on the XVF3800.</li>
+<li><strong>Canonical volume reset to 1.0</strong> in <code>config/animatronics.json</code> and
+  <code>scripts/yard-theater/speaker-volumes.json</code>. The old 1.5 was measured on the Unitek that no longer
+  exists, so it was not a measurement any more. <strong>It needs re-measuring by ear.</strong> Orlok's identical
+  XVF3800 sits at 1.30 — a reasonable starting point, not an answer.</li>
+</ul>
+<h3 id="open-she-is-not-audible-yet-and-it-looks-physical">⚠️ Open: she is not audible yet, and it looks physical</h3>
+<p>An ear-check and a direct 14-second recording both scored <strong>SILENT</strong> (rise 1.1 dB, then 1.6 dB at
+volume 1.30). Everything on the software side checks out:</p>
+<ul>
+<li><code>muted: false</code>, confirmed on the endpoint and in <code>data/speaker-state.json</code></li>
+<li>XVF3800 is the default sink and source</li>
+<li><code>pw-play</code> streams start and exit cleanly with code 0 — audio IS reaching the device</li>
+<li>volume raised to Orlok's proven 1.30</li>
+<li>nothing relevant in either log</li>
+</ul>
+<p>So the signal reaches the array and no sound arrives at the microphone. <strong>Mina has a powered
+subwoofer</strong>; the most likely cause is that it is switched off, unplugged, or not connected to the
+array's output. Check the analog path before touching any config.</p>
+<p>Note also that the XVF3800 capture traps still apply (<code>docs/hardware/RESPEAKER-XVF3800.md</code>):
+<code>arecord</code>/<code>parec</code>/<code>ffmpeg</code> can open the array and deliver zero usable frames — PyAudio via
+<code>python_wrappers/microphone_cli.py</code> is the only capture layer proven to stream from it. The ear-check
+uses <code>arecord</code>, so once the speaker is confirmed, verify the MIC separately through the app's own path
+and judge on frames, not on the device opening.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

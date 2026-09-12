@@ -1,0 +1,247 @@
+{
+  "stream": "ghost-settings",
+  "items": [
+    {
+      "name": "tts-config.json `speed` — ghost (no UI), and a no-op on the one-shot path for every character",
+      "status": "open",
+      "evidence": [
+        "All six characters carry a tuned value with no UI able to show or change it: data/character-1..6/ai-config/tts-config.json -> speed 1.0 / 0.87 / 0.75 / 0.9 / 0.9 / 1.05 (cat of all six files).",
+        "No UI control exists: `grep -rn speed public/js/ai-settings-tts.js views/ai-settings/*.ejs` returns ZERO hits. The only id list in views/ai-settings/tts.ejs is ttsModel, defaultVoice, stability, similarityBoost, style, speakerBoost, conversationalMode, speakerPart.",
+        "It is read and clamped on both config read paths: services/aiConfigStore.js:178 and :228 (`speed: clampSpeed(parsed.speed, 1.0)`), so it reaches every generateSpeech() caller as options.speed.",
+        "It is then DROPPED for eleven_v3: services/elevenLabsTTSService.js:17-21 `MODELS_HONORING_SPEED = {eleven_multilingual_v2, eleven_flash_v2_5, eleven_turbo_v2_5}`; :199-202 only sets voiceSettings.speed when the model is in that set. All six characters are on `eleven_v3` (every tts-config.json), so the one-shot TTS path applies NO speed for anyone today.",
+        "The conversational-agent claim is TRUE but for a different reason than 'MonsterBox sends it': the agent applies speed SERVER-SIDE from its own ElevenLabs config (config/elevenlabs/agents/orlok.json:98 `speed: 0.75`, mina.json:66 0.87, dragomir.json:69 0.9, pumpkinhead.json:69 1.0, groundbreaker.json:69 0.96, renfield.json:89 1.05). MonsterBox cannot override it: every snapshot sets overrides.conversation_config_override.tts.speed=false (orlok.json:437, mina.json:392, dragomir.json:369, pumpkinhead.json:391, groundbreaker.json:377, renfield.json:387), and services/elevenLabsWebSocketService.js:665 and :2315 send an EMPTY `conversation_config_override: {}`. Documented at services/aiConfigStore.js:166-172.",
+        "So the per-character file value is a MIRROR of the agent snapshot, not an input. Its one real reader is the drift detector: scripts/log-review.mjs:109 diffs ['voice_id','stability','similarity_boost','speed','model'] against the committed file.",
+        "config/schemas/tts-config.schema.json does not declare `speed` at all (properties list: model, stability, similarity_boost, style, use_speaker_boost, voice_id, agent_id, conversationalMode) — it validates only because additionalProperties is not false."
+      ],
+      "files_to_touch": [
+        "data/character-1..6/ai-config/tts-config.json",
+        "config/schemas/tts-config.schema.json",
+        "services/aiConfigStore.js",
+        "services/elevenLabsTTSService.js",
+        "scripts/log-review.mjs"
+      ],
+      "remaining_work": "Decide KEEP-AS-MIRROR vs REMOVE. Recommend KEEP but declare it honestly: (a) add `speed` to tts-config.schema.json with a description saying it mirrors the agent snapshot and only bites on non-v3 one-shot models; (b) do NOT add a UI slider (V11-DECISIONS #2 removes sliders); (c) surface it read-only next to the ElevenLabs deep link on /ai-settings/tts. If instead it is removed from the six data files, log-review.mjs:109 must drop 'speed' from its diff list or it will flag every node forever. Do NOT 'fix' it by sending speed to v3 — measured no-op, documented at elevenLabsTTSService.js:11-21.",
+      "risk": "Low code risk, medium semantic risk: removing the key loses the only committed record of each character's tuned pace, which is the value log-review compares against when a voice flattens.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "TTS tuning sliders (stability / similarityBoost / style / speakerBoost) — operator-ordered removal not started",
+      "status": "open",
+      "evidence": [
+        "Decision recorded but NOT implemented: docs/development/V11-DECISIONS.md item 2 (commit 48e6db7e, 2026-08-20) — 'Remove the TTS tuning sliders from /ai-settings/tts; identity becomes read-only with a deep link to the ElevenLabs agent.'",
+        "The controls are still shipped: views/ai-settings/tts.ejs:96 (#stability), :107 (#similarityBoost), :133 (#style), :144 (#speakerBoost), :72 (#ttsModel), :82 (#defaultVoice).",
+        "The clobber vector is still live: public/js/ai-settings-tts.js:450-490 saveConfiguration() reads the slider ELEMENTS even when disabled (:479-484) and normalizes with `parseFloat(config.stability || '0.5')` (:488-489), so a Save from a page that failed to load the character's values posts page defaults over tuned identity.",
+        "A deep link already exists to build on: views/ai-settings/tts.ejs:61 #agentEditorLink (currently ai-hidden by default)."
+      ],
+      "files_to_touch": [
+        "views/ai-settings/tts.ejs",
+        "public/js/ai-settings-tts.js",
+        "config/schemas/tts-config.schema.json"
+      ],
+      "remaining_work": "Strip the four tuning inputs and their save path; render model/voice/stability/similarity/speed as read-only text sourced from config/elevenlabs/agents/*.json; always show #agentEditorLink (operator's rule: 'there must be a link out to ElevenLabs'). Keep the Test/Generate box and the voice library — those do real work.",
+      "risk": "This is the second config-clobberer; removing it at the vector is safer than patching writers, but browser specs under tests/browser that assert the sliders exist will need updating.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "STT capture controls — UI removal LANDED; orphan data keys remain in five of six characters",
+      "status": "partial",
+      "evidence": [
+        "Commit dabcbe9d ('[stt] delete the capture controls that never reached the capture path') removed 76 lines from views/ai-settings/stt.ejs and 100 from public/js/ai-settings-stt.js.",
+        "Verified gone from the UI today: `grep` for sampleRate / captureChunkDuration / minBufferDuration / maxBufferDuration / sttThrottleInterval / microphoneInputGain / format / channels in views/ai-settings/stt.ejs and public/js/ai-settings-stt.js returns no control hits (the only sampleRate hits are ai-settings-stt.js:1294 and :1428, which are the browser AudioContext for listen-in/talk-through, unrelated).",
+        "The DATA is still there: data/character-1 and -2 and -3 and -5 and -6 stt-config.json still carry format, sampleRate, channels; character-1 and -2 still carry the stale `deviceId`; character-5 still carries captureChunkDuration 0.5, minBufferDuration 2.5, maxBufferDuration 6, sttThrottleInterval 2500, microphoneInputGain 70. Only character-4 is clean.",
+        "The schema already declares these keys dead: config/schemas/stt-config.schema.json:4 — 'Capture format/rate/channels are fixed by the capture layer (16 kHz mono PCM16) and are deliberately not configurable here.' They pass validation only because additionalProperties is not false.",
+        "The stale `deviceId` is not read from stt-config: services/elevenLabsWebSocketService.js:230 reads `cfg.deviceId` from a MICROPHONE PART's config, not from stt-config.json (getMicrophoneDeviceForCharacter, :221-236)."
+      ],
+      "files_to_touch": [
+        "data/character-1/ai-config/stt-config.json",
+        "data/character-2/ai-config/stt-config.json",
+        "data/character-3/ai-config/stt-config.json",
+        "data/character-5/ai-config/stt-config.json",
+        "data/character-6/ai-config/stt-config.json",
+        "config/schemas/stt-config.schema.json"
+      ],
+      "remaining_work": "Strip the orphan keys from the five files (they are node-local mutable state on some nodes — coordinate with the fleet stream so the deletion is not re-written on the next boot), then consider `additionalProperties: false` on the STT schema so a future orphan key fails the gate instead of accumulating. Low priority: these are inert data, not lying controls.",
+      "risk": "Low. data/character-*/ai-config files are rewritten by the service on some nodes; a deletion that is not deployed fleet-wide will reappear in git status as drift.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "Webcam resolution / fps / quality — WIRED through the Model/Overrides tab, contrary to the '§5 silent no-op' claim",
+      "status": "refuted",
+      "evidence": [
+        "controllers/webcamController.js:552-564 reads part.config.resolution (default '640x480'), part.config.fps (15) and part.config.quality (85) and writes them into the mjpg-streamer systemd drop-in: `ExecStart=... input_uvc.so -d <devicePath> -r <resolution> -f <fps> -q <quality>` at /etc/systemd/system/mjpg-streamer.service.d/override.conf, then reloads and restarts the service (:591+).",
+        "The route exists and is mounted: routes/setup/calibration.js:1524-1525 POST /setup/calibration/api/webcam/parts/:id/apply-device -> webcamController.applyDeviceToService.",
+        "A UI writes exactly those keys: views/setup/calibration.ejs:2007-2010 OVERRIDE_SCHEMAS.webcam = [resolution, fps, quality, devicePath]; saved via POST /setup/calibration/api/parts/:id/overrides (calibration.ejs:2119-2121 -> routes/setup/calibration.js:655-667, which merges into part.config).",
+        "A UI invokes the apply: views/setup/calibration.ejs:5001-5037 applyWebcamToMjpg() POSTs apply-device.",
+        "Model-level defaults also carry them: data/models/webcam_models.json entries default-uvc-1 / arducam-b0205 / webcam_sonix_streaming_camera each have defaults.resolution/fps/quality; views/setup/models.ejs:320-324 edits them."
+      ],
+      "files_to_touch": [],
+      "remaining_work": "No fix needed for the wiring itself. Two honest caveats to document rather than 'fix': (1) apply is MANUAL — editing overrides does not restart mjpg-streamer, the operator must press the apply button; (2) MODEL defaults are not consulted by applyDeviceToService (it reads part.config only), so a model's defaults.resolution never reaches the camera unless copied into the part's overrides. Item (2) is a genuine gap worth closing by merging modelDefaults under part.config in webcamController.js:552-554, mirroring the deepMerge already at routes/setup/calibration.js:758-761.",
+      "risk": "Restarting mjpg-streamer drops every live webcam consumer (dashboard, head tracking, Fleet Command Center proxy) for a second or two.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "Webcam Edit-Part form writes config.width / config.height — genuine DEAD CONTROLS (nothing reads them)",
+      "status": "open",
+      "evidence": [
+        "The second, older webcam surface: views/setup/calibration.ejs:5757-5763 renders #editWidth / #editHeight / #editFps; :5322-5332 saves `config.width = parseInt(width)` and `config.height = parseInt(height)`; :6072-6089 loads them back with defaults 1280 / 720 / 30.",
+        "Nothing anywhere reads config.width or config.height for a webcam: the only consumer of capture geometry is controllers/webcamController.js:552 which reads `part.config.resolution` (the 'WxH' STRING), and services/hardwareService/index.js:1040-1042 capture({resolution}) which splits 'WxH'. `width`/`height` never appear in either.",
+        "So the same page offers two contradictory geometry editors: the Model/Overrides tab (writes `resolution`, honored) and the Edit-Part form (writes `width`/`height`, ignored). #editFps writes `fps`, which IS honored — the same form is half live and half dead, which is the worst shape.",
+        "Data confirms the split: data/character-3/parts.json:158-161 webcam config carries devicePath/deviceId/modelId and NO width/height/resolution — the Edit-Part form's defaults (1280x720@30) are pure fiction on this node."
+      ],
+      "files_to_touch": [
+        "views/setup/calibration.ejs"
+      ],
+      "remaining_work": "Delete #editWidth and #editHeight from generateEditWebcamConfig (calibration.ejs ~5757), from the save switch (~5325-5330) and from loadEditWebcamValues (~6067-6085). Either remove #editFps too and point the operator at the Model/Overrides tab, or convert the whole webcam Edit-Part block to write `resolution` (a WxH select matching OVERRIDE_SCHEMAS) so one page has one truth. Add the missing `quality` field only if the block is kept.",
+      "risk": "Low — pure UI deletion in one file. Check tests/browser/*calibration* for selectors on #editWidth/#editHeight.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "Webcam `deviceIndex` — orphan data key, zero readers and zero writers",
+      "status": "open",
+      "evidence": [
+        "Repo-wide grep for `deviceIndex` across js/ejs/py/json returns ONLY data: data/parts.json:25 and :50, data/character-5/parts.json:32 and :57, data/character-6/parts.json:46. No code reads it, no UI writes it.",
+        "The live device selector is `deviceId` / `devicePath`, normalized in python_wrappers/webcam_cli.py by commit 620d9427 ('accept every spelling of deviceId that parts.json contains' — 0, '0', 'video0', '/dev/video0') and by controllers/webcamController.js:543-549."
+      ],
+      "files_to_touch": [
+        "data/parts.json",
+        "data/character-5/parts.json",
+        "data/character-6/parts.json"
+      ],
+      "remaining_work": "Delete the five `deviceIndex` keys. Note data/parts.json at the repo root is itself suspicious (a non-per-character parts file) — flag to the data/schema stream rather than resolving here.",
+      "risk": "Very low.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "hardwareService.startStream echoes a `resolution` it never applies",
+      "status": "open",
+      "evidence": [
+        "services/hardwareService/index.js:1108 `async startStream({ deviceId = 0, resolution = '640x480', partId })` — the body only probes mjpg-streamer's snapshot URL and may `systemctl start mjpg-streamer` (:1112-1136). The parameter is never used to configure anything.",
+        "It is nonetheless reflected back to the caller at :1156 `resolution: resolution`, so an API response reports a resolution that has no relationship to what mjpg-streamer is actually serving."
+      ],
+      "files_to_touch": [
+        "services/hardwareService/index.js"
+      ],
+      "remaining_work": "Drop `resolution` from the startStream signature and from the success payload, or read the real value out of the systemd drop-in. Same defect class as a `success: true` that proves nothing.",
+      "risk": "Low; check callers that destructure `resolution` off the result.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "#speakerPart selector on /ai-settings/tts — a LYING control: the selection is overridden for actual playback",
+      "status": "open",
+      "evidence": [
+        "views/ai-settings/tts.ejs:171-172 renders 'Select Speaker Part' (#speakerPart); public/js/ai-settings-tts.js:239-260 populates it and auto-selects speakerParts[0].",
+        "public/js/ai-settings-tts.js:632-635 playGeneratedAudio(): `var characterSpeaker = this.getCurrentCharacterSpeaker(); var selectedSpeaker = characterSpeaker || document.getElementById('speakerPart').value;` — the dropdown is only consulted when getCurrentCharacterSpeaker() returns falsy.",
+        "public/js/ai-settings-tts.js:735-744 getCurrentCharacterSpeaker(): `if (this.speakerParts && this.speakerParts.length > 0) return this.speakerParts[0].id;` — it returns the FIRST speaker whenever any speaker exists. So the operator's choice is discarded on every Generate and every voice Preview (:786 previewVoice -> playGeneratedAudio).",
+        "The only place the selection is honored is the Test button: public/js/ai-settings-tts.js:791-796 testSpeakerIntegration() reads speakerSelect.value directly. A test that passes therefore proves nothing about where the real output goes.",
+        "Server side is capable of honoring it: services/serverPlaybackService.js:97-110 getSpeakerDeviceForPartId() and :232 resolve a device from speakerPartId correctly — the bug is entirely client-side."
+      ],
+      "files_to_touch": [
+        "public/js/ai-settings-tts.js",
+        "views/ai-settings/tts.ejs"
+      ],
+      "remaining_work": "One-line class of fix: make the dropdown authoritative — `var selectedSpeaker = document.getElementById('speakerPart').value || this.getCurrentCharacterSpeaker();` (invert the precedence at ai-settings-tts.js:635). OR, per the operator's rule, delete the dropdown and always route to the character's speaker. Do not leave it as-is; today it is the exact 'dead control' shape he calls worse than none. Note the fleet mostly has one speaker per character, so the two options are behaviourally identical today and only diverge on a multi-speaker node.",
+      "risk": "Low. If made authoritative, the empty-string default option must not silently fall through to browser audio.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "Listen-in volume sliders — all three are LIVE, not silent no-ops",
+      "status": "refuted",
+      "evidence": [
+        "#bridge-listenin-volume (views/conversation/index.ejs:335 and views/conversation/showtime.ejs:296) IS read: public/js/dashboard.js:2090-2092 `var volSlider = document.getElementById('bridge-listenin-volume'); var volume = ...; for (...) float32[m] *= volume;` applied before the buffer is queued (:2094-2101). dashboard.js is loaded on both pages (conversation/index.ejs:396, showtime.ejs:392).",
+        "#stt-listenin-volume (views/ai-settings/stt.ejs:77) IS read: public/js/ai-settings-stt.js:1355-1357, same per-sample gain.",
+        "#listenin-volume (views/setup/audio.ejs:196) IS read: views/setup/audio.ejs:1421-1423, same per-sample gain.",
+        "All three are browser-side monitor gain on the listen-in PCM stream — they were never supposed to touch the animatronic's speaker."
+      ],
+      "files_to_touch": [],
+      "remaining_work": "None. The §5 claim 'Listen-in volume (#bridge-listenin-volume) is a silent no-op' is REFUTED against current code. Worth a one-line label change so the control says 'Browser monitor volume' everywhere (setup/audio.ejs and ai-settings/stt.ejs already say 'Browser Volume'; the two conversation views say only 'listen-in volume', which is what invited the misreading).",
+      "risk": "None.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "Master / system volume — NOT a dead control, but it lies on Orlok: the API clamps to 1.0 while canonical is 1.3",
+      "status": "open",
+      "evidence": [
+        "The control is real: routes/api/systemRoutes.js:287-315 PUT /api/system/volume shells `wpctl set-volume @DEFAULT_AUDIO_SINK@ <linear>`; :269-281 GET reads it back with `wpctl get-volume`. Wired from views/setup/system.ejs:258 (#systemVolumeSlider) / :1116-1117, and from the global control bar public/js/mb-control-bar.js:99-121. So '§5: master/system volume a dead control' is REFUTED.",
+        "But the range is wrong for this fleet. Canonical per-node levels are ear-verified in config/animatronics.json: Orlok sinkVolume 1.3, Mina 1.0, Sir Dragomir 0.55 (node -e dump). server.js:142-161 applies them with wpctl at every start.",
+        "routes/api/systemRoutes.js:253-263 volumePayload() does `Math.min(1, fraction)`. On Orlok, wpctl reports 1.30 and the API reports 100% — the UI displays 100% while the sink is at 130%.",
+        "PUT rejects anything above 100 (:294-296) and rejects non-integers (:297-304), so the slider CANNOT express 1.3. Any touch of the slider on Orlok writes 1.00 and drops him ~23% below his ear-verified level, with the UI showing no change (it read 100 and wrote 100).",
+        "The setting is also non-persistent: it is node-local wpctl state reset by reboots and by test suites. scripts/log-review.mjs:119-126 exists precisely to warn when live volume drifts from the canonical value."
+      ],
+      "files_to_touch": [
+        "routes/api/systemRoutes.js",
+        "views/setup/system.ejs",
+        "public/js/mb-control-bar.js",
+        "config/animatronics.json"
+      ],
+      "remaining_work": "Raise the ceiling to match reality (wpctl accepts >1.0; a sensible cap is 150%), stop clamping in volumePayload(), widen the slider max, and — the important half — make a slider commit ALSO update this node's `sinkVolume` in config/animatronics.json so the operator's chosen level survives a reboot instead of being silently reverted by server.js:152. Until then the control is honest-but-lossy and should say so in the UI.",
+      "risk": "Medium acoustic risk: raising the cap lets an operator drive a sink past 100% (distortion). Editing config/animatronics.json from a runtime path is a node-local-state-in-git hazard — coordinate with the fleet stream, which already fought this (commit 9a66fd68 'stop shipping this node's own measurements to every other node').",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "Per-speaker stored volume / bass / treble / format — GHOST data with live editors (nothing reads them)",
+      "status": "open",
+      "evidence": [
+        "Data exists: data/character-3/parts.json:110-115 speaker part 6 config = { audioDeviceId, volume: 100, bass: 0, treble: 0 }.",
+        "Three UI surfaces write it: views/setup/calibration.ejs:4434 (#addSpeakerVolume, Add Part), :5806 (#editVolume, Edit Part), and the override schemas views/setup/calibration.ejs:2001-2004 (speaker: audioDeviceId, volume, format) and views/setup/models.ejs:316-319 (speaker: outputDevice, volume, format).",
+        "Nothing reads any of them. services/serverPlaybackService.js:72-80 _resolveSpeakerDevice() is the ONLY consumer of a speaker part's config and it reads only audioDeviceId / outputDevice / device / deviceName / pulseSink / sink. Volume comes from opts.volume with DEFAULT_VOLUME (:130, :247, :369, :462, :747) — never from the part.",
+        "Confirmed by grep: `config.volume` / `cfg.volume` / `.bass` / `.treble` across services/ routes/ controllers/ python_wrappers/ matches only jawAnimationSuperPowerService.js:738 and :1272, which are `config.volumeThreshold` (unrelated). A search for a speaker `.format` reader returns nothing.",
+        "Note the scene-step `volume` fields (views/scenes/studio.ejs:1062, scene-editor.ejs:663) are a DIFFERENT, live setting — they flow into opts.volume. Do not confuse the two."
+      ],
+      "files_to_touch": [
+        "views/setup/calibration.ejs",
+        "views/setup/models.ejs",
+        "data/character-*/parts.json",
+        "data/models/speaker_models.json"
+      ],
+      "remaining_work": "Either wire or remove; removal is the operator's default. To WIRE: have _resolveSpeakerDevice's callers also return the part's volume and use it as the default for opts.volume in serverPlaybackService — this is the natural home for a per-character trim and would compose with the canonical sinkVolume. To REMOVE: delete #addSpeakerVolume, #editVolume, the `volume`/`format` entries from both OVERRIDE_SCHEMAS, and the volume/bass/treble keys from the speaker parts. Pick one; do not ship both editors and no reader again.",
+      "risk": "If wired, per-speaker volume multiplies with the canonical sink volume and with scene-step volume — three multipliers is how a character goes silent for a reason nobody can find. Prefer removal unless the operator asks for a per-character trim.",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "name": "USB VID:PID model identity — backend landed in v10.4, no matcher and no UI surface; 5 of 9 model entries carry a signature",
+      "status": "partial",
+      "evidence": [
+        "The read path EXISTS and follows the operator's refinement exactly: routes/api/systemRoutes.js:110-177 GET /api/system/usb-devices walks /sys/bus/usb/devices, skips interface nodes and root hubs (:148), and returns { idVendor, idProduct, usbId: 'vvvv:pppp', product, manufacturer, busPath } — with the per-unit serial deliberately omitted (:111-118 comment: 'reports MODEL identity, not unit identity... recording the serial would make a like-for-like swap look like the wrong device'). Landed in commit 55d9ecf2 (`git log -S usb-devices`).",
+        "The storage shape EXISTS on model entries, at meta.* rather than a new top-level field: data/models/webcam_models.json:201-204 (webcam_sonix_streaming_camera: usbId 0c45:636b, usbProduct 'Streaming Camera', usbManufacturer 'SONix Technology Co., Ltd.'), data/models/microphone_models.json:29 (2886:001a) and :55-57 (0d8c:0014 C-Media), data/models/speaker_models.json:27 (2886:001a) and :43-45 (0d8c:0014).",
+        "Coverage is partial: webcam_models 1 of 3 entries has meta.usbId; microphone_models 2 of 3; speaker_models 2 of 3 (counted with node over each file).",
+        "NOTHING consumes it. Repo-wide grep for 'usb-devices' matches only its own definition (routes/api/systemRoutes.js:111 and :124) — zero fetches from views/ or public/js/. There is no comparison of a live usbId against meta.usbId anywhere, so the endpoint currently answers a question no screen asks.",
+        "data/models/*.json have no uncommitted diff now (`git diff --stat data/models/` empty); the only change since v10.1.0 is 55d9ecf2."
+      ],
+      "files_to_touch": [
+        "views/setup/calibration.ejs",
+        "views/setup/models.ejs",
+        "public/js/manual-controls.js",
+        "data/models/webcam_models.json",
+        "data/models/microphone_models.json",
+        "data/models/speaker_models.json",
+        "controllers/modelsController.js",
+        "controllers/webcamModelsController.js"
+      ],
+      "remaining_work": "Three pieces, in order: (1) a matcher — given a part, resolve its modelId -> model.meta.usbId, fetch /api/system/usb-devices, and classify MATCH / NOT PRESENT / DIFFERENT MODEL PRESENT; (2) a badge on the part page (calibration Model/Overrides tab is the natural home, next to the modelId select) reading 'This IS the model on record' / 'A DIFFERENT model is attached'; (3) fill in the four missing meta.usbId values by reading them off live hardware — do NOT guess them, and record the manufacturer/product strings alongside, as the three existing entries do. Their notes already state the correct semantics ('same model, not same retail SKU') — reuse that wording. Keep it USB-only: PCA9685/servo identity has no back-channel (55d9ecf2 commit message).",
+      "risk": "Low, read-only. Watch character-independence: the matcher must take a characterId, not read selectedCharacter. The four unknown signatures can only be read on the node that physically has the device, so this needs the fleet stream to collect them.",
+      "verdict": "CONFIRMED"
+    }
+  ],
+  "will_conflict_with": [
+    "elevenlabs/voice stream — both edit views/ai-settings/tts.ejs and public/js/ai-settings-tts.js (slider removal vs read-only identity panel + agent deep link). Sequence: do the slider removal ONCE, in whichever stream owns tts.ejs.",
+    "stt-cleanup stream — V11-DECISIONS #1 deletes the orphan /api/elevenlabs/stt/listen/* routes; my orphan stt-config KEY cleanup touches the same six data files and config/schemas/stt-config.schema.json.",
+    "calibration/parts-UI stream — views/setup/calibration.ejs is touched by three of my items (webcam Edit-Part width/height, speaker volume editors, USB identity badge) and is the same file the deferred Advanced-tab removal would touch.",
+    "fleet-audio stream — the master-volume ceiling fix writes config/animatronics.json sinkVolume, which that stream treats as canonical and which commit 9a66fd68 specifically stopped deploying between nodes.",
+    "data/schema stream — additionalProperties tightening on stt-config and the `speed` declaration on tts-config both change what `npm run gate` accepts."
+  ],
+  "dependencies_on_other_streams": [
+    "Fleet stream must read the four missing meta.usbId signatures off live hardware (Mina's XVF3800 array post-6ca28f49, PumpkinHead's and Groundbreaker's cameras/adapters) — they cannot be read from the Orlok node.",
+    "Deleting orphan keys from data/character-*/ai-config/*.json only sticks if it is deployed fleet-wide; some nodes rewrite these files at boot, so an Orlok-only edit shows up as drift.",
+    "The TTS slider removal depends on the ElevenLabs stream confirming which agent snapshot fields the read-only panel should display (config/elevenlabs/agents/*.json is the declared source of truth per V11-DECISIONS #2).",
+    "Any browser-spec updates for removed controls need the testing stream's invocation (MB_USE_RUNNING_SERVER=1 BASE_URL=http://localhost:3100 npx playwright test) — the default npm script fails on the PID guard."
+  ],
+  "open_questions": [
+    "tts-config `speed`: keep as a committed mirror of the agent snapshot (my recommendation — it is log-review.mjs's drift anchor) or delete it as a ghost? Operator call.",
+    "Per-speaker volume: remove, or wire it as a per-character trim? If wired, it becomes a third multiplier alongside canonical sinkVolume and scene-step volume — is that acceptable?",
+    "Master volume: should a slider commit persist to config/animatronics.json sinkVolume, given that file is committed to git and is explicitly not supposed to carry one node's local measurements?",
+    "Webcam geometry: collapse the Edit-Part form into the Model/Overrides tab (one editor), or keep both and make Edit-Part write `resolution`?",
+    "Should applyDeviceToService merge model defaults under part.config, so a webcam model's defaults.resolution/fps/quality actually reach mjpg-streamer?",
+    "Is data/parts.json (root-level, non-per-character, carrying two deviceIndex keys) live data or an artifact? Out of my scope but it is where two of the five orphan keys live."
+  ],
+  "fleet_wide_notes": "Verified against HEAD 48e6db7e, package.json 10.4.0, on the Orlok node; read-only throughout (no writes, no restarts, no hardware, no audio). Scorecard against the v104-overnight §5 list of 11: CONFIRMED STILL OPEN — tts `speed` ghost, #speakerPart lying control, per-speaker volume/bass/treble/format ghost, webcam Edit-Part width/height dead controls, webcam deviceIndex orphan data, startStream's echoed resolution. LANDED — the ten STT capture controls (dabcbe9d) and the webcam panel lies (55d9ecf2); only inert data keys remain from the STT set. REFUTED — webcam resolution/fps/quality are wired end-to-end through part.config -> apply-device -> mjpg-streamer systemd drop-in; all three listen-in volume sliders apply real browser-side gain; master/system volume genuinely drives wpctl. NEW, not on the original list — /api/system/volume clamps to 1.0 while Orlok's ear-verified canonical is 1.3, so the page reads 100% at a 130% sink and any slider touch silently drops him ~23% until the next restart; and config/schemas/tts-config.schema.json never declares `speed` even though all six characters store it. Pattern worth carrying into implementation: in this repo a 'ghost' is usually a SECOND editor for a setting that already has a working one (webcam geometry, speaker volume) — the fix is to delete the duplicate surface, not to wire it up."
+}

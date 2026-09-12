@@ -1,0 +1,171 @@
+[
+ {
+  "area": "Uptime and performance hardening of the running system (Orlok node) + fleet-wide video resolution consistency. Full report: /tmp/v11-uptime-perf.md",
+  "findings": [
+   {
+    "id": "UP-1",
+    "title": "Webcam 'apply device' writes an ExecStart override that destroys the self-healing mjpg launcher",
+    "severity": "show-stopper",
+    "category": "video/recovery",
+    "file": "controllers/webcamController.js",
+    "line": 561,
+    "evidence": "Lines 556-575 build override.conf with 'ExecStart=' + a full mjpg_streamer command using a bare devicePath (fallback '/dev/video0', q85 default at line 554), write it to /etc/systemd/system/mjpg-streamer.service.d/override.conf and restart the unit. scripts/mjpg-launcher.sh header documents the 2026-08-17 incident: a USB re-enumeration crash-looped the unit 42+ times against a hardcoded /dev/video0; the launcher resolves /dev/v4l/by-id at every start to prevent exactly this. systemctl cat mjpg-streamer confirms no override.conf exists on Orlok today, so the trap is armed but unsprung.",
+    "failure_scenario": "Operator presses Apply in the webcam setup UI during show prep; override.conf replaces the launcher with a bare /dev/videoN path; weeks later a USB over-current blip re-enumerates the camera mid-show and mjpg-streamer crash-loops (Restart=on-failure RestartSec=2, forever) against a dead node \u2014 monitoring feed gone until a human edits systemd files.",
+    "fix": "Rewrite applyDeviceToService to emit /etc/default/monsterbox-cam (MB_CAM_DEV/MB_CAM_RES/MB_CAM_FPS/MB_CAM_Q \u2014 the launcher already sources it at lines 16-24) and restart the unit; never emit an ExecStart= replacement. Default quality to 60, matching the launcher.",
+    "blast_radius": "All six characters (same controller ships fleet-wide); silently reintroduces the 42-crash-loop failure mode on every node where the button is ever pressed.",
+    "characters_affected": "all (1-6)"
+   },
+   {
+    "id": "UP-2",
+    "title": "Head-tracking pan-servo claim leaks on tracker crash and is held while driving is refused",
+    "severity": "show-stopper",
+    "category": "process-lifecycle",
+    "file": "controllers/motionTrackingController.js",
+    "line": 424,
+    "evidence": "(a) tracker.on('exit') at lines 424-428 only deletes activeTrackers/trackingStatus \u2014 no releaseServo; the release exists only in stopMotionTrackingInternal (lines 347-352), whose comment describes the exact frozen-head failure being guarded. (b) maybeDriveHead claims the servo at lines 663-670 BEFORE the calibrated-window guardrail check; line 591 refusal warn appears 610x in /var/log/monsterbox.err while monsterbox.log has 1,828 'DENIED claim on servo 15 by idle-loop' and 1,826 'IdleLoop All servos preempted, pausing' lines \u2014 the claim is held at priority 80 while nothing drives.",
+    "failure_scenario": "Python tracker crashes on its own (camera unplug, OpenCV error) mid-show: exit handler runs, claim stays held forever, head is frozen out of tracking AND idle/ambient motion until the operator disables head tracking or restarts the server. Separately, with an uncalibrated window the head sits statue-still all night while the UI shows tracking active \u2014 and the refusal reason is only in .err.",
+    "fix": "Call releaseServo(panServoId, headOwner(webcamId)) in the tracker 'exit' handler; move (or add) the guardrail null-check before claimServo in maybeDriveHead.",
+    "blast_radius": "Any character with head tracking enabled; converts a transient camera/python fault into an all-night frozen head.",
+    "characters_affected": "3 (Orlok, servo 15 \u2014 currently in the refusing state per 610 .err warns), plus any node with head tracking"
+   },
+   {
+    "id": "UP-3",
+    "title": "Video resolution has four disagreeing sources of truth; UI advertises 1080p30 while the stream is VGA15",
+    "severity": "major",
+    "category": "video-consistency",
+    "file": "data/models/webcam_models.json",
+    "line": 60,
+    "evidence": "arducam-b0205 defaults declare 1920x1080@30 q90; scripts/mjpg-launcher.sh defaults (and the live process, verified via ps: '-r 640x480 -f 15 -q 60') are 640x480@15 q60 per the operator's 2026-08-17 spec; webcamController.js:552-554 apply-path defaults q85; data/character-5/parts.json:33-34 bakes 1920x1080@30; goblin/goblin-pi.js:222 forces ffplay '-vf scale=1920:1080' on a Pi3B. Measured camera cost at VGA15 with an active client: 3 jiffies over 5s = ~0.6% of one core (native MJPEG passthrough).",
+    "failure_scenario": "Any path that honors the model/part defaults (apply button, a future model-defaults push, character-5 coming out of storage) silently jumps the stream to 1080p30 q90 \u2014 ~9x USB bandwidth on a bus shared with the audio adapter and ReSpeaker, for a phone-viewed feed; goblin Pi3B burns CPU software-scaling every frame to 1080p.",
+    "fix": "Canonical geometry: 640x480@15 q60. Single source of truth: scripts/mjpg-launcher.sh defaults (git-tracked, reaches all six characters via npm run deploy:all, including the four offline nodes on next deploy), per-node override only via /etc/default/monsterbox-cam. Align in-code now: webcam_models.json arducam defaults -> 640x480/15/60, apply path -> env-file writer with q60, character-5 parts.json -> 640x480/15, goblin-pi.js -> drop the scale filter.",
+    "blast_radius": "All six characters; consistency is exactly what Aaron asked for and today only Orlok's live process matches the spec.",
+    "characters_affected": "all (1-6); character-5 config provably wrong in-repo"
+   },
+   {
+    "id": "UP-4",
+    "title": "performance-history.json is fully rewritten every 5 minutes: ~427 MB/day of SD writes, non-atomic",
+    "severity": "major",
+    "category": "sd-write-pressure",
+    "file": "services/systemService.js",
+    "line": 136,
+    "evidence": "recordPerformanceSnapshot (lines 120-142) reads the whole file, appends one snapshot, and rewrites the entire file with plain fs.writeFile; server.js:885 schedules it every 300,000 ms; retention is 30 days and the file is still growing. Measured now: data/performance-history.json = 1,483,408 bytes. 1.48 MB x 288/day \u2248 427 MB/day \u2014 larger than all logging combined (monsterbox.log grows ~1.3 MB/day).",
+    "failure_scenario": "Steady SD wear on every node, every day, show or no show; a power cut mid-write truncates the file (silently reset to [] on next read). This is the hidden write path that ages SD cards toward the corruption failures Mina already exhibits.",
+    "fix": "Append NDJSON with periodic compaction, or buffer in RAM and flush hourly via services/atomicStore.js writeJsonAtomic; consider shorter retention.",
+    "blast_radius": "Every node in the fleet, continuously.",
+    "characters_affected": "all live nodes (2, 3, 4 now; 1, 5 when powered)"
+   },
+   {
+    "id": "UP-5",
+    "title": "A wedged-but-alive server can never auto-recover: exceptions swallowed, no watchdog, Restart downgraded to on-failure",
+    "severity": "major",
+    "category": "startup-recovery",
+    "file": "server.js",
+    "line": 74,
+    "evidence": "server.js:74-80 swallows all uncaughtException/unhandledRejection (log-and-continue). /etc/systemd/system/monsterbox.service.d/10-priority.conf silently overrides the base unit's Restart=always to Restart=on-failure (systemctl show confirms Restart=on-failure), and grep finds WatchdogSec in no unit file. No external health-check timer exists.",
+    "failure_scenario": "Hour nine of a show: a swallowed exception leaves state corrupted or the event loop blocked; systemd sees 'active (running)' forever, no restart ever fires, every endpoint times out, and the show stays dead until someone SSHes in. Hard power-cut recovery is otherwise clean (PID guard verified correct incl. pre-boot mtime and PID-reuse cmdline checks).",
+    "fix": "Add WatchdogSec=60 + sd_notify keepalive from the event loop (or a systemd timer curling /health with systemctl restart on failure); reconcile the Restart= intent in one drop-in and codify all drop-ins in install.sh like the journald/logrotate blocks.",
+    "blast_radius": "Whole node; the only failure class with no automatic path back to a running show.",
+    "characters_affected": "all live nodes"
+   },
+   {
+    "id": "UP-6",
+    "title": "characters.json and the tts-config file class are written non-atomically (power-loss corruption)",
+    "severity": "major",
+    "category": "sd-write-pressure",
+    "file": "services/characterService.js",
+    "line": 136,
+    "evidence": "saveCharacters uses plain fs.writeFile for data/characters.json (line 136), as do lines 181/193 (audio config, microphones.json) and services/aiConfigStore.js:36 (the tts-config class \u2014 the same file class with the live clobber bug). By contrast parts.json/poses.json/scenes.json/app-config/jaw config all correctly route through services/atomicStore.js writeJsonAtomic (verified by grep).",
+    "failure_scenario": "Power cut mid-write (Mina has ALREADY had hard power-loss events) tears the fleet character registry or a tts-config: server boots with a JSON parse error, falls back to defaults, wrong voice or missing characters on show night \u2014 and a torn tts-config is indistinguishable from the known clobber bug, wasting diagnosis time.",
+    "fix": "Route characterService.js:136/181/193, aiConfigStore.js:36 (and secondarily nodeDiscoveryService.js:131, goblinManagerService.js:82, goblinPlaylistService.js:48, sceneAnalyticsService.js:195) through writeJsonAtomic.",
+    "blast_radius": "Fleet registry and per-character voice config on every node.",
+    "characters_affected": "all (registry is fleet-wide); Mina highest risk"
+   },
+   {
+    "id": "UP-7",
+    "title": "53% of the runtime log is per-servo-move debug logging (3 lines per command)",
+    "severity": "minor",
+    "category": "sd-write-pressure",
+    "file": "services/hardwareService/index.js",
+    "line": 696,
+    "evidence": "Frequency analysis of /var/log/monsterbox.log: 13,699 each of '\ud83e\uddb7 Servo route: ...' (index.js:696), 'Calling moveToAngle...' and 'moveToAngle completed' = 41,097 of 77,273 total lines; PriorityManager claim/deny churn adds ~5,700 more. Idle loop and head tracking emit these continuously all show.",
+    "failure_scenario": "Continuous small-block SD writes all night plus real failures buried in noise; log window shrinks (10M rotation fills faster), losing post-mortem evidence after a bad night.",
+    "fix": "Demote the per-move trio and PriorityManager routine claim/deny lines behind an MB_DEBUG_SERVO env flag.",
+    "blast_radius": "SD wear and diagnosability on every node.",
+    "characters_affected": "all live nodes"
+   },
+   {
+    "id": "UP-8",
+    "title": "/tmp lives on the SD card and crontab backups accumulate unboundedly (140 files now)",
+    "severity": "minor",
+    "category": "sd-write-pressure",
+    "file": "services/scheduleService.js",
+    "line": 99,
+    "evidence": "findmnt shows no tmpfs on /tmp (ext4 root). scheduleService.js:99 writes os.tmpdir()/monsterbox-crontab-<Date.now()>.bak on every crontab change and never deletes; 140 such files counted in /tmp this session, plus /tmp/dl.mp3.",
+    "failure_scenario": "Unbounded slow growth and SD writes for every schedule edit; after months, clutter and wear with zero recovery value beyond the last backup.",
+    "fix": "Keep only the last N (e.g. 5) backups on write; and add a tmpfs /tmp mount to the node baseline/install.sh (8 GB RAM, only 1.7 used).",
+    "blast_radius": "Minor SD wear per node.",
+    "characters_affected": "all live nodes"
+   },
+   {
+    "id": "UP-9",
+    "title": "Motion-tracker spawn churn: 144 kill/respawn cycles at ~2.4 s CPU each (cv2 import)",
+    "severity": "minor",
+    "category": "process-lifecycle",
+    "file": "controllers/motionTrackingController.js",
+    "line": 358,
+    "evidence": "143 'Motion tracking process exited with code 0' + 1 'code null' in the current log window; measured `python3 -c \"import cv2\"` = 2.42 s on this Pi (paid on every startMotionTrackingProcess), plus background-subtractor relearn frames. Cycle count correlates with lurk sleep/wake (115 sleep / 113 wake log lines). Process reaping, SIGTERM->SIGKILL escalation and stdio draining are all correct (lines 307-345, 389-427).",
+    "failure_scenario": "Each lurk wake pays 2.4+ s of one core before the head can track, delaying the scare; the churn multiplies CPU spikes during the busiest moments of the show.",
+    "fix": "Keep the tracker process warm across lurk sleep (pause frame processing via a stdin command) instead of kill/respawn, or accept the cost knowingly \u2014 lifecycle correctness itself is fine.",
+    "blast_radius": "Head-tracking responsiveness and CPU spikes on nodes using lurk mode.",
+    "characters_affected": "3 (Orlok) today; any lurk-enabled node"
+   },
+   {
+    "id": "UP-10",
+    "title": "express.json/urlencoded body limit is 50 MB",
+    "severity": "minor",
+    "category": "express-hardening",
+    "file": "server.js",
+    "line": 242,
+    "evidence": "app.use(express.json({ limit: '50mb' })); app.use(express.urlencoded({ extended: true, limit: '50mb' })); (lines 242-243). Outbound fleet HTTP is fine (orchestrationService uses AbortController + timeouts on every audited call); sync reads on hot paths are negligible (only scheduleRoutes.js:86 on a cold path).",
+    "failure_scenario": "Any LAN client (or a buggy fleet peer) POSTs tens of MB of JSON; the Pi buffers and JSON.parses it on the event loop, stalling scene execution and jaw sync for seconds.",
+    "fix": "Drop the global limit to 1-5 MB; give any genuinely large endpoint (audio upload uses multipart already) a per-route limit.",
+    "blast_radius": "Momentary whole-app stalls under accidental or hostile large bodies.",
+    "characters_affected": "all live nodes"
+   },
+   {
+    "id": "UP-11",
+    "title": "ExecStart=/usr/bin/npm start keeps a 60 MB npm wrapper resident and adds a signal-forwarding hop",
+    "severity": "cosmetic",
+    "category": "startup-recovery",
+    "file": "server.js",
+    "line": 958,
+    "evidence": "ps shows npm wrapper PID 27346 RSS 60,176 KB alive beside node server.js (124 MB) for the life of the service; unit file ExecStart=/usr/bin/npm start. gracefulShutdown (server.js ~958-1052) is correct, but SIGTERM must transit npm first.",
+    "failure_scenario": "Wasted RAM per node and one more layer where a shutdown signal can be mishandled after an npm upgrade; also skews MemoryCurrent accounting.",
+    "fix": "ExecStart=/usr/bin/node /home/remote/MonsterBox/server.js in the unit (codify in install.sh).",
+    "blast_radius": "~60 MB RAM per node; marginal shutdown risk.",
+    "characters_affected": "all live nodes"
+   },
+   {
+    "id": "UP-12",
+    "title": "Goblin reconnect loop polls storage nodes forever every 30 s",
+    "severity": "cosmetic",
+    "category": "process-lifecycle",
+    "file": "services/goblinManagerService.js",
+    "line": 536,
+    "evidence": "startHeartbeatMonitor setInterval plus a 30 s reconnect cycle (comment at line 567); 605 throttled 'Attempting to reconnect 3 offline goblins' lines in monsterbox.log. Offline is EXPECTED for the storage nodes.",
+    "failure_scenario": "Perpetual failed network attempts and log lines against nodes that are intentionally powered off; noise, not outage.",
+    "fix": "Add an expectedOffline/storage flag per goblin that suppresses reconnect attempts, or back off exponentially to minutes.",
+    "blast_radius": "Log and network noise only.",
+    "characters_affected": "goblin subsystem nodes"
+   }
+  ],
+  "unverified": [
+   "Camera CPU at 1920x1080@30 was not measured (would have required changing the live stream); only the VGA15 cost (~0.6% of one core while actively streamed) was measured directly.",
+   "goblin/goblin-pi.js:222 behavior verified by code only \u2014 the goblin Pi3B nodes are offline, so the ffplay scale cost was not measured on real hardware.",
+   "No production source of SIGHUP or clean exit-0 was found, so the Restart=on-failure downgrade (10-priority.conf) leaving the service down after a clean exit is a latent gap, not a demonstrated one.",
+   "Steady-state size of performance-history.json at full 30-day retention is unknown; 1.48 MB is the measured current size and it is still growing.",
+   "Health items verified GOOD and needing no work: PID guard (singleInstance.js) correct in all examined cases including PID reuse; journald 64M cap and logrotate ARE live AND now codified in install.sh:489-496 (the memory note that they are not in git is stale); atomicStore used correctly for parts/poses/scenes/app-config/jaw; orchestration outbound HTTP has timeouts; mpg123/pw-play/MJPEG-proxy cleanup handlers correct; hardwareService/exec.js has 30s timeout + SIGKILL with drained stdio.",
+   "The task brief said 73 motion-tracker restarts; the current log window actually contains 144 tracker exits (143 code 0, 1 code null)."
+  ]
+ }
+]

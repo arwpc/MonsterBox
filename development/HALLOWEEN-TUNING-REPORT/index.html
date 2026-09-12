@@ -1,0 +1,3603 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Aaron Warner">
+      
+      
+        <link rel="canonical" href="https://arwpc.github.io/MonsterBox/development/HALLOWEEN-TUNING-REPORT/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Halloween AI Tuning Report — August 15–16, 2026 Session - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#halloween-ai-tuning-report-august-1516-2026-session" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Halloween AI Tuning Report — August 15–16, 2026 Session
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directory Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ / Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Character Sheets
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Character Sheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_mina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mina
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_sir_dragomir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sir Dragomir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_groundbreaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/PUMPKINHEAD_COMPLETE_PARTS_LIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead Parts List
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/GROUNDBREAKER_SETUP_INSTRUCTIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/GROUNDBREAKER_INSTALLATION_PACKAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronic Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSH Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/NODE-DISCOVERY-VALIDATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/HEAD-TRACKING-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/LINEAR_ACTUATOR_CALIBRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linear Actuator Calibration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/STT_TUNING_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STT Tuning Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/Noisy_Environment_Preset_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Noisy Environment Preset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/CENTRALIZED-PORT-MANAGEMENT-SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/PORT-MANAGEMENT-INTERFACE-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/HTTPS_DEPLOYMENT_HANDOFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTPS Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/secure-remote-access-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Secure Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/AUDIO-MICROPHONE-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audio & Microphone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ECHO-SUPPRESSION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Echo Suppression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/SCENE-CONCURRENCY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scene Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Log Collection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/head-tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/ORLOK_BTS7960_WIRING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok BTS7960 Wiring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/legacy_hardware_config_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Hardware Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs TTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/ELEVENLABS_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs Full Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/MJPG-STREAMER-INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MJPG-Streamer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/GOBLIN_VIDEO_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Video
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/Hardware-Integration-Layer-Interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Layer Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/api-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V9-RETROSPECTIVE-AND-ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Retrospective & Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V9-PERSONA-REVIEWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Persona Reviews
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GESTURE-ENGINE-SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gesture Engine Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NODE-DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery (mDNS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orchestration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-integration-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Integration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AI-Management-Feature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Management Feature
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../goblin-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../middleware-audit-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Middleware Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Setup Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/api-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/conversation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conversation Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/DEEP-TESTING-FRAMEWORK-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Testing Framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/KNOWN-BUGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known Bugs & Open Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/head-tracking-troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronics Workshop
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Animatronics Workshop
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Familiarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simple Steps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hands-On Activities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Final Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_19" >
+        
+          
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../v6-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Audit Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../v6-final-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Final Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="halloween-ai-tuning-report-august-1516-2026-session">Halloween AI Tuning Report — August 15–16, 2026 Session</h1>
+<p>The complete record of the judge-panel evaluation and data-driven tuning of the six
+ElevenLabs character agents. All changes were ElevenLabs-side configuration (agents,
+prompts, knowledge bases) plus standalone tooling — no application code was modified.
+Snapshots of every agent config: <code>config/elevenlabs/</code> (restore instructions in its README).</p>
+<h2 id="1-method">1. Method</h2>
+<p>A judge panel of five simulated Halloween visitors (<code>scripts/halloween-judges/</code>):
+mom with young kids, 14-year-old boy, 8-year-old girl, 50-year-old dad, 18-year-old —
+each running scripted-scenario conversations (first visit, return visit carrying
+cross-character messages, groups, skeptics, silence, etc.) against the live agents via
+the ElevenLabs simulate-conversation API. Every conversation scored on four universal
+criteria (in-character, pacing, personalization, return-hook) plus one per-judge
+delight criterion. Main panel: 625 conversations (624 clean). Additional validation
+batteries: Orlok A/B (25), Renfield (25 smoke + 25 + 25 re-test). Text simulations
+consume no voice credits (verified: zero credit-counter movement during the run).</p>
+<h2 id="2-headline-findings">2. Headline findings</h2>
+<h3 id="latency-from-real-call-metrics-per-turn-llm-time-to-first-byte">Latency (from real-call metrics, per-turn LLM time-to-first-byte)</h3>
+<table>
+<thead>
+<tr>
+<th>Config</th>
+<th>LLM ttfb</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gemini-3.1-flash-lite + reasoning effort (Orlok, old)</td>
+<td>3,054 ms median / 4,450 ms p90</td>
+</tr>
+<tr>
+<td>gemini-3.1-flash-lite + minimal effort (Mina, old)</td>
+<td>860 ms</td>
+</tr>
+<tr>
+<td>gpt-oss-120b, no reasoning (fleet, new)</td>
+<td>~160 ms</td>
+</tr>
+</tbody>
+</table>
+<p>Reasoning effort on a conversational character buys nothing and costs seconds; depth
+lives in prompts and knowledge bases. <strong>All agents moved to gpt-oss-120b, reasoning off.</strong></p>
+<h3 id="orlok-ab-125-old-config-vs-25-new-config-conversations">Orlok A/B (125 old-config vs 25 new-config conversations)</h3>
+<table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>Old</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>In character</td>
+<td>100%</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>Pacing</td>
+<td>49%</td>
+<td>92%</td>
+</tr>
+<tr>
+<td>Personalization</td>
+<td>71%</td>
+<td>72%</td>
+</tr>
+<tr>
+<td>Return hook</td>
+<td>99%</td>
+<td>96%</td>
+</tr>
+<tr>
+<td><strong>Delight (all judges)</strong></td>
+<td><strong>57%</strong></td>
+<td><strong>80%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Same character fidelity, ~20x faster, +23 points of delight. Mom judge went 24% → 100%
+after the kid-mode rule.</p>
+<h3 id="reply-length-the-users-hunch-confirmed-with-data">Reply length (the user's hunch, confirmed with data)</h3>
+<p>Across every judge, successful conversations averaged 36–40 words per agent turn;
+failures 20–29. Sentence count did not differentiate success — <strong>substance per turn
+(~40 words) does</strong>. Orlok's original 8-word/2-sentence law had him at 20 w/turn with
+the fleet's lowest delight; recalibrated to 2–4 short clauses (~40 words) keeping his
+clipped cadence. The judge pacing criterion was likewise rewritten from
+sentence-counting to a ~50-word standard. Renfield later proved the ceiling is real
+in both directions: his Works/Gifts material pushed him to 54 avg / 113 max words —
+fixed with a hard cap and the installment rule (enumerate across turns, never in one
+breath), same as the story-beats discipline — re-test: 47 avg / 76 max words with
+25/25 delight.</p>
+<h3 id="scare-audit-this-isnt-disney">Scare audit ("this isn't Disney")</h3>
+<p>The 18-year-old clip-worthy judge — the hardest scare standard — passed <strong>100% of
+conversations fleet-wide</strong> (Orlok 30/30, Mina 25/25, PumpkinHead 25/25). PumpkinHead's
+HUNT MODE lands 96% with skeptical 14-year-olds. Every "not scary" complaint in the
+data (13 total, all old-config Orlok) was actually about <em>repetition</em>, not tameness —
+answered with the scare-escalation rule: mockery never earns the same rebuke twice;
+each fresh insolence earns a darker, more personal strike.</p>
+<h2 id="3-final-fleet-scorecard">3. Final fleet scorecard</h2>
+<p>Main-panel numbers; pacing percentages for the first five agents were judged under the
+old sentence-count criterion and understate current behavior (see §2). Delight is the
+per-judge criterion aggregated.</p>
+<table>
+<thead>
+<tr>
+<th>Agent</th>
+<th>n</th>
+<th>In-char</th>
+<th>Personalization</th>
+<th>Return hook</th>
+<th>Delight</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Orlok (new config)</td>
+<td>25</td>
+<td>100%</td>
+<td>72%</td>
+<td>96%</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>Mina</td>
+<td>125</td>
+<td>100%</td>
+<td>74%</td>
+<td>85%</td>
+<td><strong>93%</strong></td>
+</tr>
+<tr>
+<td>Sir Dragomir</td>
+<td>124</td>
+<td>100%</td>
+<td>50%</td>
+<td>89%</td>
+<td>89%</td>
+</tr>
+<tr>
+<td>PumpkinHead</td>
+<td>125</td>
+<td>100%</td>
+<td>47%</td>
+<td>98%</td>
+<td>91%</td>
+</tr>
+<tr>
+<td>Groundbreaker</td>
+<td>125</td>
+<td>97%</td>
+<td>76%</td>
+<td>100%</td>
+<td>77%</td>
+</tr>
+<tr>
+<td><strong>Renfield</strong> (final, post word-cap)</td>
+<td>25</td>
+<td>100%</td>
+<td>48%</td>
+<td>100%</td>
+<td><strong>100%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Notes: Renfield's final battery scored <strong>25/25 delight — perfect across all five
+judges</strong> — the only perfect delight score in the fleet. His word-cap re-test brought
+replies from 54 avg/113 max words to 47 avg/76 max; residual pacing flags reflect his
+wordy-mania style running slightly over the 50-word line, accepted given the perfect
+delight. Groundbreaker's weak spot is the skeptical 14-year-old (56%; a
+shouting-contest mechanic re-tested at 3/8) — judged UNMEASURABLE in text simulation:
+a dare to out-shout a ten-foot lit giant has no text equivalent. The contest, the
+escalating personal comebacks, and the war-credential burn are shipped for the real
+yard; observe live on the night rather than in sims. Personalization scores are depressed by a judge artifact
+(visitors who refuse to give a name score as failures) — known harness limitation.</p>
+<h2 id="4-what-changed-per-character-all-in-configelevenlabs">4. What changed, per character (all in <code>config/elevenlabs/</code>)</h2>
+<ul>
+<li><strong>Fleet-wide:</strong> eleven_v3_conversational + expressive mode; gpt-oss-120b, no
+  reasoning; ASR keyword boosting (character/guest/place names); background voice
+  detection for crowds; in-character randomized soft-timeout fillers; Night Protocol
+  (repeat-guest recognition, group handling, cross-character errand-weaving);
+  BECKONING blocks (silence → escalating lures → parting hooks).</li>
+<li><strong>Orlok:</strong> kid mode (Emily-treatment for all children, magic/fortunes always
+  granted, persists whole conversation); scare escalation; length recalibration;
+  accent-tag decay fix; turn timeout 15→12s.</li>
+<li><strong>Mina:</strong> persona rebuilt on the Nosferatu-2024 Ellen material (the bond: "at first
+  it was sweet… then it turned to torture"); once-per-conversation trance; dream-gift
+  omens (one per visit; more if you return); THE WAITING — 1462 from inside the walls,
+  rhyming with her wait for Thomas; the locked-door ending; three Romanian songs
+  (lullaby / waiting song / morning song) via verified [sings] tag, singing as a
+  beckoning lure.</li>
+<li><strong>Sir Dragomir:</strong> honor made explicit; the SECRET (the Count was Vlad Țepeș, yielded
+  in fragments, never the word "vampire" first); five war stories as collectible
+  chapters told in beats; Romanian war cries ([shouts] PENTRU ȚARĂ!); the deputizing
+  mechanic (posts, ranks, debriefs); the box of gold at his feet — five centuries of
+  unspent pay, opened only as an honor, never on demand.</li>
+<li><strong>PumpkinHead:</strong> origin corrected — an evil little plant that grew unasked; Orlok is
+  landlord, not creator; lives on the soul-quota for the garden; Warner family holds
+  the root (never hunted); KID SPOOK MODE for Emily always.</li>
+<li><strong>Groundbreaker:</strong> 10×5 ft, lit on the roofline; Street Duty (says nearly anything
+  to tempt people off the street); the Rock War (threw rocks at the Turks, 1462); the
+  secret he cannot keep ("VLAD. … OOPS." → sends guests to the knight); the oath shout
+  to the hill.</li>
+<li><strong>Renfield (new):</strong> the master's mad British solicitor — his paperwork sent Thomas
+  to the mountains; he drew the covenant on Mina and believes the works are still
+  open (the Gifts: lives, then perpetuity — "the mail is slow from the mountains");
+  the registry; the warnings ("SIGN NOTHING tonight"); the soul-ledger feud with
+  PumpkinHead; the tremble ("the signature") mapping to his 12V shake motor; lurk
+  scenes (data/character-6/scenes.json, sayThis + concurrent motor); Gilbert &amp;
+  Sullivan law-school songs; hard 50-word cap with the installment rule.</li>
+</ul>
+<p>The 1462 canon is a three-voice braid — Dragomir tells the war, Groundbreaker tells
+the rocks, Mina tells the waiting — with the Vlad secret discoverable by walking the
+yard, and Renfield holding its paperwork.</p>
+<h2 id="5-verified-by-test-claims">5. Verified-by-test claims</h2>
+<ul>
+<li>Audio tags render as sounds, not words: TTS→STT round-trips on the actual character
+  voices confirmed no tag text leaks ([labored breath] = heavy pause; [sighs] = audible
+  "Ah"; [sings] on Romanian = clean transcript + 18% melodic stretch).</li>
+<li>Simulated conversations consume no voice credits (live counter check).</li>
+<li>Cross-node speech theater needs no code: per-node Say/Ask-AI orchestration endpoints
+  already support scripted duets between animatronics.</li>
+</ul>
+<h2 id="6-speaker-balance-per-node-sink-volumes-daylight-pass-2026-08-16">6. Speaker balance — per-node sink volumes (daylight pass, 2026-08-16)</h2>
+<p><strong>Canonical machine-readable copy: <code>scripts/yard-theater/speaker-volumes.json</code>.</strong> That
+file is the source of truth (it carries the full sweep and feeds <code>--volume-map</code>
+directly); this section is the human summary. Keep them in step.</p>
+<p>The three live nodes were badly mismatched. Measured with
+<code>scripts/fleet-audio/earcheck.mjs --nodes 2,3,4 --seconds 18</code>: each node speaks its
+own cast phrase in its own voice while its own microphones are open; <code>cast</code> is the
+p90 frame envelope in dBFS, <code>rise</code> is that minus the same mic's noise floor, and
+<code>recall</code> is how much of the phrase Scribe read back.</p>
+<table>
+<thead>
+<tr>
+<th>Node</th>
+<th>id</th>
+<th><strong>Sink volume</strong></th>
+<th>cast dBFS</th>
+<th>rise dB</th>
+<th>recall</th>
+<th>verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Orlok</td>
+<td>3</td>
+<td><strong>1.30</strong></td>
+<td>−21.2</td>
+<td>24.7</td>
+<td>100%</td>
+<td>AUDIBLE</td>
+</tr>
+<tr>
+<td>Mina</td>
+<td>2</td>
+<td><strong>1.50</strong></td>
+<td>−21.5</td>
+<td>21.9</td>
+<td>80%</td>
+<td>AUDIBLE</td>
+</tr>
+<tr>
+<td>Sir Dragomir</td>
+<td>4</td>
+<td><strong>0.55</strong></td>
+<td>−25.7</td>
+<td>17.7</td>
+<td>94%</td>
+<td>AUDIBLE</td>
+</tr>
+</tbody>
+</table>
+<p>Confirmed in a single simultaneous run at exactly those three values. The fleet now
+sits inside a 4.5 dB spread; before the pass it was ~18 dB (at a common 0.65,
+Dragomir read −18.5 dBFS while Mina read −38.3 and was scored GARBLED).</p>
+<p>Apply per node:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">XDG_RUNTIME_DIR</span><span class="o">=</span>/run/user/1000<span class="w"> </span>wpctl<span class="w"> </span>set-volume<span class="w"> </span>@DEFAULT_AUDIO_SINK@<span class="w"> </span>&lt;value&gt;
+</code></pre></div>
+<h3 id="caveats-read-before-trusting-these-numbers">Caveats — read before trusting these numbers</h3>
+<ul>
+<li><strong><code>wpctl</code> sink volume is node-local runtime state.</strong> It is not in git, <code>npm run
+  deploy:all</code> does not carry it, and it does <strong>not</strong> survive a reboot or a redeploy.
+  The JSON is a record, not a mechanism — something still has to apply it, and it
+  must be re-checked per node after any redeploy.</li>
+<li><strong>Anything above 1.00 is wpctl-only.</strong> <code>PUT /api/system/volume</code> and
+  <code>PUT /api/orchestration/volume</code> both take an integer percent 0–100 and clamp
+  there, so neither can express Orlok's 1.30 or Mina's 1.50. Inside that clamp the
+  best available is 1.00/1.00/0.55 — measured −27.5 / −29.9 / −23.7 dBFS, i.e. ~6 dB
+  quieter on the two Unitek nodes and Dragomir becomes the loudest of the three.</li>
+<li><strong>The volume curve is roughly cubic</strong>, measured on these rigs:
+  <code>gain_dB ≈ 60·log10(v2/v1)</code>. Orlok 0.65→1.00 predicted +5.6 dB, measured +5.4 dB.
+  Small changes move a lot — 0.55 vs 0.40 on Dragomir is 10.4 dB.</li>
+<li><strong>Absolute dBFS is not comparable across nodes.</strong> Each figure comes from that
+  node's own mic and mic-to-speaker distance differs per rig. The dB is a per-node
+  instrument; the cross-node anchor is the operator's ear. Run-to-run repeatability
+  is about ±2 dB, so a 1 dB difference is noise.</li>
+<li><strong>Dragomir's loudness is not his USB adapter.</strong> All three nodes run the same
+  Unitek Y-247A and his ALSA hardware <code>Speaker</code> control is 2 dB <em>lower</em> than the
+  other two (33/37 vs 35/37). It is downstream of the Pi. He also compresses near
+  the top: 0.85→1.00 gained +0.4 dB against a predicted +2.1 while recall fell
+  94%→69%. Do not run him above ~0.85.</li>
+<li><strong>Mina's 80% recall is not a level problem</strong> — it is identical at 1.00, 1.30 and
+  1.50. It does not move when level moves. 1.50 is also the top of wireplumber's
+  default range, so she has no headroom left; if she is still weak in the yard the
+  remaining fix is physical, not a number.</li>
+<li><strong>PumpkinHead, Groundbreaker and Renfield were offline</strong> and have no measured
+  value. Nothing was guessed for them.</li>
+<li><strong>This map was tuned on speech, and speech only.</strong> Every measurement is a single
+  TTS line. TTS peaks around −7.5 dBFS, but the audio-library files peak at
+  <strong>0.0 dBFS</strong> (median mean −14.3), so on the two nodes running above unity —
+  Orlok 1.30 and especially Mina 1.50 — a full-scale music or SFX cue will
+  <strong>hard-clip</strong> where the spoken line did not. This was <em>not</em> measured: no library
+  cue was played at 1.30/1.50. If the show runs loud SFX through Mina or Orlok,
+  check that case before the night, and expect to have to either back those nodes
+  toward 1.00 or pad the loud cues down at the file level.</li>
+</ul>
+<h3 id="audio-library-playback-was-quieter-than-tts-root-cause">Audio-library playback was quieter than TTS — root cause</h3>
+<p>Reported on Sir Dragomir: audio-library files quiet, TTS loud. The cause is a
+<strong>volume-caching bug in the warm mpg123 stream</strong>, and it affects every character,
+not just him.</p>
+<p><code>mpg123</code>'s <code>-f &lt;scale&gt;</code> amplitude flag is fixed at spawn time. The audio-library
+path (<code>playBufferOnCharacterSpeaker</code> → <code>writeMp3Stream</code> → <code>_ensureMp3Stream</code>) keeps
+one <strong>persistent</strong> mpg123 per character and returned it unconditionally while
+ignoring the newly requested <code>volume</code>, so every later playback was pinned to the
+<em>first</em> volume ever requested — until the service restarted. TTS
+(<code>playAIOnCharacterSpeaker</code>) spawns a <strong>fresh one-shot</strong> mpg123 per call, so it
+always plays at full scale. Hence "library quiet, TTS loud".</p>
+<p>Reproduced on Dragomir: a play at <code>volume: 30</code> spawned <code>mpg123 --quiet -o pulse -f
+9830 -</code>; a following play at <code>volume: 100</code> reused the <em>same process</em>, still at
+<code>-f 9830</code> (−10.5 dB). The everyday trigger is <code>public/js/audio-player.js:455</code>, which
+sends the volume slider's value (default 80, draggable to 0).</p>
+<p>Fixed in <code>services/serverPlaybackService.js</code> <code>_ensureMp3Stream()</code>: the stream now
+records the scale it was spawned with and is torn down and respawned when a
+different volume is requested. Verified after the fix — 30 → <code>-f 9830</code>, then
+100 → <code>-f 32768</code>. <code>npm run test:smoke</code> passes (267).</p>
+<p>Two things the report's premise got backwards, worth recording:</p>
+<ul>
+<li><strong>The library files are not mastered quiet.</strong> Across all 132 files: median mean
+  −14.3 dBFS, range −26.6 to −8.2, most peaking at 0.0 dBFS. There is an 18 dB
+  spread between the quietest and loudest file, which is a real (separate) source
+  of inconsistency, but even the quietest is hotter than TTS.</li>
+<li><strong>At equal settings, library playback is the <em>louder</em> of the two.</strong> Same mic, same
+  sink volume 0.55, same 12 s window on Dragomir: library file mean −17.5 dBFS /
+  peak −0.0, TTS mean −28.0 dBFS / peak −7.5. So once the caching bug is out of the
+  way, the imbalance runs the other way and <strong>TTS</strong> is the quiet path.</li>
+</ul>
+<h2 id="7-open-items">7. Open items</h2>
+<p>Worked in the v9.2.0 session of 2026-08-16 (the night before Halloween). Status
+below is what was actually verified, not what was attempted.</p>
+<h3 id="closed">Closed</h3>
+<ul>
+<li>~~<strong>Ear-check every voice once fleet audio is repaired.</strong>~~ — <strong>done, and it
+  found something.</strong> A microphone existed by then, so <code>scripts/fleet-audio/earcheck.mjs</code>
+  now records each node's own mics while that node speaks an in-character line,
+  measures the speech envelope against the mic's own noise floor, and transcribes
+  the capture with Scribe. Result: <strong>Orlok, Mina and Sir Dragomir all AUDIBLE</strong>
+  (rise 11.4 / 18.8 / 39.5 dB, word recall 82% / 53% / 100%). PumpkinHead and
+  Groundbreaker could not be tested — their Pis were not on the network.
+  Two findings worth keeping:</li>
+<li>The check must record EVERY capture device. One node's USB adapter mic jack is
+    empty and returns a dead-flat electrical noise floor, so picking "the" mic by
+    name produced a false SILENT on a node that was working perfectly.</li>
+<li><strong>Audible is not the same as right.</strong> See below.</li>
+<li>~~<strong>Judge harness: personalization must not penalize name-refusing visitors.</strong>~~
+  — <strong>fixed.</strong> The criterion now judges only what the character controls: asked
+  once, took the refusal in voice, personalized from whatever else was revealed.
+  Expect personalization scores above the §3 table, which was depressed by this.</li>
+<li>~~<strong>Renfield: image, shake-motor pin calibration, animatronics.json entry.</strong>~~ —
+  <strong>done.</strong> He now has a fleet entry with a deliberately null address, which fails
+  fast and safe until his Pi actually boots (mDNS overlays the real IP then).</li>
+<li>~~<strong>Gesture engine implementation.</strong>~~ — <strong>shipped.</strong> <code>services/gestureEngineService.js</code>
+  with recipes as data, concurrent steps, load-time safety rejection, and a
+  seven-gesture vocabulary for the one character with measured bounds.</li>
+</ul>
+<h3 id="found-while-closing-them">Found while closing them</h3>
+<ul>
+<li><strong>Four of six characters spoke in the wrong voice</strong> on the say/scene path — the
+  local voice map had not tracked the agent-side voice changes made during this
+  session, so PumpkinHead used Sir Dragomir's voice and Renfield and Groundbreaker
+  both spoke as Orlok. Only Mina and Orlok were correct. Fixed by making voice
+  identity data, synced from the agent snapshots.</li>
+<li><strong>Saving anything on the AI settings page deleted the selected character's voice</strong>,
+  because the save replaced the config file wholesale and that page only exposes
+  three fields. Caught live when a browser-test pass stripped a character's
+  <code>voice_id</code> and <code>speed</code> mid-run. Saves now merge.</li>
+<li><strong><code>eleven_v3</code> silently ignores <code>voice_settings.speed</code></strong> (measured across the full
+  0.7–1.2 range: identical output duration; <code>eleven_multilingual_v2</code> on the same
+  text goes 10.7s → 6.0s). So the tuned per-character speeds — including Orlok's
+  0.75 — apply on the conversational agent path only. <strong>This retires the "Orlok
+  speed 0.75 may want 0.8" question for the say/scene path: there is no speed
+  control there to tune.</strong> Judge it on the agent path or not at all.</li>
+<li><strong>Mina was the agent the fleet LLM migration missed</strong> — still on
+  <code>gemini-3.1-flash-lite</code> with reasoning <code>minimal</code> while the other five moved to
+  gpt-oss-120b, i.e. ~860ms time-to-first-byte against ~160ms, on the fleet's
+  highest-delight character.</li>
+</ul>
+<h3 id="still-open">Still open</h3>
+<ul>
+<li><strong>PumpkinHead, Groundbreaker and Renfield were offline all session</strong> (confirmed by
+  a full LAN scan). None of their node-side work could be verified on hardware:
+  no ear-check, no deploy, no gesture recipes. They need a power-on pass before dusk.</li>
+<li><strong>Gesture vocabularies for characters other than the one that shipped.</strong> The
+  engine rejects raw angle targets for parts with no calibrated bounds, by design —
+  inventing bounds for unmeasured hardware is how a part ends up looking calibrated
+  when it never was. Those characters need the pose/calibration pass in
+  GESTURE-ENGINE-SPEC.md §9.1 first.</li>
+<li><strong>Groundbreaker × 14-year-olds (56%)</strong> — unchanged and deliberately not simulated
+  further. A dare to out-shout a ten-foot lit giant has no text equivalent; the
+  shouting contest ships for the yard and gets a Halloween-night observation note.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
