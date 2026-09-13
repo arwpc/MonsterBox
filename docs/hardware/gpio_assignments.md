@@ -75,6 +75,12 @@ bus is free for one later.*
 |-----|------|-----------|
 | 12 | Shake Motor RPWM | Output (BTS7960 / IBT-2) — header pin 32 |
 | 13 | Shake Motor LPWM | Output (BTS7960 / IBT-2) — header pin 33 |
+| 18 | Eye Rings (pair, one signal) | Output (switched light) — header pin 12 |
+
+The eye rings are a **plain switched light**, not addressable. MonsterBox has no WS2812/NeoPixel
+support anywhere, and `rpi_ws281x` does not work on a Pi 5 — RP1 broke the DMA/PWM register
+access it relies on. GPIO 18 is the Pi's I2S `PCM_CLK`; unused here because Renfield's audio is
+entirely USB, but move the rings first if I2S is ever enabled on this node.
 
 `R_EN` and `L_EN` are **jumpered to VCC on the board**, not driven from GPIO —
 `linear_actuator_control_v2.py` only ever writes them HIGH at setup, so a GPIO buys nothing a

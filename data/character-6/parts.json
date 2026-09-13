@@ -49,5 +49,33 @@
       "deviceId": "alsa_input.usb-HHWei_Technology_Co.__Ltd._USB_Camera_HHW001-02.analog-stereo"
     },
     "updated": "2025-10-17T19:23:01.992Z"
+  },
+  {
+    "id": "4",
+    "characterId": 6,
+    "name": "Renfield's Eyes",
+    "type": "webcam",
+    "pin": null,
+    "description": "Sunplus 1080P Webcam (USB 1bcf:28c4). Proven 2026-08-31 by FRAMES, not status fields: 60 frames/6s from mjpg-streamer on the node, 98 through his own stream endpoint, 296 through Orlok's Fleet Command Center proxy. This entry was recorded in the CHANGELOG but never committed to parts.json - it existed only node-locally, so every config-driven path skipped it. Identify USB devices by idVendor:idProduct, never by per-unit serial. If the device migrates video0<->video1 the /dev/v4l/by-id symlink follows it correctly, which is why the launcher resolves by-id.",
+    "config": {
+      "devicePath": "/dev/video0",
+      "deviceId": 0,
+      "usbId": "1bcf:28c4"
+    },
+    "created": "2026-08-31T00:00:00.000Z",
+    "updated": "2026-09-13T00:00:00.000Z",
+    "enabled": true
+  },
+  {
+    "id": "5",
+    "characterId": 6,
+    "name": "Renfield Eye Rings",
+    "type": "light",
+    "pin": 18,
+    "description": "Pair of LED ring lights used as Renfield's glowing eyes. Both rings on ONE signal line - they light together. BCM GPIO 18 (header pin 12) for signal; power and ground wired as PumpkinHead's light.\n\nStandard GPIO light path: light_cli.py -> scripts/light_control.py, which drives the pin with `pinctrl set <pin> op dh|dl` rather than lgpio. That is deliberate - lgpio releases the pin when the wrapper process exits and the level snaps back to its pull default, which makes a lamp flick off the moment the command returns. pinctrl state outlives the process. State is read BACK with `pinctrl get` for the same reason (v10.5.1, commit 3fa394d): process memory resets to 'off' on every service restart, so the first toggle after one used to re-send 'on' to a lamp already on - one dead click, every time, blamed on the lamp. libgpiod/gpioinfo is NOT a substitute: it reports kernel line requests, and a pinctrl-driven pin shows there as an unused input while it is actually driving high.\n\nGPIO 18 is free on this node: the motor holds 12 and 13, and nothing else claims a GPIO. 18 is the Pi's I2S PCM_CLK line, which is unused here because Renfield's audio is entirely USB (ReSpeaker XVF3800) - if I2S is ever enabled on this node, move these rings first.\n\nNOT ADDRESSABLE. This is a plain switched ring, not WS2812/NeoPixel. MonsterBox has no addressable-LED support anywhere, and rpi_ws281x does not work on a Pi 5 (RP1 broke the DMA/PWM register access it depends on), so addressable pixels here would need an SPI-based driver written from scratch.",
+    "config": {},
+    "created": "2026-09-13T00:00:00.000Z",
+    "updated": "2026-09-13T00:00:00.000Z",
+    "enabled": true
   }
 ]
