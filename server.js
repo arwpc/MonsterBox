@@ -1124,6 +1124,25 @@ async function onServerReady(protocol) {
         }
     }
 
+    // Re-arm ambient movement-while-speaking for the selected character if the
+    // operator left AI Motion on. randomPoseService's per-character "enabled"
+    // state is in-memory only, so without this a restart would silently stop the
+    // body sway even though AI Motion still reads ON in super-powers.json. Lurk
+    // and the AI Motion toggle also arm it; this covers a plain restart.
+    try {
+        const { readAiMotionConfig } = await import('./services/aiMotionSuperPowerService.js');
+        const aiMotion = await readAiMotionConfig(config.selectedCharacter);
+        if (aiMotion && aiMotion.enabled) {
+            const { default: randomPoseService } = await import('./services/randomPoseService.js');
+            await randomPoseService.enable(config.selectedCharacter, { cooldownMs: 8000, minAmplitude: 0.2, maxAmplitude: 0.5 });
+            console.log('🤸 Ambient movement re-armed (AI Motion is on for the selected character)');
+        }
+    } catch (error) {
+        if (error.code !== 'ERR_MODULE_NOT_FOUND') {
+            console.warn('Ambient movement re-arm skipped:', (error && error.message) || error);
+        }
+    }
+
     // Start movement telemetry auto-flush and servo command buffer
     try {
         const { startAutoFlush } = await import('./services/movement/movementTelemetry.js');

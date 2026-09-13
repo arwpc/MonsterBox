@@ -357,7 +357,21 @@ router.post('/api/ai-motion', express.json(), async (req, res) => {
     }
 
     const config = await aiMotionService.readAiMotionConfig(characterId);
-    await aiMotionService.writeAiMotionConfig(characterId, { ...config, enabled });
+    // Turning AI Motion ON also arms ambient movement-while-speaking (the body
+    // "sway"). That existing random-pose-during-speech path is what moves parts
+    // — like PumpkinHead's shake motor — while the character talks; the eyes and
+    // jaw already react on their own. ambientDuringSpeech stays OFF by default in
+    // the config (a silent fleet-wide default caused trouble before); it is armed
+    // HERE only by the operator's explicit, per-character toggle. The in-memory
+    // random-pose state must also be enabled or the during-speech trigger no-ops.
+    const nextTriggers = { ...(config.triggers || {}), ...(enabled ? { ambientDuringSpeech: true } : {}) };
+    await aiMotionService.writeAiMotionConfig(characterId, { ...config, enabled, triggers: nextTriggers });
+    if (enabled) {
+      try {
+        const { default: randomPoseService } = await import('../services/randomPoseService.js');
+        await randomPoseService.enable(characterId, { cooldownMs: 8000, minAmplitude: 0.2, maxAmplitude: 0.5 });
+      } catch (_) { /* best-effort — the persisted config is the source of truth */ }
+    }
     res.json({ success: true, enabled });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });

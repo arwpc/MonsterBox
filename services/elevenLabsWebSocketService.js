@@ -1012,10 +1012,17 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         }
                         this.sendToClient(sessionId, chunkMsg);
 
-                        // Trigger a safe random pose during speech if enabled
+                        // Trigger a safe random pose ("sway") ONCE per agent turn
+                        // while it speaks, if AI Motion ambient is enabled. Audio
+                        // events carry no text, so key off the length captured from
+                        // the agent_response event; without this the trigger always
+                        // saw length 0 and never fired (ambient-during-speech was
+                        // dead on the realtime path). triggerDuringTTS still applies
+                        // its own 50% skip + cooldown, so ~half of turns sway.
                         try {
-                            if (c && c.characterId != null) {
-                                randomPoseService.triggerDuringTTS(c.characterId, (responseText || '').length);
+                            if (c && c.characterId != null && !c._ambientFiredThisTurn && (c._ambientTurnLen || 0) >= 50) {
+                                c._ambientFiredThisTurn = true;
+                                randomPoseService.triggerDuringTTS(c.characterId, c._ambientTurnLen);
                             }
                         } catch (_) { /* noop */ }
                     }
@@ -1086,6 +1093,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     }
 
                     if (responseText) {
+                        // Record this turn's response length and re-arm one ambient
+                        // "sway" attempt for it. The audio events carry no text, so
+                        // the during-speech trigger must key off the length captured
+                        // here (see the audio_chunk handler below).
+                        connection._ambientTurnLen = responseText.length;
+                        connection._ambientFiredThisTurn = false;
                         this.sendToClient(sessionId, {
                             type: 'agent_response',
                             text: responseText,

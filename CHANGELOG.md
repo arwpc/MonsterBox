@@ -4,6 +4,23 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **AI Motion toggle now moves the body while talking (and occasionally while idle).** Turning on
+  "AI Motion" for a character arms ambient movement-during-speech — it sets aiMotion.enabled and
+  triggers.ambientDuringSpeech and enables random poses — so the standard dashboard toggle finally
+  produces "sway while speaking" uniformly, instead of needing the ambient trigger armed separately on
+  the AI Motion setup page. ambientDuringSpeech still defaults OFF in config (a silent fleet-wide
+  default caused trouble once); it is armed only by the operator's explicit per-character toggle, and
+  re-armed from super-powers.json on restart (server.js).
+- **Fix — ambient movement-during-speech never fired on the realtime agent path.** ConvAI audio events
+  carry no text, so the during-speech trigger saw length 0 and always skipped
+  (services/elevenLabsWebSocketService.js). It now uses the response length captured from the
+  agent_response event and fires once per turn (still subject to the 50% skip + cooldown). This was
+  dead for every character, not just PumpkinHead.
+- **PumpkinHead sways:** two node-local motor "Body Sway" poses drive his Body Shakes motor at a gentle
+  35% / 1s; the existing random-pose (during speech) and idle-loop (while waiting) engines play them.
+  To give any motor/servo character the same, author a pose containing the part and turn on AI Motion.
+  Character-independent; a no-op for a character with no suitable poses.
+
 - **Fix — LED eyes now speech-sync during a realtime AI conversation on a character with no jaw servo.**
   The realtime agent-audio path (`driveJawFromPcmStream`) returned early when a character had no jaw
   servo, so the eye ring never left the "thinking" colour while the agent talked — it read as the eyes
