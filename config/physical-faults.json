@@ -80,14 +80,8 @@
       }
     },
     "6": {
-      "_note": "Renfield has NO servo hardware: no PCA9685 is attached, so there is no servo capability. /dev/i2c-1 now exists (dtparam=i2c_arm was enabled and the node rebooted during the Pi 5 bring-up audit), so the bus is available whenever a PCA9685 is fitted - the earlier note that it was missing is superseded. His one motor part is being wired as of 2026-09-13. Nothing here is damaged; it was never connected.",
-      "parts": {
-        "1": {
-          "status": "broken",
-          "reason": "Renfield Shake Motor - NOT YET PROVEN, and one driver has already been destroyed. A Cytron MDD10A was wired here 2026-09-13 and failed with smoke after a couple of minutes powered; root cause not conclusively established (reverse-connected bulk electrolytic is the leading candidate, a bare capacitor used as a snubber the second). The Pi survived. The part is now configured for the BTS7960/IBT-2 (HW-039) on RPWM=12, LPWM=13 with the enables jumpered to VCC in hardware. No motion has been observed. linear_actuator_control_v2.py returns success whether or not a motor is attached - and with VCC unconnected this board moves nothing while reporting fine - so an unattended scene would log a lie. CLEAR THIS ENTRY only after the motor is seen and heard turning both directions.",
-          "since": "2026-08-30"
-        }
-      }
+      "_note": "Renfield has NO servo hardware: no PCA9685 is attached, so there is no servo capability. /dev/i2c-1 exists (dtparam=i2c_arm was enabled during the Pi 5 bring-up audit), so the bus is available whenever one is fitted. His shake motor (part 1) WORKS as of 2026-09-13 - observed turning on a BTS7960/IBT-2 at 30% duty. Nothing is declared broken on this node.",
+      "parts": {}
     }
   }
 }

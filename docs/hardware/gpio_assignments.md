@@ -81,6 +81,9 @@ bus is free for one later.*
 jumper does not, and tying them in hardware removes the `GPIO_BUSY (-79)` trap a shared enable
 pin used to cause.
 
+**Proven moving 2026-09-13** at 30% duty. `VCC` → Pi pin 2, `GND` → Pi pin 6, `R_EN` and
+`L_EN` both → Pi pin 4 (5 V, same rail). `R_IS`/`L_IS` unconnected.
+
 > ⚠️ **The IBT-2 needs 5 V on `VCC`.** Unlike the MDD10A it does not power its logic from the
 > motor rail. `VCC` → Pi header pin 2 or 4, `GND` → any Pi ground pin. With `VCC` unconnected the
 > board moves nothing and every command still returns success. Never put 12 V on `VCC`.
