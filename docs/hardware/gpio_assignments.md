@@ -64,3 +64,23 @@
 | 26 | Motor DIR | Output (MDD10A) |
 | 13 | Motor PWM | Output (MDD10A) |
 | 16 | PIR Motion Sensor | Input |
+
+### Renfield (Character 6, 192.168.8.224) — Raspberry Pi 5 / Debian 13
+
+*No PCA9685 fitted. `/dev/i2c-1` exists (enabled during the Pi 5 bring-up audit), so the
+bus is free for one later.*
+
+**GPIO:**
+| Pin | Part | Direction |
+|-----|------|-----------|
+| 26 | Shake Motor DIR | Output (MDD10A) |
+| 13 | Shake Motor PWM | Output (MDD10A) |
+
+Same pair and same order as PumpkinHead — GPIO 13 is the PWM line on every MDD10A in the fleet.
+(These were briefly wired reversed on 2026-09-13 and swapped back the same day.) DIR and PWM are
+not interchangeable: swapped, `motor_control.py` puts the 2 kHz PWM train on the DIR line and a
+static level on the PWM line, so the board sees a permanently-asserted enable with direction
+chattering — the motor runs flat out and speed does nothing.
+
+`gpiochip0` is the RP1 bank on this Pi 5, which is what every wrapper already opens — no code
+change was needed for the platform.
