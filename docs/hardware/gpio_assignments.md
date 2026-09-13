@@ -73,8 +73,8 @@ bus is free for one later.*
 **GPIO:**
 | Pin | Part | Direction |
 |-----|------|-----------|
-| 27 | Shake Motor RPWM | Output (BTS7960 / IBT-2) |
-| 22 | Shake Motor LPWM | Output (BTS7960 / IBT-2) |
+| 12 | Shake Motor RPWM | Output (BTS7960 / IBT-2) — header pin 32 |
+| 13 | Shake Motor LPWM | Output (BTS7960 / IBT-2) — header pin 33 |
 
 `R_EN` and `L_EN` are **jumpered to VCC on the board**, not driven from GPIO —
 `linear_actuator_control_v2.py` only ever writes them HIGH at setup, so a GPIO buys nothing a
@@ -85,8 +85,14 @@ pin used to cause.
 > motor rail. `VCC` → Pi header pin 2 or 4, `GND` → any Pi ground pin. With `VCC` unconnected the
 > board moves nothing and every command still returns success. Never put 12 V on `VCC`.
 
+Both `RPWM` and `LPWM` carry PWM on this board (one at a time, by direction), unlike the MDD10A
+where `DIR` was a static level. `lgpio.tx_pwm()` is **software** PWM and runs on any GPIO, so
+nothing today depends on the choice — but GPIO 12/13 are the Pi 5's RP1 hardware-PWM pair
+(`dtoverlay=pwm-pi5`), so they are the only pins that would not need rewiring if hardware PWM is
+ever added.
+
 An MDD10A was wired here on 2026-09-13 (DIR=26, PWM=13) and destroyed itself with smoke after a
-couple of minutes powered. Those two pins are free again.
+couple of minutes powered. GPIO 22, 26 and 27 are free.
 
 `gpiochip0` is the RP1 bank on this Pi 5, which is what every wrapper already opens — no code
 change was needed for the platform.

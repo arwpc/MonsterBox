@@ -84,7 +84,7 @@
       "parts": {
         "1": {
           "status": "broken",
-          "reason": "Renfield Shake Motor - NOT YET PROVEN, and one driver has already been destroyed. A Cytron MDD10A was wired here 2026-09-13 and failed with smoke after a couple of minutes powered; root cause not conclusively established (reverse-connected bulk electrolytic is the leading candidate, a bare capacitor used as a snubber the second). The Pi survived. The part is now configured for the BTS7960/IBT-2 (HW-039) on RPWM=27, LPWM=22 with the enables jumpered to VCC in hardware. No motion has been observed. linear_actuator_control_v2.py returns success whether or not a motor is attached - and with VCC unconnected this board moves nothing while reporting fine - so an unattended scene would log a lie. CLEAR THIS ENTRY only after the motor is seen and heard turning both directions.",
+          "reason": "Renfield Shake Motor - NOT YET PROVEN, and one driver has already been destroyed. A Cytron MDD10A was wired here 2026-09-13 and failed with smoke after a couple of minutes powered; root cause not conclusively established (reverse-connected bulk electrolytic is the leading candidate, a bare capacitor used as a snubber the second). The Pi survived. The part is now configured for the BTS7960/IBT-2 (HW-039) on RPWM=12, LPWM=13 with the enables jumpered to VCC in hardware. No motion has been observed. linear_actuator_control_v2.py returns success whether or not a motor is attached - and with VCC unconnected this board moves nothing while reporting fine - so an unattended scene would log a lie. CLEAR THIS ENTRY only after the motor is seen and heard turning both directions.",
           "since": "2026-08-30"
         }
       }
