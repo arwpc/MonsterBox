@@ -73,14 +73,20 @@ bus is free for one later.*
 **GPIO:**
 | Pin | Part | Direction |
 |-----|------|-----------|
-| 26 | Shake Motor DIR | Output (MDD10A) |
-| 13 | Shake Motor PWM | Output (MDD10A) |
+| 27 | Shake Motor RPWM | Output (BTS7960 / IBT-2) |
+| 22 | Shake Motor LPWM | Output (BTS7960 / IBT-2) |
 
-Same pair and same order as PumpkinHead — GPIO 13 is the PWM line on every MDD10A in the fleet.
-(These were briefly wired reversed on 2026-09-13 and swapped back the same day.) DIR and PWM are
-not interchangeable: swapped, `motor_control.py` puts the 2 kHz PWM train on the DIR line and a
-static level on the PWM line, so the board sees a permanently-asserted enable with direction
-chattering — the motor runs flat out and speed does nothing.
+`R_EN` and `L_EN` are **jumpered to VCC on the board**, not driven from GPIO —
+`linear_actuator_control_v2.py` only ever writes them HIGH at setup, so a GPIO buys nothing a
+jumper does not, and tying them in hardware removes the `GPIO_BUSY (-79)` trap a shared enable
+pin used to cause.
+
+> ⚠️ **The IBT-2 needs 5 V on `VCC`.** Unlike the MDD10A it does not power its logic from the
+> motor rail. `VCC` → Pi header pin 2 or 4, `GND` → any Pi ground pin. With `VCC` unconnected the
+> board moves nothing and every command still returns success. Never put 12 V on `VCC`.
+
+An MDD10A was wired here on 2026-09-13 (DIR=26, PWM=13) and destroyed itself with smoke after a
+couple of minutes powered. Those two pins are free again.
 
 `gpiochip0` is the RP1 bank on this Pi 5, which is what every wrapper already opens — no code
 change was needed for the platform.
