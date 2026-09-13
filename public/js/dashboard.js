@@ -90,6 +90,7 @@
     const ui = {
       sayStatus: null,
       jawToggle: null,
+      ledTalkToggle: null,
       headTrackToggle: null,
     aiMotionToggle: null,
       parrotToggle: null,
@@ -637,6 +638,7 @@
     async function init() {
       ui.sayStatus = $('sayStatus');
       ui.jawToggle = $('jawToggle');
+      ui.ledTalkToggle = $('ledTalkToggle');
       ui.headTrackToggle = $('headTrackToggle');
     ui.aiMotionToggle = $('aiMotionToggle');
       ui.parrotToggle = $('parrotToggle');
@@ -660,6 +662,7 @@
         initChat(),
         loadWebcam(),
         loadJawSettings(),
+        loadLedTalkSettings(),
         loadHeadTrackStatus(),
         loadAiMotionStatus(),
         loadMotionSensorStatus(),
@@ -705,6 +708,7 @@
         loadSpeakers(),
         loadWebcam(),
         loadJawSettings(),
+        loadLedTalkSettings(),
         loadHeadTrackStatus(),
         loadAiMotionStatus(),
         loadFollowOrdersSettings(),
@@ -734,6 +738,7 @@
       }
 
       ui.jawToggle && ui.jawToggle.addEventListener('change', saveJawSettings);
+      ui.ledTalkToggle && ui.ledTalkToggle.addEventListener('change', saveLedTalkSettings);
       ui.headTrackToggle && ui.headTrackToggle.addEventListener('change', saveHeadTrackSettings);
     ui.aiMotionToggle && ui.aiMotionToggle.addEventListener('change', saveAiMotionSettings);
       ui.followOrdersToggle && ui.followOrdersToggle.addEventListener('change', saveFollowOrdersSettings);
@@ -1667,6 +1672,48 @@ async function saveHeadTrackSettings() {
       } catch { }
     }
 
+    // LED Talk — the eye ring reflects the AI/Lurk interaction (thinking /
+    // listening / idle) and goes audio-reactive while speaking. Backed by
+    // jawAnimation.ledSync.enabled. Disabled honestly on characters with no ring.
+    async function loadLedTalkSettings() {
+      if (!ui.ledTalkToggle) return;
+      try {
+        const r = await fetch('/conversation/api/led-talk');
+        const j = await r.json();
+        if (j && j.success) {
+          ui.ledTalkToggle.checked = !!j.enabled;
+          const label = ui.ledTalkToggle.closest('.mb-switch');
+          if (j.available === false) {
+            ui.ledTalkToggle.disabled = true;
+            if (label) { label.style.opacity = '0.5'; label.title = 'No LED ring on this character'; }
+          } else {
+            ui.ledTalkToggle.disabled = false;
+            if (label) { label.style.opacity = ''; }
+          }
+        }
+      } catch { }
+    }
+
+    async function saveLedTalkSettings() {
+      const wanted = ui.ledTalkToggle.checked;
+      try {
+        const r = await fetch('/conversation/api/led-talk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: wanted })
+        });
+        const j = await r.json();
+        if (!j || !j.success) {
+          // No ring / can't arm — revert instead of showing a green switch that
+          // lights nothing (mirrors the jaw + follow-orders toggles).
+          ui.ledTalkToggle.checked = !wanted;
+          if (j && j.error) ui.ledTalkToggle.title = j.error;
+        }
+      } catch {
+        ui.ledTalkToggle.checked = !wanted;
+      }
+    }
+
     function updateChatModeUI() {
       var btn = ui.chatModeToggle;
       var input = ui.chatInput;
@@ -2406,6 +2453,7 @@ async function saveHeadTrackSettings() {
   var badgeMap = [
     { toggle: 'chatAiOnToggle',    badge: 'lurkBadgeAI' },
     { toggle: 'jawToggle',         badge: 'lurkBadgeJaw' },
+    { toggle: 'ledTalkToggle',     badge: 'lurkBadgeLed' },
     { toggle: 'headTrackToggle',   badge: 'lurkBadgeHead' },
     { toggle: 'idleToggle',        badge: 'lurkBadgeIdle' },
     { toggle: 'motionSensorToggle',badge: 'lurkBadgeMotion' }
@@ -2470,7 +2518,7 @@ async function saveHeadTrackSettings() {
     } catch (_) {}
 
     // Turn off every toggle that could be animating/speaking.
-    ['lurkToggle', 'chatAiOnToggle', 'jawToggle', 'headTrackToggle',
+    ['lurkToggle', 'chatAiOnToggle', 'jawToggle', 'ledTalkToggle', 'headTrackToggle',
      'parrotToggle', 'idleToggle', 'motionSensorToggle', 'followOrdersToggle',
      'aiMotionToggle']
       .forEach(function (id) {

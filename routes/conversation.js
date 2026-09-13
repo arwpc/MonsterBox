@@ -194,6 +194,64 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
   }
 });
 
+// GET /conversation/api/led-talk — dashboard LED Talk toggle state
+// "LED Talk" is the operator-facing name for jawAnimation.ledSync.enabled: the
+// single gate that lets the eye ring reflect the AI interaction (thinking /
+// listening / idle) and go audio-reactive while speaking. Character-independent;
+// `available` is false on any character with no led_ring so the UI can disable it.
+router.get('/api/led-talk', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.json({ success: true, enabled: false, available: false });
+    const config = await jawAnimationService.readJawConfig(characterId);
+    const parts = await loadCharacterParts(characterId);
+    const ring = parts.find(p => String(p.type).toLowerCase() === 'led_ring' && p.enabled !== false);
+    res.json({
+      success: true,
+      enabled: !!(config.ledSync && config.ledSync.enabled),
+      available: !!ring
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/led-talk { enabled }
+router.post('/api/led-talk', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No selected character' });
+    const enabled = !!req.body.enabled;
+    const parts = await loadCharacterParts(characterId);
+    const ring = parts.find(p => String(p.type).toLowerCase() === 'led_ring' && p.enabled !== false);
+    if (enabled && !ring) {
+      // Honest refusal, mirroring the jaw / follow-orders toggles: a character
+      // with no ring must not show a green switch that lights nothing.
+      return res.json({ success: false, error: 'This character has no LED ring' });
+    }
+    const config = await jawAnimationService.readJawConfig(characterId);
+    config.ledSync = { ...(config.ledSync || {}), enabled };
+    // Auto-assign the ring so the speaking/interaction paths know which part to
+    // light, without a trip to the LED Animation page just to arm the toggle.
+    if (enabled && ring && config.ledSync.partId == null) {
+      config.ledSync.partId = String(ring.id);
+    }
+    await jawAnimationService.writeJawConfig(characterId, config);
+    // Immediate feedback on the eyes: come alive at idle when armed, black out
+    // when disarmed. Fire-and-forget — an eye update must never fail the toggle.
+    if (enabled) {
+      ledInteractionService.setInteractionState(characterId, 'idle').catch(() => {});
+    } else {
+      import('../services/ledController.js')
+        .then(async (m) => { await m.default.initialize(characterId); await m.default.off(); })
+        .catch(() => {});
+    }
+    res.json({ success: true, enabled });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
 // GET /conversation/api/follow-orders — current state for the dashboard toggle + badge
 router.get('/api/follow-orders', async (req, res) => {
   try {
@@ -1294,7 +1352,11 @@ async function findMotionSensor(characterId) {
 // Helper: check which lurk features are available for a character
 async function checkLurkCapabilities(characterId) {
   const parts = await loadCharacterParts(characterId);
-  const capabilities = { jaw: false, headTracking: false, idle: false, motionSensor: false, ai: true };
+  const capabilities = { jaw: false, headTracking: false, idle: false, motionSensor: false, led: false, ai: true };
+
+  // LED "talk": the character has an addressable eye ring the interaction states
+  // and audio-reactive speaking can drive.
+  capabilities.led = parts.some(p => String(p.type).toLowerCase() === 'led_ring' && p.enabled !== false);
 
   // Jaw: needs a servo part configured for jaw
   try {
@@ -1342,7 +1404,7 @@ router.get('/api/lurk-mode/capabilities', async (req, res) => {
 
 // Helper: enable all lurk superpowers (jaw, head tracking, random poses)
 async function enableLurkSuperpowers(characterId) {
-  const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null };
+  const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null, led: null };
 
   // 1. Enable jaw animation — but ONLY if this character actually has a jaw.
   //
@@ -1450,6 +1512,27 @@ async function enableLurkSuperpowers(characterId) {
     results.idle = { enabled: true, testMode: true };
   }
 
+  // 5. Enable LED "talk" eyes — the ring reflects thinking/listening/idle and goes
+  // audio-reactive while speaking. Only for characters that own an led_ring; a
+  // no-op elsewhere (mirrors the jaw gate). Arms the same jawAnimation.ledSync.enabled
+  // flag the dashboard "LED Talk" switch controls, then shows idle immediately.
+  try {
+    const ledParts = await loadCharacterParts(characterId);
+    const ring = ledParts.find(p => String(p.type).toLowerCase() === 'led_ring' && p.enabled !== false);
+    if (ring) {
+      const jc = await jawAnimationService.readJawConfig(characterId);
+      jc.ledSync = { ...(jc.ledSync || {}), enabled: true };
+      if (jc.ledSync.partId == null) jc.ledSync.partId = String(ring.id);
+      await jawAnimationService.writeJawConfig(characterId, jc);
+      ledInteractionService.setInteractionState(characterId, 'idle').catch(() => {});
+      results.led = { enabled: true };
+    } else {
+      results.led = { enabled: false, reason: 'no LED ring' };
+    }
+  } catch (e) {
+    results.led = { enabled: false, error: e.message };
+  }
+
   return results;
 }
 
@@ -1482,7 +1565,7 @@ export async function disarmLurkCompletely(characterId) {
 // relied on the fleet fan-out reaching this node over its own loopback HTTPS,
 // which is both slower and able to fail exactly when it matters most.
 export async function disableLurkSuperpowers(characterId) {
-  const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null };
+  const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null, led: null };
 
   try {
     const jawConfig = await jawAnimationService.readJawConfig(characterId);
@@ -1490,6 +1573,22 @@ export async function disableLurkSuperpowers(characterId) {
     await jawAnimationService.writeJawConfig(characterId, jawConfig);
     results.jaw = { enabled: false };
   } catch (e) { results.jaw = { error: e.message }; }
+
+  // Disarm LED "talk" and black out the ring so lurk sleep/disable leaves the
+  // eyes dark, not stuck on the last interaction colour.
+  try {
+    const jc = await jawAnimationService.readJawConfig(characterId);
+    if (jc.ledSync) {
+      jc.ledSync = { ...jc.ledSync, enabled: false };
+      await jawAnimationService.writeJawConfig(characterId, jc);
+    }
+    try {
+      const { default: ledController } = await import('../services/ledController.js');
+      await ledController.initialize(characterId);
+      await ledController.off();
+    } catch (_) { /* no ring / daemon down — nothing to darken */ }
+    results.led = { enabled: false };
+  } catch (e) { results.led = { error: e.message }; }
 
   if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
     try {

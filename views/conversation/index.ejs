@@ -41,6 +41,8 @@
               data-bs-toggle="tooltip" data-bs-placement="bottom" title="AI Conversation"><i class="bi bi-chat-dots"></i> AI</span>
         <span class="mb-badge mb-badge-primary lurk-badge" id="lurkBadgeJaw"
               data-bs-toggle="tooltip" data-bs-placement="bottom" title="Jaw Animation"><i class="bi bi-soundwave"></i> Jaw</span>
+        <span class="mb-badge mb-badge-info lurk-badge" id="lurkBadgeLed"
+              data-bs-toggle="tooltip" data-bs-placement="bottom" title="LED Talk — eyes reflect thinking/talking"><i class="bi bi-lightbulb"></i> LED</span>
         <span class="mb-badge mb-badge-info lurk-badge" id="lurkBadgeHead"
               data-bs-toggle="tooltip" data-bs-placement="bottom" title="Head Tracking"><i class="bi bi-eye"></i> Head</span>
         <span class="mb-badge mb-badge-warning lurk-badge" id="lurkBadgeIdle"
@@ -163,6 +165,11 @@
       <input type="checkbox" id="jawToggle" title="Toggle jaw animation">
       <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
       <span class="mb-text-sm"><i class="bi bi-soundwave"></i> Jaw</span>
+    </label>
+    <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Light the eye ring to match what the character is doing — thinking, listening, and talking colours during AI and Lurk">
+      <input type="checkbox" id="ledTalkToggle" title="Toggle LED Talk (eyes react during AI/Lurk)">
+      <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+      <span class="mb-text-sm"><i class="bi bi-lightbulb"></i> LED Talk</span>
     </label>
     <label class="mb-switch" data-bs-toggle="tooltip" data-bs-placement="top" title="Track visitors via webcam and move head servo to follow">
       <input type="checkbox" id="headTrackToggle" title="Toggle head tracking">

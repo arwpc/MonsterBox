@@ -4,6 +4,14 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **LED Talk toggle on the dashboard.** A switch beside "Jaw" (on both the Scare Console and the
+  classic dashboard) arms the eye ring for the AI/Lurk interaction: the eyes show the per-state colours
+  for **thinking** and **listening**, go **audio-reactive while speaking**, and rest at **idle**. Backed
+  by the single `jawAnimation.ledSync.enabled` gate and exposed via `GET/POST /conversation/api/led-talk`;
+  Lurk mode now arms/disarms it alongside jaw/head/idle (and blacks the ring out on sleep), with a
+  lurk-status "LED" badge. Character-independent — the switch disables itself on any character with no
+  `led_ring`. Verified live in AI mode on PumpkinHead: idle → thinking → speaking → listening.
+
 - **LED Eye Sync is on the Jaw Animation page, right under "Play TTS & Jaw."** The tuning controls
   (enable, LED part, quiet/loud colours, sensitivity, smoothing, speed, attack, release, and audio
   offset) now sit as one horizontal panel directly below the Play button — where you actually play
