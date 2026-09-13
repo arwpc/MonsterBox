@@ -75,12 +75,14 @@ bus is free for one later.*
 |-----|------|-----------|
 | 12 | Shake Motor RPWM | Output (BTS7960 / IBT-2) — header pin 32 |
 | 13 | Shake Motor LPWM | Output (BTS7960 / IBT-2) — header pin 33 |
-| 18 | Eye Rings (pair, one signal) | Output (switched light) — header pin 12 |
+| 10 | Eye Rings (pair, chained) | Output (SPI0 MOSI, WS2812 data) — header pin 19 |
 
-The eye rings are a **plain switched light**, not addressable. MonsterBox has no WS2812/NeoPixel
-support anywhere, and `rpi_ws281x` does not work on a Pi 5 — RP1 broke the DMA/PWM register
-access it relies on. GPIO 18 is the Pi's I2S `PCM_CLK`; unused here because Renfield's audio is
-entirely USB, but move the rings first if I2S is ever enabled on this node.
+The eye rings are **addressable** and driven over **SPI, not GPIO 18**. Every NeoPixel guide says
+GPIO 18 because `rpi_ws281x` builds the 800 kHz waveform from the BCM2835/2711 PWM+DMA
+peripherals — RP1 removed that access, so on a Pi 5 that library cannot work at all.
+`python_wrappers/neopixel_cli.py` encodes each WS2812 bit as three SPI bits at 2.4 MHz on MOSI
+instead. **Unproven against hardware as of 2026-09-13**, and not yet wired into the Node light
+path (which still drives a static level and does nothing to these).
 
 `R_EN` and `L_EN` are **jumpered to VCC on the board**, not driven from GPIO —
 `linear_actuator_control_v2.py` only ever writes them HIGH at setup, so a GPIO buys nothing a
