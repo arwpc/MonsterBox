@@ -26,6 +26,7 @@ import setupCharactersRoutes from './routes/setup/characters.js';
 import setupModelsRoutes from './routes/setup/models.js';
 import setupPosesRoutes from './routes/setup/poses.js';
 import setupJawAnimationRoutes from './routes/setup/jaw-animation.js';
+import setupLedAnimationRoutes from './routes/setup/led-animation.js';
 import setupHeadAnimationRoutes from './routes/setup/head-animation.js';
 import setupFollowOrdersRoutes from './routes/setup/follow-orders.js';
 import setupAiMotionRoutes from './routes/setup/ai-motion.js';
@@ -41,6 +42,7 @@ import charactersApiRoutes from './routes/api/charactersRoutes.js';
 import elevenLabsApiRoutes from './routes/api/elevenLabsApiRoutes.js';
 import orchestrationRoutes from './routes/api/orchestrationRoutes.js';
 import partsApiRoutes from './routes/api/partsApi.js';
+import ledApiRoutes from './routes/api/ledRoutes.js';
 import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
 import systemApiRoutes from './routes/api/systemRoutes.js';
@@ -581,6 +583,7 @@ app.use('/setup/calibration', setupCalibrationRoutes);
 app.use('/setup/audio', setupAudioRoutes);
 app.use('/setup/models', setupModelsRoutes);
 app.use('/setup/jaw-animation', setupJawAnimationRoutes);
+app.use('/setup/led-animation', setupLedAnimationRoutes);
 app.use('/setup/head-animation', setupHeadAnimationRoutes);
 app.use('/setup/follow-orders', setupFollowOrdersRoutes);
 app.use('/setup/ai-motion', setupAiMotionRoutes);
@@ -604,6 +607,7 @@ app.use('/ai-settings', aiSettingsRoutes);
 // Audio loop API routes
 app.use('/api/audio-loop', audioLoopApiRoutes);
 app.use('/api/parts', partsApiRoutes);
+app.use('/api/led', ledApiRoutes);
 // Scheduled Events. Mounted before the generic '/api' routers below so the
 // specific prefix wins, matching the '/api/parts' ordering requirement.
 app.use('/api/schedule', scheduleApiRoutes);
@@ -1099,6 +1103,27 @@ async function onServerReady(protocol) {
         console.error(`❌ Failed to restore motion mode:`, error.message);
     }
 
+    // Bring up the addressable LED rings for the selected character.
+    //
+    // Deliberately best-effort and never awaited into the critical path: a node
+    // whose character has no led_ring part (most of the fleet) resolves to a
+    // no-op, and a missing rpi_ws281x or a busy PWM channel must not stop the
+    // web server from serving. The controller reports the reason either way.
+    try {
+        const { default: ledController } = await import('./services/ledController.js');
+        const ledUp = await ledController.initialize(config.selectedCharacter);
+        if (ledUp) {
+            const geo = ledController.geometry;
+            console.log(`\u{1F308} LED rings ready: ${geo.pixelCount} pixels on GPIO${geo.gpioPin} (${ledController.part.name})`);
+            const startState = (ledController.part.config && ledController.part.config.defaultState) || 'idle';
+            await ledController.setState(startState);
+        }
+    } catch (error) {
+        if (error.code !== 'ERR_MODULE_NOT_FOUND') {
+            console.warn('LED ring startup skipped:', (error && error.message) || error);
+        }
+    }
+
     // Start movement telemetry auto-flush and servo command buffer
     try {
         const { startAutoFlush } = await import('./services/movement/movementTelemetry.js');
@@ -1244,6 +1269,23 @@ async function gracefulShutdown(signal) {
         await jawServoDaemon.shutdown();
     } catch (error) {
         console.warn('Jaw servo daemon cleanup error:', (error && error.message) || error);
+    }
+
+    // Clear the addressable LED rings and stop their daemon.
+    //
+    // WS2812B latches: each pixel holds the last colour clocked into it and keeps
+    // emitting it with no host attached at all. "The service stopped" therefore
+    // does NOT mean "the eyes went dark" — without this the rings stay lit
+    // through a restart, and through a shutdown. The controller blacks out first
+    // and kills the daemon second, in that order, for exactly that reason.
+    try {
+        const { default: ledController } = await import('./services/ledController.js');
+        await ledController.shutdown();
+        console.log('  \u2713 LED rings cleared');
+    } catch (error) {
+        if (error.code !== 'ERR_MODULE_NOT_FOUND') {
+            console.warn('LED ring cleanup error:', (error && error.message) || error);
+        }
     }
 
     // Stop memory monitor

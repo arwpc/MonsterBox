@@ -832,6 +832,14 @@
                   </div>
                 </div>
               </div>
+
+              <!-- LED animation moved to its own page -->
+              <div id="advancedLedRing" style="display:none;">
+                <div class="mb-alert mb-alert-info" role="alert">
+                  <i class="bi bi-lightbulb"></i> LED colours, palette and speech-synced eyes now live on the
+                  <a href="/setup/led-animation">LED Animation</a> page, with a live test.
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2331,19 +2339,24 @@
     function renderAdvancedTab(part) {
       var advDefault = document.getElementById('advancedDefault');
       var advMotion = document.getElementById('advancedMotionTracking');
+      var advLed = document.getElementById('advancedLedRing');
       if (!advDefault || !advMotion) return;
 
-      if (part && part.type === 'webcam') {
-        advDefault.style.display = 'none';
-        advMotion.style.display = 'block';
+      var isWebcam = !!(part && part.type === 'webcam');
+      var isLedRing = !!(part && part.type === 'led_ring');
+
+      advDefault.style.display = (isWebcam || isLedRing) ? 'none' : 'block';
+      advMotion.style.display = isWebcam ? 'block' : 'none';
+      if (advLed) advLed.style.display = isLedRing ? 'block' : 'none';
+
+      if (isWebcam) {
         initCalMotionTracking(part);
         loadServoPartsForCalHeadTracking();
       } else {
-        advDefault.style.display = 'block';
-        advMotion.style.display = 'none';
         stopCalMotionTracking();
       }
     }
+
 
     function loadServoPartsForCalHeadTracking() {
       var servoSelect = document.getElementById('calPanServoSelect');
@@ -5173,7 +5186,12 @@
       const enabled = document.getElementById('editEnabled')?.checked || false;
       const description = document.getElementById('editDescription')?.value || '';
 
-      // Get type-specific configuration
+      // Get type-specific configuration. The save route
+      // (/setup/calibration/api/parts/:id) DEEP-MERGES config into the stored
+      // config, so we send only the fields this form owns — an led_ring's
+      // colours/palette (set on the LED Animation page) are preserved untouched.
+      // Do NOT re-send a page-load snapshot of them: it would clobber colours a
+      // second tab changed after this page loaded.
       const config = getEditConfigValues(selected.type);
 
       // Get pin values for parts that have pins
@@ -5392,6 +5410,25 @@
         if (brightness) config.brightness = parseInt(brightness);
         break;
 
+      case 'led_ring': {
+        // The GPIO/geometry live in config for an led_ring (no top-level pin).
+        const gpioPin = document.getElementById('editLedGpioPin')?.value;
+        const pwmChannel = document.getElementById('editLedPwmChannel')?.value;
+        const colorOrder = document.getElementById('editLedColorOrder')?.value;
+        const pixelCount = document.getElementById('editLedPixelCount')?.value;
+        const ringSplit = document.getElementById('editLedRingSplit')?.value;
+        const dma = document.getElementById('editLedDma')?.value;
+        const dataRate = document.getElementById('editLedDataRate')?.value;
+        if (gpioPin !== undefined && gpioPin !== '') config.gpioPin = parseInt(gpioPin, 10);
+        if (pwmChannel !== undefined && pwmChannel !== '') config.pwmChannel = parseInt(pwmChannel, 10);
+        if (colorOrder) config.colorOrder = colorOrder;
+        if (pixelCount !== undefined && pixelCount !== '') config.pixelCount = parseInt(pixelCount, 10);
+        if (ringSplit !== undefined && ringSplit !== '') config.ringSplit = parseInt(ringSplit, 10);
+        if (dma !== undefined && dma !== '') config.dma = parseInt(dma, 10);
+        if (dataRate !== undefined && dataRate !== '') config.dataRateHz = parseInt(dataRate, 10);
+        break;
+      }
+
       case 'sensor':
       case 'motion_sensor':
         const sensitivity = document.getElementById('editSensitivity')?.value;
@@ -5529,6 +5566,9 @@
       case 'light':
       case 'led':
         html = generateEditLightConfig(part, config, type);
+        break;
+      case 'led_ring':
+        html = generateEditLedRingConfig(part, config);
         break;
       case 'sensor':
       case 'motion_sensor':
@@ -5781,6 +5821,61 @@
         `;
   }
 
+  function generateEditLedRingConfig(part, config) {
+    return `
+          <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-lightbulb"></i> LED Ring Configuration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Data Pin (GPIO)</label>
+                  <input type="number" class="mb-input" id="editLedGpioPin" title="BCM GPIO pin that clocks the pixel data" min="0" max="40">
+                  <div class="form-text">BCM pin. WS2812B needs a PWM/PCM/SPI-capable pin (18, 12, 13, 19, 10, 21).</div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">PWM Channel</label>
+                  <select class="mb-select" id="editLedPwmChannel" title="PWM channel — GPIO 18/12 → 0, GPIO 13/19 → 1">
+                    <option value="0">0 (GPIO 18 / 12)</option>
+                    <option value="1">1 (GPIO 13 / 19)</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Colour Order</label>
+                  <select class="mb-select" id="editLedColorOrder" title="Channel order the pixels expect (WS2812B is GRB)">
+                    <option value="GRB">GRB (WS2812B)</option>
+                    <option value="RGB">RGB</option>
+                    <option value="RBG">RBG</option>
+                    <option value="GBR">GBR</option>
+                    <option value="BRG">BRG</option>
+                    <option value="BGR">BGR</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row g-3 mt-1">
+                <div class="col-md-3">
+                  <label class="form-label">Pixel Count</label>
+                  <input type="number" class="mb-input" id="editLedPixelCount" title="Total pixels on the chain" min="1" max="300">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Ring Split</label>
+                  <input type="number" class="mb-input" id="editLedRingSplit" title="First index of the second ring (e.g. 8 for two 8-pixel eyes)" min="0" max="300">
+                  <div class="form-text">Left eye 0…split-1, right eye split…end</div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">DMA Channel</label>
+                  <input type="number" class="mb-input" id="editLedDma" title="DMA channel for the PWM driver" min="0" max="15" value="10">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Data Rate (Hz)</label>
+                  <input type="number" class="mb-input" id="editLedDataRate" title="WS2812B is 800000; WS2811 clones 400000" min="100000" max="1000000" step="100000" value="800000">
+                </div>
+              </div>
+              <div class="form-text mt-2"><i class="bi bi-info-circle"></i> Colours, palette and speech sync live on <a href="/setup/led-animation" target="_blank">LED Animation</a>.</div>
+            </div>
+          </div>
+        `;
+  }
+
   function generateEditSensorConfig(part, config, type) {
     const isMotion = type === 'motion_sensor';
     return `
@@ -5924,6 +6019,9 @@
       case 'light':
       case 'led':
         loadEditLightValues(part, config);
+        break;
+      case 'led_ring':
+        loadEditLedRingValues(part, config);
         break;
       case 'sensor':
       case 'motion_sensor':
@@ -6118,6 +6216,20 @@
 
     var maxExtEl = document.getElementById('editMaxExtension'); if (maxExtEl) maxExtEl.value = maxExtension;
     var maxRetEl = document.getElementById('editMaxRetraction'); if (maxRetEl) maxRetEl.value = maxRetraction;
+  }
+
+  function loadEditLedRingValues(part, config) {
+    function set(id, value, fallback) {
+      const el = document.getElementById(id);
+      if (el) el.value = (value != null ? value : fallback);
+    }
+    set('editLedGpioPin', config.gpioPin, 18);
+    set('editLedPwmChannel', config.pwmChannel != null ? config.pwmChannel : 0, 0);
+    set('editLedColorOrder', config.colorOrder || 'GRB', 'GRB');
+    set('editLedPixelCount', config.pixelCount, 16);
+    set('editLedRingSplit', config.ringSplit, 8);
+    set('editLedDma', config.dma != null ? config.dma : 10, 10);
+    set('editLedDataRate', config.dataRateHz != null ? config.dataRateHz : 800000, 800000);
   }
 
   function loadEditLightValues(part, config) {

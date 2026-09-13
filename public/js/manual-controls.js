@@ -62,7 +62,7 @@
     if (pType === 'servo') return 'primary';
     if (pType === 'linear_actuator') return 'warning';
     if (pType === 'motor' || pType === 'stepper') return 'success';
-    if (pType === 'light' || pType === 'led') return 'info';
+    if (pType === 'light' || pType === 'led' || pType === 'led_ring') return 'info';
     if (pType === 'motion_sensor') return 'danger';
     return 'secondary';
   }
@@ -72,6 +72,7 @@
     if (pType === 'linear_actuator') return 'bi-arrows-expand';
     if (pType === 'motor' || pType === 'stepper') return 'bi-fan';
     if (pType === 'light' || pType === 'led') return 'bi-lightbulb-fill';
+    if (pType === 'led_ring') return 'bi-eye-fill';
     if (pType === 'motion_sensor') return 'bi-broadcast';
     if (pType === 'speaker') return 'bi-volume-up-fill';
     if (pType === 'microphone') return 'bi-mic-fill';
@@ -551,6 +552,21 @@
         '<button class="btn btn-sm btn-warning bm-toggle-btn"><i class="bi bi-lightbulb-fill"></i> Toggle</button>' +
       '</div>';
 
+    } else if (pType === 'led_ring') {
+      html += '<div class="d-flex gap-1 justify-content-center flex-wrap mb-2">' +
+          '<button class="btn btn-sm btn-outline-info bm-led-state" data-state="idle">Idle</button>' +
+          '<button class="btn btn-sm btn-outline-info bm-led-state" data-state="listening">Listening</button>' +
+          '<button class="btn btn-sm btn-outline-info bm-led-state" data-state="thinking">Thinking</button>' +
+          '<button class="btn btn-sm btn-outline-info bm-led-state" data-state="speaking">Speaking</button>' +
+          '<button class="btn btn-sm btn-outline-info bm-led-state" data-state="fade">Fade</button>' +
+          '<button class="btn btn-sm btn-danger bm-led-off"><i class="bi bi-power"></i> Off</button>' +
+        '</div>' +
+        '<div class="d-flex align-items-center gap-2">' +
+          '<input type="color" class="bm-led-color" value="#ff7800" title="Set both eyes to a solid colour">' +
+          '<input type="range" class="bm-led-bright" min="0" max="100" value="60" style="flex:1" title="Brightness">' +
+          '<span class="small text-muted bm-led-bright-val">60%</span>' +
+        '</div>';
+
     } else if (pType === 'motion_sensor') {
       html += '<div class="text-center small text-muted"><i class="bi bi-broadcast me-1"></i>Passive infrared sensor</div>' +
         '<div class="d-flex gap-1 justify-content-center mt-1">' +
@@ -662,6 +678,29 @@
     for (var tb = 0; tb < testBtns.length; tb++) {
       testBtns[tb].addEventListener('click', function () { testSensor(partId); });
     }
+
+    // LED ring: state buttons, off, colour, brightness
+    var ledStateBtns = controlPanel.querySelectorAll('.bm-led-state');
+    for (var ls = 0; ls < ledStateBtns.length; ls++) {
+      (function (btn) {
+        btn.addEventListener('click', function () { ledSetState(btn.getAttribute('data-state')); });
+      })(ledStateBtns[ls]);
+    }
+    var ledOffBtns = controlPanel.querySelectorAll('.bm-led-off');
+    for (var lo = 0; lo < ledOffBtns.length; lo++) {
+      ledOffBtns[lo].addEventListener('click', function () { ledOff(); });
+    }
+    var ledColor = controlPanel.querySelector('.bm-led-color');
+    if (ledColor) {
+      var pixelCount = (part.config && Number(part.config.pixelCount)) || 16;
+      ledColor.addEventListener('change', function () { ledSetColor(ledColor.value, pixelCount); });
+    }
+    var ledBright = controlPanel.querySelector('.bm-led-bright');
+    if (ledBright) {
+      var ledBrightVal = controlPanel.querySelector('.bm-led-bright-val');
+      ledBright.addEventListener('input', function () { if (ledBrightVal) ledBrightVal.textContent = ledBright.value + '%'; });
+      ledBright.addEventListener('change', function () { ledSetBrightness(ledBright.value); });
+    }
   }
 
   // ── Hardware Command APIs ──
@@ -758,6 +797,45 @@
     }).then(function (r) { return r.json(); }).then(function (j) {
       setCtrlStatus(j.success ? 'Toggled' : 'Failed');
     }).catch(function () { setCtrlStatus('Error'); });
+  }
+
+  // ── LED ring (drives the character's led_ring via /api/led/*, which resolves
+  //    the selected character — same convention as the other controls here) ──
+  function ledHexToRgb(hex) {
+    var m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || ''));
+    if (!m) return [0, 0, 0];
+    var n = parseInt(m[1], 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function ledApi(path, body) {
+    return fetch('/api/led' + path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    }).then(function (r) { return r.json(); });
+  }
+  function ledSetState(state) {
+    setCtrlStatus(state + '...');
+    ledApi('/state', { state: state })
+      .then(function (j) { setCtrlStatus(j && j.success ? state : ('Failed' + (j && j.reason ? ': ' + j.reason : ''))); })
+      .catch(function () { setCtrlStatus('Error'); });
+  }
+  function ledOff() {
+    setCtrlStatus('Off...');
+    ledApi('/off', {}).then(function (j) { setCtrlStatus(j && j.success ? 'Off' : 'Failed'); }).catch(function () { setCtrlStatus('Error'); });
+  }
+  function ledSetColor(hex, pixelCount) {
+    var rgb = ledHexToRgb(hex);
+    var pixels = [];
+    for (var i = 0; i < (pixelCount || 16); i++) pixels.push(rgb);
+    setCtrlStatus('Colour...');
+    ledApi('/pixels', { pixels: pixels, target: 'both' })
+      .then(function (j) { setCtrlStatus(j && j.success ? 'Colour set' : 'Failed'); })
+      .catch(function () { setCtrlStatus('Error'); });
+  }
+  function ledSetBrightness(value) {
+    ledApi('/brightness', { brightness: Number(value) })
+      .then(function (j) { setCtrlStatus(j && j.success ? ('Brightness ' + value + '%') : 'Failed'); })
+      .catch(function () { setCtrlStatus('Error'); });
   }
 
   function testSensor(partId) {

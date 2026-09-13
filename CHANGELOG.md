@@ -4,6 +4,95 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **LED Eye Sync is on the Jaw Animation page, right under "Play TTS & Jaw."** The tuning controls
+  (enable, LED part, quiet/loud colours, sensitivity, smoothing, speed, attack, release, and audio
+  offset) now sit as one horizontal panel directly below the Play button — where you actually play
+  audio — instead of a buried link in the bottom-left. A **Loop** toggle repeats the audio so you can
+  adjust the settings live between passes. "Play TTS & Jaw" drives the eyes from the same audio as the
+  jaw, honouring the LED offset (frame-shifted on the jaw path), and — critically — it now plays and
+  drives the eyes even on a character with **no jaw servo** (e.g. PumpkinHead), so the LED can be tuned
+  there. The same control also remains on the dedicated LED Animation page.
+- **LED eyes are part of the AI interaction.** The conversation lifecycle now drives the ring
+  through its per-state colours so onlookers can read the animatronic: **thinking** while the agent
+  composes a reply, **speaking** (audio-reactive) during playback, and **listening** when it's the
+  person's turn to answer — with **idle** at rest. Wired into the HTTP conversation routes
+  (`/conversation/api/say`, `/api/ask-ai`) and the realtime agent (thinking on the guest's transcript,
+  idle on session end), via two small services (`ledInteractionService`, and `ledAnimationService`
+  driving audio-reactive speaking from a buffer). Works alongside jaw animation and on any character
+  with an LED ring — including characters with **no jaw servo**, which previously lit nothing during
+  speech. No-op where there is no ring, so it's safe fleet-wide (Orlok, etc.).
+- **LED sync timing controls + audio/LED comparison + live loop tuning.** The LED Animation page has
+  the LED analogue of the jaw's tuning — **Sensitivity, Smoothing, Attack, Release, Speed, and an
+  Audio Offset** — applied by an independent per-character envelope (`ledSpeakingSync`), so the eyes
+  are tuned and timed separately from the mouth. The controls sit in one **horizontal panel directly
+  under the LED Level**, and a **Loop** toggle repeats the audio so you can adjust the settings while
+  it plays — each pass re-reads the config, so a change takes effect on the very next pass. "Speak &
+  Drive Eyes" returns a timeline and the page draws an **audio-amplitude vs LED-level graph**; dragging
+  the offset shifts the LED curve over the audio live, so you can match the lighting to the sound (the
+  same workflow as timing the jaw). The offset delays/advances the eyes on the real drive too. The jaw
+  paths now feed the eyes the raw audio amplitude and the LED shapes it itself.
+- **LED-during-AI gating.** The LED participates in a conversation (states + audio-reactive speaking)
+  only when the operator has turned LED sync **on** for the character — a single, consistent gate. The
+  LED Animation page's own Test/Sweep buttons always drive regardless, so you can preview before
+  enabling. (Fixes a bug where a spread-order slip made the AI drive paths no-op unless sync happened
+  to be on.)
+- **Calibration edit page: a proper GPIO/geometry control for LED rings.** An `led_ring` part's Data
+  Pin (GPIO), PWM channel, colour order, pixel count, ring split, DMA and data rate are now editable
+  as real fields on `/setup/calibration` → Edit, instead of only through the raw JSON box. Saving
+  geometry merges over the existing config so the colours/palette (stored on the same part) survive.
+  Covered by `tests/browser/calibration-led-gpio.spec.js` (2).
+- **Removed the Audio Sync Offset slider from the Jaw Animation page** (operator request; LED timing
+  is split out to its own page). The stored `audioLeadTimeMs` is left untouched — the save path no
+  longer writes it, so any existing offset is preserved rather than zeroed.
+- **Dedicated LED Animation page (`/setup/led-animation`).** All addressable-LED controls now live
+  in one findable place — a Setup tile and a nav-menu entry — instead of being buried in Calibration's
+  Advanced tab and split across the Jaw Animation page. It carries the full set: live per-eye colour
+  and brightness, an identify-pixels walk, colour-per-state rows, the palette cross-fade editor, and
+  the speech-sync ("react the eyes to speech") config, plus a Jaw-Animation-style test panel: quick
+  per-state test buttons, a low→high sweep, and **"Speak & Drive Eyes"** — it speaks typed text on the
+  character's own speaker and drives the ring from the audio (colour + brightness), the same effect as
+  jaw sync but with no jaw servo required, so it can be exercised on any node that has an LED ring. A
+  live LED-level meter shows the ring reacting. The old Calibration and Jaw pages now show a short
+  pointer link to this page. Character-independent throughout; the route resolves the character through
+  the canonical resolver. Covered by `tests/browser/led-animation.spec.js` (7).
+- **LED eyes react to speech like the jaw (any character with a `led_ring` part).** Jaw Animation
+  can now drive an assigned LED ring from the same audio envelope that moves the jaw servo: as the
+  mouth opens (min→max), the eyes crossfade from a "quiet" colour to a "loud" colour and brighten
+  with it. Configured on `/setup/jaw-animation` → **LED Eye Sync**: an enable toggle, a dropdown of
+  the character's LED rings, low/high colour pickers, and a Test LED Sweep button. Stored per
+  character in `super-powers.json` (`jawAnimation.ledSync`) and wired into all three jaw playback
+  paths (pre-analysed TTS, buffer playback, and the realtime agent PCM stream), so scenes, the TTS
+  test, and live conversation all light the eyes. Character-independent — the LED part and colours
+  come from each character's own data; a character with no LED ring simply shows the jaw. New
+  daemon capability: the `speaking` state interpolates `colorLow`→`colorHigh` by amplitude, and the
+  audio-level feed gained a direct-set mode so the eyes track the jaw down as well as up. Also
+  fixed a latent read bug: a character whose jaw `configs` array was empty read back no top-level
+  settings, which would have dropped LED sync — the flatten path now preserves `enabled`,
+  `servoPartId`, and `ledSync` in that case.
+- **LED ring subsystem (PumpkinHead "Pumpkin Eyes", any character with a `led_ring` part).** A root
+  Python daemon (`python_wrappers/led_ring_daemon.py`) owns the WS2812B chain on PWM/DMA and renders
+  animated states (`off/idle/listening/thinking/speaking/error/fade`) at 50 fps over a Unix socket;
+  `services/ledController.js` resolves the geometry from the character's own part (no hardcoded pins —
+  GPIO18 is a motor line on other characters), `routes/api/ledRoutes.js` exposes state/pixels/config,
+  and the calibration page gains an Advanced "LED Ring" panel (live per-eye colour picker, colour per
+  state, palette cross-fade editor, live brightness, identify-pixels walk). Fixed en route: gamma was
+  applied per-channel to already-quantised 8-bit values, crushing the idle breath to literal black for
+  half its cycle — it now applies once to the intensity envelope in float, preserving hue, with a
+  floor so a lit pixel never quantises to black.
+- **Fixed — LED daemon could survive SIGTERM as a root zombie holding PWM0**, making the next service
+  start look like dead LEDs. `rpi_ws281x` calls are serialized behind a lock (the C library is not
+  thread-safe; the animator and the shutdown blackout could race inside `ws2811_render`), and every
+  shutdown request arms a 10 s hard-exit failsafe. Verified: SIGTERM → clean exit in 0.26 s on an
+  isolated SPI-driver instance.
+- **Fixed — `colorOrder` and `dataRateHz` on `led_ring` parts were silently ignored.** The daemon now
+  accepts `--color-order` (validated, mapped to the library's strip types) and the client passes
+  `--freq`/`--color-order` through from the part config; defaults remain 800 kHz / GRB.
+- **Hardware resolution (PumpkinHead):** the day-long frozen-white eye rings were cabled backwards —
+  data fed the chain's DOUT instead of DIN. Localized by validated GPIO probes (a DOUT reads as a
+  driven-low load where a DIN is high-impedance), confirmed and fixed by the operator at the bench.
+  Post-mortem: `docs/troubleshooting/LED-RING-HANDOFF.md` §0.
+
+
 - **Fleet code sync 2026-09-07:** code, views, scripts, tests, docs, schemas, `animatronics.json`,
   `physical-faults.json` and `data/models` rsynced from Orlok to all five peers (node-local data untouched),
   every service restarted and re-verified (health, camera frames, mic frames, parts API, motion mode).

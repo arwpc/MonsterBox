@@ -10,6 +10,7 @@ import { getCalibrationStore, isPlaceholderProfile, isDegenerateWindow } from '.
 import { resolveDriveWindow } from './hardwareService/driveWindow.js';
 import { writeJsonAtomic, updateJsonUnderLock } from './atomicStore.js';
 import speechExpression from './speechExpressionService.js';
+import ledSpeakingSync from './ledSpeakingSync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,15 +83,82 @@ async function readRawJawSection(characterId) {
 }
 
 /**
+ * Default LED-sync block: eyes react to speech like the jaw, off by default.
+ * partId is which led_ring part to drive; colorLow/colorHigh are the closed
+ * (quiet) and open (loud) colours the daemon crossfades between by amplitude.
+ */
+function defaultLedSync() {
+  return {
+    enabled: false,
+    partId: null,
+    colorLow: [80, 0, 0],
+    colorHigh: [255, 120, 0],
+    // Timing knobs for how the ring tracks the audio — the LED analogue of the
+    // jaw's tuning, applied independently so the eyes can be tuned separately
+    // from the mouth. See services/ledSpeakingSync.js applyEnvelope.
+    sensitivity: 1.0,   // amplitude gain before clamping to 1
+    smoothing: 0.5,     // 0 = raw/jittery, ~0.9 = very smooth/laggy
+    attackMs: 40,       // rise rate limit (ms to open fully)
+    releaseMs: 120,     // fall rate limit (ms to close fully)
+    speed: 1.0,         // animation-rate multiplier passed to the daemon
+    offsetMs: 0         // +delay the eyes (audio leads), -advance them (eyes lead)
+  };
+}
+
+const LED_TIMING_BOUNDS = {
+  sensitivity: [0.1, 5.0],
+  smoothing: [0.0, 0.95],
+  attackMs: [1, 1000],
+  releaseMs: [1, 2000],
+  speed: [0.1, 5.0],
+  offsetMs: [-1000, 1000]
+};
+
+/** Validate one [r,g,b] triple, or null. */
+function coerceRgbTriple(value) {
+  if (!Array.isArray(value) || value.length !== 3) return null;
+  const out = value.map((c) => Math.round(Number(c)));
+  if (out.some((c) => !Number.isFinite(c))) return null;
+  return out.map((c) => Math.max(0, Math.min(255, c)));
+}
+
+/**
+ * Merge an incoming ledSync patch onto the existing (or default) block, keeping
+ * each field only if valid. A bad colour keeps the prior colour rather than
+ * blanking it, and partId is stored as a string to match the parts store.
+ */
+function sanitizeLedSync(patch, existing) {
+  const base = { ...defaultLedSync(), ...(existing || {}) };
+  if (!patch || typeof patch !== 'object') return base;
+  if (patch.enabled !== undefined) base.enabled = !!patch.enabled;
+  if (patch.partId !== undefined) base.partId = patch.partId == null ? null : String(patch.partId);
+  const low = coerceRgbTriple(patch.colorLow);
+  const high = coerceRgbTriple(patch.colorHigh);
+  if (low) base.colorLow = low;
+  if (high) base.colorHigh = high;
+  for (const key of Object.keys(LED_TIMING_BOUNDS)) {
+    if (patch[key] !== undefined) {
+      const n = Number(patch[key]);
+      if (Number.isFinite(n)) {
+        const [lo, hi] = LED_TIMING_BOUNDS[key];
+        base[key] = Math.max(lo, Math.min(hi, n));
+      }
+    }
+  }
+  return base;
+}
+
+/**
  * Migrate a flat jaw config to multi-config format.
  * The existing config becomes the first entry in configs[].
  */
 function migrateToMultiConfig(flat) {
-  const { enabled, servoPartId, ...params } = flat;
+  const { enabled, servoPartId, ledSync, ...params } = flat;
   const configId = 'config-1';
   return {
     enabled: !!enabled,
     servoPartId: servoPartId || null,
+    ledSync: ledSync || defaultLedSync(),
     activeConfigId: configId,
     configs: [{
       id: configId,
@@ -109,6 +177,7 @@ function buildDefaultMultiConfig() {
   return {
     enabled: false,
     servoPartId: null,
+    ledSync: defaultLedSync(),
     activeConfigId: 'config-1',
     configs: [{
       id: 'config-1',
@@ -164,13 +233,30 @@ function flattenJawConfig(jaw) {
   const configs = jaw.configs || [];
   const active = configs.find(c => c.id === jaw.activeConfigId) || configs[0];
 
-  if (!active) return getDefaultJawConfig();
+  if (!active) {
+    // No tuning config (e.g. a character whose configs were wiped, or one with
+    // no jaw servo). The tuning params fall back to defaults, but the TOP-LEVEL
+    // settings — enabled, servoPartId and ledSync — are still real and must
+    // survive, or LED eye sync configured on such a character would read back
+    // empty every time.
+    return {
+      ...getDefaultJawConfig(),
+      enabled: !!jaw.enabled,
+      servoPartId: jaw.servoPartId || null,
+      ledSync: { ...defaultLedSync(), ...(jaw.ledSync || {}) },
+      activeConfigId: jaw.activeConfigId
+    };
+  }
 
-  // Merge: top-level enabled/servoPartId + active config's tuning params
+  // Merge: top-level enabled/servoPartId/ledSync + active config's tuning params.
+  // ledSync is top-level (one LED assignment per character's jaw), not per config,
+  // mirroring servoPartId — normalised through defaultLedSync so a partial or
+  // legacy block always reads back complete.
   const { id, name, ...tuningParams } = active;
   return {
     enabled: !!jaw.enabled,
     servoPartId: jaw.servoPartId || null,
+    ledSync: { ...defaultLedSync(), ...(jaw.ledSync || {}) },
     activeConfigId: jaw.activeConfigId,
     ...tuningParams
   };
@@ -203,6 +289,9 @@ async function writeJawConfig(characterId, jawConfig) {
       // Update top-level fields
       if (jawConfig.enabled !== undefined) jaw.enabled = !!jawConfig.enabled;
       if (jawConfig.servoPartId !== undefined) jaw.servoPartId = jawConfig.servoPartId;
+      if (jawConfig.ledSync !== undefined) {
+        jaw.ledSync = sanitizeLedSync(jawConfig.ledSync, jaw.ledSync);
+      }
 
       // Update the active config's tuning params.
       // Intentionally excludes minAngle/maxAngle — calibration_profiles.json is the
@@ -606,6 +695,29 @@ async function getAvailableServos(characterId = null) {
 
   } catch (error) {
     console.error('Error getting available servos:', error);
+    return [];
+  }
+}
+
+/**
+ * List the character's addressable LED parts (type led_ring) for the jaw-sync
+ * dropdown. Character-independent: reads only the requested character's parts.
+ * Returns [{ id, name, type }]. A character with no led_ring gets an empty list
+ * and the UI simply hides/disables LED sync — the jaw still works everywhere.
+ */
+async function getAvailableLedParts(characterId = null) {
+  try {
+    const parts = await loadPartsSafe(characterId);
+    return parts
+      .filter((p) => {
+        if (String(p.type).toLowerCase() !== 'led_ring') return false;
+        if (p.enabled === false) return false;
+        if (characterId != null && p.characterId != null && String(p.characterId) !== String(characterId)) return false;
+        return true;
+      })
+      .map((p) => ({ id: p.id, name: p.name || `LED #${p.id}`, type: p.type }));
+  } catch (error) {
+    console.error('Error getting available LED parts:', error);
     return [];
   }
 }
@@ -1452,6 +1564,14 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
   return new Promise((resolve) => {
     function startJawTimeline() {
       console.log(`[jaw-sync] jaw timeline started at T+${Date.now() - syncStartTime}ms`);
+      // Begin LED eye sync with the jaw timeline (no-op unless configured). Kept
+      // here, not before pre-analysis, so a failed analysis can't leave the eyes
+      // stuck in 'speaking' with no matching end().
+      ledSpeakingSync.begin(characterId, config.ledSync).catch(() => {});
+      // LED audio offset (tuned on this page): shift the amplitude fed to the
+      // eyes by this many frames so the eyes can lag/lead the jaw and the sound.
+      const ledFrameMs = analysis.frames.length > 1 ? (analysis.frames[1].time - analysis.frames[0].time) : 20;
+      const ledOffFrames = Math.round(((config.ledSync && Number(config.ledSync.offsetMs)) || 0) / (ledFrameMs || 20));
       const startTime = Date.now();
       let frameIndex = 0;
 
@@ -1463,6 +1583,7 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
           driveState.angle = closedAngle;
           const ms = audioMonitoringState.get(cid);
           if (ms) { ms.isMonitoring = false; ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
+          ledSpeakingSync.end(cid).catch(() => {});
           activeJawDrives.delete(cid);
           resolve({ success: true, duration: analysis.duration, frameCount: analysis.frames.length });
           return;
@@ -1476,8 +1597,12 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
         const ms = audioMonitoringState.get(cid);
         if (ms) { ms.lastAmplitude = frame.amplitude; ms.smoothedAmplitude = frame.amplitude; }
 
-        // Send angle to servo
+        // Send angle to servo; feed the eyes an amplitude shifted by the LED
+        // offset (positive = eyes lag the jaw/audio) so they can be timed
+        // independently, with their own envelope on top.
         sendJawAngleCmd(jawServo, frame.angle, cid);
+        const ledIdx = frameIndex - ledOffFrames;
+        ledSpeakingSync.noteLevel(cid, (ledIdx >= 0 && ledIdx < analysis.frames.length) ? analysis.frames[ledIdx].amplitude : 0);
 
         frameIndex++;
 
@@ -1652,6 +1777,13 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
       const totalDuration = frames.length * FRAME_DURATION_MS;
       let frameIndex = 0;
 
+      // Begin LED eye sync only now that we have real frames to play — starting
+      // it earlier would leave the eyes stuck in 'speaking' if the decode failed
+      // (nothing would call end() on that path). No-op unless LED sync is set up.
+      ledSpeakingSync.begin(characterId, config.ledSync).catch(() => {});
+      // LED audio offset in frames (positive = eyes lag the jaw/audio).
+      const ledOffFrames = Math.round(((config.ledSync && Number(config.ledSync.offsetMs)) || 0) / FRAME_DURATION_MS);
+
       function nextFrame() {
         if (driveState.cancelled || frameIndex >= frames.length) {
           // Done — close jaw (fire-and-forget servo command)
@@ -1664,6 +1796,7 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
             ms.lastAmplitude = 0;
             ms.smoothedAmplitude = 0;
           }
+          ledSpeakingSync.end(cid).catch(() => {});
           activeJawDrives.delete(cid);
           resolve({ success: true, duration: totalDuration, frameCount: frames.length });
           return;
@@ -1689,8 +1822,12 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
           ms.smoothedAmplitude = smoothedAmplitude;
         }
 
-        // Fire servo command (daemon: <1ms, fallback: hardwareService)
+        // Fire servo command (daemon: <1ms, fallback: hardwareService) and feed
+        // the eyes an amplitude shifted by the LED offset (they apply their own
+        // timing envelope on top).
         sendJawAngleCmd(jawServo, targetAngle, cid);
+        const ledIdx = frameIndex - ledOffFrames;
+        ledSpeakingSync.noteLevel(cid, (ledIdx >= 0 && ledIdx < levels.length) ? levels[ledIdx] : 0);
 
         frameIndex++;
         driveState.timer = setTimeout(nextFrame, FRAME_DURATION_MS);
@@ -1803,8 +1940,10 @@ function _startPcmJawTimer(cid) {
       const ms = audioMonitoringState.get(cid);
       if (ms) { ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
       s.timer = null;
-      // End of an utterance: let the head ease home and idle liveliness resume.
+      // End of an utterance: let the head ease home, the eyes settle, and idle
+      // liveliness resume. The next chunk re-begins both.
       try { speechExpression.stopSpeaking(cid); } catch (_) { /* decorative only */ }
+      ledSpeakingSync.end(cid).catch(() => {});
       return;
     }
     const amplitude = s.queue.shift();
@@ -1814,14 +1953,18 @@ function _startPcmJawTimer(cid) {
     const smoothed = applySmoothingToAmplitude(cid, amplitude, s.config);
     const angle = calculateJawAngle(smoothed, s.config, s.guardrails, cid);
     sendJawAngleCmd(s.jawServo, angle, cid);
+    // Feed the raw audio amplitude to the eyes (their own timing shapes it).
+    ledSpeakingSync.noteLevel(cid, amplitude);
     const ms = audioMonitoringState.get(cid);
     if (ms) { ms.lastAmplitude = amplitude; ms.smoothedAmplitude = smoothed; }
     s.timer = setTimeout(step, PCM_JAW_FRAME_MS);
   };
 
-  // A new drain run is a new spoken utterance — start head co-expression with it.
-  // Failures here must never affect speech, so this is fire-and-forget.
+  // A new drain run is a new spoken utterance — start head co-expression and
+  // LED eye sync with it. Failures here must never affect speech, so both are
+  // fire-and-forget.
   speechExpression.startSpeaking(cid).catch(() => {});
+  ledSpeakingSync.begin(cid, stream.config && stream.config.ledSync).catch(() => {});
 
   stream.timer = setTimeout(step, 0);
 }
@@ -1843,8 +1986,9 @@ function stopPcmJawStream(characterId) {
   // that is no longer speaking.
   resetLoudnessState(cid);
   // Session teardown must leave nothing ticking: this drops every co-expression
-  // and idle timer and releases the head claim.
+  // and idle timer and releases the head claim, and restores the eyes.
   try { speechExpression.stopAll(cid); } catch (_) { /* non-fatal */ }
+  ledSpeakingSync.end(cid).catch(() => {});
   const ms = audioMonitoringState.get(cid);
   if (ms) { ms.isMonitoring = false; ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
   return { success: true, dropped: stream.dropped };
@@ -1871,6 +2015,8 @@ function cancelJawDrive(characterId) {
     }
     activeJawDrives.delete(cid);
   }
+  // Cancelling mid-utterance must also release the eyes.
+  ledSpeakingSync.end(cid).catch(() => {});
   // Reset monitoring state
   const ms = audioMonitoringState.get(cid);
   if (ms) {
@@ -2022,6 +2168,7 @@ export {
   writeJawConfig,
   getDefaultJawConfig,
   getAvailableServos,
+  getAvailableLedParts,
   loadPartsSafe,
   getCalibrationFromMarkers,
   getCalibrationForPart,

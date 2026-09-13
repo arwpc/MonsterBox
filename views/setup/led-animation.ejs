@@ -1,0 +1,230 @@
+<div class="jaw-page">
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="mb-alert mb-alert-warning mb-2" role="alert">
+    <i class="bi bi-exclamation-triangle"></i> <%= error %>
+  </div>
+  <% } %>
+
+  <!-- Header bar -->
+  <div class="mb-row-sm align-items-center mb-2">
+    <h6 class="jaw-section-title mb-0"><i class="bi bi-lightbulb"></i> LED Animation</h6>
+    <div class="ms-auto mb-row-sm">
+      <button type="button" class="mb-btn mb-btn-danger mb-btn-sm" id="ledAllOffBtn" title="Blackout the ring">
+        <i class="bi bi-power"></i> Off
+      </button>
+      <button type="button" class="mb-btn mb-btn-primary mb-btn-sm" id="ledSaveConfigBtn" title="Save LED colours &amp; palette">
+        <i class="bi bi-save"></i> Save
+      </button>
+    </div>
+  </div>
+
+  <% if (currentCharacter) { %>
+  <div id="ledNoPartNotice" class="mb-alert mb-alert-info mb-2 jaw-hidden" role="alert">
+    <i class="bi bi-info-circle"></i> This character has no addressable LED ring (an <code>led_ring</code> part).
+    Add one in <a href="/setup/calibration">Calibration</a> to use LED animation.
+  </div>
+
+  <div class="row g-2">
+    <!-- LEFT COLUMN: Configuration -->
+    <div class="col-lg-5">
+
+      <!-- Live Colour -->
+      <div class="jaw-section">
+        <h6 class="jaw-section-title" title="Drive the ring right now to preview colours"><i class="bi bi-eyedropper"></i> Live Colour</h6>
+        <div class="d-flex align-items-end gap-3 mb-2">
+          <div>
+            <label class="mb-field-label" for="ledLeftColor">Left eye</label>
+            <input type="color" class="mb-color" id="ledLeftColor" title="Drives the left ring as you drag">
+          </div>
+          <div>
+            <label class="mb-field-label" for="ledRightColor">Right eye</label>
+            <input type="color" class="mb-color" id="ledRightColor" title="Drives the right ring as you drag">
+          </div>
+          <label class="mb-switch mb-1" title="Keep both eyes the same colour">
+            <input type="checkbox" id="ledLinkEyes" checked>
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span>Link eyes</span>
+          </label>
+        </div>
+
+        <div class="jaw-field">
+          <label class="mb-field-label" for="ledBrightness">Brightness <span class="mb-badge" id="ledBrightnessValue">60</span>%</label>
+          <input type="range" class="mb-range" id="ledBrightness" min="0" max="100" value="60" title="Master brightness for the whole ring">
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap mt-2">
+          <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm" id="ledApplyLive" title="Push the two colours above to the ring now">
+            <i class="bi bi-lightbulb"></i> Apply
+          </button>
+          <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm" id="ledIdentify" title="Walk one white pixel around the ring to confirm pixel order">
+            <i class="bi bi-search"></i> Identify pixels
+          </button>
+        </div>
+        <div class="mb-field-hint mt-2" id="ledLiveStatus">&mdash;</div>
+      </div>
+
+      <!-- Colour per State -->
+      <div class="jaw-section">
+        <h6 class="jaw-section-title" title="The colour each state uses whenever anything drives the ring — scenes, speech, the dashboard"><i class="bi bi-palette"></i> Colour per State</h6>
+        <p class="mb-field-hint mb-2">Each row shows the current (or default) colour and saves when you Save. Use the Test button to run a state on the ring.</p>
+        <div id="ledStateRows"></div>
+      </div>
+
+      <!-- Palette cross-fade -->
+      <div class="jaw-section">
+        <h6 class="jaw-section-title" title="The colours the 'fade' state cycles through"><i class="bi bi-rainbow"></i> Palette (fade state)</h6>
+        <div class="d-flex flex-wrap gap-2 mb-2" id="ledPaletteSwatches"></div>
+        <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm mb-2" id="ledAddSwatch" title="Add a palette colour">
+          <i class="bi bi-plus-lg"></i> Add colour
+        </button>
+        <div class="jaw-grid-2">
+          <div class="jaw-field">
+            <label class="mb-field-label" for="ledFadeMs">Fade <span class="mb-badge" id="ledFadeMsValue">1200</span>ms</label>
+            <input type="range" class="mb-range" id="ledFadeMs" min="200" max="4000" step="100" value="1200" title="Crossfade time between palette colours">
+          </div>
+          <div class="jaw-field">
+            <label class="mb-field-label" for="ledHoldMs">Hold <span class="mb-badge" id="ledHoldMsValue">600</span>ms</label>
+            <input type="range" class="mb-range" id="ledHoldMs" min="0" max="4000" step="100" value="600" title="How long each palette colour holds before fading">
+          </div>
+        </div>
+        <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm mt-2" id="ledPreviewFade" title="Run the fade on the real ring">
+          <i class="bi bi-play"></i> Preview Fade
+        </button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Test & Monitoring -->
+    <div class="col-lg-7">
+      <!-- Speak & Drive Eyes -->
+      <div class="jaw-panel mb-2">
+        <h6 class="jaw-section-title"><i class="bi bi-megaphone"></i> Speak &amp; Drive Eyes</h6>
+        <p class="mb-field-hint mb-1">Speaks the text on this character's speaker and drives the ring from the audio &mdash; the same effect as jaw sync, no jaw servo needed.</p>
+        <textarea class="mb-textarea mb-dialogue" id="ledTtsText" rows="2" title="Text to speak">The quick brown fox jumped over the lazy dog</textarea>
+        <div class="d-flex gap-2 my-2 align-items-center">
+          <button type="button" class="mb-btn mb-btn-primary mb-btn-sm flex-grow-1" id="ledSpeakBtn" title="Speak and drive the eyes from the audio">
+            <i class="bi bi-play-fill"></i> Speak &amp; Drive Eyes
+          </button>
+          <label class="mb-switch mb-0" title="Repeat the audio so you can tune the settings below live between passes">
+            <input type="checkbox" id="ledLoop">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span>Loop</span>
+          </label>
+          <button type="button" class="mb-btn mb-btn-danger mb-btn-sm" id="ledStopBtn" title="Stop playback">
+            <i class="bi bi-stop-fill"></i> Stop
+          </button>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span id="ledTtsStatus"><span class="mb-badge">Idle</span></span>
+          <span><small class="mb-text-muted">State:</small> <span class="mb-mono mb-text-info" id="ledCurrentState">—</span></span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="meter-label"><i class="bi bi-soundwave"></i> LED Level</span>
+          <span class="meter-value amp" id="ledLevelValue">0.000</span>
+        </div>
+        <div class="mb-meter jaw-meter-tall"><div class="mb-meter-fill" id="ledLevelFill"></div></div>
+
+        <!-- Audio vs LED comparison — match the eyes to the sound -->
+        <div class="mt-3" id="ledComparePanel" style="display:none;">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="meter-label"><i class="bi bi-graph-up"></i> Audio vs LED</span>
+            <span class="mb-field-hint"><span style="color:var(--mb-fg-muted)">&#9632; audio</span> &nbsp; <span style="color:var(--mb-primary)">&#9632; LED</span></span>
+          </div>
+          <canvas id="ledCompareCanvas" width="600" height="120" style="width:100%;height:120px;"></canvas>
+          <div class="mb-field-hint">The LED line is the audio shaped by sensitivity/smoothing/attack/release and shifted by the offset. Match its peaks to the audio, then tune the offset by eye/ear against the real ring.</div>
+        </div>
+      </div>
+
+      <!-- Jaw / Speech Sync — horizontal, right under the LED Level so you can
+           tune it while audio loops -->
+      <div class="jaw-panel mb-2" id="ledSyncSection">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="jaw-section-title mb-0" title="Drive the ring from speech like the jaw: the eyes brighten and shift colour as audio gets louder/quieter."><i class="bi bi-soundwave"></i> Jaw / Speech Sync</h6>
+          <label class="mb-switch mb-0" title="React the ring to speech during the AI conversation">
+            <input type="checkbox" id="ledSyncEnabled" title="Enable speech sync">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span>React eyes to speech</span>
+          </label>
+        </div>
+
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-12 col-md-6">
+            <label class="mb-field-label" for="ledSyncPartSelect"><i class="bi bi-lightbulb"></i> LED Part</label>
+            <select class="mb-select" id="ledSyncPartSelect" title="Which LED ring to drive">
+              <option value="">Select an LED ring...</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="mb-field-label" for="ledSyncColorLow" title="Colour when quiet / mouth closed">Quiet</label>
+            <input type="color" class="mb-color" id="ledSyncColorLow" title="Colour at minimum">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="mb-field-label" for="ledSyncColorHigh" title="Colour when loud / mouth open">Loud</label>
+            <input type="color" class="mb-color" id="ledSyncColorHigh" title="Colour at maximum">
+          </div>
+        </div>
+
+        <div class="row g-2 mb-1">
+          <div class="col-6 col-md-4" title="Amplifies quiet audio so the eyes react more. 1.0 = no amplification.">
+            <label class="mb-field-label" for="ledSyncSensitivity">Sensitivity <span class="mb-badge" id="ledSyncSensitivityValue">1.0</span></label>
+            <input type="range" class="mb-range" id="ledSyncSensitivity" min="0.1" max="5.0" step="0.1" value="1.0">
+          </div>
+          <div class="col-6 col-md-4" title="Smooths the level between frames. Lower = snappier but jittery; higher = smoother but laggier.">
+            <label class="mb-field-label" for="ledSyncSmoothing">Smoothing <span class="mb-badge" id="ledSyncSmoothingValue">0.5</span></label>
+            <input type="range" class="mb-range" id="ledSyncSmoothing" min="0" max="0.95" step="0.05" value="0.5">
+          </div>
+          <div class="col-6 col-md-4" title="Animation-rate multiplier for the ring (shimmer/movement speed).">
+            <label class="mb-field-label" for="ledSyncSpeed">Speed <span class="mb-badge" id="ledSyncSpeedValue">1.0</span></label>
+            <input type="range" class="mb-range" id="ledSyncSpeed" min="0.1" max="5.0" step="0.1" value="1.0">
+          </div>
+        </div>
+
+        <div class="row g-2 align-items-end">
+          <div class="col-6 col-md-3" title="How fast the eyes brighten when audio gets louder (ms to fully open).">
+            <label class="mb-field-label" for="ledSyncAttack">Attack (ms)</label>
+            <input type="number" class="mb-input" id="ledSyncAttack" min="1" max="1000" value="40">
+          </div>
+          <div class="col-6 col-md-3" title="How fast the eyes dim when audio gets quieter (ms to fully close).">
+            <label class="mb-field-label" for="ledSyncRelease">Release (ms)</label>
+            <input type="number" class="mb-input" id="ledSyncRelease" min="1" max="2000" value="120">
+          </div>
+          <div class="col-12 col-md-6" title="Shift the lighting in time to match the sound. Positive delays the eyes; negative advances them.">
+            <label class="mb-field-label" for="ledSyncOffset">Audio Offset <span class="mb-badge" id="ledSyncOffsetValue">0</span>ms</label>
+            <input type="range" class="mb-range" id="ledSyncOffset" min="-1000" max="1000" step="25" value="0">
+            <div class="d-flex justify-content-between">
+              <small class="mb-field-hint">Eyes lead &larr;</small>
+              <small class="mb-field-hint">&rarr; Audio leads</small>
+            </div>
+          </div>
+        </div>
+        <small class="mb-field-hint" id="ledSyncStatus">Pick an addressable LED ring.</small>
+        <small class="mb-field-hint d-block"><i class="bi bi-arrow-repeat"></i> Turn on <strong>Loop</strong> above, then adjust these while it plays &mdash; each pass uses your latest settings. Colours are shared with the jaw; timing/offset affect only the eyes.</small>
+      </div>
+
+      <!-- Quick state tests -->
+      <div class="jaw-panel mb-2">
+        <h6 class="jaw-section-title"><i class="bi bi-collection-play"></i> Test States</h6>
+        <div class="d-flex flex-wrap gap-2" id="ledStateTestButtons"></div>
+        <div class="d-flex gap-2 mt-2">
+          <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm flex-grow-1" id="ledSweepBtn" title="Sweep the eyes quiet→loud so you can see the colour and brightness range">
+            <i class="bi bi-play-circle"></i> Low→High Sweep
+          </button>
+        </div>
+      </div>
+
+      <div class="jaw-panel">
+        <p class="mb-field-hint mb-0"><i class="bi bi-info-circle"></i>
+          Configure the jaw servo itself on <a href="/setup/jaw-animation">Jaw Animation</a>.
+          Geometry (pin, pixel count) is set in <a href="/setup/calibration">Calibration</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+  <% } else { %>
+  <div class="mb-alert mb-alert-info" role="alert">
+    <i class="bi bi-info-circle"></i> No character selected. Please select a character from the navigation menu.
+  </div>
+  <% } %>
+</div>
+
+<script src="/js/led-animation.js?v=<%= Date.now() %>"></script>

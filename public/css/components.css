@@ -359,6 +359,31 @@
 .mb-input-auto,
 .mb-select-auto { display: inline-block; width: auto; }
 
+/* Native colour picker, framed to match .mb-input. The swatch VALUE is a raw
+   hex the browser owns (there is no token form for an <input type="color">
+   value), but the control's chrome is token-driven so it themes correctly. */
+.mb-color {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 44px;
+  height: 40px;
+  padding: 3px;
+  background: var(--mb-bg-1);
+  border: 1px solid var(--mb-border-default);
+  border-radius: var(--mb-radius-md);
+  cursor: pointer;
+  transition: border-color var(--mb-dur-fast) var(--mb-ease-out),
+              box-shadow var(--mb-dur-fast) var(--mb-ease-out);
+}
+.mb-color:hover { border-color: var(--mb-border-strong); }
+.mb-color:focus { outline: none; border-color: var(--mb-primary); box-shadow: var(--mb-focus-ring); }
+.mb-color:disabled { opacity: 0.5; cursor: not-allowed; }
+.mb-color::-webkit-color-swatch-wrapper { padding: 0; }
+.mb-color::-webkit-color-swatch { border: none; border-radius: calc(var(--mb-radius-md) - 3px); }
+.mb-color::-moz-color-swatch { border: none; border-radius: calc(var(--mb-radius-md) - 3px); }
+.mb-color-sm { width: 36px; height: 32px; }
+
 .mb-select {
   appearance: none;
   background-image:

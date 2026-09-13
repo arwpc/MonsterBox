@@ -536,6 +536,31 @@ emergency stop (see Security / Ops). It has been **restored**, but re-check any 
 superpowers after a suite run that predates the `httpNode` guard.
 
 ### PumpkinHead — char 1 · `192.168.8.150`
+✅ **OPERATIONAL — working 100% (operator-confirmed 2026-09-13).** Motor, camera, mic, speaker, and the
+WS2812B eye rings all functional; LED eye animation + speech/AI sync built and tuned this session. The
+under-voltage note below is a known hard-start limitation, mitigated in software (drive the motor at
+≤25 %, never 100 % DC) — not a fault blocking normal operation. Items below are retained history.
+
+🟠 **2026-09-12/13 SESSIONS — LED eye rings ("Pumpkin Eyes", part 9, WS2812B ×2 on GPIO18).**
+- ✅ **RESOLVED (2026-09-13) — the rings were cabled BACKWARDS: data fed the chain's DOUT, not DIN.**
+  Operator reversed the connection; both rings animate ("we have awesome lights"). The day-long
+  "bright white frozen, ignores all data, dark at 3.3 V" was the power-on state of a chain that could
+  never latch a frame. The electrical probe that localized it is worth keeping: from the header, a
+  DOUT reads as a **driven-low, low-impedance load** (defeats the pull-up, 0 in every pull mode,
+  loses to the pin driver) where a healthy DIN is megaohm high-impedance — if an addressable-LED
+  data line measures like that, you are on the wrong end of the chain. Full post-mortem:
+  `docs/troubleshooting/LED-RING-HANDOFF.md` §0.
+- ✅ **FIXED (2026-09-13) — LED daemon ignored SIGTERM and could survive as a root zombie holding PWM0**,
+  which makes the *next* service start present as "the LEDs are dead". `rpi_ws281x` access is now
+  serialized, and a 10 s hard-exit failsafe arms on any shutdown request. SIGTERM → clean exit
+  verified on both driver paths (SPI harness 0.26 s, real PWM 0.16 s). The 09-12 hang did not
+  reproduce on old code today — it was situational — but the fix closes the class regardless.
+- ✅ **FIXED (2026-09-13) — `colorOrder`/`dataRateHz` in the part config did nothing** (never reached
+  `PixelStrip`). Daemon takes `--color-order`, client passes `--freq`/`--color-order` from the part.
+- ✅ **FIXED (2026-09-12) — idle animation rendered near-black** (gamma applied per-channel to
+  already-quantised 8-bit values crushed the low end; idle peaked at RGB(7,1,13) and sat at literal
+  black half its breath). Gamma now applies once to the intensity envelope in float; hue preserved.
+
 🟠 **2026-09-07 SESSION — the node has a POWER fault; software was straightened out around it.**
 - 🟠 **UNDER-VOLTAGE, MEASURED PROPERLY (2026-09-07 afternoon) — it is a hard-start problem, not a bad
   supply.** Operator: the motor has its own 12 V supply and the Pi's 5 V comes from a converter.

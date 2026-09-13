@@ -129,25 +129,6 @@
           <input type="range" class="mb-range" id="quantizationRange" min="5" max="20" step="1" value="10" title="Adjust number of jaw positions">
         </div>
 
-        <hr class="jaw-rule">
-
-        <!-- Audio Sync Offset -->
-        <div class="jaw-field" title="Compensates for audio device latency. If jaw moves before you hear audio, slide right (positive). If audio plays before jaw moves, slide left (negative). Adjust in 25ms increments and test with Play TTS.">
-          <label for="audioLeadTimeRange" class="mb-field-label">
-            Audio Sync Offset <span class="mb-badge" id="audioLeadTimeValue">0ms</span>
-          </label>
-          <!-- Range is +/-1000ms to match the engine, which already clamps to
-               Math.max(-1000, Math.min(1000, ...)) in jawAnimationSuperPowerService.
-               The slider used to stop at 500 while the engine accepted twice that,
-               so an operator who needed more delay than 500ms had no way to ask for
-               it. Cold USB-sink resume alone can cost 150-450ms on top of mpg123
-               spawn and decode, which puts a cold start past the old limit. -->
-          <input type="range" class="mb-range" id="audioLeadTimeRange" min="-1000" max="1000" step="25" value="0" title="Adjust audio sync offset">
-          <div class="d-flex justify-content-between">
-            <small class="mb-field-hint">Jaw leads &larr;</small>
-            <small class="mb-field-hint">&rarr; Audio leads</small>
-          </div>
-        </div>
       </div>
 
       <!-- Calibration Quick-Adjust -->
@@ -172,6 +153,7 @@
           </div>
         </div>
       </div>
+
     </div>
 
     <!-- RIGHT COLUMN: TTS Test & Monitoring -->
@@ -190,10 +172,15 @@
           <textarea class="mb-textarea mb-dialogue" id="ttsTestText" rows="2" title="Enter TTS test text">The quick brown fox jumped over the lazy dog</textarea>
         </div>
 
-        <div class="d-flex gap-2 mb-2">
-          <button type="button" class="mb-btn mb-btn-primary mb-btn-sm flex-grow-1" id="playTtsBtn" title="Speak this text on the character's own speaker and drive the jaw servo from the audio">
+        <div class="d-flex gap-2 mb-2 align-items-center">
+          <button type="button" class="mb-btn mb-btn-primary mb-btn-sm flex-grow-1" id="playTtsBtn" title="Speak this text on the character's own speaker and drive the jaw servo (and the eyes) from the audio">
             <i class="bi bi-play-fill"></i> Play TTS &amp; Jaw
           </button>
+          <label class="mb-switch mb-0" title="Repeat the audio so you can tune the jaw and LED settings live between passes">
+            <input type="checkbox" id="jawLoop">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span>Loop</span>
+          </label>
           <button type="button" class="mb-btn mb-btn-danger mb-btn-sm" id="stopBtn" title="Stop TTS playback">
             <i class="bi bi-stop-fill"></i> Stop
           </button>
@@ -234,6 +221,69 @@
             <small class="mb-text-muted" id="jawMeterMax">180&deg;</small>
           </div>
         </div>
+      </div>
+
+      <!-- LED Eye Sync — right here under Play TTS & Jaw so you can tune the eyes
+           against the same audio you play for the jaw. -->
+      <div class="jaw-panel mb-2" id="ledSyncSection">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="jaw-section-title mb-0" title="Drive an LED eye ring from the same audio as the jaw. Play TTS & Jaw above drives both; tune the eyes here."><i class="bi bi-eye"></i> LED Eye Sync</h6>
+          <label class="mb-switch mb-0" title="React an LED ring to speech alongside the jaw">
+            <input type="checkbox" id="ledSyncEnabled">
+            <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
+            <span>React eyes to speech</span>
+          </label>
+        </div>
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-12 col-md-6">
+            <label class="mb-field-label" for="ledSyncPartSelect"><i class="bi bi-lightbulb"></i> LED Part</label>
+            <select class="mb-select" id="ledSyncPartSelect" title="Which LED ring to drive">
+              <option value="">Select an LED ring...</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="mb-field-label" for="ledSyncColorLow" title="Colour when quiet / mouth closed">Quiet</label>
+            <input type="color" class="mb-color" id="ledSyncColorLow" title="Colour at minimum">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="mb-field-label" for="ledSyncColorHigh" title="Colour when loud / mouth open">Loud</label>
+            <input type="color" class="mb-color" id="ledSyncColorHigh" title="Colour at maximum">
+          </div>
+        </div>
+        <div class="row g-2 mb-1">
+          <div class="col-6 col-md-4" title="Amplifies quiet audio so the eyes react more.">
+            <label class="mb-field-label" for="ledSyncSensitivity">Sensitivity <span class="mb-badge" id="ledSyncSensitivityValue">1.0</span></label>
+            <input type="range" class="mb-range" id="ledSyncSensitivity" min="0.1" max="5.0" step="0.1" value="1.0">
+          </div>
+          <div class="col-6 col-md-4" title="Smooths the level between frames.">
+            <label class="mb-field-label" for="ledSyncSmoothing">Smoothing <span class="mb-badge" id="ledSyncSmoothingValue">0.5</span></label>
+            <input type="range" class="mb-range" id="ledSyncSmoothing" min="0" max="0.95" step="0.05" value="0.5">
+          </div>
+          <div class="col-6 col-md-4" title="Ring animation-rate multiplier.">
+            <label class="mb-field-label" for="ledSyncSpeed">Speed <span class="mb-badge" id="ledSyncSpeedValue">1.0</span></label>
+            <input type="range" class="mb-range" id="ledSyncSpeed" min="0.1" max="5.0" step="0.1" value="1.0">
+          </div>
+        </div>
+        <div class="row g-2 align-items-end">
+          <div class="col-6 col-md-3" title="How fast the eyes brighten (ms to fully open).">
+            <label class="mb-field-label" for="ledSyncAttack">Attack (ms)</label>
+            <input type="number" class="mb-input" id="ledSyncAttack" min="1" max="1000" value="40">
+          </div>
+          <div class="col-6 col-md-3" title="How fast the eyes dim (ms to fully close).">
+            <label class="mb-field-label" for="ledSyncRelease">Release (ms)</label>
+            <input type="number" class="mb-input" id="ledSyncRelease" min="1" max="2000" value="120">
+          </div>
+          <div class="col-12 col-md-6" title="Shift the lighting in time to match the sound. Positive delays the eyes; negative advances them.">
+            <label class="mb-field-label" for="ledSyncOffset">Audio Offset <span class="mb-badge" id="ledSyncOffsetValue">0</span>ms</label>
+            <input type="range" class="mb-range" id="ledSyncOffset" min="-1000" max="1000" step="25" value="0">
+            <div class="d-flex justify-content-between">
+              <small class="mb-field-hint">Eyes lead &larr;</small>
+              <small class="mb-field-hint">&rarr; Audio leads</small>
+            </div>
+          </div>
+        </div>
+        <small class="mb-field-hint" id="ledSyncStatus">Pick an addressable LED ring.</small>
+        <small class="mb-field-hint d-block">Press <strong>Play TTS &amp; Jaw</strong> above and adjust these live &mdash; they drive the eyes from the same audio. Colours are shared with the jaw; timing/offset affect only the eyes. Full LED palette &amp; per-state colours on <a href="/setup/led-animation">LED Animation</a>.</small>
       </div>
 
       <!-- Jaw Timeline Visualization -->

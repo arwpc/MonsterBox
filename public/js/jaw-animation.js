@@ -14,6 +14,8 @@
   var playbackTimer = null;
   var currentConfig = {};
   var availableServos = [];
+  var availableLedParts = [];   // led_ring parts for the LED Eye Sync control
+  var ledSaveTimer = null;
   var configsList = [];       // Array of { id, name, preset }
   var activeConfigId = null;  // Currently active config ID
   var autoSaveTimer = null;   // Debounce timer for auto-save
@@ -45,6 +47,7 @@
       saveConfigBtn:       document.getElementById('saveConfigBtn'),
       testJawBtn:          document.getElementById('testJawBtn'),
       playTtsBtn:          document.getElementById('playTtsBtn'),
+      jawLoop:             document.getElementById('jawLoop'),
       stopBtn:             document.getElementById('stopBtn'),
       emergencyStopBtn:    document.getElementById('emergencyStopBtn'),
       ttsTestText:         document.getElementById('ttsTestText'),
@@ -78,15 +81,29 @@
       jawTimelineCanvas:   document.getElementById('jawTimelineCanvas'),
       timelinePanel:       document.getElementById('timelinePanel'),
       // Audio sync offset
-      audioLeadTimeRange:  document.getElementById('audioLeadTimeRange'),
-      audioLeadTimeValue:  document.getElementById('audioLeadTimeValue'),
       // Test text save
       saveTestTextBtn:     document.getElementById('saveTestTextBtn'),
       // Config selector
       configSelector:      document.getElementById('configSelector'),
       saveAsNewBtn:        document.getElementById('saveAsNewBtn'),
       renameConfigBtn:     document.getElementById('renameConfigBtn'),
-      deleteConfigBtn:     document.getElementById('deleteConfigBtn')
+      deleteConfigBtn:     document.getElementById('deleteConfigBtn'),
+      // LED Eye Sync (under Play TTS & Jaw)
+      ledSyncEnabled:      document.getElementById('ledSyncEnabled'),
+      ledSyncPartSelect:   document.getElementById('ledSyncPartSelect'),
+      ledSyncColorLow:     document.getElementById('ledSyncColorLow'),
+      ledSyncColorHigh:    document.getElementById('ledSyncColorHigh'),
+      ledSyncSensitivity:  document.getElementById('ledSyncSensitivity'),
+      ledSyncSensitivityValue: document.getElementById('ledSyncSensitivityValue'),
+      ledSyncSmoothing:    document.getElementById('ledSyncSmoothing'),
+      ledSyncSmoothingValue: document.getElementById('ledSyncSmoothingValue'),
+      ledSyncSpeed:        document.getElementById('ledSyncSpeed'),
+      ledSyncSpeedValue:   document.getElementById('ledSyncSpeedValue'),
+      ledSyncAttack:       document.getElementById('ledSyncAttack'),
+      ledSyncRelease:      document.getElementById('ledSyncRelease'),
+      ledSyncOffset:       document.getElementById('ledSyncOffset'),
+      ledSyncOffsetValue:  document.getElementById('ledSyncOffsetValue'),
+      ledSyncStatus:       document.getElementById('ledSyncStatus')
     };
   }
 
@@ -126,6 +143,7 @@
       });
     }
 
+
     // Enable toggle — auto-save on change
     if (el.jawEnabled) {
       el.jawEnabled.addEventListener('change', function() {
@@ -145,14 +163,6 @@
       el.quantizationRange.addEventListener('input', function() {
         if (el.quantizationValue) el.quantizationValue.textContent = this.value;
         selectPreset('custom');
-        scheduleAutoSave();
-      });
-    }
-
-    // Audio sync offset slider
-    if (el.audioLeadTimeRange) {
-      el.audioLeadTimeRange.addEventListener('input', function() {
-        if (el.audioLeadTimeValue) el.audioLeadTimeValue.textContent = this.value + 'ms';
         scheduleAutoSave();
       });
     }
@@ -178,6 +188,107 @@
 
     // Save test text button
     if (el.saveTestTextBtn) el.saveTestTextBtn.addEventListener('click', saveTestText);
+
+    // LED Eye Sync controls (drive the eyes when you Play TTS & Jaw)
+    if (el.ledSyncEnabled)   el.ledSyncEnabled.addEventListener('change', function() { updateLedSyncState(); scheduleLedSyncSave(); });
+    if (el.ledSyncPartSelect) el.ledSyncPartSelect.addEventListener('change', function() { updateLedSyncState(); scheduleLedSyncSave(); });
+    if (el.ledSyncColorLow)  el.ledSyncColorLow.addEventListener('change', scheduleLedSyncSave);
+    if (el.ledSyncColorHigh) el.ledSyncColorHigh.addEventListener('change', scheduleLedSyncSave);
+    [['ledSyncSensitivity', 'ledSyncSensitivityValue'], ['ledSyncSmoothing', 'ledSyncSmoothingValue'],
+     ['ledSyncSpeed', 'ledSyncSpeedValue'], ['ledSyncOffset', 'ledSyncOffsetValue']].forEach(function(pair) {
+      var input = el[pair[0]];
+      if (!input) return;
+      input.addEventListener('input', function() { var o = el[pair[1]]; if (o) o.textContent = input.value; });
+      input.addEventListener('change', scheduleLedSyncSave);
+    });
+    if (el.ledSyncAttack)  el.ledSyncAttack.addEventListener('change', scheduleLedSyncSave);
+    if (el.ledSyncRelease) el.ledSyncRelease.addEventListener('change', scheduleLedSyncSave);
+  }
+
+  // ─── LED Eye Sync (shares jawAnimation.ledSync with the LED Animation page) ──
+  function ledHexToRgb(hex) {
+    var m = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || ''));
+    if (!m) return [0, 0, 0];
+    var n = parseInt(m[1], 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function ledRgbToHex(rgb) {
+    if (!rgb || rgb.length !== 3) return '#000000';
+    function h(c) { var s = Math.max(0, Math.min(255, c | 0)).toString(16); return s.length === 1 ? '0' + s : s; }
+    return '#' + h(rgb[0]) + h(rgb[1]) + h(rgb[2]);
+  }
+  function buildLedSyncFromForm() {
+    return {
+      enabled:   el.ledSyncEnabled ? el.ledSyncEnabled.checked : false,
+      partId:    (el.ledSyncPartSelect && el.ledSyncPartSelect.value) ? el.ledSyncPartSelect.value : null,
+      colorLow:  el.ledSyncColorLow ? ledHexToRgb(el.ledSyncColorLow.value) : [80, 0, 0],
+      colorHigh: el.ledSyncColorHigh ? ledHexToRgb(el.ledSyncColorHigh.value) : [255, 120, 0],
+      sensitivity: el.ledSyncSensitivity ? Number(el.ledSyncSensitivity.value) : 1.0,
+      smoothing:   el.ledSyncSmoothing ? Number(el.ledSyncSmoothing.value) : 0.5,
+      attackMs:    el.ledSyncAttack ? parseInt(el.ledSyncAttack.value, 10) : 40,
+      releaseMs:   el.ledSyncRelease ? parseInt(el.ledSyncRelease.value, 10) : 120,
+      speed:       el.ledSyncSpeed ? Number(el.ledSyncSpeed.value) : 1.0,
+      offsetMs:    el.ledSyncOffset ? parseInt(el.ledSyncOffset.value, 10) : 0
+    };
+  }
+  function populateLedSyncPartDropdown(parts) {
+    if (!el.ledSyncPartSelect) return;
+    var selected = el.ledSyncPartSelect.value;
+    el.ledSyncPartSelect.innerHTML = '<option value="">Select an LED ring...</option>';
+    parts.forEach(function(part) {
+      var opt = document.createElement('option');
+      opt.value = part.id;
+      opt.textContent = part.name || ('LED #' + part.id);
+      el.ledSyncPartSelect.appendChild(opt);
+    });
+    if (selected) el.ledSyncPartSelect.value = selected;
+  }
+  function ledSetSlider(inputKey, valueKey, value, fallback) {
+    var v = value != null ? value : fallback;
+    if (el[inputKey]) el[inputKey].value = v;
+    if (el[valueKey]) el[valueKey].textContent = v;
+  }
+  function populateLedSyncControls(sync) {
+    var s = sync || {};
+    if (el.ledSyncEnabled) el.ledSyncEnabled.checked = !!s.enabled;
+    if (el.ledSyncPartSelect) el.ledSyncPartSelect.value = s.partId != null ? String(s.partId) : '';
+    if (el.ledSyncColorLow)  el.ledSyncColorLow.value = ledRgbToHex(s.colorLow || [80, 0, 0]);
+    if (el.ledSyncColorHigh) el.ledSyncColorHigh.value = ledRgbToHex(s.colorHigh || [255, 120, 0]);
+    ledSetSlider('ledSyncSensitivity', 'ledSyncSensitivityValue', s.sensitivity, 1.0);
+    ledSetSlider('ledSyncSmoothing', 'ledSyncSmoothingValue', s.smoothing, 0.5);
+    ledSetSlider('ledSyncSpeed', 'ledSyncSpeedValue', s.speed, 1.0);
+    ledSetSlider('ledSyncOffset', 'ledSyncOffsetValue', s.offsetMs, 0);
+    if (el.ledSyncAttack)  el.ledSyncAttack.value = s.attackMs != null ? s.attackMs : 40;
+    if (el.ledSyncRelease) el.ledSyncRelease.value = s.releaseMs != null ? s.releaseMs : 120;
+    updateLedSyncState();
+  }
+  function updateLedSyncState() {
+    var hasParts = availableLedParts.length > 0;
+    var on = el.ledSyncEnabled && el.ledSyncEnabled.checked;
+    if (el.ledSyncEnabled) el.ledSyncEnabled.disabled = !hasParts;
+    var enable = hasParts && on;
+    ['ledSyncPartSelect', 'ledSyncColorLow', 'ledSyncColorHigh', 'ledSyncSensitivity', 'ledSyncSmoothing',
+     'ledSyncAttack', 'ledSyncRelease', 'ledSyncSpeed', 'ledSyncOffset'].forEach(function(k) {
+      if (el[k]) el[k].disabled = !enable;
+    });
+    if (el.ledSyncStatus) {
+      el.ledSyncStatus.textContent = !hasParts
+        ? 'No addressable LED ring on this character.'
+        : (on ? 'The eyes track the audio when you Play TTS & Jaw.' : 'Turn on to react the eyes to speech.');
+    }
+  }
+  function scheduleLedSyncSave() {
+    if (ledSaveTimer) clearTimeout(ledSaveTimer);
+    ledSaveTimer = setTimeout(saveLedSync, 400);
+  }
+  function saveLedSync() {
+    if (!currentCharacterId) return Promise.resolve();
+    return fetch('/setup/led-animation/api/led-sync/' + currentCharacterId, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildLedSyncFromForm())
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d && d.success) showToast('LED sync saved', 'success');
+    }).catch(function() {});
   }
 
   // ─── Auto-Save (debounced) ────────────────────────────────────────
@@ -260,8 +371,7 @@
       useBandpassFilter:   el.bandpassFilter ? el.bandpassFilter.checked : true,
       useAGC:              el.agcEnabled ? el.agcEnabled.checked : true,
       quantizationLevels:  parseInt(el.quantizationRange ? el.quantizationRange.value : 10, 10),
-      preset:              getSelectedPreset(),
-      audioLeadTimeMs:     parseInt(el.audioLeadTimeRange ? el.audioLeadTimeRange.value : 0, 10)
+      preset:              getSelectedPreset()
     };
     if (config.enabled && !config.servoPartId) return null;
     return config;
@@ -292,11 +402,14 @@
         if (data.success) {
           currentConfig = data.config;
           availableServos = data.availableServos || [];
+          availableLedParts = data.availableLedParts || [];
           configsList = data.configs || [];
           activeConfigId = data.activeConfigId || (data.config && data.config.activeConfigId) || null;
           populateConfigSelector();
           populateServoDropdown(availableServos);
+          populateLedSyncPartDropdown(availableLedParts);
           populateForm(data.config);
+          populateLedSyncControls(data.config && data.config.ledSync);
           updateFormState();
         } else {
           showToast('Error loading config: ' + (data.error || 'Unknown'), 'error');
@@ -345,11 +458,6 @@
     if (el.quantizationRange) {
       el.quantizationRange.value = config.quantizationLevels || 10;
       if (el.quantizationValue) el.quantizationValue.textContent = config.quantizationLevels || 10;
-    }
-    // Audio sync offset
-    if (el.audioLeadTimeRange) {
-      el.audioLeadTimeRange.value = config.audioLeadTimeMs || 0;
-      if (el.audioLeadTimeValue) el.audioLeadTimeValue.textContent = (config.audioLeadTimeMs || 0) + 'ms';
     }
     // Saved test text
     if (el.ttsTestText && config.testText) {
@@ -463,10 +571,15 @@
       el.playTtsBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
     }
 
-    fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/test-tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text })
+    // Persist the on-screen LED sync settings FIRST so the eyes use exactly what
+    // is set (the drive reads the saved config; the sliders auto-save on a
+    // debounce, so a value just moved would otherwise be missed).
+    Promise.resolve(saveLedSync()).then(function() {
+      return fetch('/setup/jaw-animation/api/jaw-animation/' + currentCharacterId + '/test-tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text })
+      });
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -478,11 +591,19 @@
           drawTimeline(data.timeline);
         }
         startPolling();
-        // Auto-stop after duration + buffer
+        // After the audio: loop (re-play, re-reading the latest settings) if the
+        // Loop toggle is on, so you can tune the jaw and LED live between passes;
+        // otherwise stop.
         var duration = (data.duration || 3000) + 500;
         playbackTimer = setTimeout(function() {
-          stopPlayback();
-          setStatus('Done');
+          if (el.jawLoop && el.jawLoop.checked) {
+            isPlaying = false;
+            resetPlayBtn();
+            playTts();
+          } else {
+            stopPlayback();
+            setStatus('Done');
+          }
         }, duration);
       } else {
         isPlaying = false;

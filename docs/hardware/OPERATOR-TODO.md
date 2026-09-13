@@ -3,7 +3,17 @@
 Software cannot close any of these. Each one has been isolated to a physical cause with evidence,
 so none of them needs re-diagnosing from scratch.
 
-Last updated **2026-08-22** (v11.0 production-readiness audit + bench session; §C jaw moved to ch1, §G watchdog added).
+Last updated **2026-09-13** (PumpkinHead LED-ring extension isolated — new top entry; previously 2026-08-22, v11.0 audit + bench session).
+
+---
+
+# PumpkinHead LED eye rings — optional hardening only (RESOLVED 2026-09-13)
+
+The frozen-white rings were **cabled backwards — data fed DOUT instead of DIN**; the operator
+reversed it and both eyes animate. Nothing is broken. Two cheap, optional reliability fits while the
+lid is ever open again (standard WS2812 practice, not urgent): **330–470 Ω in series with data at the
+ring's DIN**, and **1000 µF across V_CC/GND at the ring**. Post-mortem:
+`docs/troubleshooting/LED-RING-HANDOFF.md` §0.
 
 ---
 

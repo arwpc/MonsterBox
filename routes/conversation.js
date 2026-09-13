@@ -22,6 +22,8 @@ import lurkMotionWatcher from '../services/lurkMotionWatcherService.js';
 import { getStatus as getIdleStatus, start as startIdleLoop, stop as stopIdleLoop } from '../services/movement/idleLoopService.js';
 import { loadPoses as loadCharacterPoses } from '../services/poses/poseRepository.js';
 import serverPlaybackService from '../services/serverPlaybackService.js';
+import ledAnimationService from '../services/ledAnimationService.js';
+import ledInteractionService from '../services/ledInteractionService.js';
 import { resolveCharacterSync } from '../services/characterContext.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -499,6 +501,10 @@ router.post('/api/say', express.json(), async (req, res) => {
     } catch (_) {}
 
     if (!jawSynced) {
+      // No jaw servo drove the audio — light the eyes from the same audio for any
+      // character that has an LED ring (no-op otherwise). Fire-and-forget so it
+      // starts alongside playback.
+      ledAnimationService.driveLedFromBuffer(characterId, gen.audioBuffer, gen.contentType).catch(() => {});
       const play = await serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, {
         contentType: gen.contentType, characterId, speakerPartId: req.body.speakerPartId || undefined
       });
@@ -702,7 +708,12 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
     // Use ElevenLabs Conversational AI for actual AI conversation
     // This should generate an AI response to the question, not just repeat the question
     const { default: elevenLabsWebSocketService } = await import('../services/elevenLabsWebSocketService.js');
-    
+
+    // Show "thinking" on the eyes while the agent composes its reply (no-op
+    // without an LED ring). Speaking is driven audio-reactively by the jaw/LED
+    // sync during playback; we set "listening" again once the turn completes.
+    ledInteractionService.setInteractionState(characterId, 'thinking').catch(() => {});
+
     try {
       // Generate AI response using ElevenLabs Conversational AI
       const aiResponse = await elevenLabsWebSocketService.askAgentQuestion(
@@ -714,16 +725,19 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
       if (aiResponse && aiResponse.success) {
         // The agent already streamed its audio response through the speaker
         // via askAgentQuestion -> _startAudioPlayback. No need for separate TTS.
+        ledInteractionService.setInteractionState(characterId, 'listening').catch(() => {});
         return res.json({
           success: true,
           response: aiResponse.response,
           audioPlayed: true
         });
       } else {
-        return res.status(500).json({ 
-          success: false, 
-          error: 'Failed to get AI response', 
-          details: aiResponse?.error || 'Unknown error' 
+        // Turn failed — don't leave the eyes stuck on the "thinking" colour.
+        ledInteractionService.setInteractionState(characterId, 'listening').catch(() => {});
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to get AI response',
+          details: aiResponse?.error || 'Unknown error'
         });
       }
     } catch (aiError) {
@@ -749,6 +763,8 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
           } catch (_) {}
 
           if (!jawSynced) {
+            // Light the eyes from the audio for LED-equipped, no-jaw characters.
+            ledAnimationService.driveLedFromBuffer(characterId, gen.audioBuffer, gen.contentType).catch(() => {});
             const playResult = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, {
               characterId,
               contentType: gen.contentType || 'audio/wav',
@@ -758,7 +774,8 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
             audioPlayed = playResult.success;
           }
         }
-        
+
+        ledInteractionService.setInteractionState(characterId, 'listening').catch(() => {});
         return res.json({
           success: true,
           response: fallbackResponse,
@@ -766,10 +783,11 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
           fallback: true
         });
       } catch (fallbackError) {
-        return res.status(500).json({ 
-          success: false, 
+        ledInteractionService.setInteractionState(characterId, 'listening').catch(() => {});
+        return res.status(500).json({
+          success: false,
           error: 'AI service unavailable and TTS fallback failed',
-          originalError: aiError.message 
+          originalError: aiError.message
         });
       }
     }

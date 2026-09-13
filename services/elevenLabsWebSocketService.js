@@ -352,6 +352,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 // Stop the streaming jaw driver's 50ms timer
                 if (connection.characterId != null) {
                     try { jawAnimationService.stopPcmJawStream(connection.characterId); } catch (_) { /* noop */ }
+                    // Return the eyes to their resting look when the session ends.
+                    import('./ledInteractionService.js').then(m => m.default.setInteractionState(connection.characterId, 'idle')).catch(() => {});
                 }
 
                 toDelete.push(sessionId);
@@ -1035,6 +1037,11 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             // The listener dedupes against the Scribe tap via
                             // its cooldown window.
                             this._followOrdersHook(connection.characterId, userText, { sessionId, source: 'agent_asr' });
+
+                            // Guest finished a turn — show "thinking" on the eyes
+                            // while the agent composes its reply (no-op without an
+                            // LED ring; speaking then takes over during playback).
+                            import('./ledInteractionService.js').then(m => m.default.setInteractionState(connection.characterId, 'thinking')).catch(() => {});
 
                             // Start the turn clock at the guest's last voiced frame.
                             connection._turn = {
@@ -2084,6 +2091,18 @@ class ElevenLabsWebSocketService extends EventEmitter {
         c._streamPrimed = false;
         console.log(`🔊 Starting audio playback for session ${sessionId}, character ${c.characterId}`);
 
+        // Light the eyes from the agent audio for any character with an LED ring
+        // (no-op otherwise). Works alongside — or instead of — the jaw.
+        c._ledSpeak = null;
+        try {
+            const ledAnim = (await import('./ledAnimationService.js')).default;
+            const ledSpeak = (await import('./ledSpeakingSync.js')).default;
+            const sync = await ledAnim.resolveLedSync(c.characterId);
+            if (sync.partId != null && sync.enabled && await ledSpeak.begin(c.characterId, { ...sync })) {
+                c._ledSpeak = ledSpeak;
+            }
+        } catch (_) { c._ledSpeak = null; }
+
         try {
             while ((Array.isArray(c.audioBuffer) && c.audioBuffer.length > 0) || c.isActive) {
                 // Wait for buffer to have chunks or timeout
@@ -2117,6 +2136,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 let result;
                 if (fmt.startsWith('pcm_')) {
                     const sampleRate = parseInt(fmt.split('_')[1]) || 16000;
+                    // Feed the eyes an amplitude for this PCM aggregate; the LED's
+                    // own envelope (sensitivity/smoothing/attack/release) shapes it.
+                    if (c._ledSpeak) {
+                        let sum = 0;
+                        const samples = audioBuffer.length >> 1;
+                        for (let k = 0; k < samples; k++) { const s = audioBuffer.readInt16LE(k * 2); sum += s * s; }
+                        const rms = samples > 0 ? Math.sqrt(sum / samples) / 32768 : 0;
+                        c._ledSpeak.noteLevel(c.characterId, Math.min(1, rms * 4));
+                    }
                     result = await serverPlaybackService.writePcmStream(audioBuffer, {
                         characterId: c.characterId,
                         volume: 100,
@@ -2154,6 +2182,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
             console.log(`🔇 Audio playback stopped for session ${sessionId}`);
             // Close jaw when audio stops
             try { jawAnimationService.driveJawFromAmplitude(c.characterId, 0).catch(() => {}); } catch (_) {}
+            // Settle the eyes back to their resting state.
+            try { if (c._ledSpeak) c._ledSpeak.end(c.characterId).catch(() => {}); } catch (_) {}
+            c._ledSpeak = null;
         }
     }
 

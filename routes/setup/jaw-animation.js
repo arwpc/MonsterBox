@@ -5,6 +5,7 @@ import * as jawAnimationService from '../../services/jawAnimationSuperPowerServi
 import { getTTSConfigForCharacter } from '../../services/aiConfigStore.js';
 import elevenLabsTTSService from '../../services/elevenLabsTTSService.js';
 import serverPlaybackService from '../../services/serverPlaybackService.js';
+import ledAnimationService from '../../services/ledAnimationService.js';
 
 const router = express.Router();
 
@@ -113,10 +114,11 @@ router.get('/api/jaw-animation/:characterId', async (req, res) => {
   try {
     const { characterId } = req.params;
 
-    const [config, configsList, servos] = await Promise.all([
+    const [config, configsList, servos, ledParts] = await Promise.all([
       jawAnimationService.readJawConfig(characterId),
       jawAnimationService.listJawConfigs(characterId),
-      jawAnimationService.getAvailableServos(characterId)
+      jawAnimationService.getAvailableServos(characterId),
+      jawAnimationService.getAvailableLedParts(characterId)
     ]);
     const monitoringState = jawAnimationService.getAudioMonitoringState(characterId);
 
@@ -126,6 +128,7 @@ router.get('/api/jaw-animation/:characterId', async (req, res) => {
       configs: configsList.configs,
       activeConfigId: configsList.activeConfigId,
       availableServos: servos,
+      availableLedParts: ledParts,
       monitoringState
     });
   } catch (error) {
@@ -325,6 +328,8 @@ router.post('/api/jaw-animation/:characterId/test', async (req, res) => {
   }
 });
 
+// LED eye-sync configuration and testing moved to /setup/led-animation.
+
 // Get real-time audio levels and jaw state
 router.get('/api/jaw-animation/:characterId/audio-levels', async (req, res) => {
   try {
@@ -439,8 +444,8 @@ router.post('/api/jaw-animation/:characterId/test-tts', async (req, res) => {
     // Pre-analyze audio for jaw timeline (used for both playback and UI visualization)
     let timeline = null;
     let analysisResult = null;
+    const jawConfig = await jawAnimationService.readJawConfig(characterId);
     try {
-      const jawConfig = await jawAnimationService.readJawConfig(characterId);
       const guardrails = await jawAnimationService.loadCalibrationGuardrails(
         jawConfig.servoPartId, characterId
       );
@@ -458,13 +463,20 @@ router.post('/api/jaw-animation/:characterId/test-tts', async (req, res) => {
       console.warn('Pre-analysis for test-tts failed:', err.message);
     }
 
-    // Use playWithJawSync for synchronized playback (fire-and-forget)
-    // Pass pre-computed analysis to avoid redundant ffmpeg spawn (~300-500ms saved)
-    jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType, {
-      preAnalysis: analysisResult
-    }).catch((err) => {
-        console.error('Jaw sync playback error:', err.message);
-      });
+    if (jawConfig.enabled && jawConfig.servoPartId) {
+      // Jaw servo present — playWithJawSync plays the audio AND drives the jaw
+      // (and the eyes, if LED sync is on). Fire-and-forget; reuse the analysis.
+      jawAnimationService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType, {
+        preAnalysis: analysisResult
+      }).catch((err) => console.error('Jaw sync playback error:', err.message));
+    } else {
+      // No jaw servo (e.g. an LED-only character) — still play the audio and
+      // drive the eyes so "Play TTS & Jaw" tunes the LED here too.
+      ledAnimationService.driveLedFromBuffer(characterId, gen.audioBuffer, gen.contentType).catch(() => {});
+      serverPlaybackService.playBufferOnCharacterSpeaker(gen.audioBuffer, {
+        contentType: gen.contentType, characterId
+      }).catch((err) => console.error('TTS playback error:', err && err.message));
+    }
 
     const estimatedDuration = analysisResult ? analysisResult.duration : 3000;
 
@@ -526,6 +538,8 @@ router.post('/api/jaw-animation/:characterId/stop', async (req, res) => {
 
     // Cancel jaw drive loop
     jawAnimationService.cancelJawDrive(characterId);
+    // Cancel a no-jaw LED-only drive (the fallback path) and settle the eyes.
+    await ledAnimationService.stopLedTts(characterId).catch(() => {});
 
     // Drive jaw to closed position
     await jawAnimationService.moveJawToAngle(characterId, 0).catch(() => {});

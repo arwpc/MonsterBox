@@ -656,6 +656,40 @@ curl -s http://localhost:8090/?action=stream | dd bs=1k count=64 2>/dev/null | \
 
 Open: http://localhost:3000/setup/calibration
 
+## LED Eye Rings (addressable WS2812B)
+
+Characters with a `led_ring` part (e.g. PumpkinHead's "Pumpkin Eyes" — two 8-pixel WS2812B
+rings chained on GPIO18) get animated eyes driven by a root Python daemon
+(`python_wrappers/led_ring_daemon.py`) that owns the pixel chain on PWM/DMA and renders
+50 fps over a Unix socket (`/tmp/monsterbox-led.sock`). Geometry (pin, pixel count, ring
+split, colour order, data rate) comes from the character's own part config — nothing is
+hardcoded, because GPIO18 means something else entirely on other characters.
+
+- **States:** `off · idle · listening · thinking · speaking (audio-reactive) · error · fade`
+  (palette cross-fade). Saved colours per state are defaults; explicit scene/API colours win.
+- **API:** `GET /api/led/status` · `POST /api/led/state` `{state, options}` ·
+  `POST /api/led/pixels` (manual/test) · `GET|POST /api/led/config` (colours, palette, timing).
+  All take `?characterId=`.
+- **UI — one page: `/setup/led-animation`** (Setup tile + nav menu). Live per-eye colour and
+  brightness, identify-pixels walk, colour per state, palette editor with fade/hold timing, the
+  speech-sync config, and a test panel: per-state test buttons, a low→high sweep, and **Speak &
+  Drive Eyes** (speaks typed text and drives the ring from the audio — no jaw servo needed) with a
+  live level meter. Calibration and Jaw Animation link here.
+- **Jaw / Speech Sync:** on the LED Animation page, assign an LED ring, pick a quiet (closed) and
+  loud (open) colour, and tune the eyes' own **Sensitivity / Smoothing / Attack / Release / Speed**
+  (independent of the jaw). During speech the eyes brighten and crossfade between the two colours.
+  Works for any character with an LED ring — jaw or no jaw.
+- **AI interaction states:** during a conversation the eyes show **thinking** while the agent replies,
+  **speaking** (audio-reactive) during playback, and **listening** when it's your turn — so people can
+  tell when the animatronic is waiting for an answer. Character-independent; no-op without an LED ring.
+- **GPIO/geometry:** an LED ring's data pin, PWM channel, colour order, pixel count, ring split, DMA
+  and data rate are editable on `/setup/calibration` → Edit (no longer JSON-only).
+- **Wiring truth:** data must enter the chain's **DIN** — a feed on DOUT presents as
+  bright-white frozen rings that ignore everything (see
+  `docs/troubleshooting/LED-RING-HANDOFF.md` for the diagnostic method and post-mortem).
+  `install.sh` installs `rpi-ws281x` and blacklists `snd_bcm2835` (PWM0 contention) on
+  nodes whose parts include a `led_ring`.
+
 ## Jaw Animation v2 (Super Power)
 
 Jaw Animation v2 drives a servo to match speech amplitude in real-time, producing lifelike mouth movement during TTS playback. Uses a persistent Python servo daemon (<1ms per command), complete audio pre-analysis with speech bandpass filtering, and synchronized playback scheduling.
