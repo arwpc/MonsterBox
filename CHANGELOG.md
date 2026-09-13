@@ -4,6 +4,13 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Fix — LED eyes now speech-sync during a realtime AI conversation on a character with no jaw servo.**
+  The realtime agent-audio path (`driveJawFromPcmStream`) returned early when a character had no jaw
+  servo, so the eye ring never left the "thinking" colour while the agent talked — it read as the eyes
+  "chasing blue," with no speech coordination. LED eye sync is no longer gated behind the jaw: the stream
+  drives the ring from the audio amplitude whether or not a servo is present (jaw commands are skipped
+  when absent). Verified live on PumpkinHead: idle → thinking → speaking (colour tracks the voice) → listening.
+
 - **LED Talk toggle on the dashboard.** A switch beside "Jaw" (on both the Scare Console and the
   classic dashboard) arms the eye ring for the AI/Lurk interaction: the eyes show the per-state colours
   for **thinking** and **listening**, go **audio-reactive while speaking**, and rest at **idle**. Backed

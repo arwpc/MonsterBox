@@ -1878,15 +1878,29 @@ async function driveJawFromPcmStream(characterId, pcmChunk, sampleRate = PCM_JAW
   let stream = pcmJawStreams.get(cid);
   if (!stream) {
     const config = characterConfigs.get(cid) || await readJawConfig(characterId);
-    if (!config.enabled || !config.servoPartId) {
-      return { success: false, message: 'Jaw animation disabled or no servo configured' };
+    const jawOn = !!(config.enabled && config.servoPartId);
+    const ledOn = !!(config.ledSync && config.ledSync.enabled);
+    // The eyes must react to speech even on a character with NO jaw servo
+    // (e.g. PumpkinHead). LED eye sync used to be unreachable here: this path
+    // returned as soon as there was no servo, so the ring never left the
+    // "thinking" colour during a realtime agent reply. Drive whichever the
+    // character has; bail only when BOTH the jaw and the LED are off.
+    if (!jawOn && !ledOn) {
+      return { success: false, message: 'Jaw animation and LED sync both disabled' };
     }
-    const parts = await loadPartsSafe(characterId);
-    const jawServo = parts.find(p => String(p.id) === String(config.servoPartId));
-    if (!jawServo) return { success: false, message: 'Jaw servo not found' };
 
-    // Same calibrated guardrails the offline path uses — never raw 0/180.
-    const guardrails = await loadCalibrationGuardrails(config.servoPartId, characterId);
+    let jawServo = null;
+    let guardrails = null;
+    if (jawOn) {
+      const parts = await loadPartsSafe(characterId);
+      jawServo = parts.find(p => String(p.id) === String(config.servoPartId)) || null;
+      if (jawServo) {
+        // Same calibrated guardrails the offline path uses — never raw 0/180.
+        guardrails = await loadCalibrationGuardrails(config.servoPartId, characterId);
+      } else if (!ledOn) {
+        return { success: false, message: 'Jaw servo not found' };
+      }
+    }
 
     stream = {
       queue: [], residual: Buffer.alloc(0), timer: null,
@@ -1894,7 +1908,7 @@ async function driveJawFromPcmStream(characterId, pcmChunk, sampleRate = PCM_JAW
       frameBytes: pcmJawFrameBytes(sampleRate)
     };
     pcmJawStreams.set(cid, stream);
-    jawServoDaemon.ensureRunning().catch(() => {});
+    if (jawServo) jawServoDaemon.ensureRunning().catch(() => {});
   }
 
   // Carry partial frames across chunk boundaries so no audio is lost or duplicated.
@@ -1935,8 +1949,11 @@ function _startPcmJawTimer(cid) {
     if (s.queue.length === 0) {
       // Underrun: speech ended (or the network stalled). Close the jaw to its
       // calibrated minimum and idle — the next chunk restarts the timer.
-      const closed = s.guardrails.minAngle ?? s.config.minAngle ?? 0;
-      sendJawAngleCmd(s.jawServo, closed, cid);
+      // (LED-only streams have no servo/guardrails — skip the close.)
+      if (s.jawServo) {
+        const closed = s.guardrails.minAngle ?? s.config.minAngle ?? 0;
+        sendJawAngleCmd(s.jawServo, closed, cid);
+      }
       const ms = audioMonitoringState.get(cid);
       if (ms) { ms.lastAmplitude = 0; ms.smoothedAmplitude = 0; }
       s.timer = null;
@@ -1950,10 +1967,14 @@ function _startPcmJawTimer(cid) {
     // Same normalised level drives the head, so mouth and head emphasis come
     // from one signal instead of two that merely overlap in time.
     try { speechExpression.noteLevel(cid, amplitude); } catch (_) { /* decorative only */ }
-    const smoothed = applySmoothingToAmplitude(cid, amplitude, s.config);
-    const angle = calculateJawAngle(smoothed, s.config, s.guardrails, cid);
-    sendJawAngleCmd(s.jawServo, angle, cid);
+    let smoothed = amplitude;
+    if (s.jawServo) {
+      smoothed = applySmoothingToAmplitude(cid, amplitude, s.config);
+      const angle = calculateJawAngle(smoothed, s.config, s.guardrails, cid);
+      sendJawAngleCmd(s.jawServo, angle, cid);
+    }
     // Feed the raw audio amplitude to the eyes (their own timing shapes it).
+    // Independent of the jaw — this is what lights the ring on a no-servo node.
     ledSpeakingSync.noteLevel(cid, amplitude);
     const ms = audioMonitoringState.get(cid);
     if (ms) { ms.lastAmplitude = amplitude; ms.smoothedAmplitude = smoothed; }
