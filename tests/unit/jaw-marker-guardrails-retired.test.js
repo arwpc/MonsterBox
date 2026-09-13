@@ -57,7 +57,17 @@ describe('Jaw guardrails — legacy markers are retired', function () {
     expect(cal.minAngle, 'a drive window is offered').to.be.a('number');
     expect(cal.maxAngle, 'a drive window is offered').to.be.a('number');
     expect(cal.maxAngle).to.be.greaterThan(cal.minAngle);
-    expect([cal.minAngle, cal.maxAngle], 'marker values must not be the source').to.not.deep.equal([63, 131]);
+    // `source` is the ONLY honest discriminator here, and it is asserted below.
+    //
+    // This used to also assert the window was not literally [63, 131], which
+    // looked like a tighter check and was actually a false alarm: the
+    // operator-authored jaw window in this character's super-powers.json is
+    // 63-131 on all of its configs — the same numbers as the legacy markers, by
+    // coincidence of the same jaw being measured twice. So the legitimate
+    // jaw-config window is value-identical to the forbidden marker window, and a
+    // comparison on values alone fails on correct behaviour. It did: this test
+    // has been red on live data while the code under test was doing exactly the
+    // right thing (returning source 'jaw-config', markers only logged).
     expect(cal.source, 'the window must come from the jaw config or the full span').to.be.oneOf(['jaw-config', 'placeholder-span', 'full-span']);
   });
 

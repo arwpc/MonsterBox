@@ -70,6 +70,7 @@
     "verify:mcp": "npm run test:system && npm run test:unit && npm run test:mcp",
     "setup": "bash install.sh",
     "setup:webcam": "bash scripts/setup-webcam.sh",
+    "find:channels": "python3 scripts/find-servo-channels.py",
     "advertise-node": "node scripts/advertise-node.mjs",
     "deploy:all": "bash scripts/deploy-all.sh",
     "check:discovery": "node scripts/check-discovery.mjs",

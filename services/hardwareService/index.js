@@ -50,8 +50,20 @@ const MJPG_STREAM_ENDPOINT = `${MJPG_STREAMER_URL}/?action=stream`;
  *
  * @returns {Promise<number>} how many drives were ended
  */
-async function killInFlightDrive({ rpwmPin, lpwmPin }) {
-    if (rpwmPin == null && lpwmPin == null) return 0;
+async function killInFlightDrive({ rpwmPin, lpwmPin, directionPin, pwmPin }) {
+    // Two wiring shapes reach this, and only one used to be handled.
+    //
+    // BTS7960 parts carry rpwmPin/lpwmPin and drive through
+    // linear_actuator_control_v2.py, which takes a JSON config on its argv.
+    // MDD10A/Cytron parts (Mina's Coffin Door: directionPin 5, pwmPin 13) carry
+    // NEITHER, so the old `if (rpwmPin == null && lpwmPin == null) return 0`
+    // made this a no-op for them — and they do not run the v2 script either, so
+    // the process match missed them twice over. Their drive holds GPIO 5/13 for
+    // the full duration via lgpio.gpio_claim_output, one process per command, so
+    // every overlapping command was refused with "Failed to set up pins: 'GPIO
+    // busy'" (54 of them in /var/log/monsterbox.err) and no drive could be cut
+    // short. Mina's scenes 1 and 3 drive that part for 8500 ms at a stretch.
+    if (rpwmPin == null && lpwmPin == null && directionPin == null && pwmPin == null) return 0;
     let stdout = '';
     try {
         stdout = await new Promise((resolve, reject) => {
@@ -73,10 +85,24 @@ async function killInFlightDrive({ rpwmPin, lpwmPin }) {
         const pid = Number(m[1]);
         const args = m[2];
         if (pid === self || pid === 1) continue;
-        if (!/python3?\s+\S*python_wrappers\/linear_actuator_control_v2\.py/.test(args)) continue;
-        // Only this part's drive: the config JSON is on the command line.
-        const mine = (rpwmPin != null && new RegExp(`"rpwmPin"\\s*:\\s*${Number(rpwmPin)}\\b`).test(args))
-            || (lpwmPin != null && new RegExp(`"lpwmPin"\\s*:\\s*${Number(lpwmPin)}\\b`).test(args));
+        const isV2 = /python3?\s+\S*python_wrappers\/linear_actuator_control_v2\.py/.test(args);
+        // The MDD10A/Cytron path: actuator_cli.py shells into
+        // linear_actuator_control.py, and either process may be the one holding
+        // the pins depending on where in the drive it is.
+        const isMdd = /python3?\s+\S*python_wrappers\/(actuator_cli|linear_actuator_control)\.py/.test(args);
+        if (!isV2 && !isMdd) continue;
+
+        let mine = false;
+        if (isV2) {
+            // Only this part's drive: the config JSON is on the command line.
+            mine = (rpwmPin != null && new RegExp(`"rpwmPin"\\s*:\\s*${Number(rpwmPin)}\\b`).test(args))
+                || (lpwmPin != null && new RegExp(`"lpwmPin"\\s*:\\s*${Number(lpwmPin)}\\b`).test(args));
+        } else if (directionPin != null && pwmPin != null) {
+            // `actuator_cli.py control <dirPin> <pwmPin> <direction> <speed> ...`
+            // — the two pins are positional and adjacent, which is specific
+            // enough that another part's drive on different pins cannot match.
+            mine = new RegExp(`\\b${Number(directionPin)}\\s+${Number(pwmPin)}\\b`).test(args);
+        }
         if (mine) victims.push(pid);
     }
 
@@ -106,9 +132,35 @@ async function killInFlightDrive({ rpwmPin, lpwmPin }) {
             try { process.kill(pid, 'SIGKILL'); } catch (_) { /* gone, good */ }
         }
         if (alive.length) await new Promise(r => setTimeout(r, 40));
-        console.warn(`🛑 stop: ended ${victims.length} in-flight drive(s) on GPIO ${rpwmPin}/${lpwmPin}: ${victims.join(', ')}`);
+        // Name the pins this call actually matched on. Logging rpwmPin/lpwmPin
+        // unconditionally printed "GPIO undefined/undefined" for every MDD10A
+        // part, which reads like the kill was unscoped when it was not.
+        const pinLabel = (rpwmPin != null || lpwmPin != null)
+            ? `${rpwmPin}/${lpwmPin}`
+            : `${directionPin}/${pwmPin}`;
+        console.warn(`🛑 ended ${victims.length} in-flight drive(s) on GPIO ${pinLabel}: ${victims.join(', ')}`);
     }
     return victims.length;
+}
+
+/**
+ * End a drive still holding this part's pins before starting a new one.
+ *
+ * A second extend/retract/jog used to claim the pins while the first drive still
+ * held them, so it was refused with 'GPIO busy' and the first drive ran on to the
+ * end of its duration: pressing Retract mid-extend did nothing, and there was no
+ * way to reverse the coffin door (seen again after the 2026-09-12 12:18 restart).
+ * The newest command now wins, through the same pin-scoped kill stop() uses, so
+ * another part's move is never touched. Never throws: if the kill fails, the new
+ * command meets the old refusal rather than an exception.
+ */
+async function supersedeInFlightDrive(pins) {
+    try {
+        return await killInFlightDrive(pins);
+    } catch (err) {
+        console.error('🦴 could not end the in-flight drive before a new command:', err.message);
+        return 0;
+    }
 }
 
 /**
@@ -451,6 +503,7 @@ const HARDWARE_CONTROLLERS = {
                         speed,
                         duration: dur
                     });
+                    await supersedeInFlightDrive({ rpwmPin, lpwmPin });
                     out = await runWrapper('linear_actuator_control_v2.py', [config]);
                 } else {
                     console.log(`🦴 extend() using MDD10A/Cytron path...`);
@@ -459,6 +512,7 @@ const HARDWARE_CONTROLLERS = {
                     const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
 
                     console.log(`🦴 extend() calling actuatorService.controlActuator with dirPin=${dirPin}, pwm=${pwm}, speed=${speed}, duration=${dur}`);
+                    await supersedeInFlightDrive({ directionPin: dirPin, pwmPin: pwm });
                     out = await actuatorService.controlActuator({
                         directionPin: dirPin,
                         pwmPin: pwm,
@@ -528,12 +582,14 @@ const HARDWARE_CONTROLLERS = {
                         speed,
                         duration: dur
                     });
+                    await supersedeInFlightDrive({ rpwmPin, lpwmPin });
                     out = await runWrapper('linear_actuator_control_v2.py', [config]);
                 } else {
                     // Use legacy script for MDD10A/Cytron
                     const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
                     const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
 
+                    await supersedeInFlightDrive({ directionPin: dirPin, pwmPin: pwm });
                     out = await actuatorService.controlActuator({
                         directionPin: dirPin,
                         pwmPin: pwm,
@@ -582,6 +638,21 @@ const HARDWARE_CONTROLLERS = {
                 const dirPin = (typeof directionPin === 'number') ? directionPin : (typeof pin === 'number' ? pin : parseInt(pin, 10));
                 const pwm = (typeof pwmPin === 'number') ? pwmPin : (typeof pin === 'number' ? pin + 1 : parseInt(pin, 10) + 1);
 
+                // End any drive still holding these pins first. The motor
+                // controller has done this since v9.3.0; the linear actuator —
+                // the part that actually runs 8.5-second drives — never did, so
+                // its stop had to claim GPIOs the in-flight drive was holding and
+                // was refused with 'GPIO busy' while the actuator kept running to
+                // the end of its duration. A stop that cannot stop anything is
+                // the one control an operator needs to trust. See
+                // killInFlightDrive().
+                try {
+                    const ended = await killInFlightDrive({ directionPin: dirPin, pwmPin: pwm });
+                    if (ended) console.log(`🛑 linear actuator stop: ended ${ended} in-flight drive(s) holding GPIO ${dirPin}/${pwm}`);
+                } catch (err) {
+                    console.error('🛑 linear actuator stop: could not end in-flight drive:', err.message);
+                }
+
                 const out = await actuatorService.stopActuator({ directionPin: dirPin, pwmPin: pwm });
                 const parsed = (() => {
                     try {
@@ -611,20 +682,86 @@ const HARDWARE_CONTROLLERS = {
     },
 
     // 💡 Light - basic on/off lighting
-    // Track light state per pin/channel for true toggle behavior
+    //
+    // A PCA9685-attached light is a SWITCH on a PWM channel, so it is driven as a
+    // duty cycle (servo_cli.py set_duty_pca). It used to be driven as a SERVO —
+    // "on" was move_to_pca <ch> 180 and "off" was move_to_pca <ch> 0 — but those
+    // are servo pulse widths, 2400us and 500us inside a 20ms frame, i.e. 12% and
+    // 2.5% duty. Mina's eye laser is a 3V relay hanging straight off the signal
+    // pin (docs/hardware/OPERATOR-TODO.md §2); it never latched at 12% and never
+    // fully released at 2.5%, so the laser sat dead while every layer above it
+    // reported "light on". A register readback showed ch0 parked at 498us in BOTH
+    // states. A switch needs a steady level, and now gets one.
     _lightState: {},
     light: {
+        async _pca({ channel, address, dutyPct }) {
+            const args = ['set_duty_pca', String(channel), String(dutyPct)];
+            if (address != null) args.push(String(address));
+            const out = await runWrapper('servo_cli.py', args);
+            return { out, success: wrapperSucceeded(out, parsePythonJSON(out)) };
+        },
+
+        // The chip is the only honest record of what a light is doing.
+        // _lightState is per-process memory: it reset to "off" on every service
+        // restart, so the first toggle after one re-sent "on" to a lamp that was
+        // already on and looked like a dead button. Ask the hardware instead, and
+        // fall back to the cache only if the read fails.
+        async _readState({ channel, address }) {
+            try {
+                const args = ['get_duty_pca', String(channel)];
+                if (address != null) args.push(String(address));
+                const parsed = parsePythonJSON(await runWrapper('servo_cli.py', args));
+                const duty = parsed && parsed.data && Number(parsed.data.duty_pct);
+                // Below ~5% is the old servo-pulse residue, not an illuminated lamp.
+                if (Number.isFinite(duty)) return duty > 5 ? 'on' : 'off';
+            } catch (e) {
+                console.warn(`⚠️  light: could not read ch${channel} state (${e.message}) — using cached state`);
+            }
+            return null;
+        },
+
+        /**
+         * Read a GPIO light's real state off the pin.
+         *
+         * The PCA9685 branch got a chip readback in v10.5.1; the GPIO branch was
+         * left trusting HARDWARE_CONTROLLERS._lightState, which is per-process
+         * memory that resets to 'off' on every service restart. So the first
+         * toggle after a restart re-sent 'on' to a lamp that was already on —
+         * one dead click, every time, blamed on the hardware.
+         *
+         * scripts/light_control.py drives these pins with `pinctrl` precisely so
+         * the level survives the wrapper process exiting, which means pinctrl is
+         * also the honest place to read it back from. libgpiod (`gpioinfo`) is
+         * not: it reports the kernel's line requests, and a pinctrl-driven pin
+         * shows there as an unused input while it is in fact driving high.
+         */
+        async _readGpioState({ pin }) {
+            try {
+                const text = await new Promise((resolve, reject) => {
+                    const ps = spawn('pinctrl', ['get', String(pin)]);
+                    let out = '';
+                    ps.stdout.on('data', d => { out += d; });
+                    ps.on('close', () => resolve(out));
+                    ps.on('error', reject);
+                });
+                // e.g. "16: op -- pd | hi // GPIO16 = output"
+                const m = String(text).match(/\|\s*(hi|lo)\b/);
+                if (m) return m[1] === 'hi' ? 'on' : 'off';
+            } catch (e) {
+                console.warn(`⚠️  light: could not read GPIO ${pin} state (${e.message}) — using cached state`);
+            }
+            return null;
+        },
+
         async turnOn({ pin, channel, controllerType, address, brightness = 100, duration = 0 }) {
             try {
-                // PCA9685 channel light: use servo_cli.py to set angle 180 (full duty = on)
                 if (controllerType === 'pca9685' && channel != null) {
-                    const args = ['move_to_pca', String(channel), '180'];
-                    if (address != null) args.push(String(address));
-                    const out = await runWrapper('servo_cli.py', args);
-                    const success = wrapperSucceeded(out, parsePythonJSON(out));
-                    const key = `pca_ch${channel}`;
-                    if (success) HARDWARE_CONTROLLERS._lightState[key] = 'on';
-                    return { success, partType: 'light', channel, state: 'on', rawOutput: out, message: success ? `PCA9685 ch${channel} light on` : 'Light on failed' };
+                    const duty = (typeof brightness === 'number' && brightness >= 0 && brightness <= 100)
+                        ? brightness : 100;
+                    const { out, success } = await this._pca({ channel, address, dutyPct: duty });
+                    if (success) HARDWARE_CONTROLLERS._lightState[`pca_ch${channel}`] = 'on';
+                    return { success, partType: 'light', channel, state: 'on', brightness: duty, rawOutput: out,
+                        message: success ? `PCA9685 ch${channel} light on (${duty}% duty)` : 'Light on failed' };
                 }
                 const out = await runWrapper('light_cli.py', [String(pin), 'on', String(duration || 0)]);
                 const parsed = parsePythonJSON(out);
@@ -646,15 +783,11 @@ const HARDWARE_CONTROLLERS = {
 
         async turnOff({ pin, channel, controllerType, address }) {
             try {
-                // PCA9685 channel light: use servo_cli.py to set angle 0 (zero duty = off)
                 if (controllerType === 'pca9685' && channel != null) {
-                    const args = ['move_to_pca', String(channel), '0'];
-                    if (address != null) args.push(String(address));
-                    const out = await runWrapper('servo_cli.py', args);
-                    const success = wrapperSucceeded(out, parsePythonJSON(out));
-                    const key = `pca_ch${channel}`;
-                    if (success) HARDWARE_CONTROLLERS._lightState[key] = 'off';
-                    return { success, partType: 'light', channel, state: 'off', rawOutput: out, message: success ? `PCA9685 ch${channel} light off` : 'Light off failed' };
+                    const { out, success } = await this._pca({ channel, address, dutyPct: 0 });
+                    if (success) HARDWARE_CONTROLLERS._lightState[`pca_ch${channel}`] = 'off';
+                    return { success, partType: 'light', channel, state: 'off', rawOutput: out,
+                        message: success ? `PCA9685 ch${channel} light off` : 'Light off failed' };
                 }
                 const out = await runWrapper('light_cli.py', [String(pin), 'off']);
                 const parsed = parsePythonJSON(out);
@@ -673,22 +806,24 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async toggle({ pin, channel, controllerType, address }) {
+        async toggle({ pin, channel, controllerType, address, brightness = 100 }) {
             try {
-                // PCA9685 channel light: toggle via servo angle 0/180
                 if (controllerType === 'pca9685' && channel != null) {
                     const key = `pca_ch${channel}`;
-                    const currentState = HARDWARE_CONTROLLERS._lightState[key] || 'off';
+                    const live = await this._readState({ channel, address });
+                    const currentState = live || HARDWARE_CONTROLLERS._lightState[key] || 'off';
                     const newState = currentState === 'on' ? 'off' : 'on';
-                    const angle = newState === 'on' ? '180' : '0';
-                    const args = ['move_to_pca', String(channel), angle];
-                    if (address != null) args.push(String(address));
-                    const out = await runWrapper('servo_cli.py', args);
-                    const success = wrapperSucceeded(out, parsePythonJSON(out));
+                    const duty = newState === 'on'
+                        ? ((typeof brightness === 'number' && brightness > 0 && brightness <= 100) ? brightness : 100)
+                        : 0;
+                    const { out, success } = await this._pca({ channel, address, dutyPct: duty });
                     if (success) HARDWARE_CONTROLLERS._lightState[key] = newState;
-                    return { success, partType: 'light', channel, state: newState, action: 'toggle', rawOutput: out, message: success ? `PCA9685 ch${channel} light ${newState}` : 'Light toggle failed' };
+                    return { success, partType: 'light', channel, state: newState, action: 'toggle', rawOutput: out,
+                        message: success ? `PCA9685 ch${channel} light ${newState}` : 'Light toggle failed' };
                 }
-                const currentState = HARDWARE_CONTROLLERS._lightState[pin] || 'off';
+                // The pin is the only honest record — see _readGpioState().
+                const liveGpio = await this._readGpioState({ pin });
+                const currentState = liveGpio || HARDWARE_CONTROLLERS._lightState[pin] || 'off';
                 const newState = currentState === 'on' ? 'off' : 'on';
                 const out = await runWrapper('light_cli.py', [String(pin), newState, '0']);
                 const parsed = parsePythonJSON(out);
@@ -706,6 +841,22 @@ const HARDWARE_CONTROLLERS = {
             } catch (error) {
                 return { success: false, partType: 'light', pin: pin, error: error.message };
             }
+        },
+
+        // Brightness on a PCA9685 channel is just a duty cycle, so the setup
+        // page's slider works on these parts too instead of only on GPIO LEDs.
+        async setBrightness({ pin, channel, controllerType, address, brightness, duration }) {
+            if (controllerType === 'pca9685' && channel != null) {
+                const level = Math.max(0, Math.min(100, Number(brightness)));
+                if (!Number.isFinite(level)) {
+                    return { success: false, partType: 'light', channel, error: `Invalid brightness: ${brightness}` };
+                }
+                const { out, success } = await this._pca({ channel, address, dutyPct: level });
+                if (success) HARDWARE_CONTROLLERS._lightState[`pca_ch${channel}`] = level > 0 ? 'on' : 'off';
+                return { success, partType: 'light', channel, brightness: level, rawOutput: out,
+                    message: success ? `PCA9685 ch${channel} at ${level}% duty` : 'Light brightness failed' };
+            }
+            return await HARDWARE_CONTROLLERS.led.setBrightness({ pin, brightness, duration });
         }
     },
 
@@ -2358,8 +2509,18 @@ export async function batchMoveServos(commands, options = {}) {
         // multi-turn wrapper scale. Costs that one part its sub-ms batch sync;
         // correctness wins.
         const svType = String(partCfg.servoType || '').toLowerCase();
+        // `> 0` alone called EVERY ordinary servo multi-turn: 180 is the declared
+        // rotationRangeDeg of a plain hobby servo (Mina's MG90S model carries it),
+        // so all three of his servos fell out of the batch into the per-part
+        // fallback and every multi-part pose lost its synchronisation — the jaw
+        // and neck arriving one sequential Python call apart instead of together.
+        // The single-part seam has always had this right (declaredRange !== 180
+        // at the moveToAngle dispatch); the two now agree. A part is multi-turn
+        // when it says so, or when its range is genuinely something other than
+        // the standard 180.
+        const declaredRange = Number(partCfg.rotationRangeDeg);
         const isMultiTurn = ['multi-turn', 'multi_turn', 'multi', 'positional', 'position', 'feedback'].includes(svType)
-            || Number(partCfg.rotationRangeDeg) > 0;
+            || (Number.isFinite(declaredRange) && declaredRange > 0 && declaredRange !== 180);
         // A continuous servo NEVER rides the batch path either: the daemon's
         // set_angles writes a HELD positional pulse, which on a continuous
         // servo is an indefinite spin at whatever speed that pulse maps to —

@@ -9,9 +9,13 @@ depend on the argv shape exactly as it is):
   rotate_continuous <gpio_pin> <direction> <speed> <duration_ms>
   move_to_pca <channel> <angle_deg> [i2c_address]
   move_to_pca_multi <channel> <angle_deg> [i2c_address]
+  set_duty_pca <channel> <duty_pct> [i2c_address]
+  get_duty_pca <channel> [i2c_address]
   rotate_continuous_pca <channel> <direction> <speed> <duration_ms> [i2c_address]
   batch_pca <ch:angle> [<ch:angle> ...] [i2c_address]
   test <channel>
+  set_duty_pca <channel> <duty_pct> [i2c_address]   lights/relays: steady level
+  get_duty_pca <channel> [i2c_address]              read a channel's duty back
   release <channel> [i2c_address]           (new) de-energize ONE channel
   reconcile [i2c_address] [--release-unmapped]  (new) audit driven channels
 
@@ -400,6 +404,48 @@ def release_pca(channel, address=None):
     }
 
 
+def set_duty_pca(channel, duty_pct, address=None):
+    """Drive a PCA9685 channel as an on/off (or dimmed) SWITCH, not as a servo.
+
+    Lights, relays and LEDs wired to the PWM chip need a steady level. Routing
+    them through move_to_pca meant "on" was a 2400us servo pulse (12% duty) and
+    "off" a 500us one (2.5%) — Mina's eye-laser relay latched at neither.
+    """
+    _require_pca()
+    channel = _int_arg(channel, 'channel')
+    duty = _float_arg(duty_pct, 'duty_pct')
+    if not 0.0 <= duty <= 100.0:
+        raise WrapperError(E_ARGS, f'duty_pct must be 0-100, got {duty}')
+    address = PCA9685_DEFAULT_ADDRESS if address is None else address
+
+    part = mb_safety.find_part_by_channel(_character(), channel, address)
+    pca9685_control.pca9685_set_duty(channel, duty, int(address))
+
+    return {
+        'part': part.get('id') if part else None,
+        'data': {'channel': channel, 'duty_pct': duty, 'address': int(address),
+                 'on': duty > 0},
+        'clamps': [],
+        'message': f'PCA9685 ch{channel} set to {duty}% duty',
+    }
+
+
+def get_duty_pca(channel, address=None):
+    """Read one channel's duty back from the chip — the only honest light state."""
+    _require_pca()
+    channel = _int_arg(channel, 'channel')
+    address = PCA9685_DEFAULT_ADDRESS if address is None else address
+    duty = pca9685_control.pca9685_get_duty(channel, int(address))
+    part = mb_safety.find_part_by_channel(_character(), channel, address)
+    return {
+        'part': part.get('id') if part else None,
+        'data': {'channel': channel, 'duty_pct': duty, 'address': int(address),
+                 'on': duty > 0},
+        'clamps': [],
+        'message': f'PCA9685 ch{channel} is at {duty}% duty',
+    }
+
+
 def _release_channel(channel, address):
     """Zero one channel, preferring the daemon so the bus keeps one owner."""
     reply = pca9685_control.daemon_request(
@@ -530,6 +576,8 @@ Commands:
   rotate_continuous <gpio_pin> <direction> <speed> <duration_ms>
   move_to_pca <channel> <angle_deg> [i2c_address]
   move_to_pca_multi <channel> <angle_deg> [i2c_address]
+  set_duty_pca <channel> <duty_pct> [i2c_address]
+  get_duty_pca <channel> [i2c_address]
   rotate_continuous_pca <channel> <direction> <speed> <duration_ms> [i2c_address]
   batch_pca <ch:angle> [<ch:angle> ...] [i2c_address]
   release <channel> [i2c_address]
@@ -606,6 +654,16 @@ def main():
             if not args:
                 raise WrapperError(E_ARGS, 'release requires <channel>')
             result = release_pca(args[0], _address_arg(args, 1))
+
+        elif command == 'set_duty_pca':
+            if len(args) < 2:
+                raise WrapperError(E_ARGS, 'set_duty_pca requires <channel> <duty_pct>')
+            result = set_duty_pca(args[0], args[1], _address_arg(args, 2))
+
+        elif command == 'get_duty_pca':
+            if not args:
+                raise WrapperError(E_ARGS, 'get_duty_pca requires <channel>')
+            result = get_duty_pca(args[0], _address_arg(args, 1))
 
         elif command == 'reconcile':
             result = reconcile(_address_arg(args, 0), '--release-unmapped' in flags)

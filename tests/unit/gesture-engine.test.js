@@ -20,6 +20,7 @@
 import { expect } from 'chai';
 import fs from 'fs/promises';
 import path from 'path';
+import { calibrationFilePath } from '../../server/calibration/store.js';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -327,7 +328,7 @@ describe('Gesture engine — real character data', function () {
     if (hasData) {
       try {
         const store = JSON.parse(await fs.readFile(
-          path.join(APP_ROOT, 'data', 'calibration_profiles.json'), 'utf8'));
+          calibrationFilePath(), 'utf8'));
         const vocab = JSON.parse(await fs.readFile(
           path.join(APP_ROOT, 'data', `character-${REAL_CHAR}`, 'gestures.json'), 'utf8'));
         const recipes = Array.isArray(vocab) ? vocab : (vocab.gestures || Object.values(vocab));

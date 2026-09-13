@@ -19,6 +19,43 @@ const DEFAULT_CONFIG = {
 };
 
 /**
+ * Say what actually went wrong with a wrapper, in one line.
+ *
+ * The old text was the whole raw stderr blob. Our wrappers log every step as a
+ * JSON line, so a failure came back as several lines whose FIRST is usually
+ * `{"level":"info","message":"GPIO initialized successfully"}` — the operator
+ * was shown a success sentence for a failed command, and the actual cause
+ * ("Failed to set up pins: 'GPIO busy'") sat further down where nothing read it.
+ *
+ * Precedence: the first error-level line, else the last line carrying any
+ * message, else the exit status. A wrapper killed by a signal is named as such,
+ * because that is the NORMAL outcome of pressing Stop mid-drive and should not
+ * read as a fault.
+ */
+export function describeWrapperFailure(stderr, code, signal) {
+    const raw = String(stderr || '').trim();
+    let errorLine = null;
+    let lastMessage = null;
+    for (const line of raw.split(/\r?\n/)) {
+        const text = line.trim();
+        if (!text) continue;
+        try {
+            const parsed = JSON.parse(text);
+            if (parsed && parsed.message) {
+                lastMessage = parsed.message;
+                if (!errorLine && parsed.level === 'error') errorLine = parsed.message;
+            }
+        } catch (_) {
+            lastMessage = text;
+        }
+    }
+    if (errorLine) return errorLine;
+    if (signal) return `Command stopped (${signal})`;
+    if (lastMessage) return lastMessage;
+    return `Process exited with code ${code}`;
+}
+
+/**
  * Execute Python hardware script with timeout and error handling
  * @param {string[]} args - Command arguments (script path and parameters)
  * @param {Object} options - Execution options
@@ -56,7 +93,7 @@ export function runPy(args, options = {}) {
         });
 
         // Handle process completion
-        childProcess.on('exit', (code) => {
+        childProcess.on('exit', (code, signal) => {
             clearTimeout(timeout);
 
             // These two lines were printed unconditionally, ignoring
@@ -97,7 +134,7 @@ export function runPy(args, options = {}) {
                 }
                 resolve(out);
             } else {
-                const errorMsg = stderr.trim() || `Process exited with code ${code}`;
+                const errorMsg = describeWrapperFailure(stderr, code, signal);
                 if (config.enableLogging) {
                     console.error(`❌ Hardware Error: ${errorMsg}`);
                 }
