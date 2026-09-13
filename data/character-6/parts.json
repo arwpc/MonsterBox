@@ -71,17 +71,20 @@
     "characterId": 6,
     "name": "Renfield Eye Rings",
     "type": "light",
-    "pin": 10,
-    "description": "Pair of addressable LED rings used as Renfield's glowing eyes, chained on one data line. Data = BCM GPIO 10 (header pin 19, SPI0 MOSI). 5V and GND from the buck converter, grounds bonded to the Pi.\n\nNOT GPIO 18, AND NOT rpi_ws281x. Every NeoPixel guide says GPIO 18 because rpi_ws281x builds the 800kHz waveform out of the BCM2835/2711 PWM+DMA peripherals. The Pi 5's RP1 removed that register access, so that library cannot work here at all. python_wrappers/neopixel_cli.py generates the same waveform on SPI MOSI instead: each WS2812 bit becomes three SPI bits at 2.4MHz (1 -> 0b110, 0 -> 0b100), both inside the chip's timing tolerance, and MOSI idles low which is the reset condition. Wire order is GRB - the encoder handles it, do not swap it at the call site.\n\nTHE 3.3V MARGIN, first suspect if it stays dark while everything reports success: the Pi drives MOSI at 3.3V and a 5V WS2812 wants VIH >= 3.5V. That is BELOW spec. Many rings work anyway and some fail cold. Fix by running the rings on ~4.5V (one silicon diode in their +5V leg drops the threshold to 3.15V) or with a 74AHCT125 level shifter on the data line.\n\nPOWER: ~60mA per pixel at full white, so two 16-pixel rings approach 2A. Never off the Pi's 5V header pins - that is the brownout this node already rides close to, since its own 5V comes through the same converter.\n\nSTATUS 2026-09-13: driver written and unit-tested (encoding, GRB order, framing) but NEVER RUN AGAINST HARDWARE, and the chip marking on the rings was never confirmed. It is also not yet wired into services/hardwareService - the Node light path still calls light_cli.py, which drives a static level and does nothing to an addressable ring. Prove the rings with the wrapper directly before anyone integrates it.\n\nledCount is a GUESS of 16. Count the pixels and correct it.",
+    "pin": 18,
+    "description": "Pair of chained WS2812-family LED rings used as Renfield's glowing eyes. Data = BCM GPIO 18 (header pin 12) - the SAME pin PumpkinHead uses. 5V and GND from the buck converter, grounds bonded to the Pi. PROVEN LIT 2026-09-13 (red, then blue).\n\nSAME PIN AS THE Pi 4 NODE, DIFFERENT WAVEFORM SOURCE. PumpkinHead drives these with rpi_ws281x out of the BCM2711 PWM peripheral - `pinctrl get 18` on him reads `a5` (PWM0_0), which is that library's signature. RP1 removed that peripheral, so rpi_ws281x cannot work on a Pi 5 at all. The replacement is RP1's PIO block via Adafruit_Blinka_Raspberry_Pi5_Neopixel, which drives the same GPIO 18 - so the wiring is identical across node generations and only the driver differs.\n\nA STATIC LEVEL DOES NOTHING. These ignore voltage levels entirely; they want an 800kHz serial stream. light_cli.py drives the pin with pinctrl and holds it high, which is correct for every other light on the fleet and useless here - that is why controllerType 'neopixel' exists, and why a verified-high GPIO 18 lit nothing for an hour. Both polarities dark with the pin provably driven is the signature.\n\nNOT SPI. GPIO 10 / /dev/spidev0.0 was tried first and abandoned: the technique is real but it needed different wiring from the working node for no benefit. Stale notes pointing at pin 19 should be ignored.\n\nREQUIRES ROOT - PIO needs privileged RP1 access. monsterbox.service runs as root (install.sh), so the app path is fine; a hand test from a shell needs sudo.\n\nDEPENDENCY, installed outside install.sh on 2026-09-13: adafruit-circuitpython-neopixel (pip, --break-system-packages). CAUTION: pulling adafruit-blinka also installs the real RPi.GPIO, which the Pi 5 audit says must NOT be present - it shadows python3-rpi-lgpio, the shim that makes RPi.GPIO code work on RP1. Nothing here uses it (stepper_cli.py's fallback would), but check `python3 -c \"import RPi.GPIO as G; print(G.__file__)\"` if GPIO code starts misbehaving on this node.\n\nPOWER: ~60mA per pixel at full white, so two 16-pixel rings approach 2A. Never off the Pi's 5V header pins. brightness defaults to 40% here for that reason.\n\nledCount 16 is still a GUESS - count the pixels and correct it. Sending more pixels than exist is harmless (surplus data shifts off the end); sending fewer leaves the rest dark.",
     "config": {
-      "addressable": true,
-      "chip": "WS2812-family",
+      "controllerType": "neopixel",
       "ledCount": 16,
-      "driver": "python_wrappers/neopixel_cli.py",
-      "spi": "0.0"
+      "color": [
+        255,
+        0,
+        0
+      ],
+      "brightness": 40
     },
     "created": "2026-09-13T00:00:00.000Z",
     "updated": "2026-09-13T00:00:00.000Z",
-    "enabled": false
+    "enabled": true
   }
 ]

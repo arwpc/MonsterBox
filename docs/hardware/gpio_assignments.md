@@ -75,32 +75,18 @@ bus is free for one later.*
 |-----|------|-----------|
 | 12 | Shake Motor RPWM | Output (BTS7960 / IBT-2) — header pin 32 |
 | 13 | Shake Motor LPWM | Output (BTS7960 / IBT-2) — header pin 33 |
-| 10 | Eye Rings (pair, chained) | Output (SPI0 MOSI, WS2812 data) — header pin 19 |
+| 18 | Eye Rings (pair, chained) | Output (WS2812 data, RP1 PIO) — header pin 12 |
 
-The eye rings are **addressable** and driven over **SPI, not GPIO 18**. Every NeoPixel guide says
-GPIO 18 because `rpi_ws281x` builds the 800 kHz waveform from the BCM2835/2711 PWM+DMA
-peripherals — RP1 removed that access, so on a Pi 5 that library cannot work at all.
-`python_wrappers/neopixel_cli.py` encodes each WS2812 bit as three SPI bits at 2.4 MHz on MOSI
-instead. **Unproven against hardware as of 2026-09-13**, and not yet wired into the Node light
-path (which still drives a static level and does nothing to these).
+The eye rings are **addressable**, on the **same GPIO 18 as PumpkinHead**. Only the waveform
+source differs: his Pi 4 uses `rpi_ws281x` out of the BCM2711 PWM peripheral (`pinctrl get 18`
+there reads `a5`), which RP1 removed — so a Pi 5 drives the identical pin from RP1's **PIO**
+block via `Adafruit_Blinka_Raspberry_Pi5_Neopixel`. Wiring is identical across node generations.
+**Proven lit 2026-09-13.** Needs root; `monsterbox.service` runs as root.
 
-`R_EN` and `L_EN` are **jumpered to VCC on the board**, not driven from GPIO —
-`linear_actuator_control_v2.py` only ever writes them HIGH at setup, so a GPIO buys nothing a
-jumper does not, and tying them in hardware removes the `GPIO_BUSY (-79)` trap a shared enable
-pin used to cause.
-
-**Proven moving 2026-09-13** at 30% duty. `VCC` → Pi pin 2, `GND` → Pi pin 6, `R_EN` and
-`L_EN` both → Pi pin 4 (5 V, same rail). `R_IS`/`L_IS` unconnected.
-
-> ⚠️ **The IBT-2 needs 5 V on `VCC`.** Unlike the MDD10A it does not power its logic from the
-> motor rail. `VCC` → Pi header pin 2 or 4, `GND` → any Pi ground pin. With `VCC` unconnected the
-> board moves nothing and every command still returns success. Never put 12 V on `VCC`.
-
-Both `RPWM` and `LPWM` carry PWM on this board (one at a time, by direction), unlike the MDD10A
-where `DIR` was a static level. `lgpio.tx_pwm()` is **software** PWM and runs on any GPIO, so
-nothing today depends on the choice — but GPIO 12/13 are the Pi 5's RP1 hardware-PWM pair
-(`dtoverlay=pwm-pi5`), so they are the only pins that would not need rewiring if hardware PWM is
-ever added.
+A static level does nothing to these — `light_cli.py` holds the pin high with `pinctrl`, which
+is right for every other light on the fleet and useless here. `config.controllerType: "neopixel"`
+routes them to `neopixel_cli.py` instead. SPI on GPIO 10 was tried and abandoned; ignore any note
+pointing at pin 19.
 
 An MDD10A was wired here on 2026-09-13 (DIR=26, PWM=13) and destroyed itself with smoke after a
 couple of minutes powered. GPIO 22, 26 and 27 are free.
