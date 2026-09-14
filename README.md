@@ -528,7 +528,7 @@ MonsterBox 7.0 is a major release consolidating all v6.x features into a polishe
 - **Scene Concurrency** — Fire-and-forget model replaces pair-based grouping — multiple consecutive concurrent steps all fire in parallel
 
 ### Dashboard & UI
-- **Bootstrap Tooltips** — Descriptive hover tooltips on all Monster Features toggles (Jaw, Parrot, Translate, Head Tracking, Mute)
+- **Bootstrap Tooltips** — Descriptive hover tooltips on all Monster Features toggles (Jaw, LED Talk, AI Motion, Head Tracking, Mute)
 
 ### Documentation
 - New setup guides: Audio & Microphone Setup, Echo Suppression, Scene Concurrency

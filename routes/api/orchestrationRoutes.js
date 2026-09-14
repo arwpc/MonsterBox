@@ -1262,7 +1262,7 @@ router.get('/animatronic/:id/status', async (req, res) => {
 });
 
 /**
- * Toggle a fleet superpower (lurk|jaw|head|motion|mute|idle) on all nodes or a subset.
+ * Toggle a fleet superpower (lurk|jaw|head|motion|mute) on all nodes or a subset.
  */
 router.post('/superpower/:feature', express.json(), async (req, res) => {
     try {

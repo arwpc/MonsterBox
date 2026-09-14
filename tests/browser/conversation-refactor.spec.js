@@ -121,11 +121,6 @@ test.describe('Conversation Control - Accordion Layout', () => {
     await expect(jawToggle).toBeVisible();
     await expect(jawToggle).toHaveAttribute('type', 'checkbox');
 
-    // Check for Parrot Mode toggle
-    const parrotToggle = page.locator('#parrotToggle');
-    await expect(parrotToggle).toBeVisible();
-    await expect(parrotToggle).toHaveAttribute('type', 'checkbox');
-
     // Check for Head Tracking toggle
     const headTrackToggle = page.locator('#headTrackToggle');
     await expect(headTrackToggle).toBeVisible();
@@ -235,20 +230,6 @@ test.describe('Conversation Control - Monster Features', () => {
 
     // Wait for save
     await page.waitForTimeout(500);
-
-    // Should be opposite of initial
-    const newChecked = await toggle.isChecked();
-    expect(newChecked).toBe(!initialChecked);
-  });
-
-  test('should toggle Parrot Mode', async ({ page }) => {
-    const toggle = page.locator('#parrotToggle');
-
-    // Get initial state
-    const initialChecked = await toggle.isChecked();
-
-    // Toggle it
-    await toggle.click();
 
     // Should be opposite of initial
     const newChecked = await toggle.isChecked();

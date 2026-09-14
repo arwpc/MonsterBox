@@ -4,6 +4,20 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **v10.6.0 — Parrot and the standalone Idle toggle removed; AI no longer over-triggers.**
+- **Removed Parrot mode completely** — the dashboard toggle/chip, parrotSay, the set_parrot_mode
+  WebSocket message + connection.parrotMode guards, and its tests. Shared echo suppression
+  (suppressMicForCharacter), /conversation/api/say, and start_transcription_only are KEPT — Parrot
+  reused them but they are not Parrot.
+- **Removed the standalone "Idle" toggle** (dashboard chip, Fleet Command Center button, and the
+  `idle` fleet-superpower endpoint + its emergency-stop disarm) and rolled idle-while-waiting into
+  **Lurk**, which already runs the idle loop. idleLoopService and Lurk's use of it are unchanged; the
+  lurk-status Idle badge stays (Lurk-driven).
+- **AI only starts from Lurk or the AI toggle now.** Removed three mic-grabbing auto-starts: Parrot's
+  auto-connect; the character-change auto-reconnect (now tears down and turns AI OFF); and the
+  typed-message auto-connect (now prompts to turn AI on). Video-overlay controls and superpower
+  toggles no longer start AI.
+
 - **Fix — lurk sleep no longer turns off LED Talk.** disableLurkSuperpowers (lurk inactivity-sleep and
   disable) was setting jawAnimation.ledSync.enabled=false and blacking out the ring, so after a 5-min
   idle timeout the eyes stopped reacting to speech. LED Talk is an independent operator toggle now and

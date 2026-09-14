@@ -311,7 +311,6 @@ test.describe('1. Dashboard — All Panels', () => {
     // Verify each toggle exists and is visible rather than toggling (avoid side effects)
     const toggles = [
       { id: '#jawToggle', name: 'Jaw animation' },
-      { id: '#parrotToggle', name: 'Parrot mode' },
       { id: '#headTrackToggle', name: 'Head tracking' },
       { id: '#speakerMuteToggle', name: 'Speaker mute' },
     ];

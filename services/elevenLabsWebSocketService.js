@@ -575,12 +575,6 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     } catch (_) { /* noop */ }
                     break;
 
-                case 'set_parrot_mode':
-                    connection.parrotMode = !!(message && message.enabled);
-                    console.log(`🦜 Parrot mode ${connection.parrotMode ? 'ON' : 'OFF'} for session ${sessionId}`);
-                    this.sendToClient(sessionId, { type: 'debug', originalType: 'set_parrot_mode', data: { enabled: connection.parrotMode } });
-                    break;
-
                 case 'browser_audio_chunk':
                     // Forward browser-sent PCM16k (base64) to ElevenLabs ConvAI + Scribe STT
                     try {
@@ -591,8 +585,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         const browserNow = Date.now();
                         const browserSuppressed = connection && connection.suppressMicUntilMs && (browserNow < connection.suppressMicUntilMs);
 
-                        // Forward to ElevenLabs ConvAI agent (skip during parrot mode or echo suppression)
-                        if (connection && !browserSuppressed && !connection.parrotMode && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                        // Forward to ElevenLabs ConvAI agent (skip during echo suppression)
+                        if (connection && !browserSuppressed && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                             connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: audio64 }));
                         }
 
@@ -1029,7 +1023,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     break;
 
                 case 'user_transcript':
-                    // Forward user transcript from ElevenLabs to client (for Parrot Mode)
+                    // Forward user transcript from ElevenLabs to client
                     try {
                         const userText = (message.user_transcription_event && message.user_transcription_event.user_transcript)
                             || message.text || '';
@@ -1836,7 +1830,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     //    continuous timeline, while room tone, servo whine and the
                     //    character's own voice never reach its ASR to be hallucinated
                     //    into spurious guest turns.
-                    if (!connection.parrotMode && connection.elevenLabsWs &&
+                    if (connection.elevenLabsWs &&
                         connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                         const gated = MIC_VOICE_GATE_ENABLED ? !voiceGateOpen : false;
                         const payload = (!suppressed && !gated)
@@ -2202,7 +2196,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 
     /**
-     * Suppress mic input for all active sessions of a character (echo suppression for parrot mode).
+     * Suppress mic input for all active sessions of a character (echo suppression).
      * @param {number} characterId - Character ID to suppress
      * @param {number} durationMs - Duration in milliseconds
      */

@@ -371,7 +371,6 @@ describe('Dashboard API — Deep Functional Tests', () => {
     it('should include monster feature toggles', async () => {
       const res = await request(BASE_URL).get('/');
       expect(res.text).to.include('jawToggle');
-      expect(res.text).to.include('parrotToggle');
       expect(res.text).to.include('headTrackToggle');
       expect(res.text).to.include('speakerMuteToggle');
     });

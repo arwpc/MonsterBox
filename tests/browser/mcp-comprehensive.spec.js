@@ -388,7 +388,7 @@ test.describe('Phase 1: Dashboard', () => {
     trackErrors(page, 'dashboard-monster-features');
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
 
-    for (const id of ['#jawToggle', '#parrotToggle', '#headTrackToggle', '#speakerMuteToggle']) {
+    for (const id of ['#jawToggle', '#headTrackToggle', '#speakerMuteToggle']) {
       const toggle = page.locator(id);
       if (await toggle.count() > 0) {
         // Get current state, toggle, then toggle back

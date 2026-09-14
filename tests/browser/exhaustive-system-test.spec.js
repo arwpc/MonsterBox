@@ -261,7 +261,6 @@ test.describe('Phase 1: Dashboard', () => {
 
     const toggles = [
       { id: '#jawToggle', name: 'Jaw Animation' },
-      { id: '#parrotToggle', name: 'Parrot Mode' },
       { id: '#headTrackToggle', name: 'Head Tracking' },
       { id: '#speakerMuteToggle', name: 'Mute Speaker' },
     ];

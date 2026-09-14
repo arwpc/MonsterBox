@@ -583,7 +583,7 @@ router.post('/api/say', express.json(), async (req, res) => {
       if (!play.success) return res.status(500).json({ success: false, error: play.error || 'Playback failed' });
     }
 
-    // Suppress mic echo for parrot mode — estimate duration from word count
+    // Suppress mic echo after our own speech — estimate duration from word count
     try {
       const wordCount = text.split(/\s+/).length;
       const estimatedMs = (wordCount * 150) + 2000;

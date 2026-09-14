@@ -707,7 +707,6 @@ class OrchestrationService {
         head: (on) => ({ method: 'post', path: '/conversation/api/head-tracking', body: { enabled: on } }),
         motion: (on) => ({ method: 'post', path: '/conversation/api/motion-sensor', body: { enabled: on } }),
         mute: (on) => ({ method: 'post', path: '/conversation/api/speaker-mute', body: { muted: on } }),
-        idle: (on) => ({ method: 'post', path: on ? '/api/movement/idle/start' : '/api/movement/idle/stop' }),
         orders: (on) => ({ method: 'post', path: '/conversation/api/follow-orders', body: { enabled: on } }),
         // NOT the `motion` key above — that one is the PIR motion SENSOR. This is
         // motion GENERATION: the character moving as it speaks and on request.
@@ -777,7 +776,6 @@ class OrchestrationService {
             disarm.lurk(false),
             disarm.motion(false),
             disarm.head(false),
-            disarm.idle(false),
             disarm.mute(true),
             // Voice orders are an autonomous motion trigger too: a guest
             // shouting "raise your arm" seconds after the operator hit stop

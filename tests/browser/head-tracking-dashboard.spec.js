@@ -48,7 +48,7 @@ test.describe('Head Tracking Dashboard', () => {
     });
 
     test('should have tooltips on all monster feature toggles', async () => {
-        const toggles = ['jawToggle', 'parrotToggle', 'headTrackToggle', 'speakerMuteToggle'];
+        const toggles = ['jawToggle', 'headTrackToggle', 'speakerMuteToggle'];
         for (const id of toggles) {
             // What matters is that hovering the control explains it. The Scare
             // Console carries the Bootstrap tooltip on the .mb-switch label that

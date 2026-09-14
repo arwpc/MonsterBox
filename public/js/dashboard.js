@@ -93,8 +93,6 @@
       ledTalkToggle: null,
       headTrackToggle: null,
     aiMotionToggle: null,
-      parrotToggle: null,
-      idleToggle: null,
       chatModeToggle: null,
       chatInput: null,
       chatSendBtn: null,
@@ -132,43 +130,6 @@
     var _recentMicTexts = [];
     var _recentMicTextMaxAge = 3000;
 
-    // Parrot Mode
-    var parrotEnabled = false;
-    var lastParrotAt = 0;
-    function parrotSay(text) {
-      var t = (text || '').trim();
-      if (!t) return;
-      var now = Date.now();
-      if (now - lastParrotAt < 800) {
-        console.log('[Parrot] Throttled — too soon since last parrot');
-        return;
-      }
-      lastParrotAt = now;
-      var spkId = chatSpeakerPartId || selectedSpeakerPartId || undefined;
-      console.log('[Parrot] Saying: "' + t.slice(0, 80) + '" via speaker=' + spkId);
-      ui.sayStatus.innerHTML = '<span class="text-info">Parrot: "' + t.replace(/</g, '&lt;').slice(0, 140) + '"</span>';
-      fetch('/conversation/api/say', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: t, speakerPartId: spkId })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(j) {
-        if (j && j.success) {
-          console.log('[Parrot] Success');
-          ui.sayStatus.innerHTML = '<span class="text-success">Parrot spoke</span>';
-        } else {
-          var errMsg = (j && j.error) || 'unknown';
-          console.error('[Parrot] Failed:', errMsg);
-          ui.sayStatus.innerHTML = '<span class="text-danger">Parrot failed: ' + errMsg.replace(/</g, '&lt;').slice(0, 100) + '</span>';
-        }
-      })
-      .catch(function(e) {
-        console.error('[Parrot] Error:', e);
-        ui.sayStatus.innerHTML = '<span class="text-danger">Parrot error: ' + ((e && e.message) || '').replace(/</g, '&lt;').slice(0, 100) + '</span>';
-      });
-    }
-    try { window.__parrotSay = parrotSay; } catch (e) { }
 
 
     // Browser PCM audio player for AI speech output
@@ -330,10 +291,6 @@
           // Sync UI toggles with lurk state
           if (ui.jawToggle) ui.jawToggle.checked = enabled;
           if (ui.headTrackToggle) ui.headTrackToggle.checked = enabled;
-          // Server-side lurk enable/disable owns the idle loop now; only sync the checkbox
-          if (ui.idleToggle) {
-            ui.idleToggle.checked = enabled;
-          }
 
           // Start/stop AI chat
           const aiToggle = $('chatAiOnToggle');
@@ -533,9 +490,6 @@
           }
           if (ui.jawToggle) ui.jawToggle.checked = true;
           if (ui.headTrackToggle) ui.headTrackToggle.checked = true;
-          if (ui.idleToggle) {
-            ui.idleToggle.checked = true;
-          }
           startHeadTrackPolling();
           updateLurkUI(true, { jaw: { enabled: true }, headTracking: { enabled: true }, randomPose: { enabled: true }, motionSensor: { enabled: true } });
           const statusEl = $('lurkStatus');
@@ -549,9 +503,6 @@
           }
           if (ui.jawToggle) ui.jawToggle.checked = false;
           if (ui.headTrackToggle) ui.headTrackToggle.checked = false;
-          if (ui.idleToggle) {
-            ui.idleToggle.checked = false;
-          }
           stopHeadTrackPolling();
           updateLurkUI(true, { motionSensor: { enabled: true } });
           const statusEl = $('lurkStatus');
@@ -641,8 +592,6 @@
       ui.ledTalkToggle = $('ledTalkToggle');
       ui.headTrackToggle = $('headTrackToggle');
     ui.aiMotionToggle = $('aiMotionToggle');
-      ui.parrotToggle = $('parrotToggle');
-      ui.idleToggle = $('idleToggle');
       ui.followOrdersToggle = $('followOrdersToggle');
       ui.followOrdersBadge = $('followOrdersBadge');
       ui.chatModeToggle = $('chatModeToggle');
@@ -743,20 +692,6 @@
     ui.aiMotionToggle && ui.aiMotionToggle.addEventListener('change', saveAiMotionSettings);
       ui.followOrdersToggle && ui.followOrdersToggle.addEventListener('change', saveFollowOrdersSettings);
 
-      ui.parrotToggle && ui.parrotToggle.addEventListener('change', function () {
-        parrotEnabled = !!ui.parrotToggle.checked;
-        // Notify server to suppress ConvAI audio during parrot mode
-        if (chatWs && chatWs.readyState === WebSocket.OPEN) {
-          chatWs.send(JSON.stringify({ type: 'set_parrot_mode', enabled: parrotEnabled }));
-        }
-        // Auto-start AI On when parrot is enabled (single-click parrot)
-        const aiToggle = $('chatAiOnToggle');
-        if (parrotEnabled && (!chatWs || !chatConnected)) {
-          if (aiToggle && !aiToggle.checked) aiToggle.checked = true;
-          _audioPlaybackEnabled = true;
-          connectChatWebSocket();
-        }
-      });
 
       // Mute Speaker toggle
       const muteToggle = $('speakerMuteToggle');
@@ -775,29 +710,6 @@
         });
       }
 
-      // Idle movement toggle
-      if (ui.idleToggle) {
-        ui.idleToggle.addEventListener('change', async function () {
-          const enabled = ui.idleToggle.checked;
-          try {
-            const endpoint = enabled ? '/api/movement/idle/start' : '/api/movement/idle/stop';
-            const r = await fetch(endpoint, { method: 'POST' });
-            const j = await r.json();
-            if (!j.success) {
-              ui.idleToggle.checked = !enabled;
-              console.error('Idle toggle error:', j.error);
-            }
-            // Update lurk badge
-            const badge = $('lurkBadgeIdle');
-            if (badge) {
-              badge.classList.toggle('lurk-badge-active', enabled);
-            }
-          } catch (e) {
-            ui.idleToggle.checked = !enabled;
-            console.error('Idle toggle error:', e);
-          }
-        });
-      }
 
       // Motion sensor toggle
       const motionToggle = $('motionSensorToggle');
@@ -885,12 +797,12 @@
             if (chatCharNameEl) chatCharNameEl.textContent = newName;
             chatAgentId = await getCharacterAgentId();
             if (chatWs && chatConnected) {
-              try { chatWs.close(); } catch (_) {}
-              chatWs = null;
-              chatConnected = false;
-              _conversationReady = false;
-              appendChatMessage('System', 'Character changed to ' + newName + '. Reconnecting...');
-              setTimeout(() => connectChatWebSocket(), 1000);
+              // Character changed under a live AI session — tear down and turn AI OFF.
+              // Do NOT auto-reconnect: only Lurk and the AI toggle may start AI/mic.
+              try { disconnectChat(); } catch (_) {}
+              const aiToggle = $('chatAiOnToggle');
+              if (aiToggle) aiToggle.checked = false;
+              appendChatMessage('System', 'Character changed to ' + newName + '. AI turned off — turn it back on to talk to ' + newName + '.');
             }
           }
         } catch (_) {}
@@ -911,7 +823,7 @@
       if (chatWs && chatConnected) return;
       _conversationReady = false;
 
-      if (!chatAgentId && !parrotEnabled) {
+      if (!chatAgentId) {
         appendChatMessage('System', 'No AI agent assigned to this character.');
         const toggle = $('chatAiOnToggle');
         if (toggle) toggle.checked = false;
@@ -947,15 +859,8 @@
           if (chatSpeakerPartId) {
             chatWs.send(JSON.stringify({ type: 'set_speaker_part', speakerPartId: chatSpeakerPartId }));
           }
-          if (parrotEnabled) {
-            chatWs.send(JSON.stringify({ type: 'set_parrot_mode', enabled: true }));
-          }
           if (chatAgentId) {
             chatWs.send(JSON.stringify({ type: 'start_conversation', agentId: chatAgentId }));
-          } else if (parrotEnabled) {
-            // No agent — start transcription-only mode for parrot
-            chatWs.send(JSON.stringify({ type: 'start_transcription_only' }));
-            appendChatMessage('System', 'Parrot mode active (transcription only)');
           }
         };
 
@@ -992,7 +897,7 @@
         return;
       }
       if (msg.type === 'transcription_started') {
-        // Transcription-only mode started (parrot without agent)
+        // Transcription-only mode started (no agent)
         return;
       }
       if (msg.type === 'transcription_stopped') {
@@ -1046,10 +951,6 @@
       else if (msg.type === 'stt_committed' && msg.text) {
         _lastPartialEl = null;
         appendChatMessage('You (mic)', msg.text);
-        // Trigger parrot mode from Scribe STT
-        if (parrotEnabled) {
-          try { parrotSay(msg.text); } catch (_) {}
-        }
       }
       else if (msg.type === 'stt_partial' && msg.text) {
         if (msg.final) return;
@@ -1147,16 +1048,14 @@
       const text = input.value.trim();
       if (!text) return;
 
-      appendChatMessage('You', text);
-      input.value = '';
-      notifyLurkActivity(); // Chat counts as activity
-
       if (chatWs && chatConnected) {
+        appendChatMessage('You', text);
+        input.value = '';
+        notifyLurkActivity(); // Chat counts as activity
         chatWs.send(JSON.stringify({ type: 'send_message', text: text }));
       } else {
-        _pendingChatMessage = text;
-        _audioPlaybackEnabled = true;
-        connectChatWebSocket();
+        // Only Lurk and the AI toggle start AI — never auto-connect from a typed message.
+        appendChatMessage('System', 'Turn AI on (or Lurk) to talk.');
       }
     }
 
@@ -2455,7 +2354,6 @@ async function saveHeadTrackSettings() {
     { toggle: 'jawToggle',         badge: 'lurkBadgeJaw' },
     { toggle: 'ledTalkToggle',     badge: 'lurkBadgeLed' },
     { toggle: 'headTrackToggle',   badge: 'lurkBadgeHead' },
-    { toggle: 'idleToggle',        badge: 'lurkBadgeIdle' },
     { toggle: 'motionSensorToggle',badge: 'lurkBadgeMotion' }
   ];
   function refreshBadges() {
@@ -2519,7 +2417,7 @@ async function saveHeadTrackSettings() {
 
     // Turn off every toggle that could be animating/speaking.
     ['lurkToggle', 'chatAiOnToggle', 'jawToggle', 'ledTalkToggle', 'headTrackToggle',
-     'parrotToggle', 'idleToggle', 'motionSensorToggle', 'followOrdersToggle',
+     'motionSensorToggle', 'followOrdersToggle',
      'aiMotionToggle']
       .forEach(function (id) {
         var el = $(id);
