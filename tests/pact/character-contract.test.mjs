@@ -44,7 +44,7 @@ const KNOWN_STEP_TYPES = new Set([
 const KNOWN_PART_TYPES = new Set([
   'servo', 'continuous-servo', 'continuous_servo',
   'motor', 'linear_actuator', 'linear-actuator', 'stepper',
-  'light', 'led', 'sensor', 'motion_sensor',
+  'light', 'led', 'led_ring', 'sensor', 'motion_sensor',
   'speaker', 'microphone', 'webcam',
 ]);
 

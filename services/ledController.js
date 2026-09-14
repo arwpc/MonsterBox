@@ -51,6 +51,16 @@ export const LED_COLORABLE_STATES = Object.freeze([
 
 export const LED_PART_TYPE = 'led_ring';
 
+// Speaking is authoritative while the character is talking. For this long after
+// the last audio level (or a setState('speaking')), interaction states
+// (idle/listening/thinking/error/fade) cannot override the speaking look — so
+// the eyes never fall back to the idle "purple" or thinking "blue" mid-sentence,
+// no matter what the conversation lifecycle, jaw, or sway does. It expires
+// shortly after speech stops so the eyes still return to listening/idle. Long
+// enough to ride inter-chunk audio gaps; short enough that turn-end is snappy.
+const SPEAKING_HOLD_MS = 700;
+const HELD_DURING_SPEAKING = new Set(['idle', 'listening', 'thinking', 'error', 'fade']);
+
 // Defaults describe the DIYMall X0040MB5LN pair as wired on PumpkinHead. They
 // are a fallback for a part that omits a field, never a substitute for the part.
 const GEOMETRY_DEFAULTS = Object.freeze({
@@ -104,6 +114,9 @@ class LedController extends EventEmitter {
         this.geometry = null;
         this.currentState = 'off';
         this.currentOptions = {};
+        this._speakingUntil = 0;   // epoch ms until which 'speaking' is authoritative
+        this._pendingState = null; // interaction state requested while speaking-held
+        this._holdTimer = null;    // one-shot that applies _pendingState after the hold
         this.available = false;
         this._partCache = new Map();   // characterId -> part | null
         this._starting = null;
@@ -193,10 +206,23 @@ class LedController extends EventEmitter {
             return { success: false, reason: 'unknown-state', error: err };
         }
 
+        // Speaking wins while audio is flowing: refuse to demote the eyes to an
+        // interaction state until the speaking hold expires. 'speaking', 'off',
+        // and an explicit { force:true } (e.g. the operator disabling LED, or a
+        // deliberate restore) always pass.
+        if (wanted !== 'speaking' && wanted !== 'off' && !options.force
+            && HELD_DURING_SPEAKING.has(wanted) && Date.now() < this._speakingUntil) {
+            // Remember the most recent request so the eyes still transition to it
+            // (e.g. 'listening') once speaking actually stops, instead of sticking.
+            this._pendingState = { state: wanted, characterId: options.characterId };
+            this._scheduleHoldRelease();
+            return { success: true, held: true, state: this.currentState, reason: 'speaking-active' };
+        }
+
         const ready = await this._ensureReady(options.characterId);
         if (!ready.ok) return { success: false, reason: ready.reason };
 
-        const { characterId, ...explicit } = options;
+        const { characterId, force, ...explicit } = options;
         // Saved colours are DEFAULTS, not overrides: an explicit colour from a
         // scene step or the live picker must still win, or the operator could
         // never preview anything that differs from what is stored on the part.
@@ -213,6 +239,9 @@ class LedController extends EventEmitter {
                 return { success: false, reason: 'daemon-error', error: message };
             }
             this.currentState = wanted;
+            // Engage the speaking hold on 'speaking'; any other applied state ends it.
+            this._speakingUntil = (wanted === 'speaking') ? Date.now() + SPEAKING_HOLD_MS : 0;
+            if (wanted !== 'speaking') this._pendingState = null;   // an applied state supersedes any pending one
             this.currentOptions = daemonOptions;
             this.emit('state', { state: wanted, options: daemonOptions, characterId: this.activeCharacterId });
             return { success: true, state: wanted };
@@ -223,8 +252,33 @@ class LedController extends EventEmitter {
         }
     }
 
+    /**
+     * After the speaking hold expires (audio has actually stopped, not just a
+     * brief inter-chunk gap), apply whatever interaction state was requested
+     * while we were holding — so the eyes transition to 'listening'/'idle'
+     * instead of sticking on the speaking look. If audio resumed (the hold was
+     * refreshed), wait again.
+     */
+    _scheduleHoldRelease() {
+        if (this._holdTimer) return;
+        const delay = Math.max(50, this._speakingUntil - Date.now() + 40);
+        this._holdTimer = setTimeout(() => {
+            this._holdTimer = null;
+            if (Date.now() < this._speakingUntil) { this._scheduleHoldRelease(); return; }
+            const pend = this._pendingState;
+            this._pendingState = null;
+            if (pend && this.currentState === 'speaking') {
+                this.setState(pend.state, { characterId: pend.characterId, force: true }).catch(() => {});
+            }
+        }, delay);
+        if (this._holdTimer && typeof this._holdTimer.unref === 'function') this._holdTimer.unref();
+    }
+
     /** Blackout. Always safe, even with no part and no daemon. */
     async off() {
+        this._speakingUntil = 0;   // blackout ends any speaking hold
+        this._pendingState = null;
+        if (this._holdTimer) { clearTimeout(this._holdTimer); this._holdTimer = null; }
         if (!this.available) {
             this.currentState = 'off';
             return { success: true, state: 'off', reason: 'already-dark' };
@@ -275,6 +329,8 @@ class LedController extends EventEmitter {
         if (!this.available || this.currentState !== 'speaking') return false;
         const value = Number(level);
         if (!Number.isFinite(value)) return false;
+        // Every level keeps speaking authoritative while audio is flowing.
+        this._speakingUntil = Date.now() + SPEAKING_HOLD_MS;
         return ledDaemon.send({
             cmd: 'audio_level',
             level: Math.max(0, Math.min(1, value)),

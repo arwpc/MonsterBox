@@ -21,6 +21,7 @@
           "stepper",
           "light",
           "led",
+          "led_ring",
           "sensor",
           "motion_sensor",
           "speaker",

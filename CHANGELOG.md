@@ -4,6 +4,20 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Fix — LED speaking is now authoritative while the character talks.** The eye ring was falling
+  back to the idle ("purple") or thinking ("blue") look mid-sentence because interaction states and
+  a second audio path could override 'speaking' in ledController. A short self-refreshing speaking
+  hold (services/ledController.js) now blocks idle/listening/thinking/error/fade from overriding
+  'speaking' while audio is flowing, and releases ~700ms after speech stops so the eyes still return
+  to a waiting look. LED speaking works regardless of jaw, sway, or the conversation lifecycle.
+- **Fix — the `led_ring` part type is registered in the shared validators.** parts.schema.json and the
+  per-character pact suite (tests/pact/character-contract.test.mjs) were missing 'led_ring', so any
+  node with an LED ring failed schema/pact validation once its code was reconciled to origin. Added it
+  to both. This drift was exposed reconciling PumpkinHead's codebase with main.
+- **PumpkinHead reconciled to main:** its code was brought fully in sync with origin (the fleet
+  calibration/hardware/controls commits) via a code-only rsync that preserved all node-local data
+  (calibration, ai-config, poses, super-powers). Sway motor poses bumped to 60% for visible motion.
+
 - **AI Motion toggle now moves the body while talking (and occasionally while idle).** Turning on
   "AI Motion" for a character arms ambient movement-during-speech — it sets aiMotion.enabled and
   triggers.ambientDuringSpeech and enables random poses — so the standard dashboard toggle finally
