@@ -292,20 +292,15 @@
           if (ui.jawToggle) ui.jawToggle.checked = enabled;
           if (ui.headTrackToggle) ui.headTrackToggle.checked = enabled;
 
-          // Start/stop AI chat
+          // Start/stop the persistent AI agent (server-side; survives navigation)
           const aiToggle = $('chatAiOnToggle');
           if (enabled) {
-            if (aiToggle && !aiToggle.checked) {
-              aiToggle.checked = true;
-              _audioPlaybackEnabled = true;
-              connectChatWebSocket();
-            }
+            if (aiToggle) aiToggle.checked = true;
+            setServerAi(true);
             startHeadTrackPolling();
           } else {
-            if (aiToggle && aiToggle.checked) {
-              aiToggle.checked = false;
-              disconnectChat();
-            }
+            if (aiToggle) aiToggle.checked = false;
+            setServerAi(false);
             stopHeadTrackPolling();
           }
 
@@ -483,11 +478,8 @@
         if (wasSleeping && !lurkSleeping) {
           // Woke up from motion! Re-enable client-side features
           const aiToggle = $('chatAiOnToggle');
-          if (aiToggle && !aiToggle.checked) {
-            aiToggle.checked = true;
-            _audioPlaybackEnabled = true;
-            connectChatWebSocket();
-          }
+          if (aiToggle) aiToggle.checked = true;
+          setServerAi(true);
           if (ui.jawToggle) ui.jawToggle.checked = true;
           if (ui.headTrackToggle) ui.headTrackToggle.checked = true;
           startHeadTrackPolling();
@@ -497,10 +489,8 @@
         } else if (!wasSleeping && lurkSleeping) {
           // Just fell asleep — disable client-side features
           const aiToggle = $('chatAiOnToggle');
-          if (aiToggle && aiToggle.checked) {
-            aiToggle.checked = false;
-            disconnectChat();
-          }
+          if (aiToggle) aiToggle.checked = false;
+          setServerAi(false);
           if (ui.jawToggle) ui.jawToggle.checked = false;
           if (ui.headTrackToggle) ui.headTrackToggle.checked = false;
           stopHeadTrackPolling();
@@ -1075,24 +1065,54 @@
       appendChatMessage('System', 'AI disconnected');
     }
 
+    // Persistent, browser-independent AI. The AI toggle (and Lurk) drive the
+    // SERVER-side headless agent via /conversation/api/ai-on, so the animatronic
+    // keeps conversing (mic -> agent -> speaker, still driving LED speaking + sway)
+    // after the operator leaves the page, until it is turned off. The dashboard
+    // reflects the true agent state via /conversation/api/ai-status.
+    async function setServerAi(enabled) {
+      try {
+        const r = await fetch('/conversation/api/ai-on', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: !!enabled })
+        });
+        const j = await r.json();
+        const eff = !!(j && j.enabled);
+        const t = $('chatAiOnToggle');
+        if (t) t.checked = eff;
+        if (enabled && !eff && j && j.error) appendChatMessage('System', 'AI could not start: ' + j.error);
+        return eff;
+      } catch (_) { return null; }
+    }
+
+    async function loadAiState() {
+      try {
+        const r = await fetch('/conversation/api/ai-status');
+        const j = await r.json();
+        const t = $('chatAiOnToggle');
+        if (t && j && j.success) t.checked = !!j.enabled;
+      } catch (_) {}
+    }
+
     function bindChatEvents() {
       // AI On toggle
       const aiToggle = $('chatAiOnToggle');
       if (aiToggle) {
         aiToggle.addEventListener('change', () => {
-          if (aiToggle.checked) {
-            _audioPlaybackEnabled = true;
-            connectChatWebSocket();
-            // Auto-enable jaw animation when AI is turned on
-            if (ui.jawToggle && !ui.jawToggle.checked) {
-              ui.jawToggle.checked = true;
-              saveJawSettings();
-            }
-          } else {
-            disconnectChat();
+          const want = aiToggle.checked;
+          setServerAi(want);                 // start/stop the persistent server agent
+          if (want && ui.jawToggle && !ui.jawToggle.checked) {
+            ui.jawToggle.checked = true;
+            saveJawSettings();               // jaw moves while talking
           }
+          try { disconnectChat(); } catch (_) {}   // close any stray browser-WS viewer
         });
       }
+
+      // Reflect the true server agent state on load, and keep it in sync so the
+      // toggle stays correct across page navigation and when Lurk/motion change it.
+      loadAiState();
+      setInterval(loadAiState, 3000);
 
       // Unified send — routes to chat or say based on mode
       const chatSendBtn = $('chatSendBtn');

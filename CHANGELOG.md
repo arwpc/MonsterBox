@@ -4,6 +4,13 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **AI is now a persistent, server-side agent controlled by the AI toggle (and Lurk).** The dashboard AI
+  toggle drives `POST /conversation/api/ai-on` (the headless agent) instead of a page-bound browser
+  socket. Turning AI OFF now actually STOPS the conversation; the animatronic keeps conversing after
+  you leave the page (until turned off); and the toggle reflects the true agent state on load and every
+  3s (via /api/ai-status), staying correct across screens and when Lurk/motion change it. Lurk
+  enable/wake starts it, lurk sleep/disable stops it — one agent, no overlapping mic grabs.
+
 - **Pi 5 addressable-LED (NeoPixel) support is now in the shared codebase.** `python_wrappers/neopixel_cli.py`
   (Adafruit Blinka RP1/PIO backend on GPIO 18 — works on a Pi 5, where rpi_ws281x cannot) plus the
   `controllerType: 'neopixel'` branches in hardwareService light turnOn/turnOff/setBrightness. Brought in
