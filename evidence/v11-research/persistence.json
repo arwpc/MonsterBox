@@ -1,0 +1,18 @@
+{
+  "stream": "persistence",
+  "generated": "2026-08-20",
+  "head": "48e6db7e (v10.4.0)",
+  "note": "See structured output for full detail; this file mirrors it.",
+  "items": [
+    {"name": "Speaker mute — persistence archetype (REFERENCE)", "status": "landed", "evidence": ["services/serverPlaybackService.js:141-142 constructor reads from disk", "services/serverPlaybackService.js:155-156 _muteStatePath -> data/speaker-state.json", "services/serverPlaybackService.js:174-183 _loadMuteState", "services/serverPlaybackService.js:185-197 _persistMuteState (writeJsonAtomic)", "services/serverPlaybackService.js:199-202 setSpeakerMuted writes RAM + disk", "commit 7200ded9 v10.0.1", "data/speaker-state.json exists"]},
+    {"name": "Head-tracking armed bit", "status": "open"},
+    {"name": "PIR motion watcher", "status": "open"},
+    {"name": "Idle loop", "status": "open"},
+    {"name": "ElevenLabs headless agent session", "status": "partial"},
+    {"name": "Lurk master flag boot restore (umbrella fix)", "status": "open"},
+    {"name": "randomPoseService enabled", "status": "open"},
+    {"name": "autoAIService", "status": "open"},
+    {"name": "Parrot mode", "status": "open"},
+    {"name": "movement-config idle.enabled never read", "status": "open"}
+  ]
+}

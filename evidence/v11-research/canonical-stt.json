@@ -1,0 +1,129 @@
+{
+  "stream": "canonical-stt",
+  "items": [
+    {
+      "name": "ONE canonical STT implementation used everywhere (operator directive)",
+      "status": "open",
+      "evidence": [
+        "Directive standing at .claude/agents/elevenlabs-ai-specialist.md lines 13-24: 'STT is not [canonical] — multiple capture/transcription paths coexist' (dated 2026-08-19; nothing in git log v10.1.0..HEAD touches it)",
+        "FOUR transcription paths live today: (1) batch elevenLabsSTTService.transcribeAudio -> POST /v1/speech-to-text scribe_v2 (services/elevenLabsSTTService.js:154); (2) streaming elevenLabsRealtimeSTTService scribe_v2_realtime WS (services/elevenLabsRealtimeSTTService.js:39); (3) the ConvAI agent's OWN ASR — mic PCM forwarded as user_audio_chunk to the agent WS (services/elevenLabsWebSocketService.js:1695); (4) direct fetch('/v1/speech-to-text') in scripts/fleet-audio/earcheck.mjs:244-248 and scripts/yard-theater/verify-moment.mjs:162",
+        "THREE capture layers: serverSTTListener.captureChunkWav (spawn-per-chunk, python record_wav->ffmpeg->arecord->parec, services/serverSTTListener.js:555-659), serverSTTListener.startContinuousCapture (long-lived python stream_raw first, :718-840), and browser getUserMedia/MediaRecorder (public/js/ai-settings-stt.js:760-776 webm->POST /stt/transcribe; public/js/dashboard.js:262, ai-settings.js:434, components/ai-chat-modal.js:382 all send browser_audio_chunk PCM over the :8795 WS); plus SSH+arecord in earcheck.mjs:163 and direct microphone_cli.py get_level calls in routes/setup/audio.js:121,382,607 and services/hardwareService/index.js:1256",
+        "Consumers mapped: elevenLabsWebSocketService.js imports and uses BOTH batch (line 1732 fallback) and realtime (line 1423 createSession) plus startContinuousCapture (line 1830); routes/api/elevenLabsApiRoutes.js:104-213 exposes /stt/transcribe, /stt/listen/*, /stt/testSample; services/hardwareService/index.js:1201 delegates mic record to captureChunkWav; services/conversationService.js:13 uses batch STT"
+      ],
+      "remaining_work": "Design decision + implementation. Sketch: keep TWO named canonical entry points behind one service boundary — elevenLabsSTTService.transcribeAudio() as the ONLY batch call (already true inside services/; scripts bypass it) and elevenLabsRealtimeSTTService as the ONLY streaming session (already true); declare serverSTTListener.startContinuousCapture the ONLY capture engine and captureChunkWav the ONLY single-shot probe. Then: (a) delete the orphaned polled-session machinery (see separate item), (b) reroute earcheck.mjs and verify-moment.mjs through the node's /api/elevenlabs/stt/transcribe or a shared helper, (c) document the canon at the top of the chosen service file per the directive, (d) prove by cross-node ear-check.",
+      "files_to_touch": [
+        "services/serverSTTListener.js",
+        "services/elevenLabsSTTService.js",
+        "services/elevenLabsRealtimeSTTService.js",
+        "services/elevenLabsWebSocketService.js",
+        "routes/api/elevenLabsApiRoutes.js",
+        "scripts/fleet-audio/earcheck.mjs",
+        "scripts/yard-theater/verify-moment.mjs",
+        "services/conversationService.js"
+      ],
+      "risk": "The conversation pipeline (agent ASR + scribe realtime + batch fallback) is the production Halloween path; any consolidation must keep the XVF3800 PyAudio-first capture ladder and the voice gate intact. Prove with ear-check, not API success."
+    },
+    {
+      "name": "Hardcoded 16000/1 capture params in four places in serverSTTListener.js (handoff claim)",
+      "status": "landed",
+      "evidence": [
+        "CONFIRMED current: services/serverSTTListener.js:344 'const SR = 16000, CH = 1' (_startAggregatedCapture), :535 (_captureWithPython), :556 (captureChunkWav), :719 (startContinuousCapture)",
+        "This is now a DELIBERATE design constant, not an oversight: commit dabcbe9d (v10.1.0 '[stt] delete the capture controls that never reached the capture path') removed the sampleRate/format/channels UI + schema keys and rewrote config/schemas/stt-config.schema.json description to 'Capture format/rate/channels are fixed by the capture layer (16 kHz mono PCM16) and are deliberately not configurable'",
+        "16000/1 is consistent end-to-end: elevenLabsRealtimeSTTService.js:26-27 DEFAULTS pcm_16000/16000; elevenLabsWebSocketService.js batch fallback encodeWavPCM16LE(pcm,16000,1) around line 1725; ElevenLabs realtime docs confirm pcm_16000 is the API default"
+      ],
+      "remaining_work": "None as a defect. If v11 canonicalization introduces a shared constant, hoist the four literals into one exported CAPTURE_FORMAT constant — cosmetic only. Do NOT resurrect a sample-rate config knob; v10.1 deleted it on the operator's 'dead settings are worse than none' rule.",
+      "files_to_touch": ["services/serverSTTListener.js"],
+      "risk": "low"
+    },
+    {
+      "name": "ElevenLabs current STT surface (verified live 2026-08-20)",
+      "status": "landed",
+      "evidence": [
+        "MCP connector call succeeded: agents_list returned the 6 fleet agents (Orlok agent_0801k3f1dw7xe2g8r4jkbxk0gt2n, Mina, Sir Dragomir, PumpkinHead, Groundbreaker, Renfield) — ConvAI Agents platform is live and is the production conversation ASR",
+        "Batch: POST /v1/speech-to-text, model_id 'scribe_v2' (docs api-reference/speech-to-text/convert, fetched 2026-08-20; 5 GB direct-upload cap) — matches services/elevenLabsSTTService.js:87,143",
+        "Realtime: wss .../v1/speech-to-text/realtime, model 'scribe_v2_realtime', audio_format pcm_16000 default, commit_strategy manual|vad, client sends input_audio_chunk, server sends session_started/partial_transcript/final_transcript(_with_timestamps)/committed_transcript(_with_timestamps)/committed_transcript_entities + error types (docs fetched 2026-08-20) — services/elevenLabsRealtimeSTTService.js matches this shape (URL :39, params :98-118, messages :209-291)",
+        "Current API features the repo does NOT yet use: secondary_languages, keyterms (<=50 realtime), no_verbatim, entity_detection, filter_background_audio query params; and the repo's _handleMessage does not handle final_transcript / final_transcript_with_timestamps / committed_transcript_entities message types (only partial/committed/committed_with_timestamps, :223-265)"
+      ],
+      "remaining_work": "Design input, no code required: the repo's realtime implementation is CURRENT, refuting any assumption that it is stale. Optional v11 enhancements: filter_background_audio (directly relevant to the servo-whine/room-tone hallucination problem the hand-rolled voice gate in elevenLabsWebSocketService.js:26-43 solves in software) and keyterms for character names.",
+      "files_to_touch": ["services/elevenLabsRealtimeSTTService.js"],
+      "risk": "low"
+    },
+    {
+      "name": "Orphaned polled STT session machinery (serverSTTListener.startSession + /stt/listen/* routes)",
+      "status": "open",
+      "evidence": [
+        "No in-repo caller of POST /api/elevenlabs/stt/listen/start|stop|status outside the route file itself: grep 'stt/listen' across public/, views/, scripts/, tests/ matches only routes/api/elevenLabsApiRoutes.js:146-181",
+        "That makes the legacy 0.3s polling tick (services/serverSTTListener.js:114-233), the VAD gating (:124-198) and the entire _startAggregatedCapture utterance path (:339-449) reachable only through an endpoint nothing in the repo calls — though KNOWN-BUGS.md:115-121 records real 'stt_*' sessions failing on 2026-08-19, so an out-of-repo caller (MCP/manual curl session) exercised it recently",
+        "The aggregated path duplicates scribe_v2_realtime's server-side VAD-commit semantics in client code (pre-roll, silence finalize, 15s cap) against the batch endpoint; utteranceAggregation=true is set only on character-2 and character-3 stt-config.json",
+        "captureChunkWav and startContinuousCapture (same file) DO have live consumers and must survive: hardwareService/index.js:1201 (mic record), routes/api/elevenLabsApiRoutes.js:198 (/stt/testSample, used by views/setup/calibration.ejs:6182,6292 and ai-settings-stt.js:1176), elevenLabsWebSocketService.js:1830 (conversation mic loop)"
+      ],
+      "remaining_work": "v11 decision: either delete startSession/stopSession/getStatus/_startAggregatedCapture plus the three /stt/listen routes (CLAUDE.md says PRESERVE endpoints — needs operator sign-off since the endpoints are public contract), or keep the routes but reimplement them as thin adapters over elevenLabsRealtimeSTTService. Preserving API contracts favors the adapter. Either way serverSTTListener shrinks to the capture engine only.",
+      "files_to_touch": ["services/serverSTTListener.js", "routes/api/elevenLabsApiRoutes.js", "data/character-2/ai-config/stt-config.json", "data/character-3/ai-config/stt-config.json", "config/schemas/stt-config.schema.json"],
+      "risk": "Medium: 'PRESERVE all existing API endpoints' constraint vs deleting; and an unknown external caller used these sessions on 2026-08-19."
+    },
+    {
+      "name": "conversationService.js orphan HTTP converse path",
+      "status": "open",
+      "evidence": [
+        "services/conversationService.js implements a full STT->agent->TTS pipeline (batch transcribeAudio at line 13, fastChatWithAgent, generateSpeech) but its only importer repo-wide is tests/ai/conversation-service.test.js:2 — no route or service uses it",
+        "routes/conversation.js does NOT use it; it talks to elevenLabsWebSocketService (imports at line 20, askAgentQuestion at :572)"
+      ],
+      "remaining_work": "Delete the service + its test, or wire it as the documented one-shot HTTP converse endpoint. Deletion is the smaller change and removes one of the parallel STT paths the directive complains about.",
+      "files_to_touch": ["services/conversationService.js", "tests/ai/conversation-service.test.js"],
+      "risk": "low"
+    },
+    {
+      "name": "Dead/stale code inside the realtime STT service",
+      "status": "open",
+      "evidence": [
+        "services/elevenLabsRealtimeSTTService.js:444 _scheduleReconnect() defined with ZERO callers — the close handler comment at :176-181 explains auto-reconnect was deliberately removed; the method and 'auto_reconnect' in the /stt/realtime/capabilities feature list (routes/api/elevenLabsApiRoutes.js:879) both now overstate behavior",
+        "Header comment services/elevenLabsRealtimeSTTService.js:9 says 'Mic (arecord) -> PCM16LE' — stale: actual feeds are serverSTTListener.startContinuousCapture (PyAudio-first) and browser_audio_chunk; arecord is the LAST fallback and is the method the XVF3800 doc says delivers zero frames on the arrays",
+        "routes/api/elevenLabsApiRoutes.js:846-850 /stt/realtime/status reads session.connected and session.options?.model_id — actual fields are session.isConnected and constructor options are flattened (no .options), so the status route reports undefined/defaults"
+      ],
+      "remaining_work": "Delete _scheduleReconnect, correct the header comment and capabilities list, fix /stt/realtime/status to read session.isConnected / getStats(). Small, safe, do first in the stream.",
+      "files_to_touch": ["services/elevenLabsRealtimeSTTService.js", "routes/api/elevenLabsApiRoutes.js"],
+      "risk": "low"
+    },
+    {
+      "name": "earcheck capture path contradicts the XVF3800 constraint",
+      "status": "open",
+      "evidence": [
+        "scripts/fleet-audio/earcheck.mjs:163 records via SSH 'arecord -D <dev> -f S16_LE -r 16000 -c 1' on each node and transcribes via its own direct fetch to /v1/speech-to-text (:244-248) — both outside the canonical services",
+        "CLAUDE.md Hardware Platform + docs/hardware/RESPEAKER-XVF3800.md: arecord/parec/ffmpeg deliver zero frames from the XVF3800 arrays (Mina AND Orlok since commit 6ca28f49 put an XVF3800 on Mina); PyAudio via microphone_cli.py is the only proven capture layer",
+        "KNOWN-BUGS.md ~line 821 already proposes 'teach earcheck to use the app APIs (say + STT capture) instead' — designed, not built"
+      ],
+      "remaining_work": "Reroute earcheck's record step through each node's app API (POST /api/elevenlabs/stt/testSample?duration=N&dryRun=0 already returns usedPath + transcript in one call, riding the PyAudio ladder) and drop its private scribe() copy. This simultaneously fixes the false-OFFLINE-when-ssh-fails defect (commit d578ba54 context).",
+      "files_to_touch": ["scripts/fleet-audio/earcheck.mjs"],
+      "risk": "low; ops script only, but it is the fleet's proof instrument — validate against a node with a known-good mic before trusting new output"
+    },
+    {
+      "name": "Claim 'ElevenLabs realtime STT implementation is outdated and needs rebuild'",
+      "status": "refuted",
+      "evidence": [
+        "Current docs (fetched 2026-08-20) show the same endpoint, model id, message_type vocabulary and commit strategies the repo already implements: WS_URL services/elevenLabsRealtimeSTTService.js:39 vs docs wss .../v1/speech-to-text/realtime; input_audio_chunk :310 vs docs; committed_transcript/_with_timestamps :236-265 vs docs; vad params :106-111 vs docs vad_threshold/vad_silence_threshold_secs/min_speech_duration_ms/min_silence_duration_ms",
+        "elevenLabsSTTService.getSTTCapabilities (services/elevenLabsSTTService.js:37-47) advertises exactly the two current models scribe_v2 and scribe_v2_realtime"
+      ],
+      "remaining_work": "None — the v11 canonical-stt stream is a CONSOLIDATION job (fewer paths), not an API-currency upgrade.",
+      "files_to_touch": [],
+      "risk": "low"
+    }
+  ],
+  "dependencies_on_other_streams": [
+    "Any fleet-audio / ear-check stream: the proof-of-canonicalization is a cross-node ear-check, and this stream wants to rewrite earcheck.mjs's capture path — coordinate ownership of scripts/fleet-audio/earcheck.mjs",
+    "Any conversation/voice-gate or jaw-sync stream touching services/elevenLabsWebSocketService.js (2417 lines, the shared consumer of every STT path) — highest-collision file",
+    "Mina XVF3800 hardware stream (commit 6ca28f49, 163a6f69 USB over-current): capture-layer changes cannot be validated on Mina until her USB rail is stable"
+  ],
+  "will_conflict_with": [
+    "services/elevenLabsWebSocketService.js",
+    "routes/api/elevenLabsApiRoutes.js",
+    "services/serverSTTListener.js",
+    "scripts/fleet-audio/earcheck.mjs"
+  ],
+  "open_questions": [
+    "Who called /api/elevenlabs/stt/listen/start on 2026-08-19 (the failing stt_* sessions in KNOWN-BUGS:115-121)? No repo caller exists; if it was a manual/MCP diagnostic, the endpoints can become adapters; if some undocumented client uses them, deletion breaks it.",
+    "Does 'PRESERVE all existing API endpoints' (CLAUDE.md) permit deleting the caller-less /stt/listen/* trio, or must they be kept as adapters over the realtime service? Operator call.",
+    "Should the canonical design adopt the API-side filter_background_audio / keyterms instead of (or alongside) the hand-rolled adaptive voice gate in elevenLabsWebSocketService.js:26-43? Needs a live A/B ear-check on a node with idle servos running.",
+    "utteranceAggregation=true persists in character-2/3 stt-config.json; if the aggregated path is deleted, those keys and the schema entry need cleanup in the same change."
+  ],
+  "fleet_wide_notes": "Every node shares this code via rsync deploy; capture behavior differs per node only by mic hardware (XVF3800 on Orlok+Mina = PyAudio-only; USB webcam mic on Groundbreaker per its stt-config deviceId). The 16k/mono constant is fleet-wide and correct for both Scribe endpoints. The ConvAI agents (one per character, verified live via MCP) do their own ASR — any 'one canonical STT' declaration must explicitly scope itself to MonsterBox-initiated transcription, because the agent ASR path can never be routed through repo code."
+}
