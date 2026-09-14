@@ -4,6 +4,11 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Fix — lurk sleep no longer turns off LED Talk.** disableLurkSuperpowers (lurk inactivity-sleep and
+  disable) was setting jawAnimation.ledSync.enabled=false and blacking out the ring, so after a 5-min
+  idle timeout the eyes stopped reacting to speech. LED Talk is an independent operator toggle now and
+  survives lurk; the speaking path no-ops when nothing is speaking, so there is nothing to quiet on sleep.
+
 - **Fix — LED speaking is now authoritative while the character talks.** The eye ring was falling
   back to the idle ("purple") or thinking ("blue") look mid-sentence because interaction states and
   a second audio path could override 'speaking' in ledController. A short self-refreshing speaking

@@ -1588,21 +1588,13 @@ export async function disableLurkSuperpowers(characterId) {
     results.jaw = { enabled: false };
   } catch (e) { results.jaw = { error: e.message }; }
 
-  // Disarm LED "talk" and black out the ring so lurk sleep/disable leaves the
-  // eyes dark, not stuck on the last interaction colour.
-  try {
-    const jc = await jawAnimationService.readJawConfig(characterId);
-    if (jc.ledSync) {
-      jc.ledSync = { ...jc.ledSync, enabled: false };
-      await jawAnimationService.writeJawConfig(characterId, jc);
-    }
-    try {
-      const { default: ledController } = await import('../services/ledController.js');
-      await ledController.initialize(characterId);
-      await ledController.off();
-    } catch (_) { /* no ring / daemon down — nothing to darken */ }
-    results.led = { enabled: false };
-  } catch (e) { results.led = { error: e.message }; }
+  // LED "talk" (eyes react to speech) is an INDEPENDENT operator toggle and must
+  // SURVIVE lurk sleep/disable. Turning ledSync.enabled off here is what left the
+  // eyes dark during speech after an inactivity sleep — the exact "LED speaking
+  // should always work no matter what" complaint. Do not touch ledSync.enabled
+  // or the ring: the speaking/interaction paths own the eyes and no-op when
+  // nothing is speaking, so there is nothing to quiet on sleep.
+  results.led = { enabled: 'unchanged (operator-controlled, independent of lurk)' };
 
   if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
     try {
