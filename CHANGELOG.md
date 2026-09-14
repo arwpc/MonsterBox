@@ -4,6 +4,11 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Pi 5 addressable-LED (NeoPixel) support is now in the shared codebase.** `python_wrappers/neopixel_cli.py`
+  (Adafruit Blinka RP1/PIO backend on GPIO 18 — works on a Pi 5, where rpi_ws281x cannot) plus the
+  `controllerType: 'neopixel'` branches in hardwareService light turnOn/turnOff/setBrightness. Brought in
+  from Renfield (Pi 5). Inert on Pi 4 nodes — it only fires for parts with `controllerType: 'neopixel'`.
+
 - **v10.6.0 — Parrot and the standalone Idle toggle removed; AI no longer over-triggers.**
 - **Removed Parrot mode completely** — the dashboard toggle/chip, parrotSay, the set_parrot_mode
   WebSocket message + connection.parrotMode guards, and its tests. Shared echo suppression

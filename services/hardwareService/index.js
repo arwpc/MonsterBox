@@ -701,6 +701,28 @@ const HARDWARE_CONTROLLERS = {
             return { out, success: wrapperSucceeded(out, parsePythonJSON(out)) };
         },
 
+        /**
+         * Addressable rings (WS2812 family) via python_wrappers/neopixel_cli.py.
+         *
+         * These do NOT respond to a voltage level, which is why the ordinary GPIO
+         * branch below is useless for them: light_cli.py drives the pin with
+         * `pinctrl` and holds it high, and a WS2812 ignores a static level
+         * completely. It wants an 800 kHz serial stream. GPIO 18 is correct and
+         * matches PumpkinHead's Pi 4 wiring; only the waveform source differs
+         * (his PWM peripheral, RP1's PIO block here).
+         */
+        async _neo({ pin, ledCount, rgb, brightness }) {
+            const args = [String(pin), String(ledCount || 16)];
+            if (!rgb) {
+                args.push('off');
+            } else {
+                args.push('on', String(rgb[0]), String(rgb[1]), String(rgb[2]));
+                if (brightness != null) args.push(String(brightness));
+            }
+            const out = await runWrapper('neopixel_cli.py', args);
+            return { out, success: wrapperSucceeded(out, parsePythonJSON(out)) };
+        },
+
         // The chip is the only honest record of what a light is doing.
         // _lightState is per-process memory: it reset to "off" on every service
         // restart, so the first toggle after one re-sent "on" to a lamp that was
@@ -753,8 +775,17 @@ const HARDWARE_CONTROLLERS = {
             return null;
         },
 
-        async turnOn({ pin, channel, controllerType, address, brightness = 100, duration = 0 }) {
+        async turnOn({ pin, channel, controllerType, address, brightness = 100, duration = 0,
+                       ledCount, color }) {
             try {
+                if (controllerType === 'neopixel') {
+                    const rgb = Array.isArray(color) && color.length === 3 ? color : [255, 255, 255];
+                    const { out, success } = await this._neo({ pin, ledCount, rgb, brightness });
+                    if (success) HARDWARE_CONTROLLERS._lightState[pin] = 'on';
+                    return { success, partType: 'light', pin, state: 'on', ledCount, color: rgb,
+                        brightness, rawOutput: out,
+                        message: success ? `${ledCount || 16} pixels on pin ${pin} on` : 'NeoPixel on failed' };
+                }
                 if (controllerType === 'pca9685' && channel != null) {
                     const duty = (typeof brightness === 'number' && brightness >= 0 && brightness <= 100)
                         ? brightness : 100;
@@ -781,8 +812,14 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async turnOff({ pin, channel, controllerType, address }) {
+        async turnOff({ pin, channel, controllerType, address, ledCount }) {
             try {
+                if (controllerType === 'neopixel') {
+                    const { out, success } = await this._neo({ pin, ledCount, rgb: null });
+                    if (success) HARDWARE_CONTROLLERS._lightState[pin] = 'off';
+                    return { success, partType: 'light', pin, state: 'off', ledCount, rawOutput: out,
+                        message: success ? `${ledCount || 16} pixels on pin ${pin} off` : 'NeoPixel off failed' };
+                }
                 if (controllerType === 'pca9685' && channel != null) {
                     const { out, success } = await this._pca({ channel, address, dutyPct: 0 });
                     if (success) HARDWARE_CONTROLLERS._lightState[`pca_ch${channel}`] = 'off';
@@ -806,8 +843,19 @@ const HARDWARE_CONTROLLERS = {
             }
         },
 
-        async toggle({ pin, channel, controllerType, address, brightness = 100 }) {
+        async toggle({ pin, channel, controllerType, address, brightness = 100, ledCount, color }) {
             try {
+                if (controllerType === 'neopixel') {
+                    // A WS2812 cannot be read back — it is a write-only shift chain,
+                    // and GPIO 18 sits in a PIO alt function so pinctrl reports
+                    // nothing useful about it either. Cached state is genuinely the
+                    // best available here, unlike the GPIO and PCA9685 branches where
+                    // trusting the cache was a bug (see _readGpioState).
+                    const next = (HARDWARE_CONTROLLERS._lightState[pin] === 'on') ? 'off' : 'on';
+                    return next === 'on'
+                        ? await this.turnOn({ pin, controllerType, brightness, ledCount, color })
+                        : await this.turnOff({ pin, controllerType, ledCount });
+                }
                 if (controllerType === 'pca9685' && channel != null) {
                     const key = `pca_ch${channel}`;
                     const live = await this._readState({ channel, address });
