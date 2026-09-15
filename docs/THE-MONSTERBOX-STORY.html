@@ -26,6 +26,10 @@
   .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:10px}
   .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
   svg{width:100%;height:auto;display:block;overflow:visible}
+  /* charts keep a readable minimum and scroll inside their own panel on a phone */
+  .panel{overflow-x:auto}
+  .panel>svg{min-width:640px}
+  @media(max-width:520px){.wrap{padding-left:16px;padding-right:16px}h1{font-size:30px}h2{font-size:20px}.pull{font-size:18px}}
   .tick{fill:var(--muted);font-size:11px}
   .axis{stroke:var(--grid);stroke-width:1}
   blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--red);background:#16191f;
@@ -42,6 +46,12 @@
   table.tl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
   table.tl td{padding:6px 10px;border-bottom:1px solid #1a212b;vertical-align:top}
   table.tl td:first-child{color:var(--amber);white-space:nowrap;width:120px;font-variant-numeric:tabular-nums}
+  /* two-column definition tables stack into label-over-value blocks on a phone */
+  @media(max-width:520px){
+    table.tl tr{display:block;border-bottom:1px solid #1a212b;padding:8px 0}
+    table.tl td{display:block;border-bottom:none;padding:0 2px}
+    table.tl td:first-child{white-space:normal;width:auto;margin-bottom:3px;font-weight:600}
+  }
 </style>
 </head>
 <body>
