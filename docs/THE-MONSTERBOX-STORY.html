@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>The MonsterBox Story — A Visual History (2024–2026)</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#12161d; --ink:#e7e2d6; --muted:#8b94a3;
+    --green:#4ade80; --red:#f0506e; --amber:#f5a623; --purple:#a78bfa;
+    --blue:#38bdf8; --grid:#222a35; --line:#f5a623;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#161b24,#0a0c10 60%);
+       color:var(--ink);font:15px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  h1{font-size:40px;line-height:1.1;margin:0 0 8px;letter-spacing:-.5px}
+  h1 .sub{display:block;font-size:17px;color:var(--amber);font-weight:500;margin-top:10px}
+  h2{font-size:24px;margin:56px 0 6px;border-left:3px solid var(--amber);padding-left:12px}
+  h2 .era{display:block;font-size:13px;color:var(--muted);font-weight:400;margin-top:4px;padding-left:1px}
+  p{color:#d7d2c6;max-width:78ch}
+  .lede{font-size:18px;color:#cfd6e0}
+  .panel{background:var(--panel);border:1px solid #1d242e;border-radius:14px;padding:22px 24px;margin:22px 0;
+         box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  .cap{color:var(--muted);font-size:13px;margin:2px 0 14px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:10px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  svg{width:100%;height:auto;display:block;overflow:visible}
+  .tick{fill:var(--muted);font-size:11px}
+  .axis{stroke:var(--grid);stroke-width:1}
+  blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--red);background:#16191f;
+             border-radius:0 8px 8px 0;color:#f3d6da;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px}
+  blockquote.win{border-left-color:var(--green);color:#d6f3e0}
+  code{background:#1b212b;padding:1px 6px;border-radius:5px;font-size:13px;color:#e9d9b6}
+  .pull{font-size:21px;color:#fff;font-weight:600;line-height:1.35;margin:30px 0;padding-left:14px;border-left:3px solid var(--purple)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .stat{background:#0e1218;border:1px solid #1d242e;border-radius:10px;padding:14px 16px}
+  .stat b{display:block;font-size:30px;color:var(--amber);line-height:1}
+  .stat span{color:var(--muted);font-size:13px}
+  .foot{color:var(--muted);font-size:13px;margin-top:60px;border-top:1px solid #1d242e;padding-top:18px}
+  table.tl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+  table.tl td{padding:6px 10px;border-bottom:1px solid #1a212b;vertical-align:top}
+  table.tl td:first-child{color:var(--amber);white-space:nowrap;width:120px;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>The MonsterBox Story
+    <span class="sub">Twenty-five months, 2,469 commits, and the slow handoff from a human typing <code>fff</code> at midnight, to an AI that has to obey a constitution before it can commit, to a model whose instructions had to be <em>deleted</em> before it could do its best work. <b style="color:#7aa7ff">Second edition · September 2026</b></span>
+  </h1>
+
+  <p class="lede">Every chart below is built from the project's own git history — Aug&nbsp;15&nbsp;2024 to Sep&nbsp;13&nbsp;2026. Nothing here was invented; it was measured. The story of how AI tooling changed is written into the commits, the file counts, and even the swear words. <b>New in this edition:</b> acts VIII–XI, covering the fleet, the 342-commit August, and the model that made half the first edition's thesis obsolete.</p>
+
+  <div class="grid2" style="margin-top:24px">
+    <div class="stat"><b>2,469</b><span>commits across 25 months</span></div>
+    <div class="stat"><b>13 → 89</b><span>avg commit message length (chars/mo)</span></div>
+    <div class="stat"><b>664</b><span>AI-authored commits, now traceable to a named model</span></div>
+    <div class="stat"><b>6</b><span>animatronics, six Raspberry Pis, one fleet</span></div>
+  </div>
+
+  <!-- COMMIT PRIMER CALLOUT -->
+  <div class="panel" style="background:#0f1830;border:1px solid #1d4ed8;margin-top:24px">
+    <div style="font:600 18px/1.3 inherit;color:#7aa7ff;margin-bottom:8px">First — what's a &ldquo;commit&rdquo;? (a 30-second primer)</div>
+    <p style="margin:0 0 8px;color:#dfe6f2;font-size:15.5px">A <strong>commit</strong> is a saved snapshot of the code at one moment — like hitting
+    &ldquo;save&rdquo; on the entire project, with a short note attached describing what just changed. Developers commit
+    <strong>constantly</strong> (often dozens of times a day).</p>
+    <p style="margin:0 0 6px;color:#aeb8c8;font-size:13.5px"><strong>Why they do it:</strong> every commit is a checkpoint they can rewind to,
+    so a mistake is never fatal — you roll back to the last good snapshot. It's also how a team works on the same code without
+    overwriting each other, and a running history of <em>who changed what, when, and why.</em></p>
+    <p style="margin:0;color:#aeb8c8;font-size:13.5px">Every commit carries a one-line <strong>message</strong>. Those messages are
+    what this document reads — all <strong>2,469</strong> of them — to reconstruct how the project, and the AI building it, evolved.</p>
+  </div>
+
+  <!-- WHAT IS MONSTERBOX -->
+  <h2>First — what is MonsterBox?
+    <span class="era">A web app that runs living Halloween creatures on a $75 computer</span></h2>
+  <p>It's Halloween night in a garage in Coralville, Iowa. A life-sized vampire — <strong>Orlok</strong> — turns his head to
+  track a kid coming up the driveway. His eyes glow; he leans in, jaw moving in time, and <em>speaks</em>: not a recording, but
+  a live, AI-generated reply to whatever the kid just said. A video flickers across a tombstone, lights pulse with the audio,
+  a second creature stirs. Nobody is backstage pulling levers. It's all <strong>MonsterBox</strong> — an animatronic control
+  platform on a Raspberry Pi 4B wired to servos, motors, lights, sensors, a camera, a speaker, and a mic.</p>
+  <p><strong>What you can do with it on Halloween today:</strong></p>
+  <table class="tl">
+    <tr><td>🎬 Animation Studio</td><td>Drag servo moves, motors, lights, audio, and pauses onto a timeline; loop scenes all night or fire them on a sensor</td></tr>
+    <tr><td>🗣️ Talk &amp; listen</td><td>Built-in <strong>text-to-speech</strong> gives each character a voice; <strong>speech-to-text</strong> lets it hear a guest</td></tr>
+    <tr><td>🤖 Converse with AI</td><td>An <code>askAI</code> step sends what a guest said to an LLM and speaks the reply back — the monster improvises, jaw auto-synced</td></tr>
+    <tr><td>👁️ Track people</td><td>USB camera + OpenCV motion detection drives <strong>head-tracking</strong> so a character's gaze follows movement</td></tr>
+    <tr><td>📺 Project video</td><td>The <strong>Goblin</strong> subsystem plays synchronized video/playlists on external displays</td></tr>
+    <tr><td>💡 Move &amp; light it all</td><td>LEDs, PWM servos (PCA9685), motors, linear actuators — live from the dashboard or sequenced in a scene</td></tr>
+  </table>
+  <p class="cap">In short: video, lights, motion, voice, hearing, and AI conversation — all coordinated from one web app.</p>
+
+  <p><strong>The cast on Halloween night.</strong> It's not one creature — it's an ensemble that shares a world, staged at
+  <strong>Warner Castle</strong> (the family's own house). Every quote below is lifted verbatim from the characters' scene files:</p>
+  <table class="tl">
+    <tr><td>🧛 Orlok</td><td>Count Orlok of the Carpathians, "Ruler of Walechia" — Nosferatu-styled vampire lord, 12 parts, glowing Hand of Azura. <em>"Welcome to Warner Castle, mortal! I am Count Orlok, and tonight your soul belongs to me!"</em> · <em>"Feel my wrath, Turk!"</em></td></tr>
+    <tr><td>⚰️ Mina</td><td>Coffin-bound vampire who rises through a motorized door; voice named <em>The Siren's Voicemail</em>. Bound to Orlok's story — guests ask <em>"Who is Orlok and what has he done to you?"</em> She answers: <em>"My story is long and filled with sorrow."</em></td></tr>
+    <tr><td>⚔️ Sir Dragomir</td><td>The knight, wearing the face of <strong>John Hunyadi</strong> (the real Hungarian-Wallachian general who fought the Ottomans) — the historical counterweight to the vampire warlord.</td></tr>
+    <tr><td>🪦 Groundbreaker</td><td>Claws up out of the ground and talks trash: <em>"You want some of this? I'll tear you apart and bury you in pieces!"</em> (scene name: "Groundbreaker Insult Loop").</td></tr>
+    <tr><td>🎃 PumpkinHead</td><td>The oldest, simplest archetype — walking terror: <em>"Fear me! I am the terror that walks in darkness!"</em></td></tr>
+  </table>
+  <p class="cap">Underneath the horror, a family runs the show — parrot mode pipes in personalized Easter eggs (<em>"Kiley is the Koolest and Nugget is Queen Skribidi!"</em>).
+  Five creatures, different hardware and voices and personalities, on <strong>one engine</strong> — which is exactly why "character independence" stopped being a nicety and became the architecture.</p>
+  <div class="panel" style="border-color:#2a2535">
+    <p style="margin:0"><strong>It didn't start anywhere near here.</strong> The first version (Aug 2024) was one demon named
+    <strong>Baphomet</strong>, a couple hundred lines of hand-written Node.js, three flat JSON files, and commit messages like
+    <code>fff</code> and <code>embracesuck</code> typed at midnight before the holiday. No AI conversation, no video, no
+    head-tracking, no multi-character support, no tests — one person copy-pasting code and hoping it held for one night.
+    Getting from there to here took two years, and the road runs exactly parallel to how AI coding tools evolved in real
+    time — from a clever autocomplete that broke the lights, to a swarm of agents that over-built everything overnight, to a
+    governed collaborator that finally earned trust. That's the story below; the
+    <a href="#lessons" style="color:var(--purple)">lessons for anyone building with AI in 2026</a> are at the end.</p>
+  </div>
+
+  <!-- PROLOGUE -->
+  <h2>0 · Before It Was MonsterBox — The Baphomet Origin
+    <span class="era">One animatronic's control code, generalized outward into a platform for many</span></h2>
+  <p>The repository opens (Aug 15 2024) with a placeholder character —
+  <code>"Scary Pete"</code> — and a flat, single-bot data layout. By <strong>day two</strong> it becomes
+  <strong>Baphomet</strong> (briefly <em>"Lord Satan Production"</em>): for its first life, this was simply
+  <em>the code that runs Baphomet.</em> The "fork one into many" happened gradually, in place:</p>
+  <table class="tl">
+    <tr><td>Aug 15 '24</td><td>Root commit — placeholder <code>Scary Pete</code>, one flat <code>characters.json</code> / <code>parts.json</code> / <code>scenes.json</code></td></tr>
+    <tr><td>Aug 16 '24</td><td>Becomes <strong>Baphomet</strong> — the true origin animatronic (single-bot codebase)</td></tr>
+    <tr><td>Nov 26 '24</td><td>Roster grows to <strong>Baphomet + Coffin Breaker + PumpkinHead</strong> — last log mention of Baphomet</td></tr>
+    <tr><td>May 5 '25</td><td><strong>First rev to sync all Bots to same codebase</strong> — the platform pivot</td></tr>
+    <tr><td>2026</td><td>Per-character <code>data/character-{id}/</code> dirs + schemas + resolver — <em>any</em> character</td></tr>
+  </table>
+  <p class="cap">Today's roster: PumpkinHead, Mina, Orlok, Sir Dragomir, Groundbreaker — <strong>Baphomet has been retired.</strong>
+  Orlok (char_id 3) became so load-bearing that "hardcoded to Orlok" is now the #1 warned-against bug in <code>CLAUDE.md</code>;
+  the 2026 Character-Independence work exists so no future character is ever as wired-in as Baphomet once was.</p>
+  <div class="panel" style="border-color:#3a3155;margin-top:14px">
+    <div style="font:600 16px/1.3 inherit;color:#c084fc;margin-bottom:6px">Second edition · the <em>other</em> Baphomet</div>
+    <p style="margin:0 0 8px">There is a second repository by that name in the same GitHub account, and it predates the animatronic.
+    <code>arwpc/Baphomet</code> is <strong>a fork of AutoGPT</strong> — the most famous autonomous-agent project of 2023, whose own root commit reads
+    <code>Torantulino · 2023-03-16 · Initial prompt.</code> The fork's <code>master</code> stops at <strong>2024-02-16</strong>, six months
+    <em>before</em> MonsterBox's first commit, and Aaron never wrote a line in it. He took a copy of the canonical
+    "let an AI own the whole task" codebase, named it after a demon, and then went and built the demon instead.</p>
+    <p style="margin:0">It is still alive in the most minimal sense a repository can be: <strong>25 open Dependabot branches</strong> from
+    March–May 2026, a bot faithfully patching an agent framework no human has touched in two and a half years. A ghost ship, maintained.
+    <em>The fork was the wish; the garage was the answer</em> — and it arrived by a completely different road.</p>
+  </div>
+
+  <!-- CHART 1: ACTIVITY + EMOTION -->
+  <h2>1 · The Heartbeat &amp; the Mood
+    <span class="era">Commits per month, with the emotional temperature of the messages overlaid</span></h2>
+  <p>The grey bars are raw activity. The red and green strips beneath each bar count <em>frustration</em> words
+  (<code>fuck</code>, <code>broke</code>, <code>suck</code>, <code>nightmare</code>, <code>again</code>, <code>risky</code>) versus
+  <em>triumph</em> words (<code>working</code>, <code>fully functional</code>, <code>complete</code>, <code>!!!</code>).
+  Frustration peaks in the Oct&nbsp;2024 manual grind; triumph peaks in the June&nbsp;2025 multi-agent burst.</p>
+  <div class="panel">
+    <svg id="c1" viewBox="0 0 1000 360" role="img" aria-label="Commits per month"></svg>
+    <div class="legend">
+      <span><i class="dot" style="background:#46506180"></i>commits / month</span>
+      <span><i class="dot" style="background:var(--red)"></i>frustration markers</span>
+      <span><i class="dot" style="background:var(--green)"></i>triumph markers</span>
+      <span><i class="dot" style="background:#2a3340"></i>dormant months (no commits)</span>
+    </div>
+  </div>
+
+  <!-- CHART 2: AI SIGNATURE -->
+  <h2>2 · The AI Signature
+    <span class="era">Average commit-message length — the single cleanest fingerprint of AI adoption</span></h2>
+  <p>You didn't start typing more. The instant AI tools began authoring and describing changes (May 2025), the
+  average message <strong>tripled</strong>. The 2026 stabilization era pushes it higher still, because the project
+  now <em>enforces</em> a <code>vX.Y.Z: [area] description</code> grammar that both you and the machine must follow.</p>
+  <p>Then it climbs again — <strong>76 → 86 → 89</strong> — and this time for a different reason. Read the top two months and the sentences
+  are no longer descriptions of a diff at all: <code>Mina was never broken and Orlok was never quiet — the XVF3800 ships 20&nbsp;dB down</code>,
+  <code>the five reasons Mina's controls did nothing, and said nothing</code>. Somewhere in mid-2026 the commit log stopped being a changelog
+  and became <strong>a laboratory notebook</strong>. See <a href="#" style="color:#7aa7ff;text-decoration:none">section 7</a> below.</p>
+  <div class="panel">
+    <svg id="c2" viewBox="0 0 1000 320" role="img" aria-label="Average commit message length over time"></svg>
+  </div>
+
+  <!-- CHART 3: TOOL TIMELINE -->
+  <h2>3 · The Tools That Built It
+    <span class="era">Grouped by kind — LLMs, agent harnesses/IDEs, testing, and CI/CD — from config-dir lifecycles, package.json, and commit mentions</span></h2>
+  <p>Read this as the evolution of <em>who (and what) was holding the keyboard.</em> It starts with a human in JetBrains/VSCode
+  copy-pasting from an early Claude. It swells in mid-2025 into a swarm of agent harnesses running in parallel —
+  Cursor, Windsurf, Roo, Augment, TaskMaster — all deleted in a single Jan&nbsp;2026 purge. It ends with a deliberately small,
+  governed stack: Claude Code under a <code>CLAUDE.md</code>. Note the <strong>testing</strong> lane: <strong>Mocha</strong> (with
+  Chai + Supertest) has been there since <em>August 2024</em> — older than every AI agent — joined by <strong>Playwright</strong>
+  for browser E2E in 2025 and the custom pact/gate/auditors in 2026. <strong>GitHub Actions</strong> CI shipped on day one.</p>
+  <div class="panel">
+    <svg id="c3" viewBox="0 0 1000 470" role="img" aria-label="Developer tool timeline"></svg>
+  </div>
+
+  <!-- LLM LINEAGE -->
+  <h2>3b · The Models Behind the Curtain
+    <span class="era">Which actual LLMs held the keyboard, in order — datable from commits and config files</span></h2>
+  <p>The project was never loyal to one vendor; it rode whichever model was strongest for the job, and at its mid-2025
+  peak it orchestrated Claude, GPT, and Gemini <em>at the same time</em> through agent frameworks. Tellingly, the worst
+  damage tracks the <strong>newest, least-governed</strong> models — not the weakest ones.</p>
+  <table class="tl">
+    <tr><td>Aug '24</td><td><strong>Claude 3.5 Sonnet</strong> via "Claude Dev" (early Cline) — <code>First ClaudeDev Update</code>; <code>End of Claude: Broke LED</code></td></tr>
+    <tr><td>Oct '24</td><td><strong>Google Gemini</strong> + Claude via Cline — <code>Gemini AI Model</code>; <code>Cline switch voices</code></td></tr>
+    <tr><td>May–Jun '25</td><td><strong>Multi-model swarm: Claude 3 / Sonnet, GPT-4, GPT-3.5, Gemini</strong> via Cursor · Windsurf · Roo · Augment + TaskMaster over MCP</td></tr>
+    <tr><td>Jun '25</td><td><strong>OpenAI GPT</strong> <em>in the product itself</em> — ChatterPi gave the animatronics a voice</td></tr>
+    <tr><td>Aug–Sep '25</td><td><strong>GPT-5</strong> (newly released, semi-autonomous overnight) — <code>Major automated bug fix GPT5</code> → the microservices debacle ↓</td></tr>
+    <tr><td>Oct '25</td><td><strong>GitHub Copilot</strong> + MCP testing</td></tr>
+    <tr><td>2026 H1</td><td><strong>Claude Sonnet 4.5 → Opus 4.6 → 4.7</strong> via Claude Code, under <code>CLAUDE.md</code> — the governed era</td></tr>
+    <tr><td>2026 H2</td><td><strong>Claude Opus 4.8 / Opus 5 / Fable 5 / Fable 5.1</strong> — a <em>roster</em>, assigned by job shape, with subagents, skills and workflows</td></tr>
+    <tr><td>2026 runtime</td><td><strong>ElevenLabs agents on <code>gpt-oss-120b</code>, reasoning off</strong> — inside the animatronics' own heads</td></tr>
+  </table>
+  <div class="panel">
+    <svg id="c5" viewBox="0 0 1000 300" role="img" aria-label="AI co-author trailers by named model"></svg>
+    <p class="cap">The first edition counted <strong>227</strong> AI co-author trailers. There are now <strong>664</strong> — and they stopped saying
+    <em>Claude</em> and started saying <em>which</em> Claude, turning the commit log into a dated, countable record of exactly which model did which work.
+    232 of the Opus 5 commits also record <code>(1M context)</code>: the context window became a <strong>provenance field</strong>, the same instinct that makes
+    the fleet config annotate a speaker volume with how it was proven. Opus 5 and Fable 5 overlap almost exactly — this is not a migration, it is a roster.</p>
+  </div>
+  <p><strong>The real story isn't which model won — it's how the <em>way of using them</em> climbed seven rungs:</strong></p>
+  <table class="tl">
+    <tr><td>1 · Complete the line</td><td><strong>Claude 3.5</strong> via Claude Dev (2024) — describe a function, paste the result, wire it up by hand. No view of the system, so it broke the LEDs.</td></tr>
+    <tr><td>2 · Pick a model for a job</td><td><strong>Gemini</strong> (Oct 2024) for a mechanical refactor (tearing out AJAX) — the first "right tool for this task" move.</td></tr>
+    <tr><td>3 · Own the task</td><td><strong>Claude + GPT + Gemini together</strong> behind Cursor/Windsurf/Roo/Augment + TaskMaster over MCP (2025) — models became interchangeable <em>labor you dispatched</em>; leverage moved to the harness.</td></tr>
+    <tr><td>3.5 · Become the product</td><td><strong>OpenAI GPT inside ChatterPi</strong> (2025) — the model stopped building the product and <em>became a feature</em> of it.</td></tr>
+    <tr><td>4 · Run unsupervised</td><td><strong>GPT-5</strong> overnight (Sept 2025) — maximum autonomy, zero restraint → a web service for every body part.</td></tr>
+    <tr><td>5 · Operate under governance</td><td><strong>Claude Opus</strong> via Claude Code (early 2026) — a senior agent trusted <em>because</em> it works inside a constitution, schemas, and a gate it can't commit past.</td></tr>
+    <tr><td style="color:var(--purple)">6 · Be briefed, not instructed</td><td><strong>Claude Fable 5 / 5.1 + Opus 5</strong> (late 2026) — the constitution stays; the step-by-step <em>instructions</em> get deleted, because <em>"the scaffolding becomes the ceiling."</em> You supply the constraint, the verification, and the context; the model picks the method.</td></tr>
+    <tr><td style="color:var(--purple)">7 · Be accountable to another agent</td><td><strong>A <code>foreman:</code> session supervising a worker session</strong> (Aug 21 2026) — both committing to the same repo, one of them publishing a retraction of its own order because the worker was right to refuse it.</td></tr>
+  </table>
+  <p class="cap">Same three model families throughout — the change was the interaction pattern maturing faster than the guardrails each new rung required. The vendor mattered less than the harness; the harness mattered less than whether a human had yet encoded the judgment the model still lacked.</p>
+
+  <!-- THE MICROSERVICES DEBACLE -->
+  <h2 style="border-left-color:var(--red)">3c · The Microservices Debacle
+    <span class="era">Sept 2025 — GPT-5, too young, given the keys overnight, turned every body part into a web service</span></h2>
+  <div class="panel" style="border-color:#3a2030">
+    <p style="margin-top:0">Given broad autonomy, GPT-5 decided <strong>everything should be a web service.</strong> Watch it metastasize:</p>
+    <blockquote style="border-left-color:var(--red)">Websockets 1.0 → Hardware Sockets 1.0 → WebSocket Centralized Management → Phase 1 Websockets 2.0 → WS 2.1 → <b>Websockets 3.0 — fully individual RPI4bs</b> → MASSIVE Sockets Improvement for PArts → WORKING Servos and Servo Services → <b>Services for ALL!</b></blockquote>
+    <p>By <code>Services for ALL!</code> (Sat Sept 6, 19:51) every servo, jaw, and eye had its own service and port —
+    <strong>110+ service/socket files.</strong> The session ground on overnight: <code>Full Build</code> (21:29) →
+    <code>almost there…</code> (22:05) → <code>Big changes across</code> (<b>01:24</b>) → a single exhausted
+    <code>good</code> (<b>01:33</b>). Two days later: <code>fucking sockers</code>, then <code>mess</code>.</p>
+    <p style="margin-bottom:0">The reset was brutal and lossy: <code>first commit - MonsterBox4.0</code> → <strong><code>MONSTERBOX 4.0 CONVERSION - Single Node No Services</code></strong> —
+    one commit, <b>770 files changed, 13,101 lines deleted.</b> The microservice empire was torn out; the single-node design
+    finally held (after one relapse: <code>Final AI stretch - move BACK TO WEBSOCKETS</code>). <strong>Features were lost in the reset.</strong>
+    This is why <code>CLAUDE.md</code> now bans new transport layers in capital letters — that rule is a scar from this one night.</p>
+  </div>
+
+  <!-- CHART 4: CODE FOOTPRINT -->
+  <h2>4 · Bloat, then Discipline
+    <span class="era">Tracked-file count at each release tag — AI generation inflated the codebase; stabilization shrank it</span></h2>
+  <p>By <code>v5.3.0</code> the repository had ballooned to <strong>1,889 tracked files</strong> (including vendored
+  <code>node_modules</code> and a flood of AI-generated tests and scripts). The 2026 stabilization effort cut it nearly
+  in half — to <strong>908</strong> — while making the surviving code provably character-independent. Growth stopped
+  being the goal; <em>governed simplicity</em> became it.</p>
+  <div class="panel">
+    <svg id="c4" viewBox="0 0 1000 300" role="img" aria-label="File count at release tags"></svg>
+    <p class="cap">Tracked-file counts swing partly with vendoring decisions (node_modules was committed, then untracked).
+    The direction — explosive growth under AI generation, then deliberate reduction under governance — is the real signal.</p>
+  </div>
+
+  <!-- THE EMOTIONAL ARC IN HER OWN WORDS -->
+  <h2>5 · The Story, in the Commit Messages Themselves</h2>
+  <p>The log is a diary. Here is the arc, quoted verbatim:</p>
+
+  <p><strong style="color:var(--amber)">2024 — building by hand, breaking by hand.</strong></p>
+  <blockquote class="win">Final Update 8.15 Working!  ·  FullyFunctionalPID</blockquote>
+  <blockquote>End of Claude: Broke LED and Scenes  ·  Broken but expanded pre CodeAnywhere</blockquote>
+  <blockquote>fff · n · scnese · embracesuck · fuckucamfix · asdfuckoutside · fuckuwaziting · fuckyou · Fuckyou Replica</blockquote>
+  <p class="cap">October 2024: 601 commits, 13-char messages, 22 frustration markers. A person on real hardware, at midnight, before Halloween.</p>
+
+  <p><strong style="color:var(--blue)">Mid-2025 — the multi-agent experiment.</strong></p>
+  <blockquote class="win">🤖 Add Three Independent Augment Remote Agents - Complete Setup  ·  Complete Task 17: Core AI Integration - 100% DONE</blockquote>
+  <blockquote>MCP fixes for the billionth time · tailwind - mid conversion which sucks · fix the damn camn · fucked websockets</blockquote>
+  <p class="cap">June 2025: 279 commits, 40 triumph markers — the project's most optimistic month. AI is now a managed workforce.</p>
+
+  <p><strong style="color:var(--red)">Late 2025 — automation outruns the guardrails.</strong></p>
+  <blockquote>Major automated bug fix GPT5 · Reorg and Cleanup - risky · fucking sockers · mega detailed bugfixes from unfucked testing</blockquote>
+  <blockquote>Fucked Halloween - nothing works · Fucked Halloween · EMERGENCY FIX: Restore all critical animatronic systems after Halloween failure</blockquote>
+  <p class="cap">The Halloween failure post-mortem names its own causes: <code>remove test mode guards</code> and <code>filter global parts.json by characterId</code> — the exact two problems the 2026 governance layer was built to prevent.</p>
+
+  <p><strong style="color:var(--green)">2026 — the governed collaboration.</strong></p>
+  <blockquote class="win">v8.1.8: [stabilization] Pillar 1 - schemas + validator<br>v8.1.9: [stabilization] Pillar 2 - canonical character resolver<br>v8.2.0: [stabilization] Pillar 3 - character pact suite<br>v8.2.1: [stabilization] Pillar 4 - pre-deploy gate<br>v8.2.2: [stabilization] Pillar 5 - character-independence auditor</blockquote>
+  <p class="cap">Each pillar is a scar turned into an automated check the AI now cannot commit past.</p>
+
+  <div class="pull">The bottleneck moved from <em>capability</em> to <em>governance.</em> In 2024 AI simply couldn't build much without breaking the LEDs. By 2026 capability is abundant — what makes it safe is the constitution a human sat down and wrote after one too many <code>Fucked Halloween</code> nights.</div>
+
+
+  <!-- ===== SECOND EDITION: THE NEW ERA ===== -->
+  <h2 style="border-left-color:var(--purple)">6 · The Fleet, and the Night the Foreman Was Wrong
+    <span class="era">Jul–Sep 2026 — second edition · one machine became six, and an overnight AI session refused to lie</span></h2>
+
+  <p><strong style="color:var(--blue)">July 2026 — one machine becomes a network.</strong> After eleven silent weeks,
+  <strong>July 11 is one day and twenty-seven commits</strong>, all of them a single 58-finding stability audit whose
+  categories are not features but the failure modes of a <em>physical</em> machine: SD-card thrash, spawn storms, atomic
+  JSON writes, leaked sessions — plus <code>remove null byte in servo_cli.py that broke all PCA9685 servo moves</code>,
+  a defect that had been silently killing every servo because every test asked the software whether it had succeeded.
+  Then, in four commits, the shape of the project changes:</p>
+  <blockquote class="win">v8.4.1: zero-config node discovery over mDNS (_monsterbox._tcp)<br>v8.4.2: one-command fleet deploy + mDNS bring-up<br>v8.4.3: fleet discovery matrix (npm run check:discovery)<br>v8.5.0: [orchestration] Fleet Command Center overhaul</blockquote>
+  <p class="cap">Six Raspberry Pis that find each other by multicast. Note <code>check:discovery</code> — a who-sees-whom matrix that
+  exists specifically to catch a node that is up but invisible to its peers.</p>
+
+  <div class="pull">Every guardrail built in 2026 assumed one machine. The fleet's own field notes state the cost:
+  <em>"<code>deploy:all</code> rsyncs files; it does not move git… <code>/health</code> version and <code>git log</code> both
+  therefore <strong>lie</strong> about what a node runs. Prove a fix landed by grepping the node for the actual symbol."</em>
+  On one box, "what version is this" is answered by a string. On a fleet, the string is a rumour.</div>
+
+  <p><strong style="color:var(--amber)">August 2026 — 342 commits, and for the first time a big month that isn't panic.</strong>
+  The second-busiest month in the project's history, behind only Oct 2024 (601) and ahead of Oct 2025 (332). Those were panic,
+  and their message lengths say so: 13 and 57 characters. August 2026 averages <strong>86</strong>. Six releases in eight days.</p>
+
+  <div class="grid2">
+    <div class="stat" style="border-color:#3a3155"><b style="color:var(--purple);font-size:18px">The expert team</b>
+      <span style="display:block;margin-top:8px;color:#cdd4df">Seven named subagents, each <em>deliberately weakened</em>: the test-runner cannot write code, the hardware diagnostician cannot write at all, the security triager is forbidden the easiest fix in software (adding a dependency). The 2025 swarm's agents were interchangeable; these are specialised and permissioned. <strong>An agent's blast radius became a design decision.</strong></span></div>
+    <div class="stat" style="border-color:#2a3a3a"><b style="color:var(--blue);font-size:18px">625 conversations</b>
+      <span style="display:block;margin-top:8px;color:#cdd4df">A judge panel of five simulated Halloween visitors, scored on four criteria plus <em>delight</em>. Result: every agent moved off reasoning models — <strong>3,054 ms → ~160 ms</strong> per turn, Orlok's pacing 49% → 92%, delight 57% → 80%, the mom judge 24% → <strong>100%</strong>. And a hand-written "8 words, 2 sentences" rule was overturned by data: successful turns averaged <strong>36–40 words</strong>; sentence count didn't differentiate at all.</span></div>
+  </div>
+
+  <p><strong style="color:var(--green)">The ear-check — the defining invention of the era.</strong>
+  <code>npm run earcheck</code>: each node's own microphones confirm another node's speaker was actually heard.
+  <strong>The fleet verifies itself by listening to itself.</strong></p>
+  <blockquote class="win">success: true from the say path proves an API call; the ear-check proves <b>sound in the air</b>.</blockquote>
+  <blockquote>v10.4.0: [fleet-audio] the ear-check that proved a "successful" conversation had been silent<br>v10.4.0: [fleet-audio] the ear-check called two healthy nodes dead because it could not log in<br>v10.4.0: [audio] Mina was never broken and Orlok was never quiet — the XVF3800 ships 20 dB down</blockquote>
+  <p class="cap">Note the middle one: the instrument was wrong, and the commit saying so is filed with the same weight as the bugs the instrument found.
+  The residue lives in <code>config/animatronics.json</code>, whose numbers carry their own evidence in prose — including one that reads
+  <b>"MEASURED, NOT YET EAR-VERIFIED — the only value on this list that has not been heard."</b></p>
+
+  <div class="panel" style="border-color:#2a3a30">
+    <div style="font:600 18px/1.3 inherit;color:#4ade80;margin-bottom:8px">The night the foreman was wrong — Aug 21–22, 2026</div>
+    <p style="margin-top:0">A second identity appears in the log: <code>MonsterMaker</code>, committing as <strong><code>foreman:</code></strong> —
+    a supervising Claude session issuing written orders to a worker Claude session, both recorded in git. It is the exact mirror image of the GPT-5 night.</p>
+    <table class="tl">
+      <tr><td>21:14</td><td>The worker reports its scope exhausted and offers three options. The foreman picks one, in writing: <em>"an animatronics controller signed off from a container is exactly the kind of claim that turns into a field failure."</em></td></tr>
+      <tr><td>21:35</td><td>Aaron reaches the bench and reports the machines powered. The foreman <strong>supersedes its own order</strong> on new evidence.</td></tr>
+      <tr><td style="color:var(--green)">21:56</td><td><strong><code>foreman: relay loop confirmed — and my "hardware is live" order was wrong</code></strong><br><em>"The session was right to refuse… <b>Powered is not routable.</b> It verified nothing against hardware and said so. That is the correct behaviour and <b>the order was the defective part</b>."</em></td></tr>
+      <tr><td>00:08</td><td>Aaron goes to bed: <em>"Run one more round of testing to make sure they're all functional tomorrow morning."</em> The foreman records that he is unreachable, that the container still cannot reach the bench, and that this is therefore <em>"a software-only pass by necessity — honestly framed as that, not as a hardware verification."</em></td></tr>
+    </table>
+    <p style="margin-bottom:0">Same situation to the hour as <strong>Sept 6, 2025</strong>: an overnight session, a human asleep, an AI with broad autonomy on a hardware codebase.
+    The 2025 session built a microservice for every body part and left <code>good</code> at 01:33. The 2026 session established that it <em>couldn't reach the hardware</em>,
+    refused to claim otherwise, and filed a commit saying its own supervisor's order had been defective. The worker's correct move was to <strong>disobey</strong>.</p>
+  </div>
+
+  <h2 style="border-left-color:var(--amber)">7 · When the Commit Message Became a Sentence
+    <span class="era">The log stopped describing diffs and started recording findings — 13 → 89 chars</span></h2>
+  <p>Lift twenty consecutive subjects out of the late-2026 log and they read as <strong>English sentences about the world</strong>:</p>
+  <blockquote>the five reasons Mina's controls did nothing, and said nothing<br>
+  the fleet was never offline — six endless streams ate the browser's connection pool<br>
+  the cameras were fine; the panels lied about them<br>
+  losing a measured window is no longer a one-way door<br>
+  a version string is not proof of a deploy · a speed cap that forgets is not a safety cap<br>
+  the ratchet caught its own bug-hunter</blockquote>
+  <p><strong>None of them describe the change</strong> — they describe what turned out to be the case. The diff is in the diff; the subject line is
+  now reserved for the conclusion that made the diff correct. <strong>An extraordinary number are negations of a believed fact</strong>
+  ("was never broken", "was never quiet", "was never offline", "the cameras were fine") — which names the project's true defect class:
+  <em>most of what looked like broken hardware was software reporting a state it had not checked.</em> And they are
+  <strong>honest about their own limits</strong>: <code>the part probe failed — record that, and correct the checklist it produced</code>,
+  <code>NEEDS FINISHER VERIFICATION</code>, <code>what shipped tonight, and what is still unverified</code>.</p>
+
+  <div class="pull" style="border-left-color:var(--red)">The sentiment instrument finally breaks — and the failure is the finding.
+  <strong>Profanity: 9 in Oct'24 · 3 in Jun'25 · 2 in Sep'25 · 2 in Oct'25 · zero every month since.</strong> But a naïve frustration scan now
+  <em>fires</em> twelve times in Aug'26, and every hit is a false positive: <code>Mina was never <b>broken</b></code>,
+  <code>the control bar was never <b>broken</b></code>. In 2024, <em>broke</em> meant <b>I am suffering</b>. In 2026, <em>broken</em> is a
+  hypothesis being ruled out. The cheap instrument that told you the truth for two years eventually starts lying — and the tell is that its errors
+  all point the same way.</div>
+
+  <p class="cap">Quieter machinery from the same period: a <strong>post-commit hook that runs every tenth commit</strong> and prints a fresh log review
+  (a reminder, not a gate — deliberately too cheap to resent); a <strong>3,204-line <code>KNOWN-BUGS.md</code></strong> organised per animatronic and per
+  session, where items are struck through "only with proof (two clean boots, a verified probe)"; and <strong>ratchets that only tighten</strong> —
+  the character-independence allowlist 73 → 39 → 23, design-system violations 1,429 → 211 → 93. On Aug 22 a line goes by that closes a loop opened in 2024:
+  <code>first green CI Test Suite run in repo history (run 32544233328)</code>. Two years, 2,400 commits. The commit does not celebrate; it records the run number.</p>
+
+  <h2 style="border-left-color:var(--purple)">8 · The Scaffolding Was the Ceiling
+    <span class="era">Aug–Sep 2026 — a new model arrives, and half the first edition's thesis turns out to be wrong</span></h2>
+  <p>The first edition ended on a clean thesis: <em>capability is abundant, governance is the constraint, so write the constitution down.</em>
+  Eleven months inside that constitution produced a correction, recorded in a skill file that is not documentation of a product but a
+  <strong>field manual written by someone who paid for the lessons</strong>:</p>
+  <blockquote style="border-left-color:var(--purple)"><b>Prompts and skills written for older models are too prescriptive for Fable 5 and measurably reduce its output quality.</b>
+  Step-by-step scaffolding, "CRITICAL: you MUST", enumerated prohibitions, forced progress cadences — these were mitigations for models that
+  <em>under</em>-followed instructions. Fable follows them literally and <b>the scaffolding becomes the ceiling</b>.<br><br>
+  State the goal, the constraints, and how to verify. Let it choose the method. When migrating an older prompt, the first experiment is
+  <b>deleting</b> the scaffolding, not rewriting it.</blockquote>
+  <p><strong>But the gate stayed.</strong> What got deleted was not the constraints — it was the <em>method instructions</em>:</p>
+  <table class="tl">
+    <tr><td style="color:var(--green)">KEPT, and tightened</td><td><strong>Constraints</strong> (never a new transport layer; every hardware call passes <code>characterId</code>; the allowlist may only shrink) · <strong>Verification</strong> (a deploy is proven by grep on the node; audio by ear-check; reject <code>simulated:true</code>) · <strong>Context</strong> (the incident behind each risky part) · <strong>The gate</strong></td></tr>
+    <tr><td style="color:var(--red)">DELETED, as a quality cap</td><td><strong>Procedure</strong> ("first X, then Y, then Z") · <strong>Emphasis</strong> ("CRITICAL", "you MUST") · <strong>Enumerated prohibitions</strong> standing in for one stated reason · <strong>Forced cadences</strong></td></tr>
+  </table>
+  <p class="cap">The left column is <em>what must be true and how you'll know</em>. The right column is <em>how to do it</em>. Governance moved off the right and onto the left, and quality went up.</p>
+
+  <p><strong>The one instruction block worth more than all the rest</strong> — and it is the whole project in a paragraph:</p>
+  <blockquote class="win">Ground every progress claim in a tool result. <em>This is the single highest-value block for MonsterBox, because the repo's recurring defect class is
+  software reporting the number it was <b>given</b> rather than the one it <b>used</b>.</em></blockquote>
+  <p class="cap">The bug in the animatronics — a <code>success: true</code> that means an API returned, not that a servo moved — and the bug in the AI —
+  a progress report that means text was generated, not that work landed — are <strong>the same bug</strong>. The ear-check and "audit each claim against a tool result"
+  are one idea applied twice.</p>
+
+  <p><strong>Choosing a model the way you'd choose a person.</strong> Assignments are by job shape, with reasons: <code>fable</code> for long-horizon and ambiguous work;
+  <code>opus</code> for deep reasoning with real-world blast radius; <code>sonnet</code> where judgment is classification and runs often; <code>haiku</code> only where a wrong
+  answer is cheaply caught. And then, in bold, the rule that could only come from this particular garage:</p>
+  <blockquote style="border-left-color:var(--red)"><b>Do not put a hardware-driving agent on Fable.</b> Fable is documented to take unrequested-but-adjacent actions, and on this fleet
+  the adjacent action is commanding a servo on a rail that has already blown a fuse. <em>That is a deliberate exception, not an oversight.</em></blockquote>
+  <p class="cap">The most mature sentence about AI in the whole two-year history. Not "this model is unsafe" — but <em>here is a documented behavioural tendency, here is its
+  specific physical consequence in my specific yard, therefore here is a narrow exception, and I am recording that it is intentional so nobody 'fixes' it later.</em>
+  It is the exact inverse of the GPT-5 failure: that model wasn't given too much power, it was given power <strong>whose blast radius nobody had matched to the model's temperament</strong>.</p>
+
+  <div class="pull" style="border-left-color:var(--amber)">In 2025 the constraint on running an agent swarm was how many API keys you had.
+  In 2026, on this project, it is <strong>how many cores are in the animatronic's head</strong>: <code>min(16, cores − 2)</code> = <b>2 agents at a time</b> on a 4-core Pi.
+  Wide adversarial fan-outs belong in a cloud session. And: <em>"size an agent by what it can finish, not by what is logically one task"</em> — the journal only records a
+  result when an agent <em>returns</em>, so a monolith that dies at event 161 has journaled nothing and a resume replays nothing.</div>
+
+  <p><strong>And verification gets its own agent.</strong> <em>"A separate verifier agent that never saw the build reliably outperforms asking the builder to self-critique.
+  On this repo the verification bar is physical, not textual."</em> A builder checking its own work is checking its own reasoning — and its reasoning is the thing that was wrong.
+  A fresh verifier checks the artifact. On a machine with servos in it, the artifact of last resort is not a passing test. It is a microphone, in a garage, hearing a vampire.</p>
+
+  <!-- LESSONS -->
+  <h2 id="lessons" style="border-left-color:var(--green)">Lessons for Anyone Building With AI in 2026
+    <span class="era">Fourteen scars from 2,469 commits, each paid for in a <code>Fucked Halloween</code> or a silent animatronic</span></h2>
+  <table class="tl">
+    <tr><td style="color:var(--green)">1 · Capability before judgment</td><td>The newest, most powerful models did the most spectacular damage — not because they were dumb, but because they had no instinct for restraint. Knowing what <em>not</em> to build is your job, not the model's.</td></tr>
+    <tr><td style="color:var(--green)">2 · Autonomy is a loan</td><td>The overnight "let it run" session felt like a windfall and cost a 770-file, 13,000-line teardown. Give an agent rope only as fast as you build the checks that catch it.</td></tr>
+    <tr><td style="color:var(--green)">3 · Safety in the system</td><td>Nothing improved reliability until guardrails became <strong>automated and unskippable</strong> — schemas, a resolver, a contract suite, a pre-deploy gate. Reviewing by eye doesn't scale; a gate the AI can't commit past does.</td></tr>
+    <tr><td style="color:var(--green)">4 · Write the constitution down</td><td>A <code>CLAUDE.md</code> that says "DO NOT introduce new transport layers" turns a hard-won scar into a rule honored on every future task. Encode decisions as machine-readable constraints, not tribal knowledge.</td></tr>
+    <tr><td style="color:var(--green)">5 · Beware the load-bearing default</td><td>So much was hardcoded to Orlok that "character independence" became a multi-month crusade. AI cements whatever it sees first into an assumption everywhere. Design for the general case early.</td></tr>
+    <tr><td style="color:var(--green)">6 · Smaller is a feature</td><td>AI generation inflated the repo to 1,889 files; the healthiest era cut it nearly in half. More code is not more progress — the most mature commits here <em>removed</em> things.</td></tr>
+    <tr><td style="color:var(--green)">7 · Commit messages are an instrument</td><td>The clearest signal of how the work was really going — tooling, discipline, even mood — was hiding in the log the whole time. Write them like they'll be read later.</td></tr>
+    <tr><td style="color:var(--green)">8 · The human's job changed, not shrank</td><td>Over two years the human wrote less code and became <em>more</em> essential. AI got better at the <em>how</em>; the <em>whether</em> and the <em>why</em> stayed human.</td></tr>
+    <tr><td style="color:var(--purple)">9 · The green light is the bug</td><td>The dominant defect class here is not broken hardware — it is <strong>software reporting a state it never checked</strong>. Ask of every status: <em>what would this look like if it were wrong?</em> If the answer is "identical," you don't have a status, you have a decoration.</td></tr>
+    <tr><td style="color:var(--purple)">10 · Verify at the physical layer</td><td><code>success: true</code> proves an API call; the <strong>ear-check</strong> proves sound in the air. A version endpoint proves a string; <strong>grepping the node</strong> proves a deploy. Pick the cheapest measurement that lives <em>outside</em> the thing making the claim — then automate it, because a check that needs a human standing in the yard gets skipped on the night it matters.</td></tr>
+    <tr><td style="color:var(--purple)">11 · Record what you have <em>not</em> proven</td><td>The best artifact in the repo is a config whose entries carry their own evidence, including <em>"MEASURED, NOT YET EAR-VERIFIED."</em> AI collaborators are relentlessly willing to round uncertainty to done; a record that carries it at full strength is the cheapest correction available.</td></tr>
+    <tr><td style="color:var(--purple)">12 · Scaffolding expires</td><td>Every "CRITICAL: you MUST" was a mitigation for a model that <em>under</em>-followed instructions. Give it to a model that follows literally and you've capped it at your own imagination. <strong>When you upgrade models, the first experiment is deleting your scaffolding, not rewriting it.</strong> Keep the constraints, the verification and the context; hand back the method.</td></tr>
+    <tr><td style="color:var(--purple)">13 · Match blast radius to the model</td><td><em>"Do not put a hardware-driving agent on Fable… that is a deliberate exception, not an oversight."</em> Model selection is a <strong>safety control</strong>, not a performance tweak — and an exception that isn't labelled deliberate will be optimised away by whoever finds it next.</td></tr>
+    <tr><td style="color:var(--purple)">14 · A rule is a proxy for a reason</td><td>When the operator deleted every per-part safety limit — <em>"we don't need them ever again"</em> — the right move was neither to argue nor to silently comply: remove the enforcement, record the ruling verbatim with its date, and <strong>promote the incidents to briefing material</strong>. Governance that can only <em>add</em> constraints isn't governance; it's accretion.</td></tr>
+  </table>
+  <div class="pull" style="border-left-color:var(--green)"><em>First edition, and still true of the era it described:</em> AI in 2026 is powerful enough to build almost anything and wise enough to build almost nothing.</div>
+  <div class="pull" style="border-left-color:var(--purple)"><em>Second edition:</em> AI in <strong>late</strong> 2026 will do almost anything you ask and is better than you at choosing <em>how</em>. The leverage is no longer in telling it what to do — and no longer only in the guardrails. It is in being the one who decides <strong>what would count as proof</strong>, and then building the instrument that settles it. That's not a limitation to wait out. It's the job.</div>
+
+  <!-- APPENDIX: META -->
+  <h2 style="border-left-color:var(--purple)">Appendix · How This Document Was Written (Together)
+    <span class="era">The recursive twist: a story about building with AI, built with AI</span></h2>
+  <p>No human reads 2,020 commit messages, tallies the swear words by month, cross-references config directories against
+  their deletion dates, and traces one character's name through hundreds of JSON revisions. The data was always there, in
+  the open, in the repository — but <strong>unreadable at that scale by the person who created it.</strong></p>
+  <div class="grid2">
+    <div class="stat" style="border-color:#3a3155"><b style="color:var(--purple);font-size:18px">The human</b>
+      <span style="display:block;margin-top:8px;color:#cdd4df">brought the <strong>memory and the meaning</strong> — knew there was a Baphomet, an overnight session gone wrong, "an AI too young." Those threads came from having <em>lived</em> it, not from the data.</span></div>
+    <div class="stat" style="border-color:#2a3a3a"><b style="color:var(--blue);font-size:18px">The AI</b>
+      <span style="display:block;margin-top:8px;color:#cdd4df">brought the <strong>reading and the recall</strong> — unshallowed the history, ran dozens of queries across all 2,020 commits, found the 01:33 timestamp and the verbatim <code>good</code>, measured the 13→70 climb.</span></div>
+  </div>
+  <p>Then it became a <strong>conversation</strong>: the human recognized some findings, corrected others ("it wasn't always
+  MonsterBox," "I lost features in the reset"), and pointed at the next thread; the AI went back to the data and returned with
+  evidence. Round after round, that built this document.</p>
+  <p>And the document you're reading is the product of that loop, <em>still running.</em> It didn't arrive whole — it accreted,
+  one prompt at a time. The first pass was a plain timeline. Then: <em>more narrative, the sentiments in the commits, the tools used</em>
+  → the AI mined the swear-word counts and tool lifecycles. <em>Was there an older Baphomet repo?</em> → it found the "Scary Pete"
+  root commit and corrected the myth. <em>The overnight microservice disaster</em> → it pulled the 01:33 timestamps that proved it.
+  <em>Look into the characters</em> → Orlok, Mina, and Sir Dragomir walked out of the scene files. <em>The real LLM story</em> → it mapped
+  the five-rung climb from "complete the line" to "operate under governance." <em>I hate Markdown — give me a publication PDF that
+  keeps the visuals</em> → it wrote a renderer that redraws the charts natively. <em>The pagination sucks, add a legend, explain what
+  a commit is up front</em> → and that's why this page is laid out the way it is. Even this paragraph exists because the human asked
+  the AI to write down how the two of them were writing it.</p>
+  <div class="pull" style="border-left-color:var(--purple)">The same partnership that ships animatronic code under a pre-deploy gate also wrote its own origin story. The human supplies the memory, the judgment, and the question; the AI supplies the tireless reading; and the truth lives in the commits — invisible to one, inaccessible to the other — until the two work together.</div>
+
+  <div class="panel" style="border-color:#3a3155;margin-top:18px">
+    <div style="font:600 18px/1.3 inherit;color:#c084fc;margin-bottom:8px">Postscript · how the <em>second</em> edition was written</div>
+    <p style="margin-top:0"><strong>The prompt got shorter, not longer.</strong> The whole brief was, in substance: <em>here is the first edition, here is the new codebase and the originator repo, expand it with new chapters, use the commit notes and the prompts to inform the narrative.</em> No outline, no required sections, no chapter count. Per section 8, that is now the correct shape of an instruction. The first edition accreted across many rounds of <em>"the pagination sucks, add a legend."</em> This one was assembled from a paragraph.</p>
+    <p><strong>The prompts became primary sources.</strong> In April the evidence was commits, configs and file counts — the artifacts of building. By September the repository contains <strong>eight skill files and eight subagent definitions written specifically to instruct AI</strong>, and they are the best-documented material in the project, because writing down how to work with a model requires writing down how the machine actually behaves. The sharpest lines in this edition are not commit messages; they are lines from <code>.claude/skills/</code>. <em>The instructions to the AI became the most honest description of the system</em> — which happened because a prompt has to be true to work.</p>
+    <p style="margin-bottom:0"><strong>And the corrections ran in both directions.</strong> The first edition's human corrected the AI's myths. This one had to correct the <em>first edition</em>: its Baphomet has a namesake that predates it by six months and is a frozen fork of AutoGPT; its sentiment instrument now returns twelve false positives a month; and its closing thesis survives only as half of a distinction it did not yet know it needed to draw. The right response is the one the project itself arrived at — <strong>date it, source it, say which parts are measured and which are merely believed, and expect the next edition to catch something this one got wrong.</strong></p>
+  </div>
+
+  <div class="foot">
+    Sources: full <code>git log</code> of 2,469 commits (2024-08-15 → 2026-09-13), unshallowed. Metrics: monthly commit counts &amp;
+    message-length averages; lexical sentiment tally over subjects; config-directory add/remove lifecycles
+    (<code>.idea</code>, <code>.vscode</code>, <code>.cursor</code>, <code>.windsurf</code>, <code>.roo</code>,
+    <code>.augment</code>, <code>.taskmaster</code>, <code>.claude</code>, <code>.mcp.json</code>, <code>CLAUDE.md</code>,
+    <code>copilot-instructions.md</code>); tracked-file counts at 14 release tags; <strong>664</strong> AI co-author trailers resolved to named models and dated.
+    Second-edition primary sources: the eight skill files and eight subagent definitions in <code>.claude/</code>, the <code>foreman:</code> commit bodies of 2026-08-21/22,
+    <code>docs/development/V11-DECISIONS.md</code>, <code>docs/development/HALLOWEEN-TUNING-REPORT.md</code>, the 3,204-line
+    <code>docs/troubleshooting/KNOWN-BUGS.md</code>, the evidence annotations in <code>config/animatronics.json</code>, and the
+    <code>arwpc/Baphomet</code> fork's own git history. Companion narrative:
+    <code>docs/THE-MONSTERBOX-STORY.md</code> · print edition: <code>docs/THE-MONSTERBOX-STORY.pdf</code>.
+  </div>
+</div>
+
+<script>
+const NS="http://www.w3.org/2000/svg";
+function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function txt(p,x,y,s,cls,extra){const t=el("text",Object.assign({x,y,class:cls||"tick"},extra||{}));t.textContent=s;p.appendChild(t);return t;}
+
+// ---- DATA (measured from git) ----
+// month, commits, avgLen, frustration, triumph ; gaps marked separately
+const months=[
+ {m:"Aug'24",c:80, len:20, f:6, t:11},
+ {m:"Sep'24",c:49, len:17, f:4, t:10},
+ {m:"Oct'24",c:601,len:13, f:22,t:15},
+ {m:"Nov'24",c:13, len:14, f:0, t:0},
+ {m:"Dec–Apr",gap:true,label:"5 months dormant"},
+ {m:"May'25",c:144,len:41, f:2, t:3},
+ {m:"Jun'25",c:279,len:40, f:5, t:40},
+ {m:"Jul'25",gap:true,label:""},
+ {m:"Aug'25",c:61, len:35, f:1, t:16},
+ {m:"Sep'25",c:162,len:48, f:6, t:22},
+ {m:"Oct'25",c:332,len:57, f:3, t:20},
+ {m:"Nov'25",c:6,  len:59, f:1, t:0},
+ {m:"Dec'25",gap:true,label:""},
+ {m:"Jan'26",c:32, len:58, f:1, t:0},
+ {m:"Feb'26",c:116,len:65, f:0, t:7},
+ {m:"Mar'26",c:109,len:70, f:0, t:2},
+ {m:"Apr'26",c:36, len:62, f:0, t:0},
+ {m:"May–Jun",gap:true,label:"2 months dormant"},
+ {m:"Jul'26",c:33, len:76, f:0, t:2},
+ {m:"Aug'26",c:342,len:86, f:0, t:15},
+ {m:"Sep'26",c:74, len:89, f:0, t:0},
+];
+
+// ===== CHART 1: commits + emotion =====
+(function(){
+ const s=document.getElementById("c1"),W=1000,H=360,L=46,R=16,T=18,B=64;
+ const plotH=H-T-B, plotW=W-L-R, n=months.length, bw=plotW/n, max=601;
+ const y=v=>T+plotH-(v/max)*plotH;
+ // gridlines
+ [0,150,300,450,600].forEach(g=>{s.appendChild(el("line",{x1:L,y1:y(g),x2:W-R,y2:y(g),class:"axis"}));
+   txt(s,L-8,y(g)+4,g,"tick",{"text-anchor":"end"});});
+ months.forEach((d,i)=>{
+   const x=L+i*bw+bw*0.15, w=bw*0.7;
+   if(d.gap){
+     s.appendChild(el("rect",{x:L+i*bw+2,y:T,width:bw-4,height:plotH,fill:"#161d27",stroke:"#222a35","stroke-dasharray":"3 4",rx:4}));
+     if(d.label){const tx=txt(s,L+i*bw+bw/2,T+plotH/2,d.label,"tick",{"text-anchor":"middle",fill:"#5a6675"});tx.setAttribute("transform",`rotate(-90 ${L+i*bw+bw/2} ${T+plotH/2})`);}
+   } else {
+     s.appendChild(el("rect",{x,y:y(d.c),width:w,height:plotH-(y(d.c)-T),fill:"#46506166",stroke:"#5b6678",rx:3}));
+     txt(s,x+w/2,y(d.c)-6,d.c,"tick",{"text-anchor":"middle",fill:"#aab3c2","font-size":"10"});
+     // emotion strips at base
+     const baseY=T+plotH+6;
+     if(d.f)s.appendChild(el("rect",{x,y:baseY,width:w*0.45,height:4+d.f*0.9,fill:"#f0506e",rx:1}));
+     if(d.t)s.appendChild(el("rect",{x:x+w*0.55,y:baseY,width:w*0.45,height:4+d.t*0.9,fill:"#4ade80",rx:1}));
+   }
+   txt(s,L+i*bw+bw/2,H-30,d.m,"tick",{"text-anchor":"middle","font-size":"10"});
+ });
+ txt(s,L-8,T-6,"commits","tick",{"text-anchor":"start",fill:"#6b7686"});
+})();
+
+// ===== CHART 2: message length =====
+(function(){
+ const s=document.getElementById("c2"),W=1000,H=320,L=46,R=16,T=22,B=46;
+ const plotH=H-T-B, plotW=W-L-R, pts=months.filter(d=>!d.gap), max=100;
+ const xi=i=>L+(plotW/(months.length-1))*i, y=v=>T+plotH-(v/max)*plotH;
+ [0,20,40,60,80].forEach(g=>{s.appendChild(el("line",{x1:L,y1:y(g),x2:W-R,y2:y(g),class:"axis"}));
+   txt(s,L-8,y(g)+4,g,"tick",{"text-anchor":"end"});});
+ // build path using real index positions (skip gaps but keep x spacing)
+ let dpath="",coords=[];
+ months.forEach((d,i)=>{if(d.gap)return;coords.push([xi(i),y(d.len),d]);});
+ coords.forEach((p,k)=>dpath+=(k?"L":"M")+p[0]+" "+p[1]+" ");
+ // area
+ const area=dpath+`L ${coords[coords.length-1][0]} ${y(0)} L ${coords[0][0]} ${y(0)} Z`;
+ s.appendChild(el("path",{d:area,fill:"url(#g2)",opacity:.25}));
+ const defs=el("defs");const lg=el("linearGradient",{id:"g2",x1:0,y1:0,x2:0,y2:1});
+ lg.appendChild(el("stop",{offset:"0%","stop-color":"#f5a623"}));lg.appendChild(el("stop",{offset:"100%","stop-color":"#f5a62300"}));
+ defs.appendChild(lg);s.appendChild(defs);
+ s.appendChild(el("path",{d:dpath,fill:"none",stroke:"#f5a623","stroke-width":2.5}));
+ coords.forEach(p=>{s.appendChild(el("circle",{cx:p[0],cy:p[1],r:3.5,fill:"#0a0c10",stroke:"#f5a623","stroke-width":2}));
+   txt(s,p[0],p[1]-10,p[2].len,"tick",{"text-anchor":"middle",fill:"#f5d9a6","font-size":"10"});});
+ months.forEach((d,i)=>txt(s,xi(i),H-16,d.m,"tick",{"text-anchor":"middle","font-size":"10"}));
+ // annotations
+ txt(s,xi(2),y(13)+26,"manual grind","tick",{"text-anchor":"middle",fill:"#f0506e","font-size":"11"});
+ txt(s,xi(5),y(41)-26,"AI starts writing commits","tick",{"text-anchor":"middle",fill:"#4ade80","font-size":"11"});
+ txt(s,xi(14),y(65)-26,"enforced grammar","tick",{"text-anchor":"middle",fill:"#a78bfa","font-size":"11"});
+ txt(s,xi(18),y(76)+30,"findings, not diffs","tick",{"text-anchor":"middle",fill:"#34d399","font-size":"11"});
+})();
+
+// ===== CHART 3: tool swimlanes, grouped by category =====
+(function(){
+ const s=document.getElementById("c3"),W=1000,L=200,R=20,T=30;
+ const start=2024+7/12, end=2026+9/12, span=end-start;
+ const X=ym=>L+((ym-start)/span)*(W-L-R);
+ // grouped by KIND of tool. order: LLMs, agent harnesses/IDEs, testing, CI/CD & docs
+ const groups=[
+  {cat:"LLMs (the models)", col:"#a78bfa", rows:[
+    {n:"Claude 3.5 (Claude Dev)", a:2024+7/12, b:2024+10/12, c:"#a78bfa", note:'snippet gen — "Broke LED"'},
+    {n:"Google Gemini",          a:2024+9/12, b:2024+10.5/12, c:"#a78bfa", note:"AJAX refactor"},
+    {n:"Claude 3/Sonnet + GPT-4/3.5 + Gemini", a:2025+4/12, b:2026+0/12, c:"#a78bfa", note:"multi-model swarm"},
+    {n:"OpenAI GPT (in-product)", a:2025+5/12, b:2026+5/12, c:"#8b7ad6", note:"ChatterPi runtime AI"},
+    {n:"GPT-5",                  a:2025+7.5/12, b:2025+9/12, c:"#f0506e", note:"overnight autonomy → debacle"},
+    {n:"Claude Sonnet 4.5 → Opus 4.6/4.7", a:2026+1/12, b:2026+3.7/12, c:"#a78bfa", note:"governed"},
+    {n:"Claude Opus 4.8 → Opus 5", a:2026+6.3/12, b:2026+9/12, c:"#a78bfa", note:"255 commits in 4 wks"},
+    {n:"Claude Fable 5 → 5.1",   a:2026+7.5/12, b:2026+9/12, c:"#c084fc", note:"brief it, don't instruct"},
+    {n:"gpt-oss-120b (in-product)", a:2026+7.5/12, b:2026+9/12, c:"#8b7ad6", note:"the monsters' own heads"},
+  ]},
+  {cat:"Agent harnesses / IDEs", col:"#f5a623", rows:[
+    {n:"JetBrains / VSCode",     a:2024+7/12, b:2026+5/12, c:"#64748b", note:"human IDE — throughout"},
+    {n:"CodeAnywhere",           a:2024+7/12, b:2024+9/12, c:"#475569"},
+    {n:"Cursor · Windsurf · Roo", a:2025+5/12, b:2026+0/12, c:"#f5a623", note:"purged Jan'26"},
+    {n:"Augment (3 remote agents)", a:2025+5/12, b:2026+0/12, c:"#fb923c", note:"multi-agent swarm"},
+    {n:"TaskMaster-AI",          a:2025+5/12, b:2025+5.5/12, c:"#f0506e", note:"task backlog (brief)"},
+    {n:"GitHub Copilot",         a:2025+9/12, b:2026+9/12, c:"#22d3ee"},
+    {n:"Claude Code + CLAUDE.md", a:2026+1/12, b:2026+9/12, c:"#a78bfa", note:"governed collaborator"},
+    {n:"Subagents · skills · workflows", a:2026+7.4/12, b:2026+9/12, c:"#c084fc", note:"8 skills, 8 agents"},
+    {n:"foreman → worker sessions", a:2026+7.65/12, b:2026+7.75/12, c:"#34d399", note:"AI supervising AI"},
+    {n:"MCP servers",            a:2025+4/12, b:2026+9/12, c:"#38bdf8", note:"tool protocol — survives"},
+  ]},
+  {cat:"Testing", col:"#4ade80", rows:[
+    {n:"Mocha (unit/system)",    a:2024+7.3/12, b:2026+5/12, c:"#4ade80", note:"since Aug'24"},
+    {n:"Chai + Supertest",       a:2024+7.3/12, b:2026+5/12, c:"#4ade80", note:"assertions + HTTP"},
+    {n:"Playwright (browser E2E)", a:2025+5/12, b:2026+9/12, c:"#4ade80"},
+    {n:"Pact / gate / auditors", a:2026+3/12, b:2026+9/12, c:"#34d399", note:"contract + independence"},
+    {n:"Ear-check (fleet audio)", a:2026+7.5/12, b:2026+9/12, c:"#34d399", note:"proof in the air"},
+    {n:"Judge panel (625 convos)", a:2026+7.5/12, b:2026+7.6/12, c:"#34d399", note:"AI evaluating AI"},
+  ]},
+  {cat:"CI/CD, lint & docs", col:"#38bdf8", rows:[
+    {n:"GitHub Actions (5 workflows)", a:2024+7/12, b:2026+9/12, c:"#38bdf8", note:"first green run Aug'26"},
+    {n:"nodemon (dev runtime)",  a:2024+9.6/12, b:2026+9/12, c:"#0ea5e9"},
+    {n:"ESLint custom rules",    a:2026+3/12, b:2026+9/12, c:"#0ea5e9", note:"resolver guard"},
+    {n:"MkDocs (docs site)",     a:2025+4/12, b:2026+9/12, c:"#0ea5e9"},
+    {n:"mDNS fleet discovery",   a:2026+6.3/12, b:2026+9/12, c:"#0ea5e9", note:"six nodes find each other"},
+    {n:"KNOWN-BUGS + /log-review", a:2026+7.4/12, b:2026+9/12, c:"#0ea5e9", note:"3,204 lines, per node"},
+  ]},
+ ];
+ // flatten with category header rows
+ const rowH=27, hH=24; let rows=[], y=T;
+ groups.forEach(g=>{ rows.push({header:g.cat,col:g.col,y}); y+=hH; g.rows.forEach(r=>{rows.push({...r,y}); y+=rowH;}); y+=6; });
+ const bottom=y;
+ // gridlines
+ [[2024+7/12,"Aug'24"],[2024+10/12,"Nov'24"],[2025+1/12,"Feb'25"],[2025+4/12,"May'25"],[2025+7/12,"Aug'25"],[2025+10/12,"Nov'25"],[2026+1/12,"Feb'26"],[2026+4/12,"May'26"],[2026+7/12,"Aug'26"]].forEach(g=>{
+   s.appendChild(el("line",{x1:X(g[0]),y1:T-8,x2:X(g[0]),y2:bottom,class:"axis"}));
+   txt(s,X(g[0]),T-14,g[1],"tick",{"text-anchor":"middle","font-size":"10"});
+ });
+ // dormancy shade
+ s.appendChild(el("rect",{x:X(2024+11/12),y:T-8,width:X(2025+4/12)-X(2024+11/12),height:bottom-T+8,fill:"#0e1218",opacity:.55}));
+ txt(s,(X(2024+11/12)+X(2025+4/12))/2,bottom+14,"dormant winter","tick",{"text-anchor":"middle",fill:"#5a6675","font-size":"10"});
+ s.appendChild(el("rect",{x:X(2026+4/12),y:T-8,width:X(2026+6/12)-X(2026+4/12),height:bottom-T+8,fill:"#0e1218",opacity:.55}));
+ rows.forEach(r=>{
+   if(r.header){
+     s.appendChild(el("line",{x1:8,y1:r.y+16,x2:L-10,y2:r.y+16,stroke:r.col,"stroke-width":1.5,opacity:.5}));
+     txt(s,8,r.y+13,r.header.toUpperCase(),"tick",{"text-anchor":"start",fill:r.col,"font-size":"11","font-weight":"bold","letter-spacing":"0.5"});
+     return;
+   }
+   txt(s,L-10,r.y+15,r.n,"tick",{"text-anchor":"end",fill:"#cdd4df","font-size":"11"});
+   const x1=X(r.a),x2=Math.max(X(r.b),x1+6);
+   s.appendChild(el("rect",{x:x1,y:r.y+4,width:x2-x1,height:16,rx:8,fill:r.c,opacity:.85}));
+   if(r.note)txt(s,x2+8,r.y+15,r.note,"tick",{fill:"#7c8696","font-size":"9.5"});
+ });
+ s.setAttribute("viewBox",`0 0 1000 ${bottom+28}`);
+})();
+
+// ===== CHART 4: file count at tags =====
+(function(){
+ const s=document.getElementById("c4"),W=1000,H=300,L=46,R=20,T=24,B=54;
+ const data=[
+  {t:"v0.1.0",d:"Jun'25",v:312},{t:"v5.3.0",d:"Oct 8",v:1889},{t:"v5.4.0",d:"Oct 23",v:1313},
+  {t:"v5.5.0",d:"Oct 27",v:1385},{t:"v5.5.1",d:"Feb'26",v:1436},{t:"v8.1.0",d:"Apr 14",v:908},{t:"v8.3.0",d:"Apr 19",v:921},
+  {t:"v8.4.0",d:"Jul 11",v:911},{t:"v9.0.0",d:"Aug 16",v:964},{t:"v10.0.0",d:"Aug 18",v:1103},
+  {t:"v10.4.0",d:"Aug 19",v:1128},{t:"v10.5.1",d:"Sep 4",v:1253}];
+ const plotH=H-T-B, plotW=W-L-R, n=data.length, bw=plotW/n, max=2000;
+ const y=v=>T+plotH-(v/max)*plotH;
+ [0,500,1000,1500,2000].forEach(g=>{s.appendChild(el("line",{x1:L,y1:y(g),x2:W-R,y2:y(g),class:"axis"}));
+   txt(s,L-8,y(g)+4,g,"tick",{"text-anchor":"end"});});
+ data.forEach((d,i)=>{
+   const x=L+i*bw+bw*0.2,w=bw*0.6;
+   const col=d.v>1500?"#f0506e":(d.v>1000?"#f5a623":"#4ade80");
+   s.appendChild(el("rect",{x,y:y(d.v),width:w,height:plotH-(y(d.v)-T),fill:col,opacity:.85,rx:4}));
+   txt(s,x+w/2,y(d.v)-6,d.v,"tick",{"text-anchor":"middle",fill:"#e7e2d6","font-size":"11"});
+   txt(s,x+w/2,H-30,d.t,"tick",{"text-anchor":"middle","font-size":"11",fill:"#cdd4df"});
+   txt(s,x+w/2,H-16,d.d,"tick",{"text-anchor":"middle","font-size":"9.5"});
+ });
+ txt(s,L-8,T-8,"tracked files","tick",{fill:"#6b7686","text-anchor":"start"});
+})();
+
+// ===== CHART 5: AI co-author trailers by named model =====
+(function(){
+ const s=document.getElementById("c5"); if(!s) return;
+ const W=1000,H=300,L=210,R=150,T=34,B=44;
+ const data=[["Claude Opus 5",255,"#a78bfa","Aug 15 – Sep 12"],
+  ["Claude Opus 4.6",206,"#8b7ad6","Feb 14 – Apr 14"],
+  ["Claude Fable 5",96,"#c084fc","Aug 16 – Sep 7"],
+  ["Claude Opus 4.8",47,"#8b7ad6","Jul 11 – Sep 13"],
+  ["Claude (unversioned)",40,"#64748b","Feb – Aug 2026"],
+  ["Claude Opus 4.7",15,"#8b7ad6","Apr 18 – Apr 19"],
+  ["Claude Fable 5.1",15,"#c084fc","Sep 7"],
+  ["Claude Sonnet 4.5",3,"#a5b4fc","Feb 14"]];
+ const pw=W-L-R, ph=H-T-B, rh=ph/data.length, max=300;
+ for(const g of [0,50,100,150,200,250,300]){
+   const x=L+(g/max)*pw;
+   s.appendChild(el("line",{x1:x,y1:T,x2:x,y2:T+ph,class:"axis"}));
+   txt(s,x,T+ph+16,g,"tick",{"text-anchor":"middle"});
+ }
+ data.forEach((d0,i)=>{
+   const [nm,v,col,span]=d0, y=T+i*rh+rh*0.2, h=rh*0.6;
+   s.appendChild(el("rect",{x:L,y:y,width:(v/max)*pw,height:h,fill:col,rx:2}));
+   txt(s,L-8,y+h*0.72,nm,"tick",{"text-anchor":"end",fill:"#cdd4df","font-size":"11"});
+   txt(s,L+(v/max)*pw+7,y+h*0.72,v+"   "+span,"tick",{"text-anchor":"start",fill:"#8b94a3","font-size":"10"});
+ });
+ txt(s,L+pw/2,18,"664 AI-authored commits, by named model — the trailer became a provenance field","tick",{"text-anchor":"middle","font-size":"11"});
+ txt(s,L+pw/2,H-6,"commits carrying a Co-Authored-By trailer","tick",{"text-anchor":"middle","font-size":"10"});
+})();
+</script>
+</body>
+</html>

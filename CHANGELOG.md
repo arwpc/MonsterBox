@@ -4,6 +4,20 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **The MonsterBox Story, second edition** (`docs/THE-MONSTERBOX-STORY.md` + `.html` + `.pdf`).
+  The commit-history narrative is extended from 2,020 commits / Apr 19 2026 to **2,469 commits /
+  Sep 13 2026**, adding four acts: **VIII — The Fleet** (the July stability audit and mDNS
+  multi-node bring-up), **IX — The August Surge** (342 commits, the expert-agent team, the
+  625-conversation judge panel, the ear-check, the `foreman:` night, and the safety ruling),
+  **X — When the Commit Message Became a Sentence** (the grammar shift to findings, and why the
+  lexical sentiment scan now returns false positives), and **XI — The Scaffolding Was the
+  Ceiling** (Fable 5/5.1, and the distinction between constraints/verification/context, which
+  were kept, and method instructions, which were deleted). Also: a prologue postscript on
+  `arwpc/Baphomet` (a frozen AutoGPT fork predating the animatronic), the models table rebuilt
+  from **664** dated co-author trailers, two new arc rungs, and six new lessons. All four charts
+  extended through Sep 2026 and a fifth added (AI trailers by named model); `scripts/build-story-pdf.py`
+  regenerates the 36-page PDF offline.
+
 - **AI is now a persistent, server-side agent controlled by the AI toggle (and Lurk).** The dashboard AI
   toggle drives `POST /conversation/api/ai-on` (the headless agent) instead of a page-bound browser
   socket. Turning AI OFF now actually STOPS the conversation; the animatronic keeps conversing after
