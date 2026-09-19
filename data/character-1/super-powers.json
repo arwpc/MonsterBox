@@ -27,7 +27,7 @@
     }
   },
   "followOrders": {
-    "enabled": false,
+    "enabled": true,
     "requireAddressByName": false,
     "addressAliases": [],
     "ackMode": "speak",

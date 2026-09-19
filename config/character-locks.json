@@ -23,8 +23,9 @@
         "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "servos.json": "1c9cf70286dd56b67639934f2a1e55628bac23f99608ef18161d041b98a9664f",
         "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
-        "super-powers.json": "0df62cf7a962c209bd144b31a1b39e1fd90f1799f72da9d27591fe35cd2c2962"
-      }
+        "super-powers.json": "48f060d3b61f0ecbd5cadfdb5affdeb2a7be18351981395b6498009f92a9ea8a"
+      },
+      "refreshedAt": "2026-09-19T23:53:51.234Z"
     }
   ]
 }

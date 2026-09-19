@@ -82,7 +82,9 @@ router.put('/config/:characterId', async (req, res) => {
         await fs.writeFile(configPath, JSON.stringify(req.body, null, 2));
         res.json({ success: true, message: 'Movement config updated' });
     } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        // A locked character carries its own status (423) — reporting that as a
+        // 500 tells the caller the server broke when the answer is "refused".
+        res.status(Number(err && err.status) || 500).json({ success: false, error: err.message });
     }
 });
 
