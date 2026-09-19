@@ -299,7 +299,9 @@ describe('Orchestration API (Fleet Command Center)', () => {
     //
     // The fan-out assertion is worth keeping, so capture the real state first and
     // put it back afterwards rather than dropping `mute` from the list.
-    ['lurk', 'jaw', 'head', 'motion', 'mute', 'idle', 'orders'].forEach((feature) => {
+    // 'idle' left this list when the standalone Idle toggle was removed (AI now
+    // starts only from Lurk/AI); asking for it is a 400 by design, not a bug.
+    ['lurk', 'jaw', 'head', 'motion', 'mute', 'orders'].forEach((feature) => {
       it(`toggles ${feature} across the fleet (test mode)`, async () => {
         const res = await request(BASE_URL).post(`/api/orchestration/superpower/${feature}`)
           .send({ enabled: true }).expect(200);

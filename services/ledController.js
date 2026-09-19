@@ -33,6 +33,7 @@ import { EventEmitter } from 'events';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { assertConfigPathWritable } from './characterConfigLock.js';
 import ledDaemon from './hardwareService/ledRingDaemonClient.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -537,6 +538,7 @@ class LedController extends EventEmitter {
 
         parts[index] = { ...parts[index], config, updated: new Date().toISOString() };
         try {
+            assertConfigPathWritable(file, 'saving LED configuration');
             await fs.writeFile(file, JSON.stringify(parts, null, 2) + '\n', 'utf8');
         } catch (err) {
             return { success: false, reason: 'write-failed', error: err.message };

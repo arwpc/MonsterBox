@@ -87,7 +87,9 @@
     "gate": "node scripts/gate.mjs",
     "audit:design-system": "node scripts/audit-design-system.mjs",
     "test:browser:solo": "bash scripts/test-browser-solo.sh",
-    "log:review": "node scripts/log-review.mjs"
+    "log:review": "node scripts/log-review.mjs",
+    "lock:status": "node scripts/character-lock.mjs status",
+    "lock:verify": "node scripts/character-lock.mjs verify"
   },
   "keywords": [
     "animatronic",

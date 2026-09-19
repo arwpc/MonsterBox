@@ -1,5 +1,81 @@
 {
   "characterId": 1,
-  "poses": [],
-  "templates": {}
+  "poses": [
+    {
+      "id": 1,
+      "name": "Body Sway (left)",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 60,
+            "duration": 1200
+          }
+        }
+      ],
+      "created": "2026-09-13T23:05:24.157Z"
+    },
+    {
+      "id": 2,
+      "name": "Body Sway (right)",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "backward",
+            "speed": 60,
+            "duration": 1200
+          }
+        }
+      ],
+      "created": "2026-09-13T23:05:24.296Z"
+    }
+  ],
+  "templates": {
+    "elbow": {
+      "description": "Elbow bend presets",
+      "options": [
+        {
+          "name": "Straight",
+          "angleDeg": 0
+        },
+        {
+          "name": "Half Bend",
+          "angleDeg": 45
+        },
+        {
+          "name": "Full Bend",
+          "angleDeg": 90
+        }
+      ]
+    },
+    "head": {
+      "description": "Head motions",
+      "options": [
+        {
+          "name": "Stop",
+          "action": "stop"
+        },
+        {
+          "name": "Wiggle",
+          "action": "random"
+        },
+        {
+          "name": "Rotate 360",
+          "action": "rotate_360"
+        }
+      ]
+    }
+  }
 }

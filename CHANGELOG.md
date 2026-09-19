@@ -4,6 +4,23 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **A finished character can now be LOCKED so nothing can change his configuration.**
+  `config/character-locks.json` freezes a character's show config — parts, poses, scenes,
+  super-powers, calibration, movement config, gestures, queues, `ai-config/`, images and his
+  registry entry — and every write path refuses it (HTTP 423, `CHARACTER_CONFIG_LOCKED`).
+  Runtime state stays writable, so a locked character still plays, talks and moves; he just
+  cannot be reconfigured. A deploy now also excludes a locked character's whole data directory
+  (`scenes.json` was never in the per-file excludes, so a routine `deploy:all` could have
+  overwritten it). CLI: `npm run lock:status`, `npm run lock:verify`,
+  `node scripts/character-lock.mjs lock|refresh|unlock <id>`. See
+  `docs/development/CHARACTER-CONFIG-LOCKS.md`.
+  **PumpkinHead (character 1) is locked as of 2026-09-19** — his authoritative config was pulled
+  from his own node into the repo first, so the committed copy is the real one.
+
+- Fixed two stale tests/data found while landing the lock: the fleet-superpower system test still
+  asked for the removed `idle` feature (a 400 by design since v10.6.0), and
+  `data/audio-library/library.json` carried `totalFiles: 133` against 80 entries.
+
 - **AI is now a persistent, server-side agent controlled by the AI toggle (and Lurk).** The dashboard AI
   toggle drives `POST /conversation/api/ai-on` (the headless agent) instead of a page-bound browser
   socket. Turning AI OFF now actually STOPS the conversation; the animatronic keeps conversing after

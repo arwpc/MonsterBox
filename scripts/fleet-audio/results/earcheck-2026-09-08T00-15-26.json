@@ -1,0 +1,50 @@
+{
+  "ranAt": "2026-09-08T00:15:26.252Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 6,
+      "name": "Renfield",
+      "hostname": "renfield",
+      "ip": "192.168.8.224",
+      "sink": "58. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "The works are still open! Sign nothing tonight, I beg you, sign nothing!",
+      "sayOk": true,
+      "voiceUsed": "zzG73sCjG25Zj6km5X4M",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "reSpeaker XVF3800 4-Mic Array",
+          "dev": "plughw:2,0",
+          "floorDb": -46,
+          "castP90Db": -28.8,
+          "castPeakDb": -6,
+          "riseDb": 17.2,
+          "floorFlat": true,
+          "transcript": "The works are still open. Sign nothing tonight, I beg you. Sign nothing",
+          "recall": 1
+        },
+        {
+          "label": "1080P Webcam",
+          "dev": "plughw:3,0",
+          "floorDb": -40.9,
+          "castP90Db": -13.2,
+          "castPeakDb": 0,
+          "riseDb": 27.8,
+          "floorFlat": false,
+          "transcript": "The works are still open. Sign nothing tonight, I beg you. Sign nothing",
+          "recall": 1
+        }
+      ],
+      "bestMic": "1080P Webcam",
+      "floorDb": -40.9,
+      "castDb": -13.2,
+      "riseDb": 27.8,
+      "recall": 1,
+      "transcript": "The works are still open. Sign nothing tonight, I beg you. Sign nothing",
+      "verdict": "AUDIBLE"
+    }
+  ]
+}

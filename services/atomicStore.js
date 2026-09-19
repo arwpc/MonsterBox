@@ -11,6 +11,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import { assertConfigPathWritable } from './characterConfigLock.js';
 
 let _tmpCounter = 0;
 
@@ -23,6 +24,9 @@ let _tmpCounter = 0;
  * @param {{ spaces?: number }} [opts] - indentation (default 2)
  */
 export async function writeJsonAtomic(filePath, value, { spaces = 2 } = {}) {
+  // A locked character's configuration is frozen: refuse here so every route and
+  // service that persists JSON inherits the guard without repeating it.
+  assertConfigPathWritable(filePath);
   const dir = path.dirname(filePath);
   // Unique temp name so concurrent writers don't collide on one .tmp file.
   const tmp = path.join(dir, `.${path.basename(filePath)}.${process.pid}.${_tmpCounter++}.tmp`);

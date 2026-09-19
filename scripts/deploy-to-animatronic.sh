@@ -143,7 +143,24 @@ set +e
 #    toggles, and selected character. Deploying used to overwrite a node's
 #    live calibration with the deploying node's stale copy of it — a deploy
 #    must bring code, never another machine's measurements.
+# A LOCKED character's whole data directory is excluded on top of the list
+# below. config/character-locks.json freezes a finished animatronic's show
+# configuration; a deploy that still pushed this node's scenes.json (which is
+# NOT in the per-file excludes) over his would undo the lock from the outside.
+LOCK_EXCLUDES=()
+while read -r LOCKED_ID; do
+    [ -n "$LOCKED_ID" ] || continue
+    LOCK_EXCLUDES+=(--exclude "data/character-${LOCKED_ID}/")
+    echo "🔒 character ${LOCKED_ID} is LOCKED — its data/ directory will not be overwritten by this deploy."
+done < <(node -e "
+  try {
+    const d = require('./config/character-locks.json');
+    for (const l of (d.locks || [])) if (l && l.characterId != null && l.active !== false) console.log(l.characterId);
+  } catch (_) { /* no lock file: nothing locked */ }
+" 2>/dev/null)
+
 ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
+    "${LOCK_EXCLUDES[@]}" \
     --exclude 'node_modules' \
     --exclude 'data/character-*/parts.json' \
     --exclude 'data/character-*/poses.json' \

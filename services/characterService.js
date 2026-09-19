@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from './configService.js';
 import { writeJsonAtomic } from './atomicStore.js';
+import { assertCharacterConfigWritable } from './characterConfigLock.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -204,6 +205,7 @@ export async function createCharacter(data) {
 }
 
 export async function updateCharacter(id, updates) {
+  assertCharacterConfigWritable(id, 'editing the character registry entry');
   const characters = await loadCharacters();
   for (var i = 0; i < characters.length; i++) {
     if (characters[i].id === id) {
@@ -230,6 +232,7 @@ async function archiveCharacterDataDir(dir, characterId) {
 }
 
 export async function deleteCharacter(id) {
+  assertCharacterConfigWritable(id, 'deleting the character');
   const characters = await loadCharacters();
   var idx = -1;
   for (var i = 0; i < characters.length; i++) {

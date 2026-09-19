@@ -1,42 +1,89 @@
 {
   "jawAnimation": {
-    "enabled": true,
-    "servoPartId": "10",
-    "activeConfigId": "config-1",
-    "configs": [
-      {
-        "id": "config-1",
-        "name": "Default",
-        "sensitivity": 1,
-        "smoothing": 0.6,
-        "volumeThreshold": 0.02,
-        "attackTime": 50,
-        "releaseTime": 150,
-        "useBandpassFilter": true,
-        "useAGC": true,
-        "quantizationLevels": 10,
-        "preset": "speech",
-        "minAngle": 63,
-        "maxAngle": 131,
-        "audioLeadTimeMs": 0,
-        "testText": "Hello I am Count Orlok."
-      }
-    ]
+    "enabled": false,
+    "servoPartId": null,
+    "activeConfigId": null,
+    "configs": [],
+    "_why": "This character has no servo at all (see parts.json), so there is no jaw to animate. The former Default config carried minAngle/maxAngle null, which failed schema validation at every start (affected subsystems degrade) and both test suites. Empty configs is the same shape Renfield uses; add a real config only when a jaw servo exists.",
+    "ledSync": {
+      "enabled": true,
+      "partId": "9",
+      "colorLow": [
+        70,
+        0,
+        0
+      ],
+      "colorHigh": [
+        255,
+        120,
+        0
+      ],
+      "sensitivity": 1.5,
+      "smoothing": 0.5,
+      "attackMs": 40,
+      "releaseMs": 120,
+      "speed": 1,
+      "offsetMs": 725
+    }
+  },
+  "followOrders": {
+    "enabled": false,
+    "requireAddressByName": false,
+    "addressAliases": [],
+    "ackMode": "speak",
+    "ackPhrases": [
+      "As you command."
+    ],
+    "refusalPhrases": [],
+    "minConfidence": 0.6,
+    "cooldownMs": 2000,
+    "defaultDurationMs": 1200,
+    "maxDurationMs": 3000,
+    "enablePoseMatching": true,
+    "enableGestureMatching": true,
+    "enablePartMatching": true,
+    "commands": [],
+    "partAliases": []
+  },
+  "aiMotion": {
+    "enabled": false,
+    "triggers": {
+      "agentGesture": true,
+      "guestCommand": true,
+      "ambientDuringSpeech": true
+    },
+    "permissions": {
+      "allowedRoles": [
+        "head",
+        "jaw",
+        "eye",
+        "arm",
+        "light"
+      ],
+      "deniedPartIds": [],
+      "kidSafeOnly": false,
+      "cooldownMs": 3000,
+      "maxPerConversation": 0,
+      "minConfidence": 0.6,
+      "requireAddressByName": false,
+      "ambientMinAmplitude": 0.2,
+      "ambientMaxAmplitude": 0.5
+    }
   },
   "headTracking": {
-    "opencvEnabled": false,
+    "opencvEnabled": true,
     "enabled": false,
     "panServoId": null,
-    "webcamPartId": null,
-    "centerDeg": 10,
-    "rangeDeg": 45,
-    "invertPan": true,
-    "smoothing": 0.5,
-    "deadzone": 8,
-    "motionThreshold": 40,
-    "minContourArea": 500,
-    "maxContourArea": 20000,
-    "backgroundLearningRate": 0.05,
+    "webcamPartId": "6",
+    "centerDeg": 0,
+    "rangeDeg": 60,
+    "invertPan": false,
+    "smoothing": 0.25,
+    "deadzone": 5,
+    "motionThreshold": 25,
+    "minContourArea": 3000,
+    "maxContourArea": 100000,
+    "backgroundLearningRate": 0.005,
     "noiseReductionKernelSize": 5,
     "blurSize": 5,
     "dilateSize": 9,
@@ -44,7 +91,6 @@
     "targetLockStrength": 5,
     "confirmFrames": 3,
     "detectInterval": 5,
-    "detectionMode": "person",
-    "presets": []
+    "detectionMode": "person"
   }
 }

@@ -154,7 +154,12 @@ describe('character image service — registered characters keep working', funct
   });
 
   it('round-trips an upload for a registered character', async function () {
-    const id = ids[0];
+    // A LOCKED character's images are frozen (config/character-locks.json), so
+    // the round-trip has to run against a character that is still editable —
+    // picking ids[0] blindly made this test fail the day one was locked.
+    const { isCharacterLocked } = await import('../../services/characterConfigLock.js');
+    const id = ids.find(c => !isCharacterLocked(c));
+    if (id == null) return this.skip();
     const name = '__probe_upload__.png';
     const dir = path.join(DATA_ROOT, `character-${id}`, 'images');
     const file = path.join(dir, name);

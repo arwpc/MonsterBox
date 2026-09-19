@@ -1,0 +1,51 @@
+{
+  "ranAt": "2026-09-08T00:07:42.105Z",
+  "conductor": "orlok",
+  "rows": [
+    {
+      "id": 5,
+      "name": "Groundbreaker",
+      "hostname": "groundbreaker",
+      "ip": "192.168.8.200",
+      "sink": "81. Audio Adapter (Unitek Y-247A) Analog Stereo [vol: 1.00]",
+      "sinkVolume": 1,
+      "phrase": "THIS ROOF IS MINE. COME DOWN FROM THE STREET AND SEE.",
+      "sayOk": true,
+      "voiceUsed": "vfaqCOvlrKi4Zp7C2IAm",
+      "voiceFallback": false,
+      "voiceCorrect": true,
+      "mics": [
+        {
+          "label": "USB Audio Device",
+          "dev": "plughw:3,0",
+          "floorDb": -83.4,
+          "castP90Db": -82.4,
+          "castPeakDb": -70.3,
+          "riseDb": 1,
+          "floorFlat": false,
+          "transcript": "[pause]",
+          "recall": 0
+        },
+        {
+          "label": "USB Camera",
+          "dev": "plughw:4,0",
+          "floorDb": -40.3,
+          "castP90Db": -2.5,
+          "castPeakDb": 0,
+          "riseDb": 37.8,
+          "floorFlat": true,
+          "transcript": "[outro jingle]",
+          "recall": 0
+        }
+      ],
+      "bestMic": "USB Camera",
+      "floorDb": -40.3,
+      "castDb": -2.5,
+      "riseDb": 37.8,
+      "recall": 0,
+      "transcript": "[outro jingle]",
+      "verdict": "GARBLED",
+      "diagnosis": "sound present but unintelligible — check clipping, distortion, or mic placement; USB Camera shows a dead-flat floor (jack likely empty)"
+    }
+  ]
+}

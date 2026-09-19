@@ -25,6 +25,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { assertConfigPathWritable } from './characterConfigLock.js';
 import { PRIORITY, claimServo, releaseServo } from './movement/priorityManager.js';
 import { transitionServos } from './movement/transitionEngine.js';
 import { getPoseById } from './movement/poseLibrary.js';
@@ -512,6 +513,7 @@ async function writeVocabulary(characterId, gestures) {
         // New file — nothing to preserve.
     }
     const payload = { ...existing, version: SCHEMA_VERSION, gestures };
+    assertConfigPathWritable(file, 'saving the gesture vocabulary');
     await fs.writeFile(file, serializeVocabulary(payload), 'utf8');
     // loadGestures() caches on mtime, so a fresh stat is enough to pick this up —
     // but dropping the entry makes the next read deterministic rather than

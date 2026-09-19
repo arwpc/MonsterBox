@@ -10,6 +10,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { assertConfigPathWritable } from '../characterConfigLock.js';
 import { getRandomIdlePose, poseAngles } from './poseLibrary.js';
 import { claimServo, releaseAll, getActiveClaims, getOwner, PRIORITY } from './priorityManager.js';
 import { applyPoseJitter, getEffectiveWindow, clampIntoWindow } from '../poses/poseBounds.js';
@@ -101,7 +102,14 @@ async function loadConfig(charId) {
             console.log(`[IdleLoop] Creating default movement-config.json for character ${charId}`);
             const dirPath = path.join(DATA_DIR, `character-${charId}`);
             await fs.mkdir(dirPath, { recursive: true });
-            await fs.writeFile(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2), 'utf8');
+            try {
+                assertConfigPathWritable(configPath, 'creating a default movement config');
+                await fs.writeFile(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2), 'utf8');
+            } catch (lockErr) {
+                // A locked character keeps running on the in-memory default
+                // rather than having a file written into his frozen config.
+                console.warn(`[IdleLoop] ${lockErr.message}`);
+            }
             return { ...DEFAULT_CONFIG };
         }
         console.error(`[IdleLoop] Error reading movement config for character ${charId}:`, err.message);

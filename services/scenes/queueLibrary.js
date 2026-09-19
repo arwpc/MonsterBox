@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
+import { assertConfigPathWritable } from '../characterConfigLock.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -100,6 +101,7 @@ export async function loadQueues(characterId){
 
 export async function saveQueues(characterId, queues){
   const p = await getQueuesPath(characterId);
+  assertConfigPathWritable(p, 'saving scene queues');
   await fs.writeFile(p, JSON.stringify(queues, null, 2), 'utf8');
 }
 

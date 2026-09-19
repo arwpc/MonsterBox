@@ -1,18 +1,22 @@
 [
   {
     "id": "1",
-    "name": "Wiper Motor",
+    "name": "Body Shakes",
     "type": "motor",
     "pin": null,
-    "description": "Test updated via comprehensive tests",
+    "description": "Jeep Wagoneer wiper motor (MDD10A, dir GPIO26 / pwm GPIO13). A hard 100% (DC-on) start drags the shared 12V rail and resets the Pi; PWM up to 85% tested clean 2026-09-07. Default 60%.",
     "config": {
-      "testFlag": true,
       "minPulse": 600,
       "simpleCalibration": {
         "safeMin": 200,
         "safeMax": 1200,
         "points": []
-      }
+      },
+      "maxDuration": 5000,
+      "controlBoard": "MDD10A",
+      "modelId": "motor_jeep_wagoneer_wiper",
+      "defaultSpeed": 60,
+      "defaultDurationMs": 2000
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
@@ -21,63 +25,7 @@
     "pwmPin": 13,
     "maxDuration": 10000,
     "modelId": "motor_jeep_wagoneer_wiper",
-    "updated": "2025-10-27T19:55:34.583Z",
-    "markers": [
-      {
-        "name": "Min",
-        "kind": "absolute",
-        "locked": false,
-        "value": 10
-      }
-    ]
-  },
-  {
-    "id": "3",
-    "name": "Speaker Left",
-    "type": "speaker",
-    "pin": null,
-    "description": "Left speaker",
-    "config": {
-      "audioDeviceId": "default",
-      "volume": 85
-    },
-    "created": "2025-10-12T06:00:02.000Z",
-    "enabled": true,
-    "modelId": "default_speaker",
-    "markers": [
-      {
-        "name": "Min",
-        "kind": "absolute",
-        "locked": false,
-        "value": 10
-      }
-    ]
-  },
-  {
-    "id": "4",
-    "name": "Elbow",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "standard",
-      "controllerType": "pca9685",
-      "address": 64,
-      "pca9685Frequency": 50,
-      "channel": 15
-    },
-    "created": "2025-10-12T06:00:03.000Z",
-    "enabled": true,
-    "modelId": "servo_hooyij_ds3240mg",
-    "markers": [
-      {
-        "name": "Min",
-        "kind": "absolute",
-        "locked": false,
-        "value": 10
-      }
-    ],
-    "updated": "2026-03-08T18:41:37.143Z"
+    "updated": "2026-09-06T21:39:18.343Z"
   },
   {
     "id": "5",
@@ -92,15 +40,7 @@
     "created": "2025-10-14T02:20:16.978Z",
     "enabled": true,
     "modelId": "pir_generic",
-    "updated": "2025-10-14T03:29:43.557Z",
-    "markers": [
-      {
-        "name": "Min",
-        "kind": "absolute",
-        "locked": false,
-        "value": 10
-      }
-    ]
+    "updated": "2025-10-14T03:29:43.557Z"
   },
   {
     "id": "6",
@@ -110,297 +50,184 @@
     "description": "Main webcam for vision",
     "config": {
       "devicePath": "/dev/video0",
-      "deviceId": "video0",
-      "motionTracking": {
-        "motionThreshold": 42,
-        "minContourArea": 500,
-        "trackingSmoothing": 0.3,
-        "trackingDeadzone": 8
-      },
-      "headTracking": {
-        "panServoId": "",
-        "rangeDeg": 90,
-        "smoothing": 0.35
-      }
+      "deviceId": "video0"
     },
     "created": "2025-10-14T02:20:17.009Z",
     "enabled": true,
     "modelId": "default-uvc-1",
-    "updated": "2026-02-21T20:19:07.755Z"
+    "updated": "2025-10-27T07:19:48.892Z"
   },
   {
-    "id": "7",
-    "name": "Webcam Microphone",
-    "type": "microphone",
-    "pin": null,
-    "description": "Webcam built-in microphone",
+    "name": "Pumpkin Mouth",
+    "type": "speaker",
+    "characterId": 1,
+    "description": "reSpeaker XVF3800 analog stereo output",
+    "modelId": "speaker_respeaker_xvf3800",
     "config": {
-      "deviceId": "default",
+      "audioDeviceId": "alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200206-00.analog-stereo",
+      "volume": 100,
+      "bass": 0,
+      "treble": 0
+    },
+    "id": "7",
+    "enabled": true,
+    "created": "2026-09-06T22:49:40.676Z",
+    "updated": "2026-09-06T22:49:40.676Z"
+  },
+  {
+    "name": "Pumpkhead Ears",
+    "type": "microphone",
+    "characterId": 1,
+    "description": "reSpeaker XVF3800 4-mic array",
+    "modelId": "mic_respeaker_xvf3800",
+    "config": {
+      "deviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200206-00.analog-stereo",
       "sampleRate": 16000,
       "channels": 1,
-      "sensitivity": 1
+      "sensitivity": 2.02498212583413
     },
-    "created": "2025-10-14T02:20:17.036Z",
-    "enabled": true,
-    "modelId": "mic_generic_usb",
-    "updated": "2026-02-28T01:58:41.525Z"
-  },
-  {
     "id": "8",
-    "name": "USB Dongle Speaker",
-    "type": "speaker",
-    "pin": null,
-    "description": "USB audio dongle speaker",
+    "enabled": true,
+    "created": "2026-09-06T22:49:40.723Z",
+    "updated": "2026-09-06T23:36:44.730Z"
+  },
+  {
+    "name": "Pumpkin Eyes",
+    "type": "led_ring",
+    "characterId": 1,
+    "description": "Two chained DIYMall X0040MB5LN 8-bit WS2812B rings on GPIO18 - left eye pixels 0-7, right eye 8-15",
+    "modelId": "led_ring_diymall_x0040mb5ln_8bit",
     "config": {
-      "audioDeviceId": "default",
-      "volume": 85
+      "gpioPin": 18,
+      "pixelCount": 16,
+      "ringSplit": 8,
+      "brightness": 100,
+      "dma": 10,
+      "pwmChannel": 0,
+      "colorOrder": "GRB",
+      "rings": [
+        {
+          "name": "Left Eye",
+          "target": "left",
+          "offset": 0,
+          "count": 8
+        },
+        {
+          "name": "Right Eye",
+          "target": "right",
+          "offset": 8,
+          "count": 8
+        }
+      ],
+      "defaultState": "idle",
+      "colors": {
+        "idle": {
+          "left": [
+            180,
+            60,
+            240
+          ],
+          "right": [
+            180,
+            60,
+            240
+          ]
+        },
+        "listening": {
+          "left": [
+            0,
+            200,
+            255
+          ],
+          "right": [
+            0,
+            200,
+            255
+          ]
+        },
+        "error": {
+          "left": [
+            255,
+            0,
+            0
+          ],
+          "right": [
+            255,
+            0,
+            0
+          ]
+        },
+        "thinking": {
+          "left": [
+            0,
+            120,
+            255
+          ],
+          "right": [
+            0,
+            120,
+            255
+          ]
+        },
+        "speaking": {
+          "left": [
+            255,
+            140,
+            30
+          ],
+          "right": [
+            255,
+            140,
+            30
+          ]
+        },
+        "fade": {
+          "left": [
+            255,
+            120,
+            0
+          ],
+          "right": [
+            255,
+            120,
+            0
+          ]
+        }
+      },
+      "palette": [
+        [
+          216,
+          3,
+          3
+        ],
+        [
+          255,
+          140,
+          0
+        ],
+        [
+          0,
+          255,
+          60
+        ],
+        [
+          10,
+          72,
+          143
+        ],
+        [
+          200,
+          0,
+          255
+        ]
+      ],
+      "fadeMs": 1500,
+      "holdMs": 400,
+      "dataRateHz": 800000
     },
-    "created": "2025-10-14T02:20:17.065Z",
+    "id": "9",
     "enabled": true,
-    "modelId": "default_speaker"
-  },
-  {
-    "id": "22",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "pulse"
-    },
-    "created": "2025-10-14T03:49:47.879Z",
-    "enabled": true,
-    "modelId": "mic_generic_usb",
-    "updated": "2025-10-27T18:52:11.532Z"
-  },
-  {
-    "id": "23",
-    "name": "T Act",
-    "type": "linear_actuator",
-    "pin": 19,
-    "description": "Linear actuator",
-    "config": {},
-    "created": "2025-10-22T22:06:03.080Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 19,
-    "pwmPin": 20,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "24",
-    "name": "T Act",
-    "type": "linear_actuator",
-    "pin": 19,
-    "description": "Linear actuator",
-    "config": {},
-    "created": "2025-10-22T22:22:22.390Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 19,
-    "pwmPin": 20,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "25",
-    "name": "T Act",
-    "type": "linear_actuator",
-    "pin": 19,
-    "description": "Linear actuator",
-    "config": {},
-    "created": "2025-10-22T22:22:42.192Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 19,
-    "pwmPin": 20,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "26",
-    "name": "T Act",
-    "type": "linear_actuator",
-    "pin": 19,
-    "description": "Linear actuator",
-    "config": {},
-    "created": "2025-10-22T22:43:50.716Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 19,
-    "pwmPin": 20,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "27",
-    "name": "T Act",
-    "type": "linear_actuator",
-    "pin": 19,
-    "description": "Linear actuator",
-    "config": {},
-    "created": "2025-10-23T01:33:31.170Z",
-    "enabled": true,
-    "controlBoard": "MDD10A",
-    "directionPin": 19,
-    "pwmPin": 20,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "28",
-    "name": "T Light",
-    "type": "light",
-    "pin": 20,
-    "description": "Light",
-    "config": {},
-    "created": "2025-10-23T01:33:54.308Z",
-    "enabled": true
-  },
-  {
-    "id": "29",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-27T06:17:45.534Z",
-    "enabled": true
-  },
-  {
-    "id": "30",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-27T06:18:55.693Z",
-    "enabled": true
-  },
-  {
-    "id": "44",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
-    "config": {
-      "maxDuration": 5000,
-      "controlBoard": "BTS7960"
-    },
-    "created": "2025-10-27T17:21:00.728Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000,
-    "updated": "2025-10-27T20:08:35.697Z"
-  },
-  {
-    "id": "45",
-    "name": "Test Actuator BTS7960",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
-    "created": "2025-10-27T17:21:07.637Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 12,
-    "lpwmPin": 13,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "46",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-27T17:47:07.806Z",
-    "enabled": true
-  },
-  {
-    "id": "47",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
-    },
-    "created": "2025-10-27T17:48:20.150Z",
-    "enabled": true
-  },
-  {
-    "id": "61",
-    "name": "Test Motor BTS7960",
-    "type": "motor",
-    "pin": null,
-    "description": "DC motors for movement",
-    "config": {},
-    "created": "2025-10-27T20:08:32.332Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 19,
-    "lpwmPin": 21,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxDuration": 10000
-  },
-  {
-    "id": "62",
-    "name": "Test Actuator BTS7960",
-    "type": "linear_actuator",
-    "pin": null,
-    "description": "extending/retracting movements",
-    "config": {},
-    "created": "2025-10-27T20:08:38.941Z",
-    "enabled": true,
-    "controlBoard": "BTS7960",
-    "rpwmPin": 12,
-    "lpwmPin": 13,
-    "renPin": 5,
-    "lenPin": 22,
-    "maxExtension": 15000,
-    "maxRetraction": 15000
-  },
-  {
-    "id": "63",
-    "name": "Servo-Std-PumpkinHead",
-    "type": "servo",
-    "pin": null,
-    "description": "precise angle control: standard, continuous, feedback",
-    "config": {
-      "servoType": "standard",
-      "controllerType": "pca9685",
-      "pcaAddress": "0x40",
-      "pcaChannel": 0
-    },
-    "created": "2025-11-01T04:38:31.534Z",
-    "enabled": true
-  },
-  {
-    "id": "64",
-    "name": "Auto Mic",
-    "type": "microphone",
-    "pin": null,
-    "description": "autotune mic",
-    "config": {
-      "deviceId": "pulse"
-    },
-    "created": "2025-11-01T04:51:21.466Z",
-    "enabled": true
+    "created": "2026-09-12T16:49:18.836Z",
+    "updated": "2026-09-13T20:39:28.899Z"
   }
 ]

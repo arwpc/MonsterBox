@@ -3,6 +3,7 @@ import path from 'path';
 import { execFile } from 'child_process';
 import { fileURLToPath } from 'url';
 import { getCharacterById, updateCharacter } from './characterService.js';
+import { assertCharacterConfigWritable } from './characterConfigLock.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -110,6 +111,7 @@ export async function listImages(characterId) {
 
 export async function saveImage(characterId, originalName, buffer) {
   await requireRegisteredCharacter(characterId);
+  assertCharacterConfigWritable(characterId, 'uploading a character image');
   await ensureImagesDir(characterId);
   const safe = String(originalName || 'image').replace(/[^a-z0-9_\-\.]+/gi, '_');
   const filePath = path.join(imagesDirFor(characterId), safe);
@@ -120,6 +122,7 @@ export async function saveImage(characterId, originalName, buffer) {
 }
 
 export async function deleteImage(characterId, filename) {
+  assertCharacterConfigWritable(characterId, 'deleting a character image');
   const safe = safeBasename(filename);
   const filePath = path.join(imagesDirFor(characterId), safe);
   try { await fs.unlink(filePath); } catch (_) { /* ignore */ }

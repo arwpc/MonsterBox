@@ -1,21 +1,21 @@
 {
   "jawAnimation": {
-    "enabled": false,
+    "enabled": true,
     "servoPartId": "10",
     "activeConfigId": "config-1",
     "configs": [
       {
         "id": "config-1",
         "name": "Default",
-        "sensitivity": 2.1,
-        "smoothing": 0.7,
+        "sensitivity": 1,
+        "smoothing": 0.6,
         "volumeThreshold": 0.02,
         "attackTime": 50,
         "releaseTime": 150,
         "useBandpassFilter": true,
         "useAGC": true,
-        "quantizationLevels": 14,
-        "preset": "custom",
+        "quantizationLevels": 10,
+        "preset": "speech",
         "minAngle": 102,
         "maxAngle": 143,
         "audioLeadTimeMs": 700,
@@ -57,7 +57,27 @@
         "audioLeadTimeMs": 300,
         "testText": "cats and dogs for emmy"
       }
-    ]
+    ],
+    "ledSync": {
+      "enabled": false,
+      "partId": null,
+      "colorLow": [
+        80,
+        0,
+        0
+      ],
+      "colorHigh": [
+        255,
+        120,
+        0
+      ],
+      "sensitivity": 1,
+      "smoothing": 0.5,
+      "attackMs": 40,
+      "releaseMs": 120,
+      "speed": 1,
+      "offsetMs": 0
+    }
   },
   "headTracking": {
     "opencvEnabled": true,
@@ -69,21 +89,21 @@
     "invertPan": false,
     "smoothing": 0.65,
     "deadzone": 5,
-    "motionThreshold": 44,
-    "minContourArea": 3000,
-    "maxContourArea": 100000,
-    "backgroundLearningRate": 0.013,
-    "noiseReductionKernelSize": 5,
-    "blurSize": 7,
-    "dilateSize": 11,
-    "varThreshold": 20,
-    "targetLockStrength": 9,
-    "confirmFrames": 4,
+    "motionThreshold": 12,
+    "minContourArea": 1500,
+    "maxContourArea": 200000,
+    "backgroundLearningRate": 0.034,
+    "noiseReductionKernelSize": 3,
+    "blurSize": 3,
+    "dilateSize": 7,
+    "varThreshold": 15,
+    "targetLockStrength": 4,
+    "confirmFrames": 2,
     "detectInterval": 5,
-    "detectionMode": "person"
+    "detectionMode": "person+motion"
   },
   "followOrders": {
-    "enabled": false,
+    "enabled": true,
     "requireAddressByName": false,
     "addressAliases": [],
     "ackMode": "speak",
@@ -106,7 +126,7 @@
     "triggers": {
       "agentGesture": true,
       "guestCommand": true,
-      "ambientDuringSpeech": false
+      "ambientDuringSpeech": true
     },
     "permissions": {
       "allowedRoles": [

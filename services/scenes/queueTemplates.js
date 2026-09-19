@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
 import scenesService from './scenesService.js';
+import { assertConfigPathWritable } from '../characterConfigLock.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,6 +57,7 @@ export async function loadTemplates(characterId){
 
 export async function saveTemplates(characterId, templates){
   const p = await getTemplatesPath(characterId);
+  assertConfigPathWritable(p, 'saving queue templates');
   await fs.writeFile(p, JSON.stringify(templates, null, 2), 'utf8');
 }
 

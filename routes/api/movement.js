@@ -8,6 +8,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { resolveCharacter } from '../../services/characterContext.js';
+import { assertConfigPathWritable } from '../../services/characterConfigLock.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,6 +77,7 @@ router.put('/config/:characterId', async (req, res) => {
         const configPath = path.join(__dirname, '..', '..', 'data', `character-${charId}`, 'movement-config.json');
 
         // Ensure directory exists
+        assertConfigPathWritable(configPath, 'updating the movement config');
         await fs.mkdir(path.dirname(configPath), { recursive: true });
         await fs.writeFile(configPath, JSON.stringify(req.body, null, 2));
         res.json({ success: true, message: 'Movement config updated' });
