@@ -4245,8 +4245,12 @@
       const type = typeSelect.value;
       const partType = partTypes[type];
 
-      // Show model selection for supported types
-      if (['servo', 'stepper', 'webcam'].includes(type)) {
+      // Show model selection for supported types.
+      // speaker/microphone belong here too: their registries exist
+      // (data/models/speaker_models.json, microphone_models.json) and the list
+      // route flags needsModel on any part without a top-level modelId, so an
+      // audio part added without one is born showing "Needs Model" forever.
+      if (['servo', 'stepper', 'webcam', 'speaker', 'microphone'].includes(type)) {
         modelGroup.style.display = 'block';
         loadModelsForType(type);
       } else {
@@ -4773,10 +4777,14 @@
       const partType = partTypes[type];
       let config = {};
 
-      // Add model if selected
+      // Add model if selected.
+      // TOP-LEVEL, not config.modelId: the list route (routes/setup/calibration.js
+      // `modelId: p.modelId`, `needsModel: !p.modelId`), the Model badge, and the
+      // POST /api/parts/:id/model writer all read/write the top-level field. A model
+      // stored under config read back as blank and kept the "Needs Model" badge.
       const modelSelect = document.getElementById('addModelSelect');
       if (modelSelect && modelSelect.value) {
-        config.modelId = modelSelect.value;
+        payload.modelId = modelSelect.value;
       }
 
       // Handle pin-based parts
