@@ -169,6 +169,10 @@ ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'data/character-*/lurk-mode-state.json' \
     --exclude 'data/character-*/ai_agent_state.json' \
     --exclude 'data/character-*/movement-config.json' \
+    --exclude 'data/character-*/scenes.json' \
+    --exclude 'data/character-*/gestures.json' \
+    --exclude 'data/character-*/scene-queues.json' \
+    --exclude 'data/character-*/scene-queue-templates.json' \
     --exclude 'data/calibration_profiles.json' \
     --exclude 'data/actuator-positions.json' \
     --exclude 'data/speaker-state.json' \
