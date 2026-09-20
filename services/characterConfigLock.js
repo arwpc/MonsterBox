@@ -157,6 +157,45 @@ export function assertConfigPathWritable(filePath, what) {
     assertCharacterConfigWritable(characterId, what || `writing ${path.basename(String(filePath))}`);
 }
 
+/**
+ * True if this error is the lock refusing a configuration write.
+ */
+export function isConfigLockedError(error) {
+    return !!(error && error.code === 'CHARACTER_CONFIG_LOCKED');
+}
+
+/**
+ * Persist a RUNTIME toggle without letting the lock break it.
+ *
+ * The lock's promise is that "a locked character still runs" — he plays, talks
+ * and moves, he just cannot be reconfigured. But the operator's live toggles
+ * (AI Motion, jaw, LED talk, head tracking, follow orders) happen to persist
+ * into super-powers.json, which IS configuration. Writing first and acting
+ * second therefore turned a finished animatronic's dashboard switches into dead
+ * controls: "AI Motion failed: PumpkinHead is LOCKED".
+ *
+ * A toggle is an instruction about right now, so the runtime effect must never
+ * depend on the write. Wrap only the persistence in this: on a locked character
+ * the refusal is reported, not thrown, and the caller carries on and applies the
+ * effect. The toggle then works for the show and simply does not survive a
+ * restart — which is correct, because the frozen config is exactly what a locked
+ * character is supposed to boot with.
+ *
+ * Every other failure still throws: this hides the lock, not real breakage.
+ *
+ * @param {() => Promise<any>} persist
+ * @returns {Promise<{persisted: boolean, locked: boolean, reason?: string}>}
+ */
+export async function persistRuntimeToggle(persist) {
+    try {
+        await persist();
+        return { persisted: true, locked: false };
+    } catch (error) {
+        if (!isConfigLockedError(error)) throw error;
+        return { persisted: false, locked: true, reason: error.message };
+    }
+}
+
 export default {
     listLocks,
     getLock,
@@ -166,5 +205,7 @@ export default {
     assertCharacterConfigWritable,
     assertConfigPathWritable,
     reloadLocks,
+    isConfigLockedError,
+    persistRuntimeToggle,
     CharacterConfigLockedError
 };

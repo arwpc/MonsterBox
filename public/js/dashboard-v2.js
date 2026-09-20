@@ -11,7 +11,11 @@
   'use strict';
 
   var deckData = { scenes: [], poses: [], sounds: [] };
-  var activeDeck = 'scenes';
+  // The AI deck is the default: the operator wants the conversation visible on
+  // arrival for every character, because it is the running record of what the
+  // animatronic has said — autonomous or prompted. The markup in showtime.ejs
+  // starts on the same tab so there is no flash of the wrong pane.
+  var activeDeck = 'ai';
   var playingSceneId = null;
 
   function $(id) { return document.getElementById(id); }
@@ -272,20 +276,27 @@
   /* ── Wire-up ───────────────────────────────────────────────────────── */
 
   function init() {
-    // Deck tabs
+    // Deck tabs. Selection lives in one function so the startup default and a
+    // click cannot drift apart — the pane, the tab strip and the tool links all
+    // move together.
     var tabs = document.querySelectorAll('.sc-tab');
+    function selectDeck(kind) {
+      activeDeck = kind;
+      for (var j = 0; j < tabs.length; j++) {
+        tabs[j].classList.toggle('active', tabs[j].getAttribute('data-deck') === kind);
+      }
+      var pe = $('scPoseEditorLink'); var st = $('scStudioLink');
+      if (pe) pe.classList.toggle('d-none', activeDeck !== 'poses');
+      if (st) st.classList.toggle('d-none', activeDeck === 'poses');
+      showDeckPane();
+      renderDeck();
+    }
     for (var i = 0; i < tabs.length; i++) {
       tabs[i].addEventListener('click', function () {
-        activeDeck = this.getAttribute('data-deck');
-        for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
-        this.classList.add('active');
-        var pe = $('scPoseEditorLink'); var st = $('scStudioLink');
-        if (pe) pe.classList.toggle('d-none', activeDeck !== 'poses');
-        if (st) st.classList.toggle('d-none', activeDeck === 'poses');
-        showDeckPane();
-        renderDeck();
+        selectDeck(this.getAttribute('data-deck'));
       });
     }
+    selectDeck(activeDeck);
 
     // Deck grid delegation
     var grid = $('scDeckGrid');
