@@ -94,7 +94,8 @@ router.post('/config', async (req, res) => {
         }
         res.json({ success: true, ...result });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        // A LOCKED character's refusal carries status 423; only a real fault is a 500.
+        res.status(Number(error && error.status) || 500).json({ success: false, error: error.message });
     }
 });
 

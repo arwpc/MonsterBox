@@ -19,6 +19,11 @@ const isTestMode = () => process.env.MB_TEST_MODE === '1' || process.env.MB_TEST
  * path param in its precedence — so these routes never read req.params directly.
  */
 
+// A refused write carries its own status — a LOCKED character's is 423. Reporting
+// that as a 500 tells the caller the server broke when the real answer is
+// "refused, deliberately". Anything without a status stays a 500.
+const statusFor = (error) => Number(error && error.status) || 500;
+
 async function characterIdFor(req) {
   const ctx = await resolveCharacter(req);
   return ctx && ctx.id != null ? ctx.id : null;
@@ -84,7 +89,7 @@ router.get('/api/config/:characterId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting LED animation config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -101,7 +106,7 @@ router.post('/api/config/:characterId', async (req, res) => {
     res.json({ success: true, ...result });
   } catch (error) {
     console.error('Error saving LED config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -115,7 +120,7 @@ router.post('/api/led-sync/:characterId', async (req, res) => {
     res.json({ success: true, ledSync: jaw.ledSync });
   } catch (error) {
     console.error('Error saving LED sync config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -134,7 +139,7 @@ router.post('/api/test-tts/:characterId', async (req, res) => {
     res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Error in LED test-tts:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -148,7 +153,7 @@ router.post('/api/sweep/:characterId', async (req, res) => {
     res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Error in LED sweep:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -161,7 +166,7 @@ router.post('/api/stop/:characterId', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error stopping LED playback:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
