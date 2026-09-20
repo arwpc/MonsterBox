@@ -1,6 +1,6 @@
 {
   "jawAnimation": {
-    "enabled": true,
+    "enabled": false,
     "servoPartId": "10",
     "activeConfigId": "config-mu9230g6imz8",
     "configs": [
@@ -123,7 +123,7 @@
     "detectionMode": "person+motion"
   },
   "followOrders": {
-    "enabled": true,
+    "enabled": false,
     "requireAddressByName": false,
     "addressAliases": [],
     "ackMode": "speak",

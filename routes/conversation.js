@@ -1583,8 +1583,17 @@ export async function disableLurkSuperpowers(characterId) {
 
   try {
     const jawConfig = await jawAnimationService.readJawConfig(characterId);
-    jawConfig.enabled = false;
-    await jawAnimationService.writeJawConfig(characterId, jawConfig);
+    // Persist only a REAL change. Jaw animation that is already off — which is
+    // every character with no jaw servo, the same case the enable path above
+    // gates on — needs no write, and writing anyway is REFUSED on a locked
+    // character (HTTP 423). That made a finished animatronic record a lock error
+    // on every lurk disable and, worse, on every panic stop, where `disarmLurk-
+    // Completely` calls this: the honest answer there is "already off", not a
+    // failure. It also spares the SD card a write per disable.
+    if (jawConfig.enabled) {
+      jawConfig.enabled = false;
+      await jawAnimationService.writeJawConfig(characterId, jawConfig);
+    }
     results.jaw = { enabled: false };
   } catch (e) { results.jaw = { error: e.message }; }
 
