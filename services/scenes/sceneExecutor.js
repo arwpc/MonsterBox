@@ -11,6 +11,7 @@ import serverPlaybackService from '../serverPlaybackService.js';
 import sceneAnalytics from './sceneAnalyticsService.js';
 import { getCalibrationStore } from '../../server/calibration/store.js';
 import actuatorPositionStore from '../actuatorPositionStore.js';
+import { recordSpeech } from '../speechLogService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -238,6 +239,9 @@ async function executeSayThisStep(step, characterId, emit) {
   const text = (step.text || step.say || '').trim();
   if (!text) throw new Error('sayThis.step requires text');
   emit && emit({ type: 'step', status: 'start', stepType: 'sayThis', text });
+  // Scripted lines are speech too: a scene running on its own is exactly the
+  // kind of talking the operator cannot otherwise see in the AI panel.
+  recordSpeech(characterId, { speaker: 'character', source: 'scene', text });
 
   const ttsCfg = await getTTSConfigForCharacter(characterId);
   const voiceId = step.voiceId || ttsCfg.voice_id;

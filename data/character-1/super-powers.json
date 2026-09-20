@@ -46,7 +46,7 @@
     "partAliases": []
   },
   "aiMotion": {
-    "enabled": false,
+    "enabled": true,
     "triggers": {
       "agentGesture": true,
       "guestCommand": true,

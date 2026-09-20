@@ -976,7 +976,7 @@
       }
 
       // Clear placeholder
-      const placeholder = chatLog.querySelector('.text-muted.text-center');
+      const placeholder = chatLog.querySelector('.text-muted.text-center, .mb-text-muted.mb-text-center');
       if (placeholder) placeholder.remove();
 
       const time = new Date().toLocaleTimeString();
@@ -990,6 +990,71 @@
 
       chatLog.appendChild(msgDiv);
       chatLog.scrollTop = chatLog.scrollHeight;
+      rememberRenderedLine(text);
+    }
+
+    // ── Speech log ────────────────────────────────────────────────────────
+    // The WebSocket only carries THIS browser's session. Everything the
+    // character says on its own — a PIR wake, lurk, a scene's sayThis, an
+    // ask-ai turn fired from a phone — happens server-side and used to appear
+    // nowhere. The server records all of it; we poll for what we have not seen.
+    //
+    // Both sources can describe the same line, so every rendered line is
+    // fingerprinted for a few seconds and a polled entry matching one is
+    // dropped. Fingerprinting the TEXT (not the sender) is deliberate: the two
+    // paths label the same speaker differently ('AI' vs 'character').
+    var _renderedLines = [];
+    var _renderedMaxAge = 15000;
+
+    function rememberRenderedLine(text) {
+      var now = Date.now();
+      _renderedLines = _renderedLines.filter(function (e) { return now - e.ts < _renderedMaxAge; });
+      _renderedLines.push({ text: normalizeLine(text), ts: now });
+    }
+
+    function normalizeLine(text) {
+      return String(text || '').replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
+    function wasRecentlyRendered(text) {
+      var now = Date.now();
+      var norm = normalizeLine(text);
+      if (!norm) return true;
+      _renderedLines = _renderedLines.filter(function (e) { return now - e.ts < _renderedMaxAge; });
+      for (var i = 0; i < _renderedLines.length; i++) {
+        if (_renderedLines[i].text === norm) return true;
+      }
+      return false;
+    }
+
+    var _speechSeq = 0;
+    var _speechTimer = null;
+
+    function pollSpeechLog() {
+      fetch('/conversation/api/speech-log?since=' + _speechSeq)
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (!j || !j.success || !j.entries) return;
+          _speechSeq = j.seq || _speechSeq;
+          for (var i = 0; i < j.entries.length; i++) {
+            var e = j.entries[i];
+            if (wasRecentlyRendered(e.text)) continue;
+            // Label by who spoke, and name the autonomous sources so the panel
+            // reads as a record rather than a chat the operator half-remembers.
+            var who = e.speaker === 'guest' ? 'You (mic)'
+              : e.source === 'scene' ? 'AI (scene)'
+              : e.source === 'follow-orders' ? 'AI (orders)'
+              : 'AI';
+            appendChatMessage(who, e.text);
+          }
+        })
+        .catch(function () { /* a missed poll catches up on the next one */ });
+    }
+
+    function startSpeechLogPolling() {
+      if (_speechTimer) return;
+      pollSpeechLog();
+      _speechTimer = setInterval(pollSpeechLog, 3000);
     }
 
     function updatePartialTranscript(text) {
@@ -1000,7 +1065,7 @@
         const span = _lastPartialEl.querySelector('.partial-text');
         if (span) span.textContent = text;
       } else {
-        const placeholder = chatLog.querySelector('.text-muted.text-center');
+        const placeholder = chatLog.querySelector('.text-muted.text-center, .mb-text-muted.mb-text-center');
         if (placeholder) placeholder.remove();
         const time = new Date().toLocaleTimeString();
         const msgDiv = document.createElement('div');
@@ -2047,7 +2112,9 @@ async function saveHeadTrackSettings() {
       if (consoleLive && consoleLive.checked) startConsolePolling();
     }
 
-    document.addEventListener('DOMContentLoaded', function() { initConsolePanel(); });
+    // The speech log polls from page load, not from when the AI tab is opened:
+    // the panel must already hold the conversation when the operator looks at it.
+    document.addEventListener('DOMContentLoaded', function() { initConsolePanel(); startSpeechLogPolling(); });
     document.addEventListener('DOMContentLoaded', init);
     window.__conv = { loadSpeakers, loadWebcam, loadScenes, loadPoses };
   })();

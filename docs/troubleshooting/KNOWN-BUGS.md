@@ -604,6 +604,13 @@ WS2812B eye rings all functional; LED eye animation + speech/AI sync built and t
 under-voltage note below is a known hard-start limitation, mitigated in software (drive the motor at
 ≤25 %, never 100 % DC) — not a fault blocking normal operation. Items below are retained history.
 
+🔧 **2026-09-20 — STRUCTURAL BREAK, REPAIRED.** A large wooden member in his body split in two. The
+operator repaired it **with metal**, so the rebuilt joint is stronger than the original wood. No
+software change and no entry in `config/physical-faults.json`: nothing is broken now, and listing a
+repaired part would wrongly make autonomous code route around a rig that is fit to run. Recorded
+because his shake motor's load path runs through that structure — if a future session sees new
+vibration, slop or a fresh crack, this repair is the first place to look, not the motor.
+
 🟠 **2026-09-12/13 SESSIONS — LED eye rings ("Pumpkin Eyes", part 9, WS2812B ×2 on GPIO18).**
 - ✅ **RESOLVED (2026-09-13) — the rings were cabled BACKWARDS: data fed the chain's DOUT, not DIN.**
   Operator reversed the connection; both rings animate ("we have awesome lights"). The day-long

@@ -1,6 +1,6 @@
 {
   "jawAnimation": {
-    "enabled": false,
+    "enabled": true,
     "servoPartId": "10",
     "activeConfigId": "config-mu9230g6imz8",
     "configs": [

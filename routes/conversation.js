@@ -25,6 +25,7 @@ import serverPlaybackService from '../services/serverPlaybackService.js';
 import ledAnimationService from '../services/ledAnimationService.js';
 import ledInteractionService from '../services/ledInteractionService.js';
 import { persistRuntimeToggle } from '../services/characterConfigLock.js';
+import { recordSpeech, speechSince } from '../services/speechLogService.js';
 import { resolveCharacterSync } from '../services/characterContext.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -761,6 +762,22 @@ router.post('/api/play-audio', express.json(), async (req, res) => {
   }
 });
 
+// GET /conversation/api/speech-log?since=<seq> — everything said since that seq.
+// Polled by the dashboard AI panel so autonomous speech (PIR wake, lurk, scenes,
+// follow-orders) shows up beside the turns the operator typed. `since` is a seq
+// rather than a timestamp so a missed poll catches up exactly.
+router.get('/api/speech-log', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.json({ success: true, entries: [], seq: 0 });
+    const since = Number(req.query.since) || 0;
+    const { entries, seq } = speechSince(characterId, since);
+    res.json({ success: true, characterId, entries, seq });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
 // POST /conversation/api/ask-ai { question, speakerPartId? }
 // Ask AI agent a question - uses working agent-speak with audio
 router.post('/api/ask-ai', express.json(), async (req, res) => {
@@ -768,6 +785,10 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
     const question = (req.body && req.body.question ? String(req.body.question) : '').trim();
     if (!question) return res.status(400).json({ success: false, error: 'question is required' });
     const characterId = getCurrentCharacterId(req);
+    // Log both halves of the turn. This route is reached from the dashboard, from
+    // another operator's phone and from the motion-wake path, so it is the one
+    // place that sees every prompted turn regardless of who started it.
+    recordSpeech(characterId, { speaker: 'guest', source: 'ask-ai', text: question });
 
     // In test mode, bypass external AI and return success
     if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
@@ -817,6 +838,7 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
         // The agent already streamed its audio response through the speaker
         // via askAgentQuestion -> _startAudioPlayback. No need for separate TTS.
         ledInteractionService.setInteractionState(characterId, 'listening').catch(() => {});
+        recordSpeech(characterId, { speaker: 'character', source: 'ask-ai', text: aiResponse.response });
         return res.json({
           success: true,
           response: aiResponse.response,
@@ -867,6 +889,7 @@ router.post('/api/ask-ai', express.json(), async (req, res) => {
         }
 
         ledInteractionService.setInteractionState(characterId, 'listening').catch(() => {});
+        recordSpeech(characterId, { speaker: 'character', source: 'tts-fallback', text: fallbackResponse });
         return res.json({
           success: true,
           response: fallbackResponse,

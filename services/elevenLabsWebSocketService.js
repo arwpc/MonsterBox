@@ -22,6 +22,7 @@ import serverPlaybackService from './serverPlaybackService.js';
 import serverSTTListener from './serverSTTListener.js';
 import * as jawAnimationService from './jawAnimationSuperPowerService.js';
 import gestureEngineService from './gestureEngineService.js';
+import { recordSpeech } from './speechLogService.js';
 
 // Absolute floor below which a frame is never treated as speech, whatever the
 // adaptive estimate says.
@@ -1039,6 +1040,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             // its cooldown window.
                             this._followOrdersHook(connection.characterId, userText, { sessionId, source: 'agent_asr' });
 
+                            // Speech log: what the guest said, so the dashboard AI
+                            // panel shows the whole conversation even when nobody
+                            // has the page open on the mic session.
+                            recordSpeech(connection.characterId, {
+                                speaker: 'guest', source: 'agent', text: userText
+                            });
+
                             // Guest finished a turn — show "thinking" on the eyes
                             // while the agent composes its reply (no-op without an
                             // LED ring; speaking then takes over during playback).
@@ -1077,6 +1085,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                     if (connection._turn && !connection._turn.responseAtMs) {
                         connection._turn.responseAtMs = Date.now();
+                    }
+
+                    // Speech log: the character's own line, from the live agent.
+                    if (responseText) {
+                        recordSpeech(connection.characterId, {
+                            speaker: 'character', source: 'agent', text: responseText
+                        });
                     }
 
                     // Feed a question asked via askAgentQuestion() on this live session.
