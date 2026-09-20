@@ -1,0 +1,31 @@
+[
+  {
+    "id": "led_ring_diymall_x0040mb5ln_8bit",
+    "name": "DIYMall X0040MB5LN 8-bit WS2812B Ring",
+    "description": "8-pixel WS2812B/NeoPixel ring, 5V, one data line in and one out so rings chain. Two of them make a pair of eyes on a single GPIO.",
+    "defaults": {
+      "pixelsPerRing": 8,
+      "brightness": 100,
+      "colorOrder": "GRB",
+      "dataRateHz": 800000,
+      "dma": 10,
+      "pwmChannel": 0,
+      "maxCurrentMaPerPixel": 60,
+      "logicVoltageV": 5
+    },
+    "controlsSchema": {
+      "type": "addressable",
+      "chipset": "WS2812B",
+      "dimmable": true,
+      "perPixelColor": true
+    },
+    "meta": {
+      "manufacturer": "DIYMall",
+      "partNumber": "X0040MB5LN",
+      "controlType": [
+        "Addressable"
+      ],
+      "notes": "Chain two rings on one data line and address them as a single 16-pixel strip: left eye pixels 0-7, right eye 8-15 (that is ringSplit). Needs a common ground with the Pi and 5V that can carry the whole chain at full white - 16 pixels is about 1A, which is more than a Pi header pin should source, so power the rings from the supply rail, not from the board. Driven by python_wrappers/led_ring_daemon.py: PWM+DMA via rpi_ws281x on a Pi 4 (root, GPIO18 = PWM0, blacklist snd_bcm2835), RP1 PIO on a Pi 5 (no root, any data GPIO)."
+    }
+  }
+]

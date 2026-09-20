@@ -227,6 +227,7 @@ function typeToModelsFile(type) {
         case 'motor': return 'motor_models.json';
         case 'stepper': return 'motor_models.json'; // stepper models are stored with motors
         case 'led': return 'led_models.json';
+        case 'led_ring': return 'led_ring_models.json';
         case 'light': return 'light_models.json';
         case 'linear_actuator': return 'linear_actuator_models.json';
         case 'sensor': return 'sensor_models.json';

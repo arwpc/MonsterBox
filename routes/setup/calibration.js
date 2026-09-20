@@ -793,6 +793,7 @@ const MODEL_FILE_BY_TYPE = {
     linear_actuator: 'linear_actuator_models.json',
     motor: 'motor_models.json',
     led: 'led_models.json',
+    led_ring: 'led_ring_models.json',
     light: 'light_models.json',
     sensor: 'sensor_models.json',
     motion_sensor: 'motion_sensor_models.json',

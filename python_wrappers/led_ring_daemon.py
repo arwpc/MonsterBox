@@ -32,6 +32,14 @@ USB (ReSpeaker XVF3800), so snd_bcm2835 is blacklisted in
 /etc/modprobe.d/blacklist-snd-bcm2835.conf. If pixels misbehave, check
 `lsmod | grep snd_bcm2835` first — a loaded module is the usual cause.
 
+Backends
+--------
+Pi 4 drives the pixels with rpi_ws281x (PWM + DMA, root). Pi 5 cannot: RP1 moved
+GPIO off the SoC, so rpi_ws281x imports and constructs happily and then lights
+nothing. On a Pi 5 the daemon uses the RP1 PIO writer instead (_Pi5Strip), which
+needs no root. Board detection is automatic; the part config is the same either
+way, and the PWM0/audio note below applies only to the Pi 4 path.
+
 Front end
 ---------
 Unix socket at $MB_LED_SOCKET (default /tmp/monsterbox-led.sock), one JSON
@@ -151,8 +159,97 @@ class StripUnavailable(RuntimeError):
     pass
 
 
+def _is_pi5():
+    """True on a Raspberry Pi 5, which needs the other backend (see _Pi5Strip)."""
+    try:
+        with open('/proc/device-tree/model', 'rb') as handle:
+            return b'Raspberry Pi 5' in handle.read()
+    except OSError:
+        return False
+
+
+class _Pi5Strip:
+    """An rpi_ws281x-shaped facade over the RP1 PIO pixel writer.
+
+    The Pi 5 put GPIO behind the RP1 south bridge, so rpi_ws281x — which drives
+    WS2812B by poking the SoC's own PWM and DMA registers through /dev/mem — has
+    nothing left to poke and cannot light a pixel on this board. It still
+    imports and still constructs a PixelStrip, which is why a Pi 5 node reads as
+    "installed but the LEDs are dead" rather than as an unsupported backend.
+    RP1's PIO block clocks the same 800kHz waveform, and Adafruit's neopixel
+    stack already routes to it, so only the backend swaps: every caller above
+    keeps the numPixels / setPixelColor / getPixelColor / show interface and
+    keeps passing colours as 0xRRGGBB.
+
+    Two differences worth knowing:
+
+      * No root. /dev/pio0 is root:gpio and the service user is in the gpio
+        group, so the sudo in ledRingDaemonClient is harmless habit here, not a
+        requirement — constraint 1 in this file's header is a Pi 4 constraint.
+      * dma, channel, freq and invert have no meaning: PIO generates the timing
+        itself and there is no PWM channel to pick. They are accepted and
+        ignored so one part config describes the rings on either board.
+    """
+
+    def __init__(self, count, pin, color_order):
+        try:
+            import board
+            import neopixel
+        except ImportError as exc:
+            raise StripUnavailable(
+                f"Raspberry Pi 5 pixels need Adafruit Blinka + neopixel ({exc}). Install with: "
+                "sudo pip3 install --break-system-packages adafruit-circuitpython-neopixel "
+                "Adafruit-Blinka-Raspberry-Pi5-Neopixel"
+            )
+
+        pin_attr = f'D{int(pin)}'
+        if not hasattr(board, pin_attr):
+            raise StripUnavailable(f"GPIO{pin} is not exposed as a board pin on this node")
+
+        # brightness stays at 1.0 on purpose: _push has already folded the master
+        # brightness and the gamma curve into the RGB it hands us, and a second
+        # scaling here would crush the low end exactly the way the per-channel
+        # gamma bug documented in _push did.
+        try:
+            self._pixels = neopixel.NeoPixel(
+                getattr(board, pin_attr), int(count),
+                brightness=1.0, auto_write=False, pixel_order=str(color_order))
+        except Exception as exc:
+            raise StripUnavailable(f"NeoPixel init failed on GPIO{pin}: {exc}")
+
+        self._count = int(count)
+        # rpi_ws281x reads colours back out of its own buffer, which
+        # _begin_transition relies on to snapshot the outgoing frame. pixelbuf
+        # would hand back a tuple, so mirror what we wrote and keep the
+        # crossfade byte-identical on both backends.
+        self._shadow = [0] * self._count
+
+    def numPixels(self):
+        return self._count
+
+    def setPixelColor(self, index, color):
+        if 0 <= index < self._count:
+            self._shadow[index] = color
+            self._pixels[index] = ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
+
+    def getPixelColor(self, index):
+        return self._shadow[index] if 0 <= index < self._count else 0
+
+    def show(self):
+        self._pixels.show()
+
+
 def _init_strip(count, pin, freq_hz, dma, invert, channel, color_order='GRB', brightness=255):
     global _strip
+    if _is_pi5():
+        if invert:
+            _log('--invert has no effect on the RP1 PIO backend; ignoring')
+        strip = _Pi5Strip(count, pin, color_order)
+        _strip = strip
+        _log(f"owning {count} pixels on GPIO{pin} via RP1 PIO "
+             f"(Raspberry Pi 5, order={color_order}; dma/channel/freq ignored)")
+        return strip
+
     try:
         from rpi_ws281x import PixelStrip, ws
     except ImportError as exc:
