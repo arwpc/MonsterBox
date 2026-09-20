@@ -1276,6 +1276,24 @@ attenuator **saturates there** (0.40=-23 dB, 0.55=-15, 0.70=-9, 0.85=-4, 1.00=0,
 Orlok's 1.30 is pure PipeWire software gain that can clip. **Not ear-verified** — the only
 value on the fleet list that has not been heard.
 
+✅ **RESOLVED 2026-09-20 — his eye rings are addressable after all, and a Pi 5 CAN drive
+WS2812B.** Part 5 was registered as a plain switched `light`, so it toggled and did nothing
+else: speech sync, the AI interaction colours and `/setup/led-animation` all select parts by
+`type === 'led_ring'`, and a `light` is invisible to every one of them. The old part
+description said the rings were NOT ADDRESSABLE because `rpi_ws281x` cannot drive pixels here —
+**right premise, wrong conclusion.** `rpi_ws281x` fails because RP1 moved GPIO off the SoC, so
+its `/dev/mem` PWM+DMA path has nothing to poke; it still imports and still constructs a
+`PixelStrip`, which is why this board reads as "installed but the LEDs are dead" rather than as
+an unsupported backend. RP1's **PIO** block clocks the same 800 kHz waveform and needs **no
+root** (`/dev/pio0` is `root:gpio`; the service user is in `gpio`). `led_ring_daemon.py` now
+picks that backend automatically on a Pi 5 (`_Pi5Strip`); `dma`/`channel`/`freq`/`invert` are
+accepted and ignored there, and the PWM0/`snd_bcm2835` contention that bites a Pi 4 does not
+apply. Measured: **500 frames at a steady 50 Hz, flat RSS**. Part 5 is now an `led_ring` on
+GPIO18 carrying the same DIYMall X0040MB5LN model and the same 16-pixel / split-8 geometry as
+PumpkinHead's Pumpkin Eyes, with `ledSync` enabled. Proven by eye (left alone, right alone,
+both green, both blue — wiring, split and GRB order all correct) and by a 213-frame TTS
+amplitude envelope, not by a success field. So he is **no longer audio-only.**
+
 **No motion.** `/dev/i2c-1` does not exist (only the HDMI DDC buses i2c-13/14), so no PCA9685
 and no servos — though note that is a Pi 5 `dtparam` matter, not a permanent ceiling. The
 `Renfield Shake Motor` (BTS7960, GPIO 27/22/17/23) is **NOT WIRED** (operator, 2026-08-30):
