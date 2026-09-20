@@ -1273,8 +1273,11 @@ output). Operator 2026-08-31: **the speakers are a good set, the same as Sir Dra
 both speaker parts carry `modelId: speaker_respeaker_xvf3800`, so his tuning is the nearest
 reference point. Canonical `sinkVolume` set to **1.00**, measured: the array's hardware
 attenuator **saturates there** (0.40=-23 dB, 0.55=-15, 0.70=-9, 0.85=-4, 1.00=0, 1.30=0), so
-Orlok's 1.30 is pure PipeWire software gain that can clip. **Not ear-verified** — the only
-value on the fleet list that has not been heard.
+Orlok's 1.30 is pure PipeWire software gain that can clip. ✅ **EAR-VERIFIED 2026-09-20** — a
+~6 s TTS line at 1.00 confirmed by the operator as clear and loud enough in the room. That was
+the last unheard volume on the fleet. It cannot be self-verified on this node (the XVF3800
+cancels his own output — a 440 Hz tone raised his own array only 2.3 dB over the room floor),
+so it took an ear, as designed.
 
 ✅ **RESOLVED 2026-09-20 — his eye rings are addressable after all, and a Pi 5 CAN drive
 WS2812B.** Part 5 was registered as a plain switched `light`, so it toggled and did nothing
