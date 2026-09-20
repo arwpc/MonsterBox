@@ -14,11 +14,57 @@
 /* The page was written to fill exactly one viewport with no page scroll. That
    is right on a desktop and wrong on a phone, where the left column alone is
    taller than the screen — clipping it hid the tuning controls entirely.
-   Keep the no-scroll desktop layout, let a phone scroll. */
+   Keep the no-scroll desktop layout, let a phone scroll.
+
+   `overflow: hidden` alone kept the *page* from scrolling by throwing the
+   overflow away: at 1440x900 this page wanted 904px inside an 844px cap, so the
+   bottom 60px — the last panel — was clipped and reachable by nothing. The
+   document scrollbar does not help, because the clipping happens inside this
+   element, not at the document.
+
+   So the cap stays, and the two COLUMNS carry the overflow instead: the row
+   takes whatever height is left and each column scrolls on its own. The header
+   stays put, the desktop still shows one screen, and nothing is unreachable.
+   `min-height: 0` is load-bearing — a flex item defaults to `min-height: auto`
+   and refuses to shrink below its content, which would put the clipping right
+   back. */
 @media (min-width: 1024px) {
   .jaw-page {
+    display: flex;
+    flex-direction: column;
     max-height: calc(100vh - var(--mb-space-9));
     overflow: hidden;
+  }
+
+  /* Header, alerts and anything else keep their natural height... */
+  .jaw-page > * { flex: 0 0 auto; }
+
+  /* ...and the column row absorbs the rest.
+
+     `flex-wrap: nowrap` is the load-bearing part, not a tidy-up. Bootstrap's
+     .row wraps, and in a wrapping flex container `align-items: stretch` sizes
+     an item to its flex LINE — a line as tall as the tallest column's content —
+     instead of to the row. So the columns kept their full content height and
+     pushed the overflow straight back out through .jaw-page. With one
+     guaranteed line the stretch resolves against the row's own (flex-definite)
+     height, and the columns finally have something to scroll inside.
+     Capping them with `max-height: 100%` does NOT work here: the row's height
+     is `auto`, and a percentage against an auto-height containing block
+     resolves to none.
+
+     col-lg-5 + col-lg-7 is exactly 12 columns, so nowrap changes no layout at
+     this breakpoint — below 1024px none of this block applies and the row wraps
+     normally. */
+  .jaw-page > .row {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-height: 0;
+  }
+
+  .jaw-page > .row > [class*="col-"] {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 
