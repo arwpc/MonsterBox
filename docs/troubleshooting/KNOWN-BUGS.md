@@ -1304,6 +1304,32 @@ PumpkinHead's Pumpkin Eyes, with `ledSync` enabled. Proven by eye (left alone, r
 both green, both blue — wiring, split and GRB order all correct) and by a 213-frame TTS
 amplitude envelope, not by a success field. So he is **no longer audio-only.**
 
+⚡ **2026-09-20 — USB OVER-CURRENT was hard-resetting the whole Pi. Fixed by giving him his own
+power supply.** Symptom: the ReSpeaker kept dropping off the bus mid-sentence and the Pi itself
+rebooted — five times that day. The reboots were real hard resets, not software: the previous boot's
+journal simply STOPS mid-activity with no shutdown sequence and no panic.
+
+Cause, from `/proc/device-tree/chosen/power/`: `usbpd_power_data_objects = 0000000` (the supply
+advertised no USB-PD contract at all), so the firmware granted `max_current = 900` mA for ALL USB.
+The two attached devices declare **exactly** that much — ReSpeaker XVF3800 `MaxPower 400mA` +
+1080P webcam `MaxPower 500mA` = 900 mA, zero headroom. Any transient tripped the protection, and
+because a Pi 5's ports share one over-current sense, `dmesg` reported it on **all four root hubs at
+once, including ports with nothing plugged in** — which is why moving the device between ports
+changed nothing, and is the signature to recognise. 160 events in five minutes.
+
+Fix: the operator put the Pi on its own supply. `max_current` went 900 → 3000 mA and the
+over-current stopped dead at 18:31:43; five minutes of a deliberate playback + mic + camera stress
+test afterwards produced zero, rail steady at 5.02 V, `throttled=0x0`.
+
+**Two things still open.** (1) He was on a battery when this was measured — finite, and the fault
+returns as it sags. (2) The operator reports the **official Pi 5 27 W supply**, which should
+negotiate 5 V/5 A and yield `max_current=5000`; it read 900. His bootloader is **May 2025 with an
+update available**, and Pi 5 PD negotiation improved in later releases — update the EEPROM
+**on mains, never on battery** (a power loss mid-EEPROM-write bricks the board) and re-check
+`usbpd_power_data_objects` before trusting mains again. Do NOT paper over it with
+`usb_max_current_enable=1`: on a supply that cannot deliver it, that swaps clean over-current
+cutoffs for brownouts, and brownouts corrupt SD cards.
+
 **No motion.** `/dev/i2c-1` does not exist (only the HDMI DDC buses i2c-13/14), so no PCA9685
 and no servos — though note that is a Pi 5 `dtparam` matter, not a permanent ceiling. The
 `Renfield Shake Motor` (BTS7960, GPIO 27/22/17/23) is **NOT WIRED** (operator, 2026-08-30):
