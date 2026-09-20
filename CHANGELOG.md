@@ -4,6 +4,29 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Renfield's eye rings are addressable, and the Pi 5 can drive WS2812B at last.**
+  `led_ring_daemon.py` had a single backend — `rpi_ws281x`, which drives pixels by poking the
+  SoC's PWM and DMA registers through `/dev/mem`. RP1 moved GPIO off the SoC on the Pi 5, so
+  that library imports, constructs a `PixelStrip` and lights nothing; a Pi 5 node reads as
+  "installed but the LEDs are dead" rather than as an unsupported backend. That is how
+  Renfield's rings came to be written off as `NOT ADDRESSABLE` and registered as a plain
+  switched `light`, which in turn made every LED feature invisible to him — speech sync, the AI
+  interaction colours and `/setup/led-animation` all select parts by `type === 'led_ring'`.
+  RP1's PIO block clocks the same 800kHz waveform and needs **no root**. `_Pi5Strip` wraps it in
+  the `rpi_ws281x` shape the daemon already speaks, board detection picks it automatically, and
+  `dma`/`channel`/`freq`/`invert` are accepted and ignored there. Measured on Renfield: 500
+  frames at a steady 50 Hz with flat RSS. **His two rings are now an `led_ring` on GPIO18,
+  the same DIYMall X0040MB5LN pair and the same 16-pixel / split-8 geometry as PumpkinHead**,
+  with speech sync enabled — confirmed by eye (left, right, green, blue all correct) and by a
+  213-frame TTS envelope.
+- `typeToModelsFile` had no `led_ring` case, so an `led_ring`'s `modelId` resolved to no file and
+  model defaults never reached the hardware merge — the same class as the speaker/microphone gap
+  fixed in `8c8d68da`. PumpkinHead's ring had carried `led_ring_diymall_x0040mb5ln_8bit` against a
+  registry with no such entry. Adds `data/models/led_ring_models.json` and the missing case in
+  both lookup tables.
+- **Renfield (character 6) is LOCKED** as of 2026-09-20 — his authoritative config was pulled from
+  his own node into the repo first, so the committed copy is the real one.
+
 - **A finished character can now be LOCKED so nothing can change his configuration.**
   `config/character-locks.json` freezes a character's show config — parts, poses, scenes,
   super-powers, calibration, movement config, gestures, queues, `ai-config/`, images and his

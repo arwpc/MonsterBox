@@ -84,3 +84,4 @@ source; it is not a way to run a session.
 | Character | Locked | Reason |
 |-----------|--------|--------|
 | 1 — PumpkinHead | 2026-09-19 | Finished and verified at 100%; configuration frozen at operator direction. |
+| 6 — Renfield | 2026-09-20 | Finished and verified at 100%; configuration frozen at operator direction. |

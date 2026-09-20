@@ -26,6 +26,26 @@
         "super-powers.json": "48f060d3b61f0ecbd5cadfdb5affdeb2a7be18351981395b6498009f92a9ea8a"
       },
       "refreshedAt": "2026-09-19T23:53:51.234Z"
+    },
+    {
+      "characterId": 6,
+      "name": "Renfield",
+      "lockedAt": "2026-09-20T17:46:48.352Z",
+      "lockedBy": "Aaron Warner",
+      "reason": "Finished and verified at 100%; eye rings, voice and shake config frozen at operator direction.",
+      "fingerprints": {
+        "ai-config/stt-config.json": "868d8f25c406cf7696912c45103405a9338ef7e42beacd4e51e03a00b095a4d4",
+        "ai-config/tts-config.json": "cea01852e7d3a956a2a1297ff7f6757dba04256fa3ed1dc979eee32b338b9fdb",
+        "images/renfield.jpg": "b98de7adacffb81e42f57ae3cb8712dd3649fc0d6fff29c999ac9e8942cd60cd",
+        "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "movement-config.json": "9e03520ea87663d9d48446c635101ac60705b4e538e4971b429f11a11746360f",
+        "parts.json": "4e77054b8066338fbea1f0b6e28b4ddf35d79588344b774090e876f8b8cf4790",
+        "poses.json": "cadff6e91df6d009cab240d9c06efea84543043836c91a6bb811b1f433010291",
+        "scenes.json": "524c136b3393bfa80f0794a428e9b83e81a0a866bac0d2ff65e5967531974f0d",
+        "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "servos.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "super-powers.json": "8c421ed44dde0caaee0eb67e96e44a1111693aaa164f494aa8fcc725c6589aa2"
+      }
     }
   ]
 }

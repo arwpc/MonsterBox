@@ -1,0 +1,82 @@
+{
+  "_note": "RENFIELD IS AN AUDIO-ONLY CHARACTER. Everything in this file that could move a body is explicitly false, and each block says why. This is deliberate configuration, not an oversight: the three services all default to enabled:false when the file is absent, but 'absent' reads as 'nobody got to it yet' and the next agent turns things on. An explicit false with a reason does not invite that. His Pi has no /dev/i2c-1 (only the HDMI DDC buses i2c-13/14), therefore no PCA9685 and no servo of any kind; his single motor part is declared NOT WIRED in config/physical-faults.json and carries enabled:false in parts.json. His hardware is exactly two things: a ReSpeaker XVF3800 mic array and the speakers hanging off it.",
+  "jawAnimation": {
+    "enabled": false,
+    "servoPartId": null,
+    "activeConfigId": null,
+    "configs": [],
+    "_why": "There is no jaw servo and no PCA9685 to drive one. Enabling this would start the jaw servo daemon and the audio-envelope pipeline against a servoPartId that cannot resolve, burning CPU on an RPi during speech for no motion. servoPartId is null rather than pointing at part 1 (the shake motor) because a motor is not a jaw and the daemon would try to claim a PWM channel that does not exist on this node.",
+    "ledSync": {
+      "enabled": true,
+      "partId": "5",
+      "colorLow": [
+        70,
+        0,
+        0
+      ],
+      "colorHigh": [
+        255,
+        120,
+        0
+      ],
+      "sensitivity": 1.5,
+      "smoothing": 0.5,
+      "attackMs": 40,
+      "releaseMs": 120,
+      "speed": 1,
+      "offsetMs": 0
+    }
+  },
+  "headTracking": {
+    "enabled": false,
+    "opencvEnabled": false,
+    "panServoId": null,
+    "webcamPartId": null,
+    "_why": "Two independent blockers, either one sufficient. (1) No pan servo and no PCA9685. (2) No camera at all on this node, and python3-opencv is deliberately not installed in the base build, so the tracker's Python side could not import cv2 even if a webcam appeared. opencvEnabled is pinned false as well so that adding a webcam later does not silently start a tracker with nowhere to send its pan output."
+  },
+  "followOrders": {
+    "enabled": false,
+    "requireAddressByName": false,
+    "addressAliases": [],
+    "ackMode": "speak",
+    "ackPhrases": [
+      "As you command."
+    ],
+    "refusalPhrases": [],
+    "minConfidence": 0.6,
+    "cooldownMs": 2000,
+    "defaultDurationMs": 1200,
+    "maxDurationMs": 3000,
+    "enablePoseMatching": false,
+    "enableGestureMatching": false,
+    "enablePartMatching": false,
+    "commands": [],
+    "partAliases": [],
+    "_why": "Follow-orders exists to turn a spoken order into body movement, and Renfield has no body to move: poses.json is empty by design, there are no gestures, and his only controllable part is the unwired motor. Leaving it enabled would be worse than useless — server.js starts a standalone listener at boot whenever this flag is true, and that listener opens the SAME XVF3800 capture device the conversation path needs. On this array only one holder can capture at a time, so an always-on order listener would contend with the one thing Renfield is actually for. All three matchers are pinned false too, so re-enabling the top flag alone still cannot select a part."
+  },
+  "aiMotion": {
+    "enabled": false,
+    "triggers": {
+      "agentGesture": true,
+      "guestCommand": true,
+      "ambientDuringSpeech": false
+    },
+    "permissions": {
+      "allowedRoles": [
+        "head",
+        "jaw",
+        "eye",
+        "arm",
+        "light"
+      ],
+      "deniedPartIds": [],
+      "kidSafeOnly": false,
+      "cooldownMs": 3000,
+      "maxPerConversation": 0,
+      "minConfidence": 0.6,
+      "requireAddressByName": false,
+      "ambientMinAmplitude": 0.2,
+      "ambientMaxAmplitude": 0.5
+    }
+  }
+}

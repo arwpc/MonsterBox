@@ -14,6 +14,14 @@
         "concurrent": false
       },
       {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 1000,
+        "concurrent": true
+      },
+      {
         "type": "sayThis",
         "text": "Moth. Eleven forty PM. Substantial. Entered. …The registry grows FAT tonight.",
         "concurrent": false
@@ -43,6 +51,14 @@
     "characterId": 6,
     "steps": [
       {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 65,
+        "duration": 1400,
+        "concurrent": true
+      },
+      {
         "type": "sayThis",
         "text": "[chuckles] …seventeen souls, he says. SEVENTEEN. I have fifteen. The audit is coming, pumpkin. The audit is COMING.",
         "concurrent": false
@@ -58,6 +74,14 @@
         "type": "sayThis",
         "text": "…dear master — per my last four hundred correspondences — I remain available. Punctual.",
         "concurrent": false
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 70,
+        "duration": 1800,
+        "concurrent": true
       },
       {
         "type": "sayThis",

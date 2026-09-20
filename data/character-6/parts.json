@@ -5,53 +5,211 @@
     "name": "Renfield Shake Motor",
     "type": "motor",
     "model": "motor_jeep_wagoneer_wiper",
-    "driver": "BTS7960",
-    "rpwmPin": 27,
-    "lpwmPin": 22,
-    "renPin": 17,
-    "lenPin": 23,
-    "enableMode": "dual",
+    "rpwmPin": 12,
+    "lpwmPin": 13,
     "minSpeed": 0,
     "maxSpeed": 100,
     "maxDuration": 5000,
     "description": "12V shake motor \u2014 'the signature', Renfield's tremble. BTS7960 H-bridge on BCM GPIO: RPWM=27, LPWM=22, R_EN=17, L_EN=23. WIRING: run R_EN and L_EN to SEPARATE GPIO lines as listed \u2014 do NOT jumper them onto one pin. linear_actuator_control_v2.py claims each enable line independently with lgpio.gpio_claim_output, so a shared pin raises GPIO_BUSY (-79) on the second claim and every motor command fails at setup. All four lines are free on a bare node (no I2C 2/3, UART 14/15 or SPI 7-11 conflict), leaving the PCA9685 bus open for later parts. Common ground between the Pi and the BTS7960 logic side is required; the 12V motor supply must NOT share the Pi's 5V rail. Shake is a short burst: scenes run 900-2000ms at 50-80% and maxDuration caps any single energization at 5000ms.",
     "created": "2025-10-14T00:00:00.000Z",
-    "enabled": true,
+    "enabled": false,
     "config": {
       "maxDuration": 5000,
       "controlBoard": "BTS7960"
     },
     "controlBoard": "BTS7960",
-    "updated": "2026-08-16T00:00:00.000Z",
-    "modelId": "motor_jeep_wagoneer_wiper"
+    "updated": "2026-08-31T00:00:00.000Z",
+    "modelId": "motor_jeep_wagoneer_wiper",
+    "disabledReason": "NOT WIRED - operator confirmed 2026-08-30 that the BTS7960 and the motor were never connected. Kept, not deleted, so the wiring notes in `description` survive for the day it IS wired. The enforcing record is config/physical-faults.json characters.6.parts.1 - that is what stops autonomous callers (sceneExecutor.executeStep, followOrdersExecutor, safetyLimits.isTestSafePart). This flag additionally removes the part from every enabled!==false filter (follow-orders part list, stopEverything, speechExpression)."
   },
   {
     "id": "2",
     "characterId": 6,
-    "name": "Speaker Renfield",
+    "name": "Speaker Renfield (ReSpeaker XVF3800)",
     "type": "speaker",
-    "description": "Main speaker",
+    "description": "powered speakers on the ReSpeaker XVF3800 line-out (the Pi 5 has no analog jack, so this is the only non-HDMI output). OPERATOR 2026-08-31: these are a good set of powered speakers, the SAME set as Sir Dragomir (character 4) uses - his speaker part carries the same modelId speaker_respeaker_xvf3800. Treat his tuning as the nearest reference point for Renfield.",
     "config": {
-      "audioDeviceId": "default",
-      "volume": 85
+      "audioDeviceId": "alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200044-00.analog-stereo",
+      "volume": 100,
+      "bass": 0,
+      "treble": 0
     },
     "created": "2025-10-14T00:00:00.000Z",
-    "enabled": true
+    "enabled": true,
+    "modelId": "speaker_respeaker_xvf3800",
+    "updated": "2026-09-01T03:17:43.595Z"
   },
   {
     "id": "3",
     "characterId": 6,
-    "name": "Microphone Renfield",
+    "name": "Microphone Renfield (ReSpeaker XVF3800)",
     "type": "microphone",
     "deviceIndex": 0,
     "sampleRate": 16000,
     "channels": 1,
-    "description": "Main microphone",
+    "description": "audio input devices \u2014 ReSpeaker XVF3800 4-Mic Array (card 2). Was pointed at a USB Camera mic this node does not have.",
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true,
     "config": {
-      "deviceId": "alsa_input.usb-HHWei_Technology_Co.__Ltd._USB_Camera_HHW001-02.analog-stereo"
+      "deviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200044-00.analog-stereo",
+      "sampleRate": 16000,
+      "gain": 50
     },
-    "updated": "2025-10-17T19:23:01.992Z"
+    "updated": "2026-08-31T04:53:07.596547Z",
+    "modelId": "mic_respeaker_xvf3800"
+  },
+  {
+    "name": "Renfield's Eyes",
+    "type": "webcam",
+    "description": "His webcam",
+    "config": {
+      "modelId": "default-uvc-1",
+      "devicePath": "/dev/video0",
+      "deviceId": 0
+    },
+    "id": "4",
+    "enabled": true,
+    "created": "2026-09-01T03:15:18.797Z",
+    "updated": "2026-09-01T03:15:26.575Z",
+    "modelId": "default-uvc-1"
+  },
+  {
+    "id": "5",
+    "characterId": 6,
+    "name": "Renfield Eye Rings",
+    "type": "led_ring",
+    "description": "Two chained DIYMall X0040MB5LN 8-bit WS2812B rings on GPIO18 - left eye pixels 0-7, right eye 8-15. Same hardware and same wiring as PumpkinHead's Pumpkin Eyes.\n\nThis part was registered as a plain switched `light` until 2026-09-20, which is why Renfield could toggle his eyes on and off and had no speech sync, no AI interaction colours and nothing on /setup/led-animation: every one of those paths selects parts by `type === 'led_ring'` and a `light` is invisible to all of them.\n\nThe old description claimed the rings were NOT addressable because rpi_ws281x cannot drive pixels on a Pi 5. The premise was right and the conclusion was wrong: rpi_ws281x fails because RP1 moved GPIO off the SoC, but RP1's own PIO block clocks WS2812B fine and needs no root (/dev/pio0 is root:gpio, and the service user is in the gpio group). led_ring_daemon.py picks that backend automatically on a Pi 5. Measured here: 500 frames at a steady 50 Hz with flat RSS.\n\nGPIO18 is free on this node - the motor holds 12 and 13. It is also the Pi's I2S PCM_CLK line, unused because Renfield's audio is entirely USB (ReSpeaker XVF3800); move these rings first if I2S is ever enabled here. The PWM0/snd_bcm2835 contention that matters on a Pi 4 does not apply on this board, because the PIO path never touches PWM0.",
+    "config": {
+      "gpioPin": 18,
+      "pixelCount": 16,
+      "ringSplit": 8,
+      "brightness": 100,
+      "dma": 10,
+      "pwmChannel": 0,
+      "colorOrder": "GRB",
+      "rings": [
+        {
+          "name": "Left Eye",
+          "target": "left",
+          "offset": 0,
+          "count": 8
+        },
+        {
+          "name": "Right Eye",
+          "target": "right",
+          "offset": 8,
+          "count": 8
+        }
+      ],
+      "defaultState": "idle",
+      "colors": {
+        "idle": {
+          "left": [
+            140,
+            0,
+            0
+          ],
+          "right": [
+            140,
+            0,
+            0
+          ]
+        },
+        "listening": {
+          "left": [
+            0,
+            200,
+            255
+          ],
+          "right": [
+            0,
+            200,
+            255
+          ]
+        },
+        "thinking": {
+          "left": [
+            0,
+            120,
+            255
+          ],
+          "right": [
+            0,
+            120,
+            255
+          ]
+        },
+        "speaking": {
+          "left": [
+            255,
+            120,
+            0
+          ],
+          "right": [
+            255,
+            120,
+            0
+          ]
+        },
+        "error": {
+          "left": [
+            255,
+            0,
+            0
+          ],
+          "right": [
+            255,
+            0,
+            0
+          ]
+        },
+        "fade": {
+          "left": [
+            255,
+            60,
+            0
+          ],
+          "right": [
+            255,
+            60,
+            0
+          ]
+        }
+      },
+      "palette": [
+        [
+          216,
+          3,
+          3
+        ],
+        [
+          255,
+          140,
+          0
+        ],
+        [
+          0,
+          255,
+          60
+        ],
+        [
+          10,
+          72,
+          143
+        ],
+        [
+          200,
+          0,
+          255
+        ]
+      ],
+      "fadeMs": 1500,
+      "holdMs": 400,
+      "dataRateHz": 800000
+    },
+    "created": "2026-09-13T00:00:00.000Z",
+    "updated": "2026-09-20T17:41:29.000Z",
+    "enabled": true,
+    "modelId": "led_ring_diymall_x0040mb5ln_8bit"
   }
 ]

@@ -1,0 +1,21 @@
+{
+  "idle": {
+    "enabled": false,
+    "minHoldMs": 3000,
+    "maxHoldMs": 8000,
+    "transitionDurationMs": 2000,
+    "defaultEasing": "ease_in_out",
+    "steppedTransitions": true,
+    "jitterDeg": 0,
+    "distanceWeighting": true
+  },
+  "microMovement": {
+    "enabled": false,
+    "breathingAmplitudeDeg": 2,
+    "breathingPeriodMs": 4000,
+    "driftAmplitudeDeg": 1,
+    "driftPeriodMs": 7000
+  },
+  "characterPersonality": "default",
+  "servoTransitions": {}
+}
