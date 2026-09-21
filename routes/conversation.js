@@ -952,6 +952,24 @@ router.get('/api/listen-in-url', async (req, res) => {
 
 // POST /conversation/api/speaker-mute { muted: true/false }
 // Toggle global speaker mute
+/**
+ * Interrupt whatever this character is currently saying.
+ *
+ * The automatic path is a detector inside the mic loop, but an operator needs a
+ * hard stop too — and it gives the browser suite something deterministic to
+ * assert without having to actually shout at an animatronic.
+ */
+router.post('/api/stop-speaking', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    const result = elevenLabsWebSocketService.bargeInForCharacter(characterId, 'manual');
+    res.json({ success: true, characterId, ...result });
+  } catch (error) {
+    console.error('Error interrupting speech:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.post('/api/speaker-mute', express.json(), async (req, res) => {
   const muted = !!(req.body && req.body.muted);
   // Await the persist before answering. Replying early made the response a promise

@@ -45,6 +45,67 @@ const MIC_GATE_HANGOVER_MS = 900;
 // Set MB_MIC_VOICE_GATE=0 to stream the raw microphone regardless.
 const MIC_VOICE_GATE_ENABLED = process.env.MB_MIC_VOICE_GATE !== '0';
 
+// ---------------------------------------------------------------------------
+// Barge-in (talking over the character)
+//
+// The characters were "hard to speak over" for a structural reason, not a
+// tuning one: while the character speaks, the mic loop below replaces the real
+// microphone with synthetic room floor before it leaves the node. That is
+// deliberate and must stay — it is what stops the character's own reply tail
+// and the servo whine beside the mic being transcribed back as guest turns. But
+// it also means the agent's own turn model literally cannot hear the guest, so
+// the 'interruption' event it would otherwise send can never fire. Barge-in has
+// to be detected HERE, on frames we are already computing RMS for.
+//
+// The threshold is learned, never fixed. Nodes differ enormously: an XVF3800
+// array does hardware echo cancellation, so the character's own voice comes
+// back attenuated, while a bare USB mic hears it at full volume. So we learn an
+// ECHO FLOOR from the suppressed frames themselves — i.e. how loud this node
+// sounds to itself while talking — and demand a frame clearly above that.
+const BARGE_IN_ENABLED = process.env.MB_BARGE_IN !== '0';
+
+// How far above the learned echo floor a frame must sit to count as someone
+// else talking. Mirrors VOICE_GATE_MARGIN's job on the noise floor.
+const BARGE_IN_MARGIN = 2.2;
+
+// An absolute floor, so a silent node that has learned a near-zero echo floor
+// cannot be interrupted by its own faint hiss.
+const BARGE_IN_RMS_FLOOR = 0.05;
+
+// Frames are ~250ms, so 3 consecutive frames is ~750ms of sustained speech.
+// Hysteresis is what keeps a door slam, a laugh or one loud consonant from
+// cutting the character off mid-sentence.
+const BARGE_IN_FRAMES = 3;
+
+// The character always gets its opening words out. Without this, the tail of
+// the guest's own question — still echoing in the room as the reply starts —
+// immediately interrupts the reply it just triggered.
+const BARGE_IN_GRACE_MS = 700;
+
+/**
+ * Should this frame, in this state, count as the guest talking over the
+ * character? Pure and exported so the thresholds can be unit-tested without a
+ * socket, a microphone or a node.
+ *
+ * @param {object} state  { echoFloor, bargeInFrames, speechStartedAt }
+ * @param {number} frameRms  0..1 energy of the current frame
+ * @param {number} now  epoch ms
+ * @returns {{ over: boolean, bargeIn: boolean, threshold: number }}
+ */
+export function shouldBargeIn(state, frameRms, now) {
+    const echoFloor = state && Number.isFinite(state.echoFloor) ? state.echoFloor : 0;
+    const threshold = Math.max(BARGE_IN_RMS_FLOOR, echoFloor * BARGE_IN_MARGIN);
+    const over = frameRms > threshold;
+
+    // Inside the grace window a loud frame is counted but never fires, so the
+    // run has to survive past the grace period to interrupt.
+    const startedAt = state && state.speechStartedAt ? state.speechStartedAt : 0;
+    const past = !startedAt || (now - startedAt) >= BARGE_IN_GRACE_MS;
+
+    const run = over ? ((state && state.bargeInFrames) || 0) + 1 : 0;
+    return { over, bargeIn: past && run >= BARGE_IN_FRAMES, threshold, run };
+}
+
 /**
  * Is an agent turn a REPLY to something we asked, or the agent's unprompted
  * opening greeting?
@@ -853,6 +914,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                         const c = this.activeConnections.get(sessionId);
 
+                        // Just barged in: ElevenLabs is still streaming the sentence we
+                        // cut off, and handing those chunks to writePcmStream would
+                        // respawn the player _bargeIn just killed — the interruption
+                        // would audibly un-do itself. Drop them for the discard window.
+                        if (c && c.discardAgentAudioUntilMs && Date.now() < c.discardAgentAudioUntilMs) {
+                            break;
+                        }
+
                         // Audio counts as reply activity for a question asked on this
                         // session — a filler line or a reply that is still streaming
                         // must keep the caller waiting rather than settling early.
@@ -1145,27 +1214,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     break;
 
                 case 'interruption':
-                    // Stop any active server playback immediately (barge-in)
-                    try {
-                        if (connection && connection.characterId != null) {
-                            serverPlaybackService.stopForCharacter(connection.characterId);
-                        } else {
-                            serverPlaybackService.stopAll();
-                        }
-                    } catch (_) { /* best-effort */ }
-                    // Reset echo suppression tracking
-                    if (connection) {
-                        connection.aiSpeaking = false;
-                        connection.speechStartedAt = 0;
-                        connection.accumulatedAudioMs = 0;
-                        // Playback was cut short, so the queued-audio clock is void.
-                        connection.playbackEndsAtMs = 0;
-                        connection.suppressMicUntilMs = Date.now() + 500; // short tail for reverb
-                    }
-                    this.sendToClient(sessionId, {
-                        type: 'interruption',
-                        reason: message.interruption_event?.reason || 'Unknown'
-                    });
+                    // One shared path with the local detector. This used to stop
+                    // audio only, leaving the jaw flapping to a dead speaker and the
+                    // eyes stuck in the speaking crossfade, and it never dropped the
+                    // queued agent audio — so the PCM writer could respawn the player
+                    // that had just been killed.
+                    this._bargeIn(sessionId, message.interruption_event?.reason || 'agent');
                     break;
 
                 case 'client_tool_call': {
@@ -1813,6 +1867,35 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             ? frameRms
                             : Math.min(frameRms, connection._noiseFloor * 1.0008 + 0.00002);
                     }
+
+                    // While suppressed we are hearing the character itself. Learn how
+                    // loud this node sounds to its own microphone — that is the level
+                    // a guest has to beat to be talking OVER it — and watch for a
+                    // sustained frame above it. Same latch-low/creep-up shape as the
+                    // noise floor, so an AEC array and a bare USB mic both settle on
+                    // their own honest level with no per-character tuning.
+                    if (suppressed && BARGE_IN_ENABLED && connection.aiSpeaking) {
+                        connection._echoFloor = (connection._echoFloor == null)
+                            ? frameRms
+                            : Math.min(frameRms, connection._echoFloor * 1.0008 + 0.00002);
+
+                        const verdict = shouldBargeIn({
+                            echoFloor: connection._echoFloor,
+                            bargeInFrames: connection._bargeInFrames,
+                            speechStartedAt: connection.speechStartedAt
+                        }, frameRms, now);
+                        connection._bargeInFrames = verdict.run;
+
+                        if (verdict.bargeIn) {
+                            connection._bargeInFrames = 0;
+                            this._bargeIn(sessionId, 'guest');
+                        }
+                    } else if (!suppressed) {
+                        // Out of playback: forget the run and let the floor re-learn
+                        // on the next utterance, which may be at a different volume.
+                        connection._bargeInFrames = 0;
+                        connection._echoFloor = null;
+                    }
                     const voiceThreshold = Math.max(
                         VOICE_ACTIVITY_RMS,
                         (connection._noiseFloor || 0) * VOICE_GATE_MARGIN
@@ -2237,6 +2320,109 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 connection.suppressMicUntilMs = Math.max(connection.suppressMicUntilMs || 0, untilMs);
             }
         }
+    }
+
+    /**
+     * Lift echo suppression NOW, character-wide.
+     *
+     * _suppressMicUntil deliberately only ever moves the deadline later, so it
+     * cannot reopen the microphone. Barge-in is the one case that must: the
+     * character has been cut off, so there is no longer any speech of its own to
+     * keep out, and the guest is mid-sentence and needs to be heard.
+     */
+    _clearMicSuppression(characterId) {
+        for (const [, connection] of this.activeConnections) {
+            if (characterId == null || Number(connection.characterId) === Number(characterId)) {
+                connection.suppressMicUntilMs = 0;
+                connection.aiSpeaking = false;
+                connection.speechStartedAt = 0;
+                connection.accumulatedAudioMs = 0;
+                connection.playbackEndsAtMs = 0;
+                connection._bargeInFrames = 0;
+                connection._echoFloor = null;
+            }
+        }
+    }
+
+    /**
+     * Cut the character off mid-sentence and hand the turn back to the guest.
+     *
+     * Called both by the local detector in the mic loop (the only thing that can
+     * notice a guest talking over a character whose mic feed is suppressed) and
+     * by the agent's own 'interruption' event. Character-independent: everything
+     * keys off connection.characterId.
+     *
+     * Order matters. The discard window is set FIRST, because ElevenLabs audio
+     * chunks are still arriving and the PCM writer would otherwise respawn the
+     * player we are about to kill — the cut would visibly un-cut itself.
+     */
+    _bargeIn(sessionId, reason = 'guest') {
+        const connection = this.activeConnections.get(sessionId);
+        const characterId = connection ? connection.characterId : null;
+
+        // 1. Refuse further agent audio for a moment, and drop what is queued.
+        const until = Date.now() + 1200;
+        for (const [, c] of this.activeConnections) {
+            if (characterId == null || Number(c.characterId) === Number(characterId)) {
+                c.discardAgentAudioUntilMs = until;
+                c.audioBuffer = [];
+            }
+        }
+
+        // 2. Kill audio already in the speaker (mpg123 + pw-play + speaker_cli stop).
+        try {
+            if (characterId != null) serverPlaybackService.stopForCharacter(characterId);
+            else serverPlaybackService.stopAll();
+        } catch (_) { /* best-effort */ }
+
+        // 3. Stop the body. Without this the jaw keeps flapping to a dead speaker
+        //    and the eyes stay in the audio-reactive speaking crossfade.
+        (async () => {
+            try {
+                const jaw = await import('./jawAnimationSuperPowerService.js');
+                if (characterId != null) {
+                    try { jaw.stopPcmJawStream(characterId); } catch (_) { /* noop */ }
+                    try { jaw.cancelJawDrive(characterId); } catch (_) { /* noop */ }
+                }
+            } catch (_) { /* jaw optional */ }
+            try {
+                const led = await import('./ledInteractionService.js');
+                if (characterId != null) {
+                    // .default: this service has no named exports. Straight to
+                    // 'listening' — the guest has the floor. No-op without an led_ring.
+                    await led.default.setInteractionState(characterId, 'listening');
+                }
+            } catch (_) { /* LEDs optional */ }
+        })();
+
+        // 4. Reopen the microphone to the agent immediately, so its own turn model
+        //    takes the turn normally from here.
+        this._clearMicSuppression(characterId);
+
+        console.log(`✋ Barge-in (${reason}) — character ${characterId} cut off, mic reopened`);
+
+        // 5. Existing client message type; both browser clients already handle it.
+        this.sendToClient(sessionId, { type: 'interruption', reason });
+    }
+
+    /**
+     * Interrupt whatever a character is currently saying, from outside a session
+     * (an operator button, a fleet-wide stop). No-op if it is not speaking.
+     */
+    bargeInForCharacter(characterId, reason = 'manual') {
+        let hit = false;
+        for (const [sessionId, c] of this.activeConnections) {
+            if (Number(c.characterId) === Number(characterId)) {
+                this._bargeIn(sessionId, reason);
+                hit = true;
+                break; // _bargeIn already fans out across this character's sessions
+            }
+        }
+        if (!hit && characterId != null) {
+            // No live session, but audio may still be playing from /api/say or a scene.
+            try { serverPlaybackService.stopForCharacter(characterId); } catch (_) { /* noop */ }
+        }
+        return { success: true, interrupted: hit };
     }
 
     async stopWebSocketServer() {
