@@ -104,6 +104,20 @@ class AudioLoopService {
      */
     async startLoop(characterId, audioFile, deviceId = 'default', volume = 100) {
         try {
+            // Honour the speaker mute, exactly as serverPlaybackService does.
+            //
+            // routes/audioLibrary.js sends loop:true straight here, bypassing
+            // serverPlaybackService entirely, so a muted node stayed silent on Play
+            // but made noise on Loop — and a fleet Emergency Stop could not hold a
+            // running loop quiet. Given the mute exists to keep the house asleep,
+            // the LOOP is the one that most needs to respect it.
+            // Returns false (the documented boolean contract) because the loop genuinely
+            // did not start; callers distinguish mute from failure via isSpeakerMuted().
+            if (serverPlaybackService.isSpeakerMuted()) {
+                console.log(`🔇 Speaker muted — loop for character ${characterId} not started`);
+                return false;
+            }
+
             // Stop any existing loop for this character
             await this.stopLoop(characterId);
 

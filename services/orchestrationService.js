@@ -776,7 +776,25 @@ class OrchestrationService {
             disarm.lurk(false),
             disarm.motion(false),
             disarm.head(false),
-            disarm.mute(true),
+            // Deliberately NOT disarm.mute(true).
+            //
+            // The speaker mute is persisted to data/speaker-state.json and restored
+            // at construction, so panic-muting here latched a PERMANENT, restart-
+            // surviving silence on every node — and nothing in the codebase ever
+            // un-mutes (setSpeakerMuted has exactly one caller, the manual toggle).
+            // One press of Emergency Stop therefore silenced the fleet forever:
+            // found 2026-09-21 with Mina, Orlok and Groundbreaker still muted, and
+            // "Speaker mute restored from disk — this node boots muted" logged on 14
+            // separate service starts. It presented as "the Audio Library is broken
+            // on every animatronic", because playback returns {success:true,
+            // muted:true} and the page reports success.
+            //
+            // Panic does not need it: /api/audio/stop-all above kills audio already
+            // in flight, and every autonomous trigger that could start new audio is
+            // disarmed in this same list. The persisted mute stays available as the
+            // OPERATOR's deliberate control (it is what protects the household at
+            // night, and it is meant to survive a restart) — it just must not be set
+            // by an automated panic path that has no matching all-clear.
             // Voice orders are an autonomous motion trigger too: a guest
             // shouting "raise your arm" seconds after the operator hit stop
             // must find the ears switched off.

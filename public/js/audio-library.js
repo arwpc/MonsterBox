@@ -449,7 +449,13 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.success) {
+            // A muted speaker answers {success:true, muted:true} and plays nothing.
+            // Branching on success alone showed a green "Now Playing" over total
+            // silence, which is why a fleet-wide persisted mute read to the operator
+            // as "the Audio Library is broken on every animatronic". Check muted FIRST.
+            if (data.muted) {
+                showError(data.message || 'Speaker is muted — nothing was played. Unmute this character to hear audio.');
+            } else if (data.success) {
                 currentlyPlayingId = audioId;
                 var audio = findAudioById(audioId);
                 showNowPlaying(audio ? audio.title : audioId);

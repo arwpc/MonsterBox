@@ -458,7 +458,11 @@ class AdvancedAudioPlayer {
 
             const data = await response.json();
 
-            if (data.success) {
+            // A muted speaker answers {success:true, muted:true} and plays nothing —
+            // report the silence instead of claiming playback. See audio-library.js.
+            if (data.muted) {
+                this.showError(data.message || 'Speaker is muted — nothing was played.');
+            } else if (data.success) {
                 this.showSuccess(`Playing "${data.audio.title}" on ${this.currentCharacter.name || 'Character ' + this.currentCharacter.id}`);
             } else {
                 this.showError(data.error || 'Failed to play audio');
