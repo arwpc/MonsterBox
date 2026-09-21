@@ -1,1 +1,206 @@
-[]
+[
+  {
+    "id": 401,
+    "name": "Riddle of the Magic Box - The Clock",
+    "steps": [
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 406,
+        "duration": 900,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "Halt, young traveller! I am Sir Dragomir, and this box at my side holds riddles older than your grandfather's grandfather.",
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "3",
+        "angle": 174,
+        "duration": 1200,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 372,
+        "duration": 900,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Here is mine. I have a face, and I have two hands. But I have no arms, and I have no legs at all. What am I?",
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 9000,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "3",
+        "angle": 20,
+        "duration": 1200,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 406,
+        "duration": 900,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Ahh, I see it in your eyes. You may have it! Take your answer to Mina, and tell her the old knight sent you. She keeps the truth of that one.",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-09-21T22:30:52.688405Z",
+    "updated": "2026-09-21T22:30:52.688405Z"
+  },
+  {
+    "id": 402,
+    "name": "Riddle of the Magic Box - The Piano",
+    "steps": [
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 406,
+        "duration": 900,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "You came back! Brave of you. The box has been rattling all night with another one.",
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "3",
+        "angle": 174,
+        "duration": 1200,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 372,
+        "duration": 900,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Listen close. I have many keys, but I open no doors. Turn me as you like, no lock will ever budge. What am I?",
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 9000,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "3",
+        "angle": 20,
+        "duration": 1200,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 406,
+        "duration": 900,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Hah! Do not tell me. Carry that answer to Orlok. He is old, and he is terrible, but he is fair, and he will tell you true.",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-09-21T22:30:52.688405Z",
+    "updated": "2026-09-21T22:30:52.688405Z"
+  },
+  {
+    "id": 403,
+    "name": "Riddle of the Magic Box - The Candle",
+    "steps": [
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 406,
+        "duration": 900,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "One last riddle, small traveller, and it is the finest of the three. Come closer, the box does not bite. Much.",
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "3",
+        "angle": 174,
+        "duration": 1200,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 372,
+        "duration": 900,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "The taller I stand, the shorter I grow. I give you my light, and I fade away giving it. What am I?",
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 9000,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "3",
+        "angle": 20,
+        "duration": 1200,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "1",
+        "angle": 406,
+        "duration": 900,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "A fine mind you have! Go now, and ask Mina or ask Orlok, whichever one you meet first. And tell them Sir Dragomir is still standing.",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-09-21T22:30:52.688405Z",
+    "updated": "2026-09-21T22:30:52.688405Z"
+  }
+]
