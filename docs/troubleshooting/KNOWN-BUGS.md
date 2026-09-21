@@ -604,6 +604,40 @@ WS2812B eye rings all functional; LED eye animation + speech/AI sync built and t
 under-voltage note below is a known hard-start limitation, mitigated in software (drive the motor at
 ≤25 %, never 100 % DC) — not a fault blocking normal operation. Items below are retained history.
 
+🔴 **2026-09-20 — ARMING LURK HARD-RESETS HIM. His PSU cannot carry the whole show at once.**
+Reproduced five times (19:11, 19:19, 19:32:00, 19:32:49, 19:37:52): he reboots within seconds of
+`POST /conversation/api/lurk-mode {enabled:true}`. Every death ends with **no shutdown sequence** in
+the journal — a hard reset, not a software restart — and with **no kernel panic** (the `mmc_debug`
+line that greps as "BUG:" is a false positive). The only under-voltage messages are the known
+2-second dip at each boot ("Undervoltage detected!" → "Voltage normalised"), because a collapse deep
+enough to reset the board never gets written.
+
+**Bisected — every subsystem is fine ALONE, and only the combination kills him:**
+| Load | Result |
+|---|---|
+| Fully idle, 10 min (twice) | stable, uptime climbed cleanly |
+| LED ring driven 90 s | stable |
+| `ask-ai` + TTS through his speaker | stable, he spoke |
+| Motor, 6 × 1200 ms at 40 % | stable, `throttled` unchanged |
+| **Arming lurk (all at once)** | **hard reset within seconds** |
+
+What lurk starts simultaneously, from his own log immediately before a death: an **STT/mic session**
+on the XVF3800, the **LED daemon** claiming 16 pixels on GPIO18, and **random poses**. Three inrushes
+together are past what his supply will hold.
+
+**This was made reachable by `f4adb271`.** Until then his AI Motion toggle failed on the character
+lock, which incidentally kept `ambientDuringSpeech` disarmed. Making that toggle work on a locked
+character is right in general and handed PumpkinHead back a path his PSU cannot sustain.
+
+**Separately fixed the same day:** both idle sway poses drove his motor at **60 %**, the speed
+already measured on 2026-09-07 to reset him (462 such commands in his log). Now **40 %**, verified
+on his hardware. That is pose authoring, NOT a reinstated per-part safety limit — the 2026-08-20
+ruling stands and nothing here clamps or refuses anything.
+
+**The fix is his power supply, not software.** Until then he runs fine on demand (AI, voice, eyes,
+motor at 40 %) but must not be left in lurk. Do not chase this in code again without first
+re-running the bisect above.
+
 🔧 **2026-09-20 — STRUCTURAL BREAK, REPAIRED.** A large wooden member in his body split in two. The
 operator repaired it **with metal**, so the rebuilt joint is stronger than the original wood. No
 software change and no entry in `config/physical-faults.json`: nothing is broken now, and listing a
