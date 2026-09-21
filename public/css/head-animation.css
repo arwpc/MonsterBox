@@ -10,15 +10,41 @@
 
 @media (min-width: 1024px) {
   .head-page {
+    display: flex;
+    flex-direction: column;
     max-height: calc(100vh - var(--mb-space-9));
     overflow: hidden;
   }
 
-  /* The left column carries far more tuning than fits a screen; it scrolls
-     independently so the webcam preview stays pinned in view beside it. */
-  .head-scroll {
-    max-height: calc(100vh - var(--mb-space-9));
+  /* Only the LEFT column used to scroll, so the right column's Test Sweep /
+     E-Stop panel was clipped by the page's overflow:hidden with nothing able to
+     reach it — measured 54px lost at 1366x768 and 64px at 1280x720, and
+     window.scrollTo moved the document 0px. Same defect the jaw and LED pages
+     had; this is that fix ported to the head page, which had been left behind.
+     The cap stays — the COLUMNS carry the overflow instead of it being thrown
+     away. */
+  .head-page > * { flex: 0 0 auto; }
+
+  .head-page > .row {
+    flex: 1 1 auto;
+    /* Load-bearing: a wrapping flex line stretches to content height and pushes
+       the overflow straight back out of the capped page. col-lg-5 + col-lg-7 is
+       exactly 12 columns, so nowrap changes no layout at this breakpoint. */
+    flex-wrap: nowrap;
+    min-height: 0;
+  }
+
+  .head-page > .row > [class*="col-"] {
+    /* Load-bearing: flex items default to min-height:auto, which refuses to
+       shrink below content height and defeats the scroll container. */
+    min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* The left column now takes its height from the flex row; it keeps only its
+     horizontal clamp and gutter. */
+  .head-scroll {
     overflow-x: hidden;
     padding-right: var(--mb-space-1);
   }

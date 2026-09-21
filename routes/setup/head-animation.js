@@ -347,16 +347,33 @@ router.post('/api/head-tracking/:charId/params', async (req, res) => {
       return res.status(400).json({ success: false, error: 'No webcam configured' });
     }
 
-    // Update OpenCV motion params on the running Python process
+    // Update OpenCV motion params on the running Python process.
+    //
+    // Every key below is already understood by motion_tracking_service.py's
+    // key_map, which also re-initialises the detector and resets the CV tracker
+    // on a detectionMode change. This list used to omit detectionMode,
+    // targetLockStrength, confirmFrames and detectInterval, and the route still
+    // answered {success:true} because the surviving keys were always present.
+    // The visible effect was that the tuning page "did nothing": the preset
+    // buttons are defined mostly BY detectionMode/targetLockStrength/
+    // confirmFrames, so switching preset only nudged contour numbers and the
+    // detection mode never changed on a running tracker at all. An omission
+    // here is silent, so this list is the whole hot-updatable surface.
+    const HOT_KEYS = [
+      'motionThreshold', 'minContourArea', 'maxContourArea',
+      'backgroundLearningRate', 'blurSize', 'dilateSize', 'varThreshold',
+      'noiseReductionKernelSize',
+      'targetLockStrength', 'confirmFrames', 'detectInterval', 'detectionMode'
+    ];
     const motionParams = {};
-    if (params.motionThreshold !== undefined) motionParams.motionThreshold = params.motionThreshold;
-    if (params.minContourArea !== undefined) motionParams.minContourArea = params.minContourArea;
-    if (params.maxContourArea !== undefined) motionParams.maxContourArea = params.maxContourArea;
-    if (params.backgroundLearningRate !== undefined) motionParams.backgroundLearningRate = params.backgroundLearningRate;
-    if (params.blurSize !== undefined) motionParams.blurSize = params.blurSize;
-    if (params.dilateSize !== undefined) motionParams.dilateSize = params.dilateSize;
-    if (params.varThreshold !== undefined) motionParams.varThreshold = params.varThreshold;
-    if (params.noiseReductionKernelSize !== undefined) motionParams.noiseReductionKernelSize = params.noiseReductionKernelSize;
+    for (const key of HOT_KEYS) {
+      if (params[key] !== undefined) motionParams[key] = params[key];
+    }
+
+    // The tracker names its own position smoothing differently — the same
+    // rename the /start route performs.
+    if (params.smoothing !== undefined) motionParams.trackingSmoothing = params.smoothing;
+    if (params.deadzone !== undefined) motionParams.trackingDeadzone = params.deadzone;
 
     if (Object.keys(motionParams).length > 0) {
       updateTrackingParamsForWebcam(webcamId, motionParams);
@@ -370,6 +387,11 @@ router.post('/api/head-tracking/:charId/params', async (req, res) => {
       if (htState.enabled) {
         enableHeadTrackingForWebcam(webcamId, {
           panServoId: htState.panServoId || config.panServoId,
+          // Pin the character here, where it is known — the controller otherwise
+          // falls back to the node's mutable selectedCharacter. Part ids are only
+          // unique WITHIN a character, and this path runs on every debounced
+          // slider nudge, so losing the pin has driven the wrong PCA9685 channel.
+          characterId: charId,
           centerDeg: params.centerDeg !== undefined ? params.centerDeg : config.centerDeg,
           rangeDeg: params.rangeDeg !== undefined ? params.rangeDeg : config.rangeDeg,
           invertPan: params.invertPan !== undefined ? params.invertPan : config.invertPan,
