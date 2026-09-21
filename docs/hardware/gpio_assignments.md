@@ -45,11 +45,21 @@
 **PCA9685 I2C (0x40, 50Hz):**
 | Channel | Part | Type |
 |---------|------|------|
-| 0 | Head servo | **Continuous rotation** (360°) |
-| 1 | Jaw servo | Standard (180°) |
-| 3 | Magic Box servo | Standard (180°) |
+| 7 | Head servo | **Multi-turn position** (900°, goBILDA Stingray-2) |
+| 3 | Jaw servo | Standard (180°) |
+| 11 | Magic Box servo | Standard (180°, `invert: true`) |
 
-*No GPIO-direct parts on Sir Dragomir.*
+**GPIO:**
+| Pin | Part | Direction |
+|-----|------|-----------|
+| 23 | PIR Motion Sensor | Input |
+
+> Corrected 2026-09-21. Every channel in this table was wrong (it read 0/1/3, and
+> called the head a 360° continuous servo), and it claimed he had no GPIO-direct
+> parts while a PIR was physically installed the whole time. The head is a
+> multi-turn POSITION servo — commanding it as continuous turns an angle into a
+> timed spin. Its full rotation tears the head cabling, so keep travel inside the
+> calibrated window.
 
 ### PumpkinHead (Character 1, 192.168.8.150)
 

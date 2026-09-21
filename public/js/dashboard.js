@@ -1161,14 +1161,43 @@
 
     function bindChatEvents() {
       // AI On toggle
+      /**
+       * Everything that only makes sense while the AI is running.
+       *
+       * Turning AI ON already switched the jaw on, but turning it OFF left the
+       * jaw, eyes, head tracking, AI motion and voice orders all still armed —
+       * so "AI off" left the character visibly alive, still tracking and still
+       * taking spoken orders. Each is switched off through its OWN save
+       * function, so the server sees exactly the same call as an operator
+       * clicking that toggle, and sequentially rather than all at once, because
+       * firing every subsystem simultaneously is what resets a marginal board.
+       */
+      async function disableAiDependentFeatures() {
+        const dependents = [
+          { toggle: ui.jawToggle, save: saveJawSettings },
+          { toggle: ui.ledTalkToggle, save: saveLedTalkSettings },
+          { toggle: ui.headTrackToggle, save: saveHeadTrackSettings },
+          { toggle: ui.aiMotionToggle, save: saveAiMotionSettings },
+          { toggle: ui.followOrdersToggle, save: saveFollowOrdersSettings }
+        ];
+        for (const d of dependents) {
+          if (!d.toggle || !d.toggle.checked || typeof d.save !== 'function') continue;
+          d.toggle.checked = false;
+          try { await d.save(); } catch (_) { /* one failure must not strand the rest */ }
+        }
+      }
+
       const aiToggle = $('chatAiOnToggle');
       if (aiToggle) {
-        aiToggle.addEventListener('change', () => {
+        aiToggle.addEventListener('change', async () => {
           const want = aiToggle.checked;
           setServerAi(want);                 // start/stop the persistent server agent
           if (want && ui.jawToggle && !ui.jawToggle.checked) {
             ui.jawToggle.checked = true;
             saveJawSettings();               // jaw moves while talking
+          }
+          if (!want) {
+            await disableAiDependentFeatures();
           }
           try { disconnectChat(); } catch (_) {}   // close any stray browser-WS viewer
         });

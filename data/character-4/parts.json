@@ -116,5 +116,16 @@
     "enabled": true,
     "modelId": "speaker_respeaker_xvf3800",
     "updated": "2026-08-22T18:23:30.893Z"
+  },
+  {
+    "id": "7",
+    "name": "PIR Motion Sensor",
+    "type": "motion_sensor",
+    "pin": 23,
+    "description": "PIR motion sensor on GPIO 23. The sensor was always physically present but had no software part, so motion arming had nothing to watch. Pin recovered from this character's own historical config (when he was named Skulltalker) rather than assumed - there is no fleet-wide PIR pin convention (17, 26 and 16 are all in use on other nodes).",
+    "config": {},
+    "created": "2026-09-21T22:49:51.925009Z",
+    "enabled": true,
+    "updated": "2026-09-21T22:49:51.925009Z"
   }
 ]
