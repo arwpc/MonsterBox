@@ -14,6 +14,13 @@ const router = express.Router();
  * Handles jaw animation and other super power configurations
  */
 
+// A refused write carries its own status — a LOCKED character's is 423. Reporting
+// that as a 500 tells the caller the server broke when the real answer is
+// "refused, deliberately": the save button on a locked character's jaw page read
+// as a server fault instead of a lock. Anything without a status stays a 500.
+// Same fix already applied to the LED and movement routes.
+const statusFor = (error) => Number(error && error.status) || 500;
+
 router.get('/api/list', async (req, res) => {
   try {
     const config = await configService.readConfig();
@@ -133,7 +140,7 @@ router.get('/api/jaw-animation/:characterId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting jaw animation config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -183,7 +190,7 @@ router.post('/api/jaw-animation/:characterId', async (req, res) => {
     res.json({ success: true, message: 'Jaw animation configuration saved' });
   } catch (error) {
     console.error('Error saving jaw animation config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -197,7 +204,7 @@ router.get('/api/jaw-animation/:characterId/configs', async (req, res) => {
     res.json({ success: true, ...result });
   } catch (error) {
     console.error('Error listing jaw configs:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -236,7 +243,7 @@ router.post('/api/jaw-animation/:characterId/configs', async (req, res) => {
     res.json({ success: true, config: saved });
   } catch (error) {
     console.error('Error creating jaw config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -255,7 +262,7 @@ router.put('/api/jaw-animation/:characterId/configs/:configId', async (req, res)
     res.json({ success: true, config: saved });
   } catch (error) {
     console.error('Error updating jaw config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -270,7 +277,7 @@ router.delete('/api/jaw-animation/:characterId/configs/:configId', async (req, r
     res.json(result);
   } catch (error) {
     console.error('Error deleting jaw config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -282,7 +289,7 @@ router.post('/api/jaw-animation/:characterId/configs/:configId/activate', async 
     res.json({ success: true, config: flat });
   } catch (error) {
     console.error('Error activating jaw config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -307,7 +314,7 @@ router.post('/api/jaw-animation/:characterId/configs/:configId/rename', async (r
     res.json({ success: true, config: saved });
   } catch (error) {
     console.error('Error renaming jaw config:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -324,7 +331,7 @@ router.post('/api/jaw-animation/:characterId/test', async (req, res) => {
     }
   } catch (error) {
     console.error('Error testing jaw movement:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -349,7 +356,7 @@ router.get('/api/jaw-animation/:characterId/audio-levels', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting audio levels:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -361,7 +368,7 @@ router.post('/api/jaw-animation/:characterId/start-monitoring', async (req, res)
     res.json(result);
   } catch (error) {
     console.error('Error starting audio monitoring:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -375,7 +382,7 @@ router.post('/api/jaw-animation/:characterId/stop-monitoring', async (req, res) 
     res.json(result);
   } catch (error) {
     console.error('Error stopping audio monitoring:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -396,7 +403,7 @@ router.post('/api/jaw-animation/:characterId/drive', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error driving jaw from amplitude:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -412,7 +419,7 @@ router.get('/api/jaw-animation/:characterId/servos', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting available servos:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -483,7 +490,7 @@ router.post('/api/jaw-animation/:characterId/test-tts', async (req, res) => {
     res.json({ success: true, duration: estimatedDuration, timeline });
   } catch (error) {
     console.error('Error in test-tts:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -527,7 +534,7 @@ router.post('/api/jaw-animation/:characterId/adjust-calibration', async (req, re
     res.json({ success: true, newValue, minAngle, maxAngle });
   } catch (error) {
     console.error('Error adjusting calibration:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 
@@ -554,7 +561,7 @@ router.post('/api/jaw-animation/:characterId/stop', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error stopping playback:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(statusFor(error)).json({ success: false, error: error.message });
   }
 });
 

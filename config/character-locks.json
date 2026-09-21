@@ -45,6 +45,28 @@
         "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "super-powers.json": "48f060d3b61f0ecbd5cadfdb5affdeb2a7be18351981395b6498009f92a9ea8a"
       }
+    },
+    {
+      "characterId": 4,
+      "name": "Sir Dragomir",
+      "lockedAt": "2026-09-21T23:35:39.095Z",
+      "lockedBy": "Aaron Warner",
+      "reason": "Sir Dragomir is finished and verified at 100% (2026-09-21). Head servo repaired (bad solder joint inside the servo) and recalibrated; ReSpeaker XVF3800 pinned as his mic and proven by frames; jaw sensitivity 1.6 (0.6 capped him at 64% travel); three Magic Box riddle scenes; old poses cleared. His PIR part (GPIO 23) is frozen with the pin UNVERIFIED at operator direction - it did not fire during testing; see the part description before trusting it.",
+      "fingerprints": {
+        "ai-config/stt-config.json": "211d44f33a09cc072fedcd10b20fc1da41d46b8222a4711625e65e60c10178a8",
+        "ai-config/tts-config.json": "a682de5368cb34406e28cb3e03450c26b7f05108fe61fa2b06c124c326e455c8",
+        "characters.json": "ff5af55fbd546d8e8f8c505c71a89412730b10abf7dae8649e85adaad11271ef",
+        "images/John_Hunyadi__Chronica_Hungarorum_.jpg": "d2925747cb996771581fb81c732d38a2669f97270f55f67145420637db176ec5",
+        "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "movement-config.json": "fb8e724cca400b5f2470fc5dd92d3c6148e55cde3d420bad9b7182b99e23f2cd",
+        "parts.json": "d89d6e5eb72cce756ad4515248ba19ce77d15fa5034f7398d102984c23097f20",
+        "poses.json": "7f5bb21f5f2d8deba0a6298af17c50560bbc32897e7a12fb2ccebc3d80000fd1",
+        "scenes.json": "eba62e9df79d0cfe6d43d9fd3a155b8284b67f7925e73d6b75448a53493e5cd8",
+        "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "servos.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "super-powers.json": "bee82245894343453990fff4fbcb435a9775e123be5e4bf3e2943f1c54522aa3"
+      }
     }
   ]
 }
