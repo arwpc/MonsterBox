@@ -604,6 +604,39 @@ WS2812B eye rings all functional; LED eye animation + speech/AI sync built and t
 under-voltage note below is a known hard-start limitation, mitigated in software (drive the motor at
 ≤25 %, never 100 % DC) — not a fault blocking normal operation. Items below are retained history.
 
+🔴 **2026-09-21 UPDATE — it is the SIMULTANEITY, and the worst case is the WAKE cold-starting the
+ElevenLabs agent.** Re-bisected with an instrumented probe writing to `/home/remote/` (not `/tmp`,
+which a reboot wipes) and `sync`ing every line, so the evidence survives the reset.
+
+| Test | Result |
+|---|---|
+| Arming lurk, instrumented 180 s | **survived** — 716 voltage samples, `throttled` never left `0x50000`, zero under-voltage |
+| ElevenLabs agent alone | **survived** |
+| Motor alone, 3 × 1200 ms at 40 % | **survived** |
+| LED ring / mic capture / TTS alone | **survived** |
+| Wake with the agent ALREADY running | **survived 90 s** |
+| **Wake that COLD-STARTS the agent on an armed lurk stack** | **reset, 2/2** — the probe log stops on the very line that fires it |
+
+`wakeOnMotion` fired `enableLurkSuperpowers`, the agent cold start and AI motion back to back with no
+gap. **Fixed in `522aaf30`:** the agent now goes first and alone, then a 250 ms settle, then the lurk
+stack, then body motion. **The fix is NOT yet verified on hardware** — a later arm reset him before
+the confirming probe ran, so treat the threshold as marginal and re-run the bisect before trusting it.
+
+**Ruled out by test, not assumption:** the motor (clean at 40 % on its own 12 V supply — the operator
+also rewired it separately and the resets continued), the LED daemon's PWM/DMA claim (starts clean by
+hand), the PIR watcher (`gpio_pin_watcher.py` is a read-only `PROT_READ` mmap of `/dev/gpiomem` and
+claims no pin, so it cannot fault one), the systemd hardware watchdog (**inactive**), and a kernel
+panic (**none** — the line that greps as `BUG:` is a false positive on `mmc_debug`). No under-voltage
+is ever logged because a collapse this deep never gets written; the journal just ends mid-line with
+no shutdown sequence.
+
+⚠️ **THE RESET IS SELF-SUSTAINING — this is the Halloween-night trap.** `lurk-mode-state.json`
+persists `enabled: true`, the node re-arms at boot, and **his PIR line is floating** (see
+`c164d37e`), so the floating pin reads motion and fires a wake *during startup* — the busiest moment
+there is — which resets him again. He was in exactly that loop on 2026-09-21 (boots at 10:36:24,
+10:38:34, 10:39:36, 10:40:09). **To break it:** stop the service and set `enabled: false` in
+`lurk-mode-state.json`, `motion-armed-state.json` and `ai_agent_state.json`, then start it.
+
 🔴 **2026-09-20 — ARMING LURK HARD-RESETS HIM. His PSU cannot carry the whole show at once.**
 Reproduced five times (19:11, 19:19, 19:32:00, 19:32:49, 19:37:52): he reboots within seconds of
 `POST /conversation/api/lurk-mode {enabled:true}`. Every death ends with **no shutdown sequence** in
