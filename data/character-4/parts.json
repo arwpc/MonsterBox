@@ -4,19 +4,19 @@
     "name": "Head Servo",
     "type": "servo",
     "pin": null,
-    "description": "Neck/head rotation. goBILDA Stingray-2 gearbox, 900 deg MULTI-TURN POSITION servo (NOT continuous rotation). Angle-commanded. Travel MUST stay inside the calibrated window - a full rotation tears the head cabling.",
+    "description": "Neck/head rotation. goBILDA Stingray-2 gearbox, 900 deg MULTI-TURN POSITION servo (NOT continuous rotation). Angle-commanded on PCA9685 0x40 channel 7. Travel MUST stay inside the calibrated window - a full rotation tears the head cabling.",
     "config": {
-      "servoType": "multi-turn",
       "controllerType": "pca9685",
-      "channel": 4,
       "address": 64,
       "pca9685Frequency": 50,
+      "channel": 7,
+      "servoType": "multi-turn",
       "rotationRangeDeg": 900
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "modelId": "servo_gobilda_stingray2",
-    "updated": "2026-03-29T23:30:00.000Z"
+    "updated": "2026-09-20T00:18:11.470Z"
   },
   {
     "id": "2",
@@ -27,14 +27,14 @@
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
-      "channel": 1,
       "address": 64,
-      "pca9685Frequency": 50
+      "pca9685Frequency": 50,
+      "channel": 3
     },
     "created": "2025-10-12T06:00:01.000Z",
     "enabled": true,
-    "modelId": "servo_miuzei_25kg",
-    "updated": "2026-03-29T23:30:00.000Z"
+    "modelId": "servo_miuzei_mg90s",
+    "updated": "2026-08-23T00:13:24.198Z"
   },
   {
     "id": "3",
@@ -45,14 +45,14 @@
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
-      "channel": 3,
       "address": 64,
-      "pca9685Frequency": 50
+      "pca9685Frequency": 50,
+      "channel": 11
     },
     "created": "2025-10-12T06:00:02.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_25kg",
-    "updated": "2026-03-29T23:30:00.000Z"
+    "updated": "2026-08-23T00:13:24.244Z"
   },
   {
     "id": "4",
@@ -62,24 +62,45 @@
     "description": "Main webcam",
     "config": {
       "devicePath": "/dev/video0",
-      "deviceId": "video0"
+      "deviceId": "video0",
+      "controls": {
+        "brightness": 0,
+        "contrast": 124,
+        "saturation": 128,
+        "nightMode": 0,
+        "hue": 0,
+        "white_balance_automatic": 1,
+        "gamma": 64,
+        "gain": 0,
+        "power_line_frequency": 1,
+        "sharpness": 5,
+        "backlight_compensation": 0,
+        "auto_exposure": 0,
+        "exposure_dynamic_framerate": 0,
+        "pan_absolute": 0,
+        "tilt_absolute": 0,
+        "focus_automatic_continuous": 1,
+        "zoom_absolute": 100
+      }
     },
     "created": "2025-10-12T06:00:03.000Z",
     "enabled": true,
-    "modelId": "default-uvc-1"
+    "modelId": "default-uvc-1",
+    "updated": "2026-09-06T22:52:36.086Z"
   },
   {
     "id": "5",
-    "name": "Webcam Microphone",
+    "name": "ReSpeaker XVF3800 Mic Array",
     "type": "microphone",
     "pin": null,
-    "description": "Webcam built-in mic",
+    "description": "ReSpeaker XVF3800 4-mic array (USB card 2). Pinned to its PipeWire node by name: deviceId \"default\" resolves through a broken ALSA asym path on this node and delivers ZERO frames. The array also only captures while a playback stream is open, so the sink no-suspend rule must stay installed.",
     "config": {
-      "deviceId": "default"
+      "deviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200200-00.analog-stereo"
     },
     "created": "2025-10-12T06:00:04.000Z",
     "enabled": true,
-    "modelId": "mic_generic_usb"
+    "modelId": "mic_respeaker_xvf3800",
+    "updated": "2026-09-21T22:09:31.021204Z"
   },
   {
     "id": "6",
@@ -93,6 +114,7 @@
     },
     "created": "2025-10-12T06:00:05.000Z",
     "enabled": true,
-    "modelId": "default_speaker"
+    "modelId": "speaker_respeaker_xvf3800",
+    "updated": "2026-08-22T18:23:30.893Z"
   }
 ]

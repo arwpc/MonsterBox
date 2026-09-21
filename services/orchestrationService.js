@@ -783,7 +783,7 @@ class OrchestrationService {
             // surviving silence on every node — and nothing in the codebase ever
             // un-mutes (setSpeakerMuted has exactly one caller, the manual toggle).
             // One press of Emergency Stop therefore silenced the fleet forever:
-            // found 2026-09-21 with Mina, Orlok and Groundbreaker still muted, and
+            // found 2026-09-21 with three of the six nodes still muted, and
             // "Speaker mute restored from disk — this node boots muted" logged on 14
             // separate service starts. It presented as "the Audio Library is broken
             // on every animatronic", because playback returns {success:true,

@@ -7,42 +7,106 @@
       {
         "id": "config-1",
         "name": "Default",
-        "sensitivity": 1.5,
+        "sensitivity": 1.6,
         "smoothing": 0.4,
-        "volumeThreshold": 0.02,
-        "attackTime": 30,
-        "releaseTime": 100,
+        "volumeThreshold": 0.03,
+        "attackTime": 31,
+        "releaseTime": 80,
         "useBandpassFilter": true,
         "useAGC": true,
-        "quantizationLevels": 18,
-        "preset": "speech",
+        "quantizationLevels": 12,
+        "preset": "custom",
         "minAngle": 0,
         "maxAngle": 180,
-        "audioLeadTimeMs": 300
+        "audioLeadTimeMs": 750
       }
-    ]
+    ],
+    "ledSync": {
+      "enabled": false,
+      "partId": null,
+      "colorLow": [
+        80,
+        0,
+        0
+      ],
+      "colorHigh": [
+        255,
+        120,
+        0
+      ],
+      "sensitivity": 1,
+      "smoothing": 0.5,
+      "attackMs": 40,
+      "releaseMs": 120,
+      "speed": 1,
+      "offsetMs": 0
+    }
   },
   "headTracking": {
     "opencvEnabled": true,
-    "enabled": false,
-    "panServoId": "",
+    "enabled": true,
+    "panServoId": "1",
     "webcamPartId": "4",
-    "centerDeg": 90,
-    "rangeDeg": 120,
-    "invertPan": false,
-    "smoothing": 0.65,
+    "centerDeg": 407,
+    "rangeDeg": 84,
+    "invertPan": true,
+    "smoothing": 0.15,
     "deadzone": 5,
-    "motionThreshold": 44,
+    "motionThreshold": 20,
     "minContourArea": 3000,
     "maxContourArea": 100000,
-    "backgroundLearningRate": 0.013,
+    "backgroundLearningRate": 0.003,
     "noiseReductionKernelSize": 5,
     "blurSize": 7,
     "dilateSize": 11,
     "varThreshold": 20,
-    "targetLockStrength": 9,
-    "confirmFrames": 4,
+    "targetLockStrength": 7,
+    "confirmFrames": 2,
     "detectInterval": 5,
     "detectionMode": "person"
+  },
+  "followOrders": {
+    "enabled": false,
+    "requireAddressByName": false,
+    "addressAliases": [],
+    "ackMode": "speak",
+    "ackPhrases": [
+      "As you command."
+    ],
+    "refusalPhrases": [],
+    "minConfidence": 0.6,
+    "cooldownMs": 2000,
+    "defaultDurationMs": 1200,
+    "maxDurationMs": 3000,
+    "enablePoseMatching": true,
+    "enableGestureMatching": true,
+    "enablePartMatching": true,
+    "commands": [],
+    "partAliases": []
+  },
+  "aiMotion": {
+    "enabled": false,
+    "triggers": {
+      "agentGesture": true,
+      "guestCommand": true,
+      "ambientDuringSpeech": true
+    },
+    "permissions": {
+      "allowedRoles": [
+        "head",
+        "jaw",
+        "eye",
+        "arm",
+        "light"
+      ],
+      "deniedPartIds": [],
+      "kidSafeOnly": false,
+      "cooldownMs": 3000,
+      "maxPerConversation": 0,
+      "minConfidence": 0.6,
+      "requireAddressByName": false,
+      "ambientMinAmplitude": 0.2,
+      "ambientMaxAmplitude": 0.5
+    }
   }
 }
