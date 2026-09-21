@@ -14,12 +14,13 @@
           "type": "motor",
           "target": {
             "direction": "forward",
-            "speed": 60,
+            "speed": 40,
             "duration": 1200
           }
         }
       ],
-      "created": "2026-09-13T23:05:24.157Z"
+      "created": "2026-09-13T23:05:24.157Z",
+      "modified": "2026-09-21T00:08:21.646Z"
     },
     {
       "id": 2,
@@ -34,12 +35,13 @@
           "type": "motor",
           "target": {
             "direction": "backward",
-            "speed": 60,
+            "speed": 40,
             "duration": 1200
           }
         }
       ],
-      "created": "2026-09-13T23:05:24.296Z"
+      "created": "2026-09-13T23:05:24.296Z",
+      "modified": "2026-09-21T00:08:21.707Z"
     }
   ],
   "templates": {

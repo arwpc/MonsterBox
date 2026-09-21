@@ -1,33 +1,6 @@
 {
   "locks": [
     {
-      "characterId": 1,
-      "name": "PumpkinHead",
-      "lockedAt": "2026-09-19T23:39:16.212Z",
-      "lockedBy": "Aaron Warner",
-      "reason": "PumpkinHead is finished and verified at 100% (2026-09-19). His show configuration — parts, poses, scenes, calibration, movement, super-powers, AI voice config, images — is frozen. Nothing may change it without a deliberate unlock.",
-      "fingerprints": {
-        "ai-config/stt-config.json": "bb8838556f1cb2860e4a165b8d81ac4c50ca536af7f5f928ee9d952b5135630b",
-        "ai-config/tts-config.json": "a538fe654aff407af54973cc602bac2bdd6909c00f9e07530912ec13d6060619",
-        "images/pumpkinhead.jpg": "c9cf20b72654d025bac081ed931aa2437311e92e00f6e49675cea01a36ff466b",
-        "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
-        "models/led_models.json": "9b0c760af34e711e4f0bf233926f3eab68ad653688ea24cc2860fc08ba00dff1",
-        "models/linear_actuator_models.json": "82d8cd62f81c5a423fac3dbdb7381a1b7c42bd0682d42938d227c4c6e264927b",
-        "models/motor_models.json": "95531e61c157644d311707966d10875e4b4eb6f91dd3f718a259a520c106a008",
-        "models/servo_models.json": "d8df81ba879697e346efa319df6c6d559619a24581a07d73e2b97a29a31af481",
-        "models/webcam_models.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-        "movement-config.json": "9e03520ea87663d9d48446c635101ac60705b4e538e4971b429f11a11746360f",
-        "parts.json": "52a5c4853a32969c027658641b580046d298298fcd14c2182aef086654ecc0b0",
-        "poses.json": "a7cf0f93d531ebfcafe860dfbe4d7c3b7efc3cccf17808fa7870924559e27f6d",
-        "scenes.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
-        "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
-        "servos.json": "1c9cf70286dd56b67639934f2a1e55628bac23f99608ef18161d041b98a9664f",
-        "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
-        "super-powers.json": "48f060d3b61f0ecbd5cadfdb5affdeb2a7be18351981395b6498009f92a9ea8a"
-      },
-      "refreshedAt": "2026-09-19T23:53:51.234Z"
-    },
-    {
       "characterId": 6,
       "name": "Renfield",
       "lockedAt": "2026-09-20T17:46:48.352Z",
@@ -45,6 +18,32 @@
         "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "servos.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
         "super-powers.json": "8c421ed44dde0caaee0eb67e96e44a1111693aaa164f494aa8fcc725c6589aa2"
+      }
+    },
+    {
+      "characterId": 1,
+      "name": "PumpkinHead",
+      "lockedAt": "2026-09-21T00:08:30.966Z",
+      "lockedBy": "Aaron Warner",
+      "reason": "Finished and verified at 100%; configuration frozen at operator direction. Sway poses set to 40% motor (60% browns out his Pi and hard-resets it).",
+      "fingerprints": {
+        "ai-config/stt-config.json": "bb8838556f1cb2860e4a165b8d81ac4c50ca536af7f5f928ee9d952b5135630b",
+        "ai-config/tts-config.json": "a538fe654aff407af54973cc602bac2bdd6909c00f9e07530912ec13d6060619",
+        "images/pumpkinhead.jpg": "c9cf20b72654d025bac081ed931aa2437311e92e00f6e49675cea01a36ff466b",
+        "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "models/led_models.json": "9b0c760af34e711e4f0bf233926f3eab68ad653688ea24cc2860fc08ba00dff1",
+        "models/linear_actuator_models.json": "82d8cd62f81c5a423fac3dbdb7381a1b7c42bd0682d42938d227c4c6e264927b",
+        "models/motor_models.json": "95531e61c157644d311707966d10875e4b4eb6f91dd3f718a259a520c106a008",
+        "models/servo_models.json": "d8df81ba879697e346efa319df6c6d559619a24581a07d73e2b97a29a31af481",
+        "models/webcam_models.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "movement-config.json": "9e03520ea87663d9d48446c635101ac60705b4e538e4971b429f11a11746360f",
+        "parts.json": "52a5c4853a32969c027658641b580046d298298fcd14c2182aef086654ecc0b0",
+        "poses.json": "66880cc3c50db59293c18270d4b36708bc9c4f8e639fc9f889ece8542a137478",
+        "scenes.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "servos.json": "1c9cf70286dd56b67639934f2a1e55628bac23f99608ef18161d041b98a9664f",
+        "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "super-powers.json": "48f060d3b61f0ecbd5cadfdb5affdeb2a7be18351981395b6498009f92a9ea8a"
       }
     }
   ]
