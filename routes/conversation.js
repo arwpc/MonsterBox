@@ -1262,12 +1262,46 @@ async function setAiMotionForMotion(characterId, enabled) {
   }
 }
 
-/** PIR fired while armed: bring the whole character to life. */
+// A wake used to fire every subsystem at once, and on a node with a marginal
+// supply that step load resets the board — measured on PumpkinHead (Pi 4), where
+// it is reproducible and total: the journal ends mid-line with no shutdown
+// sequence, no kernel panic and no logged under-voltage, because a collapse that
+// deep never gets written.
+//
+// The bisect is what names the culprit, and it is the SIMULTANEITY, not any one
+// part. Each of these survives on its own: arming lurk (180 s), the agent alone,
+// the motor at 40 %, the LED ring, mic capture, TTS through the speaker. A wake
+// with the agent ALREADY running also survives (90 s). A wake that COLD-STARTS
+// the agent on top of an armed lurk stack kills the board every time — twice out
+// of twice, with the probe log stopping on the very line that fires it.
+//
+// So the wake is staggered: the agent goes first and alone (its WebSocket
+// connect, mic stream and audio pipeline are the expensive part), then a settle,
+// then the rest. Order also suits the guest — the thing they can talk to comes up
+// first, and the body follows a beat later.
+//
+// WAKE_SETTLE_MS is deliberately conservative. This runs when a child is already
+// at the door, so a quarter-second of stagger costs nothing anyone can perceive
+// and buys the supply time to recover between inrushes.
+const WAKE_SETTLE_MS = 250;
+const settle = (ms = WAKE_SETTLE_MS) => new Promise(resolve => setTimeout(resolve, ms));
+
+/** PIR fired while armed: bring the whole character to life, one step at a time. */
 async function wakeOnMotion(characterId) {
-  console.log(`[MotionMode] motion detected for character ${characterId} — AI, jaw and body motion ON`);
+  console.log(`[MotionMode] motion detected for character ${characterId} — AI, jaw and body motion ON (staggered)`);
+
+  // 1. The agent first, on its own — the heaviest single step.
+  const ai = await setAgentForMotion(characterId, true);
+  await settle();
+
+  // 2. Then the lurk stack (LED, random poses, idle loop).
   const results = await enableLurkSuperpowers(characterId);
-  results.ai = await setAgentForMotion(characterId, true);
+  results.ai = ai;
+  await settle();
+
+  // 3. Body motion last.
   results.aiMotion = await setAiMotionForMotion(characterId, true);
+
   await persistMotionArmedState(characterId, { enabled: true, awake: true, results });
   return results;
 }
