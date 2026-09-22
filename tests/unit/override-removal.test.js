@@ -23,6 +23,7 @@ import request from 'supertest';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { skipIfLocked } from '../helpers/lockAware.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(__dirname, '..', '..');
@@ -53,6 +54,9 @@ describe('Override removal (F9 overrides-cannot-be-removed)', function () {
       } catch (_) { /* skip below */ }
     }
     if (selectedCharacterId == null) this.skip();
+    // A frozen character refuses config writes, and forcing past that with the
+    // escape hatch once wiped a locked character's parts.json. Skip instead.
+    if (skipIfLocked(this, selectedCharacterId)) return;
 
     partsPath = path.join(APP_ROOT, 'data', `character-${selectedCharacterId}`, 'parts.json');
     try {

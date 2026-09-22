@@ -31,6 +31,11 @@ describe('AI config store — partial saves must not delete identity', function 
     store = await import('../../services/aiConfigStore.js');
     const { readConfig } = await import('../../services/configService.js');
     const cfg = await readConfig();
+    // This suite writes the live selected character's tts/stt config. A frozen
+    // character refuses that, and forcing past the refusal with the escape hatch
+    // once wiped a locked character's parts.json — so skip rather than push.
+    const { skipIfLocked } = await import('../helpers/lockAware.js');
+    if (skipIfLocked(this, cfg && cfg.selectedCharacter)) return;
     const dataDir = cfg && cfg.dataPath ? cfg.dataPath : 'data';
     configPath = path.resolve(APP_ROOT, dataDir, 'ai-config', 'tts-config.json');
     try {

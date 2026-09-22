@@ -65,7 +65,16 @@ describe('MonsterBox Basic Tests', () => {
             expect(response.body).to.have.property('templates');
         });
 
-        it('should create pose from template', async () => {
+        // function(), not an arrow: this test needs the Mocha context to skip.
+        it('should create pose from template', async function () {
+            // Creating a pose WRITES poses.json, which a frozen character refuses.
+            // Forcing past that with the escape hatch once wiped a locked
+            // character's parts.json, so skip rather than push through the lock.
+            const { readConfig } = await import('../services/configService.js');
+            const { skipIfLocked } = await import('./helpers/lockAware.js');
+            const cfg = await readConfig();
+            if (skipIfLocked(this, cfg && cfg.selectedCharacter)) return;
+
             // Read the option name from the live template rather than hardcoding one.
             // Template presets legitimately change when a part's safe range is
             // revised, and a hardcoded name turns that into a false failure.
