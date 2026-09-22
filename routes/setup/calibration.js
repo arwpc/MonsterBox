@@ -350,6 +350,7 @@ async function loadCharacterParts(characterId) {
         console.log(`✅ Loaded ${parts.length} parts from ${partsPath} (selectedCharacter=${cfg.selectedCharacter}, requestedCharacterId=${characterId || 'n/a'})`);
         return parts;
     } catch (e) {
+        if (e && (e.code === 'CHARACTER_CONFIG_LOCKED' || Number(e.status) === 423)) throw e;
         console.warn('loadCharacterParts fell back to controllers.loadParts():', e && e.message);
         return await loadParts();
     }
@@ -377,8 +378,20 @@ async function saveCharacterParts(characterId, parts) {
         await writeJsonAtomic(partsPath, parts);
         console.log(`✅ Saved ${parts.length} parts to ${partsPath} (selectedCharacter=${cfg && cfg.selectedCharacter})`);
     } catch (e) {
+        // A REFUSAL is not a path problem, so it must never be retried against a
+        // different file. The character lock answers 423; falling back here wrote
+        // nothing, saveParts() swallowed its own failure into a return value, and
+        // the route above then answered 200 with the unsaved part. That is exactly
+        // how a frozen character's GPIO pin edit reported "saved successfully" and
+        // reverted on the next load. A deliberate refusal propagates.
+        if (e && (e.code === 'CHARACTER_CONFIG_LOCKED' || Number(e.status) === 423)) throw e;
         console.warn('saveCharacterParts fell back to controllers.saveParts():', e && e.message);
-        await saveParts(parts);
+        const fallback = await saveParts(parts);
+        // saveParts reports failure by return value, not by throwing. Honour it,
+        // or the caller cannot tell a completed write from a discarded one.
+        if (fallback && fallback.success === false) {
+            throw new Error(fallback.error || 'Failed to save parts');
+        }
     }
 }
 
