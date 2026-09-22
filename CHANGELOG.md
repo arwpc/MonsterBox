@@ -4,13 +4,13 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
-- **Mina session (2026-09-21): her node was ~50 files behind main, her jaw calibration had been
-  wiped a fourth time, and every "dead" control path was proven correct at the chip or pin.**
-  Synced to `b35d1bf8`, restored the jaw's measured 28–84° window from the Sept 7 backup, re-enabled
-  jaw animation on the active config. Jaw ch4 pulses follow commands (5/5 transitions), the coffin
-  door's direction and PWM pins toggle with no `GPIO busy`, the rose light's GPIO16 and the laser's
-  PCA ch0 both switch. Nothing physical moved, so the finding is a dead auxiliary (12 V / servo V+)
-  supply — recorded in KNOWN-BUGS with the meter checklist. No code changed.
+- **Mina session (2026-09-21): two software defects on her node, both fixed.** The coffin door's
+  `invertDirection: true` (recorded since v8.0.0) had been dropped from `parts.json`, so "extend"
+  drove the door closed; and the actuator position tracker sat at p=1 "homed" from an inverted
+  homing, so every pose/scene extend was a silent no-op. Flag restored, door re-homed to p=0. Her
+  tree was also ~50 files behind main (synced) and her jaw calibration had been wiped a fourth time
+  (restored, jaw animation re-enabled). Signal path proven at the Pi pads with pigpio; whether the
+  motor and servos move is still unwitnessed — see KNOWN-BUGS → Mina for the exact next test.
 
 - **Sir Dragomir is finished and LOCKED, and the session that got him there fixed a lot of shared plumbing.**
   His head servo fault turned out to be a **bad solder joint inside the servo** — found by the

@@ -322,42 +322,55 @@ top). No new physical work has been done on parts 2/3/4/5.
   the elbow component of any pose to do nothing until the rail is fixed.
 
 ### Mina — char 2 · `192.168.8.140`
-🟡 **2026-09-21 — "No moving part works, no lights work, only audio and AI." Every control path
-was proven correct at the chip or the GPIO pin on the node; the fault is downstream of the Pi and
-needs a meter, not code.** Operator confirmed the same evening: mic works, no moving part does.
+🟡 **2026-09-21 — "No moving part works, no lights work, only audio and AI." Operator: "her mic
+works, none of her moving parts do … her hardware hasn't changed." Two software defects found and
+fixed on the node; the signal path is proven at the Pi's own pads; physical motion could not be
+witnessed either way from here.**
 - **Code:** her tree was ~50 files behind `origin/main` (no LED-ring subsystem, no character locks,
-  no barge-in). Synced to `b35d1bf8` (10.6.0) with only her five node-local files left dirty;
-  restarted; `/health` 10.6.0; `services/characterConfigLock.js` and `shouldBargeIn` present on disk.
+  no barge-in). Synced to `b35d1bf8` (10.6.0) with only her node-local files left dirty; restarted.
 - **Jaw calibration wiped a FOURTH time.** `2:1` measured 28–84° → placeholder 0–180 at
-  **2026-09-18 19:50 CDT** (`.err:7045`, single-part delete; `updatedAt 2026-09-19T00:50:26Z`).
-  No Claude session ran on this node between 09-12 and 09-21 (transcripts checked), so it came
-  from the calibration page or a remote caller. Restored through `POST /api/calibration/1/profile`
-  from `/home/remote/calibration-backup-2026-09-07T01-15-50Z/`; verified via API and on disk
-  (`calibrated: true`). Neck `2:2` (48–180, invert, center 132) was intact. Eye `2:3` still never
-  calibrated. Jaw animation was `enabled:false` on disk — re-enabled through the jaw endpoint
-  (active config `config-1`, sensitivity 4.2, window now 28–84).
-- **Proven at the chip/pin, none of it moved anything:**
-  - Jaw ch4: five `moveToAngle` commands (35/78/40/75/56°) → register sampler saw **5 transitions**,
-    span 21.6→78.0° (sampler's own µs→° map), 0 rejected samples, `simulated: null`.
-    MODE1=0x20 (awake), MODE2=0x04 (totem-pole, not inverted). Camera-mic witness heard **nothing**
-    (−0.7 dB overall, 1–8 kHz band −0.6…−11.9 dB during moves) — but that mic sits at −29.6 dBFS
-    room tone with AGC-like drift, so it is not a trustworthy negative either way.
-  - Coffin door (MDD10A, dir GPIO5 / PWM GPIO13): `retract` sampled dir **hi** + PWM toggling,
-    `extend` sampled dir **lo** + PWM toggling, 600 ms each, **zero `GPIO busy`** (the v10.5.1
-    in-flight-drive fix holds).
-  - Burning Rose (GPIO16, 12 V light): `pinctrl` read **ip/lo → op/hi → op/lo** across on/off.
-  - Eye laser (PCA ch0, 3 V relay): `get_duty_pca` read **0% → 100% → 0%** across on/off.
-- **What this points at (hands, not software):** servos, the 12 V actuator, and the 12 V rose light
-  are all dead at once while the Pi, camera, XVF3800 and PCA9685 logic are fine → the rig's
-  **auxiliary supply** is the common cause. Meter, in this order: the 12 V supply output (and its
-  fuse/switch/barrel), MDD10A VMotor terminals, PCA9685 **V+** screw terminal (5–6 V), and whatever
-  buck feeds servo V+. The ch8/ch11 (neck/eye) silence predates this and is a separate harness
-  question — the swap test in `OPERATOR-TODO.md` §E still stands once V+ is back.
-- Also seen: `lock:verify` flags PumpkinHead on this node only because two **untracked** stray
-  files exist here (`data/character-1/character-1/parts.json`, `data/character-1/characters.json`)
-  — the lock's own 17 files all match. Left in place (never delete; see 09-12 nested-folder note).
-  Mic capture proven by frames: XVF3800 750 frames / 2 s @ 48 kHz via `microphone_cli.py`;
-  `default` now also resolves to the array. ElevenLabs quota healthy (674 k of 1.98 M used).
+  **2026-09-18 19:50 CDT** (`.err:7045`, single-part delete). No Claude session ran on this node
+  between 09-12 and 09-21 (transcripts checked). Restored via `POST /api/calibration/1/profile` from
+  `/home/remote/calibration-backup-2026-09-07T01-15-50Z/`. Jaw animation was `enabled:false` on
+  disk — re-enabled (active config `config-1`, window 28–84). Eye `2:3` still never calibrated.
+- **SOFTWARE DEFECT 1 — the coffin door's `invertDirection: true` was gone.** CHANGELOG v8.0.0
+  ("Mina's coffin door has opposite wiring from Orlok's") and `docs/character_mina.md` both record
+  it; no committed `parts.json` ever carried it, so a rewrite dropped it from the node-local file
+  (the rename/drop class in `PART-MODEL-CALIBRATION-UX-CHAIN.md`). Without it every API "extend"
+  drove DIR LOW = physical **close**. Restored as `config.invertDirection: true`; schema passes;
+  `/api/parts/4` returns it; the jog log now reads `retract (inverted→extend)`.
+- **SOFTWARE DEFECT 2 — the position tracker said the door was fully extended.** `2:4` was
+  `currentP: 1, confidence: homed` from a 2026-09-19 "extend" homing (which, with the inversion
+  missing, ran the door to the *closed* stop and called it open). From p=1 every pose/scene
+  "extend" resolves to zero travel and reports success. Re-homed to **retract** through
+  `POST /api/calibration/4/home` after restoring the inversion → `currentP: 0, homed`.
+- **Signal path proven with tools independent of the wrapper:** pigpio read the pad levels during
+  drives — DIR (GPIO5) high for 1.9 s on retract / low on extend, PWM (GPIO13) a solid HIGH for
+  the commanded 2.0 s at 100% (1 kHz duty at 60%). Jaw ch4 register sampler: 5/5 transitions,
+  MODE1 0x20 / MODE2 0x04. Burning Rose GPIO16 ip→op/hi→op/lo. Laser ch0 duty 0→100→0 %.
+  Zero `GPIO busy` across ~20 drives (v10.5.1 fix holds).
+- **What the witnesses said (mic = camera mic `plughw:4,0`, camera = mjpg 320×240):**
+  - ONE full-power 2 s extend (DIR LOW) was clearly heard: **+9.5 dB, 7× the floor**, aligned to
+    the drive window. Every later drive — 3× extend/retract cycles, BTS7960-pattern pin drive,
+    a 7.5 s homing — was **silent** (0.9–1.2× floor). The mic can hear this motor, so those
+    drives did not move it. Best-fit reading: that extend ran the door to an end stop and the
+    other direction (DIR HIGH) does not drive. Not proven.
+  - The jaw is inaudible tonight: room tone is −29 dBFS vs −49 dBFS on 2026-08-19, which is
+    louder than the jaw's measured whine. Do not read jaw silence as a verdict.
+  - The camera cannot see the rig: rose lamp ON, laser ON, extend and retract all produced zero
+    localised change (per-block z-score against a 10 s idle baseline; a colour-cycling lamp in
+    the garage defeats naive frame diffs). Positive controls failed, so vision proves nothing.
+- **Ruled out:** `data/power_config.json`'s "Main Power Relay" (GPIO17) — that is Orlok's PIR
+  pin; energising it changed nothing; pin restored to input. SPI holding GPIO 7/8 high — on since
+  2025-09-30, so not new. `GPIO busy` — none. `lock:verify` PumpkinHead drift here = two untracked
+  stray files (`data/character-1/character-1/parts.json`, `data/character-1/characters.json`), not
+  real drift; left in place.
+- **Next, with eyes on the door (no meter needed first):** `POST /api/calibration/4/jog-raw`
+  `{"direction":"extend","speedPct":100,"durationMs":2000}` then the same with `retract`. If one
+  direction moves and the other does not, the MDD10A's DIR-high half is the fault. If neither
+  moves, meter MDD10A VMotor and PCA9685 V+ — servos and the 12 V door being dead together while
+  the Pi, USB and PCA logic are fine still points at the auxiliary supply, but that is now the
+  *remaining* hypothesis, not the finding.
 
 🟢 **2026-09-12 — a second calibration wipe (six autoGenerated placeholders, three other
 characters' profiles gone from the file) plus five separate control-path defects, all fixed
