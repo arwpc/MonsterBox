@@ -24,7 +24,7 @@ import { loadPoses as loadCharacterPoses } from '../services/poses/poseRepositor
 import serverPlaybackService from '../services/serverPlaybackService.js';
 import ledAnimationService from '../services/ledAnimationService.js';
 import ledInteractionService from '../services/ledInteractionService.js';
-import { persistRuntimeToggle } from '../services/characterConfigLock.js';
+import { persistRuntimeToggle, withRuntimeToggle } from '../services/characterConfigLock.js';
 import { recordSpeech, speechSince } from '../services/speechLogService.js';
 import { resolveCharacterSync } from '../services/characterContext.js';
 
@@ -133,7 +133,8 @@ router.get('/api/jaw-settings', async (req, res) => {
     const characterId = getCurrentCharacterId(req);
     if (!characterId) return res.json({ success: true, enabled: false });
     const config = await jawAnimationService.readJawConfig(characterId);
-    res.json({ success: true, enabled: !!config.enabled });
+    // A LOCKED character's toggle lives in memory — see withRuntimeToggle.
+    res.json({ success: true, enabled: !!withRuntimeToggle(characterId, 'jawAnimation.enabled', !!config.enabled) });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }
@@ -190,9 +191,11 @@ router.post('/api/jaw-settings', express.json(), async (req, res) => {
     }
     config.enabled = enabled;
     // Best-effort persistence — see persistRuntimeToggle. A LOCKED character's
-    // jaw switch must still work for the show.
-    const persisted = await persistRuntimeToggle(() =>
-      jawAnimationService.writeJawConfig(characterId, config));
+    // jaw switch must still work for the show, so the value is remembered in
+    // memory when the frozen config refuses it.
+    const persisted = await persistRuntimeToggle(
+      () => jawAnimationService.writeJawConfig(characterId, config),
+      { characterId, key: 'jawAnimation.enabled', value: enabled });
     res.json({ success: true, enabled: config.enabled, persisted: persisted.persisted, locked: persisted.locked });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
@@ -213,7 +216,8 @@ router.get('/api/led-talk', async (req, res) => {
     const ring = parts.find(p => String(p.type).toLowerCase() === 'led_ring' && p.enabled !== false);
     res.json({
       success: true,
-      enabled: !!(config.ledSync && config.ledSync.enabled),
+      enabled: !!withRuntimeToggle(characterId, 'jawAnimation.ledSync.enabled',
+        !!(config.ledSync && config.ledSync.enabled)),
       available: !!ring
     });
   } catch (e) {
@@ -241,8 +245,9 @@ router.post('/api/led-talk', express.json(), async (req, res) => {
     if (enabled && ring && config.ledSync.partId == null) {
       config.ledSync.partId = String(ring.id);
     }
-    const persisted = await persistRuntimeToggle(() =>
-      jawAnimationService.writeJawConfig(characterId, config));
+    const persisted = await persistRuntimeToggle(
+      () => jawAnimationService.writeJawConfig(characterId, config),
+      { characterId, key: 'jawAnimation.ledSync.enabled', value: enabled });
     // Immediate feedback on the eyes: come alive at idle when armed, black out
     // when disarmed. Fire-and-forget — an eye update must never fail the toggle.
     if (enabled) {
@@ -268,7 +273,11 @@ router.get('/api/follow-orders', async (req, res) => {
     const config = await followOrdersService.readFollowOrdersConfig(characterId);
     res.json({
       success: true,
-      enabled: config.enabled,
+      // A LOCKED character's toggle cannot be written to its frozen config, so
+      // report the live in-memory value when one exists. Without this the read
+      // goes straight back to the locked file, the UI reloads "on", and the
+      // switch visibly flips itself back — "orders doesn't shut off".
+      enabled: withRuntimeToggle(characterId, 'followOrders.enabled', config.enabled),
       requireAddressByName: config.requireAddressByName,
       ackMode: config.ackMode,
       listener: listener.getListenerStatus(characterId)
@@ -296,8 +305,9 @@ router.post('/api/follow-orders', express.json(), async (req, res) => {
     }
 
     const config = await followOrdersService.readFollowOrdersConfig(characterId);
-    const persisted = await persistRuntimeToggle(() =>
-      followOrdersService.writeFollowOrdersConfig(characterId, { ...config, enabled }));
+    const persisted = await persistRuntimeToggle(
+      () => followOrdersService.writeFollowOrdersConfig(characterId, { ...config, enabled }),
+      { characterId, key: 'followOrders.enabled', value: enabled });
 
     if (enabled) {
       if (!inTest) await listener.startStandaloneListener(characterId);
@@ -330,7 +340,7 @@ router.get('/api/ai-motion', async (req, res) => {
     const vocab = await gestureEngine.listGestures(characterId);
     res.json({
       success: true,
-      enabled: config.enabled,
+      enabled: withRuntimeToggle(characterId, 'aiMotion.enabled', config.enabled),
       triggers: config.triggers,
       capabilities: vocab.available.length,
       characterId
@@ -380,8 +390,9 @@ router.post('/api/ai-motion', express.json(), async (req, res) => {
     // be run. A toggle is an instruction about right now, so the runtime effect
     // below runs either way; a locked character simply reverts to his frozen
     // config on restart, which is what a lock is for.
-    const persisted = await persistRuntimeToggle(() =>
-      aiMotionService.writeAiMotionConfig(characterId, { ...config, enabled, triggers: nextTriggers }));
+    const persisted = await persistRuntimeToggle(
+      () => aiMotionService.writeAiMotionConfig(characterId, { ...config, enabled, triggers: nextTriggers }),
+      { characterId, key: 'aiMotion.enabled', value: enabled });
 
     try {
       const { default: randomPoseService } = await import('../services/randomPoseService.js');
