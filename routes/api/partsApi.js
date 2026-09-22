@@ -482,7 +482,13 @@ router.put('/:id', express.json(), async (req, res) => {
         res.json({ success: true, part: parts[index] });
     } catch (error) {
         console.error('Error updating part:', error);
-        res.status(500).json({ error: 'Failed to update part' });
+        // A refusal carries its own status (the character lock answers 423). A
+        // generic 500 with no message reads as "the Save button is broken" and
+        // was how a frozen character's GPIO edit appeared to save and revert.
+        res.status(Number(error && error.status) || 500).json({
+            error: error.message || 'Failed to update part',
+            code: error.code
+        });
     }
 });
 

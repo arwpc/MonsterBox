@@ -49,9 +49,9 @@
     {
       "characterId": 4,
       "name": "Sir Dragomir",
-      "lockedAt": "2026-09-21T23:35:39.095Z",
+      "lockedAt": "2026-09-22T01:37:58.089Z",
       "lockedBy": "Aaron Warner",
-      "reason": "Sir Dragomir is finished and verified at 100% (2026-09-21). Head servo repaired (bad solder joint inside the servo) and recalibrated; ReSpeaker XVF3800 pinned as his mic and proven by frames; jaw sensitivity 1.6 (0.6 capped him at 64% travel); three Magic Box riddle scenes; old poses cleared. His PIR part (GPIO 23) is frozen with the pin UNVERIFIED at operator direction - it did not fire during testing; see the part description before trusting it.",
+      "reason": "Finished and verified at 100% (2026-09-21). Head servo repaired (bad solder joint inside the servo) and recalibrated; jaw proven moving on PCA9685 ch3 after a physically unplugged connector was reseated; ReSpeaker XVF3800 pinned and proven by frames; jaw sensitivity 1.6; three Magic Box riddle scenes. PIR corrected to GPIO 26 at operator direction (the old GPIO 23 was inherited from his Skulltalker config and never measured).",
       "fingerprints": {
         "ai-config/stt-config.json": "211d44f33a09cc072fedcd10b20fc1da41d46b8222a4711625e65e60c10178a8",
         "ai-config/tts-config.json": "a682de5368cb34406e28cb3e03450c26b7f05108fe61fa2b06c124c326e455c8",
@@ -59,7 +59,7 @@
         "images/John_Hunyadi__Chronica_Hungarorum_.jpg": "d2925747cb996771581fb81c732d38a2669f97270f55f67145420637db176ec5",
         "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "movement-config.json": "fb8e724cca400b5f2470fc5dd92d3c6148e55cde3d420bad9b7182b99e23f2cd",
-        "parts.json": "d89d6e5eb72cce756ad4515248ba19ce77d15fa5034f7398d102984c23097f20",
+        "parts.json": "e03d8eaac96633911ab11fe60d6dddc2aa9a4b879e9df1dbd65b489e70c9098f",
         "poses.json": "7f5bb21f5f2d8deba0a6298af17c50560bbc32897e7a12fb2ccebc3d80000fd1",
         "scenes.json": "eba62e9df79d0cfe6d43d9fd3a155b8284b67f7925e73d6b75448a53493e5cd8",
         "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",

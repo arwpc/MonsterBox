@@ -308,6 +308,14 @@ const linearActuatorCalibration = {
 
 const router = express.Router();
 
+// A refusal carries its own HTTP status (the character lock answers 423). Without
+// this, a deliberate refusal is reported as a server fault — which reads to the
+// operator as "the Save button is broken" rather than "this character is frozen",
+// and is exactly how a GPIO pin edit appeared to save and then revert. Anything
+// without a status stays a 500. Same fix as the jaw, LED and movement routes.
+const statusFor = (error) => Number(error && error.status) || 500;
+
+
 // Character-aware parts loading and saving functions
 // Always resolve from the global data root (not cfg.dataPath which is character-scoped)
 async function loadCharacterParts(characterId) {
@@ -677,9 +685,10 @@ router.put('/api/parts/:id', express.json(), async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating part:', error);
-        res.status(500).json({
+        res.status(statusFor(error)).json({
             success: false,
-            error: 'Failed to update part',
+            error: error.message || 'Failed to update part',
+            code: error.code,
             message: error.message
         });
     }
@@ -711,9 +720,10 @@ router.delete('/api/parts/:id', async (req, res) => {
         });
     } catch (error) {
         console.error('Error deleting part:', error);
-        res.status(500).json({
+        res.status(statusFor(error)).json({
             success: false,
-            error: 'Failed to delete part',
+            error: error.message || 'Failed to delete part',
+            code: error.code,
             message: error.message
         });
     }
@@ -737,7 +747,7 @@ router.post('/api/parts/:id/model', express.json(), async (req, res) => {
         res.json({ success: true, message: 'Model assigned', part: { id: String(parts[idx].id), modelId: parts[idx].modelId } });
     } catch (err) {
         console.error('Assign model failed:', err);
-        res.status(500).json({ success: false, error: 'Failed to assign model' });
+        res.status(statusFor(err)).json({ success: false, error: err.message || 'Failed to assign model', code: err.code });
     }
 });
 
@@ -781,7 +791,7 @@ router.post('/api/parts/:id/overrides', express.json(), async (req, res) => {
         res.json({ success: true, message: 'Overrides saved', config: parts[idx].config });
     } catch (err) {
         console.error('Save overrides failed:', err);
-        res.status(500).json({ success: false, error: 'Failed to save overrides' });
+        res.status(statusFor(err)).json({ success: false, error: err.message || 'Failed to save overrides', code: err.code });
     }
 });
 
@@ -985,7 +995,7 @@ router.post('/api/parts/:id/markers', express.json(), async (req, res) => {
         res.json({ success: true, markers });
     } catch (e) {
         console.error('save marker failed', e);
-        res.status(500).json({ success: false, error: 'Failed to save marker' });
+        res.status(statusFor(e)).json({ success: false, error: e.message || 'Failed to save marker', code: e.code });
     }
 });
 
@@ -1009,7 +1019,7 @@ router.delete('/api/parts/:id/markers/:name', async (req, res) => {
         await saveCharacterParts(characterId, parts);
         res.json({ success: true, markers: next });
     } catch (e) {
-        res.status(500).json({ success: false, error: 'Failed to delete marker' });
+        res.status(statusFor(e)).json({ success: false, error: e.message || 'Failed to delete marker', code: e.code });
     }
 });
 
@@ -1036,7 +1046,7 @@ router.post('/api/parts/:id/markers/:oldName/rename', express.json(), async (req
         await saveCharacterParts(characterId, parts);
         res.json({ success: true, markers });
     } catch (e) {
-        res.status(500).json({ success: false, error: 'Failed to rename marker' });
+        res.status(statusFor(e)).json({ success: false, error: e.message || 'Failed to rename marker', code: e.code });
     }
 });
 

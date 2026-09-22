@@ -121,11 +121,11 @@
     "id": "7",
     "name": "PIR Motion Sensor",
     "type": "motion_sensor",
-    "pin": 23,
-    "description": "PIR motion sensor, GPIO 23. PIN UNVERIFIED - recorded at operator direction, frozen with the lock. Pin 23 comes from this character's own historical config (when he was named Skulltalker), NOT from a live measurement: on 2026-09-21, with the app's watcher stopped, GPIO 23 read 0 HIGH across 160 samples over 40s while the operator moved in front of it, and a sweep of every claimable GPIO (4-27) found nothing toggling. GPIO 7 and 8 could not be tested - the SPI driver holds them - so a data wire on either would explain the silence. Either the pin is wrong or the sensor is unpowered/disconnected. Motion arming will find this part and watch a line that never fires until the wiring is checked.",
+    "pin": 26,
+    "description": "PIR motion sensor on GPIO 26. Pin corrected by the operator 2026-09-21: the previously recorded GPIO 23 was WRONG - it was inherited from this character's old Skulltalker config and never measured, which is why the line read 0 HIGH across 160 samples over 40s while he moved in front of it.",
     "config": {},
     "created": "2026-09-21T22:49:51.925009Z",
     "enabled": true,
-    "updated": "2026-09-21T23:35:10.705651Z"
+    "updated": "2026-09-22T01:37:03.230682Z"
   }
 ]
