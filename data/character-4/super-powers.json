@@ -66,7 +66,7 @@
     "detectionMode": "person"
   },
   "followOrders": {
-    "enabled": false,
+    "enabled": true,
     "requireAddressByName": false,
     "addressAliases": [],
     "ackMode": "speak",
@@ -85,7 +85,7 @@
     "partAliases": []
   },
   "aiMotion": {
-    "enabled": false,
+    "enabled": true,
     "triggers": {
       "agentGesture": true,
       "guestCommand": true,
