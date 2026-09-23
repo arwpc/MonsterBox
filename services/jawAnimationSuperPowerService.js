@@ -11,6 +11,7 @@ import { resolveDriveWindow } from './hardwareService/driveWindow.js';
 import { writeJsonAtomic, updateJsonUnderLock } from './atomicStore.js';
 import speechExpression from './speechExpressionService.js';
 import ledSpeakingSync from './ledSpeakingSync.js';
+import { withRuntimeToggle } from './characterConfigLock.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -193,6 +194,39 @@ function buildDefaultMultiConfig() {
  * The active config's params are merged into the top-level object.
  * Also pre-warms the servo daemon if jaw is enabled.
  */
+/**
+ * Overlay a LOCKED character's live toggle values onto a config read from its
+ * frozen file.
+ *
+ * A locked character's dashboard switch cannot write its config, so the value is
+ * remembered in memory (persistRuntimeToggle). The GET routes already overlay it,
+ * but the OPERATIONAL reads did not: the dashboard showed the jaw off while
+ * playWithJawSync read the frozen file and animated anyway — and the reverse,
+ * a switch shown on that drove nothing. The toggle is the operator's live intent,
+ * so it has to win everywhere the flag is consulted, not just where it is drawn.
+ */
+function applyRuntimeToggles(characterId, flat) {
+  if (!flat || characterId == null) return flat;
+  flat.enabled = !!withRuntimeToggle(characterId, 'jawAnimation.enabled', !!flat.enabled);
+  const ledSync = flat.ledSync || {};
+  flat.ledSync = {
+    ...ledSync,
+    enabled: !!withRuntimeToggle(characterId, 'jawAnimation.ledSync.enabled', !!ledSync.enabled)
+  };
+  return flat;
+}
+
+/**
+ * The config the RUNTIME should act on: the warm cache when there is one, the
+ * file otherwise, with the live toggles overlaid either way. Every playback and
+ * drive path goes through this rather than reading the cache directly.
+ */
+async function liveJawConfig(characterId) {
+  const cached = characterConfigs.get(String(characterId));
+  if (cached) return applyRuntimeToggles(characterId, { ...cached });
+  return await readJawConfig(characterId);
+}
+
 async function readJawConfig(characterId) {
   try {
     const jaw = await readRawJawSection(characterId);
@@ -213,6 +247,8 @@ async function readJawConfig(characterId) {
         }
       } catch (_) { /* retain stored values */ }
     }
+
+    applyRuntimeToggles(characterId, flat);
 
     // Pre-warm daemon so it's ready when playWithJawSync is called
     if (flat.enabled && flat.servoPartId) {
@@ -948,7 +984,7 @@ function applySmoothingToAmplitude(characterId, currentAmplitude, config) {
  */
 async function driveJawFromAmplitude(characterId, amplitude) {
   try {
-    const config = characterConfigs.get(String(characterId)) || await readJawConfig(characterId);
+    const config = await liveJawConfig(characterId);
 
     if (!config.enabled || !config.servoPartId) {
       return { success: false, message: 'Jaw animation disabled or no servo configured' };
@@ -1268,7 +1304,7 @@ async function testJawWithAudio(characterId, audioFile, jawConfig) {
  */
 async function moveJawToAngle(characterId, angleDeg) {
   try {
-    const config = characterConfigs.get(String(characterId)) || await readJawConfig(characterId);
+    const config = await liveJawConfig(characterId);
     if (!config.servoPartId) {
       return { success: false, message: 'No jaw servo configured' };
     }
@@ -1316,7 +1352,7 @@ async function moveJawToAngle(characterId, angleDeg) {
  */
 async function driveFromText({ characterId, text }) {
   try {
-    const config = characterConfigs.get(String(characterId)) || await readJawConfig(characterId);
+    const config = await liveJawConfig(characterId);
     if (!config.enabled || !config.servoPartId) return;
 
     const amplitude = estimateAmplitudeFromText(text);
@@ -1486,7 +1522,7 @@ async function playWithJawSync(characterId, audioBuffer, contentType, options = 
   cancelJawDrive(characterId);
 
   const cid = String(characterId);
-  const config = characterConfigs.get(cid) || await readJawConfig(characterId);
+  const config = await liveJawConfig(characterId);
   if (!config.enabled || !config.servoPartId) {
     return { success: false, message: 'Jaw animation disabled or no servo configured' };
   }
@@ -1686,7 +1722,7 @@ async function driveJawFromAudioBuffer(characterId, audioBuffer, contentType) {
   // This is inspired by ChatterPi's approach: everything the audio
   // callback needs is resolved up-front so the per-frame work is
   // purely synchronous (compute angle, set state, fire servo).
-  const config = characterConfigs.get(cid) || await readJawConfig(characterId);
+  const config = await liveJawConfig(characterId);
   if (!config.enabled || !config.servoPartId) {
     activeJawDrives.delete(cid);
     return { success: false, message: 'Jaw animation disabled or no servo configured' };
@@ -1877,7 +1913,7 @@ async function driveJawFromPcmStream(characterId, pcmChunk, sampleRate = PCM_JAW
 
   let stream = pcmJawStreams.get(cid);
   if (!stream) {
-    const config = characterConfigs.get(cid) || await readJawConfig(characterId);
+    const config = await liveJawConfig(characterId);
     const jawOn = !!(config.enabled && config.servoPartId);
     const ledOn = !!(config.ledSync && config.ledSync.enabled);
     // The eyes must react to speech even on a character with NO jaw servo
