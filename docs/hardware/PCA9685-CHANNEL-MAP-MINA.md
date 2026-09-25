@@ -1,6 +1,55 @@
 # Mina — PCA9685 channel map
 
-## ⛔ THE 2026-08-22 REWIRE WAS NEVER PERFORMED — do not land it
+## ✅ CURRENT, 2026-09-25 — operator-confirmed harness: jaw 11 / neck 7 / eye 3 / LED 15
+
+**Operator confirmation, 2026-09-25 (Aaron, direct, at the rig): wiring confirmed on ALL
+parts.** Eye = PCA9685 ch3, Neck = ch7, Jaw = ch11. The eye LED/laser (part 10) is wired to
+that channel's signal and ground pins only — no PWM dimming, driven full-on/full-off. Power
+to the PCA9685 was confirmed and each servo was tested individually; separately, the MDD10A
+opens and closes the coffin door. This **reverses** the 2026-08-23 "never rewired" finding
+below — that finding is now superseded and its warnings are backwards: following them tonight
+would put the jaw back on ch4, where nothing is connected.
+
+| Part (id) | Name | Channel | How confirmed |
+|---|---|---|---|
+| Jaw (1) | Jaw | **ch11** | Operator wiring check + servo tested individually; register witness this session: ch11 39.6°→69.66°, 9 transitions (×2) |
+| Neck (2) | Neck | **ch7** | Operator wiring check + servo tested individually; register witness: ch7 59.95°/83.54°→107.6°, 9 transitions; API confirms inverted mapping (commanded 120° → reports "Moved to 108° — inverted servo") |
+| Eye (3) | Eye | **ch3** | Operator wiring check + servo tested individually; register witness: ch3 84.93°→99.73°, 9 transitions |
+| Servo Channel Laser / LED (10) | Eye LED/laser | **ch15** | Operator wiring check (signal+GND only, on/off); register witness: `get_duty_pca 15` → 100% then 0% on `/api/parts/10/test` on/off |
+| Coffin Door (4) | Coffin door | GPIO 5 (DIR) / 13 (PWM), MDD10A | Operator: MDD10A opens and closes the door; pin levels proven with pigpio in earlier sessions (2026-09-12/21) |
+
+`data/character-2/parts.json` now carries exactly this map (`config.channel` 11/7/3/15 on
+parts 1/2/3/10) and needs no further edit for the channel assignment.
+
+**The rule that resolved this, restated:** a PCA9685 emits PWM whether or not a servo is
+plugged into the pin, so register sampling and "the command succeeded" read identically for a
+correct and an incorrect harness. Only the operator's eyes at the rig settle a wiring question
+— that happened tonight, and it settles this one. Software proof (register/acoustic witness)
+still matters for confirming *the software* obeys the map; it cannot substitute for the
+operator's physical confirmation, and must not be used to override it.
+
+**Acoustic witness note (2026-09-25):** inconclusive tonight for all three servos — ambient
+noise sat 20–28 dB above the 2026-08-19 floor and drifted, so a servo that would have read
+clearly above floor in August could not be distinguished from room noise tonight. This is a
+measurement-conditions limitation, not a contradiction of the register or operator evidence.
+Full numbers: `docs/hardware/MINA-SESSION-EVIDENCE-2026-09-25.md` (session evidence) and the
+2026-09-25 KNOWN-BUGS entry.
+
+**Still open:** the neck's calibrated window (48–180°, inverted, centre 132) was measured
+2026-08-23, before this channel change — it drove correctly tonight (API reported the expected
+inverted angle) but the window itself awaits a fresh eyes-on confirmation now that the harness
+question is closed. The eye remains uncalibrated (placeholder, never had Set Min/Max run).
+
+---
+
+## Historical: ⛔ 2026-08-23 finding — "THE 2026-08-22 REWIRE WAS NEVER PERFORMED" — SUPERSEDED 2026-09-25
+
+**This entire section is retained as history only. It was correct on 2026-08-23 and is wrong
+now. Do not act on it.** The operator physically confirmed the opposite on 2026-09-25 (see the
+CURRENT section above): the harness IS on ch11/ch7/ch3/ch15, and `parts.json` already reflects
+it. The warning below ("DO NOT run the four curls, they would move the jaw off ch4") describes
+a state that no longer exists — the jaw has not been on ch4 since the 2026-09-25 session, and
+moving it there now would break the working harness, not protect it.
 
 **Operator confirmation, 2026-08-23 (Aaron, asked directly): Mina's harness is
 UNCHANGED.** The rewire recorded below as "CURRENT" was a plan that never became
@@ -24,9 +73,14 @@ identically either way. Only the operator's eyes settle it — which is how this
 finally resolved. Treat any future "rewired" note here as unproven until confirmed
 at the rig.
 
-The 2026-08-19 sweep below therefore still stands as the live verdict, including
+The 2026-08-19 sweep below was the live verdict at the time it was written, including
 its finding that **ch8 (Neck) and ch11 (Eye) are silent while their PWM is correct**
-— a fault downstream of the chip. See `OPERATOR-TODO.md` §2 for the swap test.
+— a fault downstream of the chip. See `OPERATOR-TODO.md` §2 for the swap test (also
+now closed, see the CURRENT section at the top of this file).
+
+**This entire finding is superseded by the 2026-09-25 operator confirmation above.**
+Retained below only as history — the pre-rebuild channels it measured (jaw ch4, neck
+ch8, eye ch11, laser ch0) are no longer the harness Mina carries.
 
 ---
 

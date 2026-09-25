@@ -1,5 +1,185 @@
 {
   "characterId": 2,
-  "poses": [],
+  "poses": [
+    {
+      "id": 1,
+      "name": "Rest",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "home"
+      ],
+      "weight": 20,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 32
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 114
+          }
+        }
+      ],
+      "created": "2026-08-31T02:45:00.000Z",
+      "notes": "Canonical safe home for Mina. Jaw shut, neck centred. Both angles well inside the measured windows (jaw 28-84, neck 48-180), so this is safe to snap to from any state."
+    },
+    {
+      "id": 2,
+      "name": "Listening At The Wall",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "listen"
+      ],
+      "weight": 15,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 32
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 60
+          }
+        }
+      ],
+      "created": "2026-08-31T02:45:00.000Z",
+      "notes": "Turned toward the wall she listens through. Jaw shut - she is taking sound in, not giving it."
+    },
+    {
+      "id": 3,
+      "name": "Speaking Softly",
+      "category": "speech",
+      "tags": [
+        "speech",
+        "talk"
+      ],
+      "weight": 12,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 56
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 114
+          }
+        }
+      ],
+      "created": "2026-08-31T02:45:00.000Z",
+      "notes": "Jaw part-open for ordinary speech. Mid-window so the jaw never reaches either stop while talking."
+    },
+    {
+      "id": 4,
+      "name": "Whisper",
+      "category": "speech",
+      "tags": [
+        "speech",
+        "whisper"
+      ],
+      "weight": 10,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 38
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 60
+          }
+        }
+      ],
+      "created": "2026-08-31T02:45:00.000Z",
+      "notes": "Barely voiced, close to the wall - matches her whisper register. Jaw only just off its shut position."
+    },
+    {
+      "id": 5,
+      "name": "The Long Breath",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "breath"
+      ],
+      "weight": 8,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 56
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 168
+          }
+        }
+      ],
+      "created": "2026-08-31T02:45:00.000Z",
+      "notes": "Head turned away, jaw slack. The rationed air of the coffin."
+    },
+    {
+      "id": 6,
+      "name": "Startled",
+      "category": "reaction",
+      "tags": [
+        "reaction"
+      ],
+      "weight": 6,
+      "holdVariance": 1200,
+      "transitionProfile": "ease_in_out",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 78
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 168
+          }
+        }
+      ],
+      "created": "2026-08-31T02:45:00.000Z",
+      "notes": "A visitor arrives unannounced. Jaw wide but still 6 degrees short of the measured maximum."
+    }
+  ],
   "templates": {}
 }

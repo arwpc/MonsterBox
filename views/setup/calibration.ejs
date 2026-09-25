@@ -3953,6 +3953,9 @@
           html += field('editPin', 'PWM Pin', 'number', 'GPIO');
           html += field('editDirectionPin', 'Direction Pin', 'number', 'GPIO');
           html += '</div>';
+        } else if ((part.type === 'led' || part.type === 'light') && part.config && part.config.controllerType === 'pca9685') {
+          // Switched from a PCA9685 channel (set in the Light Configuration card); part.pin is unused.
+          html += '<div class="text-muted">PCA9685-switched light — no GPIO pin; set the channel below.</div>';
         } else if (part.type === 'servo' || part.type === 'led' || part.type === 'light' || part.type === 'sensor' || part.type === 'motion_sensor') {
           html += '<div class="row g-3">' + field('editPin', 'Pin', 'number', 'GPIO') + '</div>';
         } else {
@@ -5413,10 +5416,16 @@
         break;
 
       case 'light':
-      case 'led':
+      case 'led': {
         const brightness = document.getElementById('editBrightness')?.value;
         if (brightness) config.brightness = parseInt(brightness);
+        const lightChannel = document.getElementById('editLightChannel')?.value;
+        if (lightChannel !== undefined && lightChannel !== '') {
+          const ch = parseInt(lightChannel, 10);
+          if (!isNaN(ch) && ch >= 0 && ch <= 15) config.channel = ch;
+        }
         break;
+      }
 
       case 'led_ring': {
         // The GPIO/geometry live in config for an led_ring (no top-level pin).
@@ -5808,16 +5817,28 @@
   }
 
   function generateEditLightConfig(part, config, type) {
+    // A PCA9685-switched light has no GPIO pin: the hardware layer reads
+    // config.channel and ignores part.pin entirely. Offering only a "GPIO Pin"
+    // box here is how Mina's eye LED ended up with pin 15 typed in while
+    // config.channel stayed 0 and the LED was driven on the wrong channel.
+    const isPca = config && config.controllerType === 'pca9685';
+    const pinOrChannel = isPca
+      ? `<div class="col-md-6">
+                  <label class="form-label">PCA9685 Channel</label>
+                  <input type="number" class="mb-input" id="editLightChannel" title="PCA9685 channel (0-15) this light is switched from" min="0" max="15">
+                  <div class="form-text">Switched from this channel's signal pin (address ${config.address != null ? '0x' + Number(config.address).toString(16) : '0x40'}); no GPIO pin</div>
+                </div>`
+      : `<div class="col-md-6">
+                  <label class="form-label">GPIO Pin</label>
+                  <input type="number" class="mb-input" id="editLightPin" title="GPIO pin for the light" min="1" max="40">
+                  <div class="form-text">GPIO pin for control</div>
+                </div>`;
     return `
           <div class="card mb-3">
             <div class="card-header"><i class="bi bi-lightbulb"></i> ${type === 'led' ? 'LED' : 'Light'} Configuration</div>
             <div class="card-body">
               <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">GPIO Pin</label>
-                  <input type="number" class="mb-input" id="editLightPin" title="GPIO pin for the light" min="1" max="40">
-                  <div class="form-text">GPIO pin for control</div>
-                </div>
+                ${pinOrChannel}
                 <div class="col-md-6">
                   <label class="form-label">Brightness (%)</label>
                   <input type="number" class="mb-input" id="editBrightness" title="Default brightness percent" min="0" max="100" value="100">
@@ -6246,6 +6267,9 @@
 
     const pinEl = document.getElementById('editLightPin');
     if (pinEl && pin != null) pinEl.value = pin;
+
+    const channelEl = document.getElementById('editLightChannel');
+    if (channelEl && config.channel != null) channelEl.value = config.channel;
 
     const brightnessEl = document.getElementById('editBrightness');
     if (brightnessEl) brightnessEl.value = brightness;

@@ -4,6 +4,21 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Mina session (2026-09-25): her PCA9685 channel map is confirmed and documented.** The
+  operator physically confirmed the harness at the rig — jaw ch11, neck ch7, eye ch3, eye
+  LED/laser ch15 (signal+GND only, no PWM dimming) — reversing the 2026-08-23 "never
+  rewired" finding, which is now retained only as history in
+  `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`, `docs/character_mina.md`,
+  `docs/hardware/OPERATOR-TODO.md` and `docs/hardware/MINA-REBUILD.md`. Along the way: part
+  10 (eye LED) had `pin: 15` set but `config.channel` still 0 — the light path reads
+  `config.channel`, so the pin field was a no-op and the LED was actually on ch0; pointed at
+  ch15 and confirmed with a register witness. Jaw calibration (28–84°) was wiped a fifth time
+  by the single-part Clear endpoint 12 s after the jaw part save and was restored from the
+  pre-wipe snapshot; jaw animation re-enabled. Node code synced to `origin/main`. Still open:
+  the neck's 48–180° inverted window predates this channel confirmation and awaits an
+  eyes-on re-check; the eye remains uncalibrated; ElevenLabs character quota is exhausted
+  (every `sayThis`/`say` fails until reset or top-up). See KNOWN-BUGS → Mina for full detail.
+
 - **Mina session (2026-09-21): two software defects on her node, both fixed.** The coffin door's
   `invertDirection: true` (recorded since v8.0.0) had been dropped from `parts.json`, so "extend"
   drove the door closed; and the actuator position tracker sat at p=1 "homed" from an inverted

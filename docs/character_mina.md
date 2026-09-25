@@ -18,15 +18,15 @@ Mina is a coffin-themed vampire animatronic with a motorized door, jaw/neck/eye 
 
 | ID | Name | Type | Details |
 |----|------|------|---------|
-| 1 | Jaw | servo | PCA9685 channel **11** (rewired 2026-08-22; was 4), addr 0x40, model: Miuzei MG90S |
-| 2 | Neck | servo | PCA9685 channel **7** (rewired 2026-08-22; was 8), addr 0x40, model: Miuzei MG90S |
-| 3 | Eye | servo | PCA9685 channel **3** (rewired 2026-08-22; was 11/12), addr 0x40, model: Miuzei MG90S |
-| 10 | Servo Channel Laser | light | PCA9685 channel **15** (rewired 2026-08-22; was 0), addr 0x40 — eye laser toggle |
+| 1 | Jaw | servo | PCA9685 channel **11** (operator-confirmed at the rig 2026-09-25), addr 0x40, model: Miuzei MG90S |
+| 2 | Neck | servo | PCA9685 channel **7** (operator-confirmed at the rig 2026-09-25), addr 0x40, model: Miuzei MG90S |
+| 3 | Eye | servo | PCA9685 channel **3** (operator-confirmed at the rig 2026-09-25), addr 0x40, model: Miuzei MG90S |
+| 10 | Servo Channel Laser | light | PCA9685 channel **15** (operator-confirmed at the rig 2026-09-25) — full-on/full-off only, no PWM dimming (wired to signal + GND) |
 | 4 | Coffin Door | linear_actuator | MDD10A driver, GPIO 5 (dir) / 13 (pwm), 15s max, **invertDirection: true** |
 | 5 | Burning Rose | light | GPIO 16, model: generic 12V light |
-| 6 | Speaker | speaker | USB Audio Adapter (Unitek Y-247A), volume 85% |
-| 7 | Mina Cam | webcam | /dev/video0, USB (Microdia Streaming Camera) |
-| 8 | Webcam Microphone | microphone | USB audio default input |
+| 6 | Speaker | speaker | ReSpeaker XVF3800 4-Mic Array (USB), volume 100% |
+| 7 | Mina Cam | webcam | /dev/video0, USB (HHWei USB Camera, replaced the failing SONix camera 2026-08-20) |
+| 8 | Microphone | microphone | ReSpeaker XVF3800 4-Mic Array (USB) |
 | 9 | PIR Motion Sensor | motion_sensor | GPIO 26, PIR generic |
 
 **Total: 10 parts** — 3 servos, 1 PCA9685 light (laser), 1 linear actuator, 1 GPIO light, 1 speaker, 1 webcam, 1 microphone, 1 PIR sensor
@@ -35,16 +35,18 @@ Mina is a coffin-themed vampire animatronic with a motorized door, jaw/neck/eye 
 
 I2C at address `0x40` (64), 50 Hz:
 
-Rewired by the operator during the 2026-08-22 rebuild (full history:
-`docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`). The node's restored `parts.json`
-must be updated to this map at acceptance — `MINA-REBUILD.md` §3a has the curls.
+**Operator-confirmed at the rig, 2026-09-25** (full history and register-readback proof:
+`docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`). `data/character-2/parts.json` carries this map
+exactly — no further edit needed. A 2026-08-23 note previously stated the 2026-08-22 rewire
+plan had never been physically landed; that statement is now superseded, since confirmed at
+the rig.
 
 | Part | Channel | Type | Notes |
 |------|---------|------|-------|
-| Eye | 3 | Standard servo | Eye movement |
-| Neck | 7 | Standard servo | Head tracking pan |
-| Jaw | 11 | Standard servo | Jaw animation sync |
-| Laser | 15 | Light (PWM toggle) | Eye laser on/off |
+| Eye | 3 | Standard servo | Eye movement — **uncalibrated** (placeholder, never had Set Min/Max run) |
+| Neck | 7 | Standard servo | Head tracking pan — window 48–180°, inverted, centre 132 (measured 2026-08-23, **predates** this channel change; awaits eyes-on re-confirmation) |
+| Jaw | 11 | Standard servo | Jaw animation sync — calibrated window 28–84° |
+| Laser | 15 | Light, full-on/full-off | Eye laser/LED, wired to the channel's signal + GND only — no PWM dimming |
 
 ## GPIO Assignments
 
@@ -57,8 +59,8 @@ must be updated to this map at acceptance — `MINA-REBUILD.md` §3a has the cur
 
 ## Super Powers
 
-- **Jaw Animation** — Servo part 1 (ch11 since the 2026-08-22 rewire), angles 17°–153°, speech-synced with bandpass filter + AGC
-- **Head Tracking** — Pan servo part 2 (ch7 since the 2026-08-22 rewire), webcam part 7, 120° range, person detection mode
+- **Jaw Animation** — Servo part 1 (PCA9685 ch11), calibrated window 28°–84°; re-enabled 2026-09-25
+- **Head Tracking** — Pan servo part 2 (PCA9685 ch7), webcam part 7, 120° range, person detection mode; the 48–180° inverted window/centre-132 preset predates the 2026-09-25 channel confirmation and awaits eyes-on re-check
 
 ## Scenes
 
@@ -71,16 +73,21 @@ must be updated to this map at acceptance — `MINA-REBUILD.md` §3a has the cur
 
 ## Poses
 
+Six poses authored 2026-08-31 (jaw + neck only; both inside the measured windows jaw 28–84°,
+neck 48–180°). The eye has no calibrated window yet, so no pose uses it.
+
 | ID | Name | Category | Parts Used |
 |----|------|----------|------------|
-| 1 | Neutral | idle | Jaw 90°, Neck 90°, Eye 90° |
-| 2 | Glance Left | idle | Neck 60°, Eye 60° |
-| 3 | Glance Right | idle | Neck 120°, Eye 120° |
-| 4 | Mouth Open | expression | Jaw 150° |
-| 5 | Mouth Closed | expression | Jaw 20° |
-| 6 | Look Up | idle | Eye 45° |
-| 7 | Menacing | performance | Jaw 130°, Neck 70°, Eye 50° |
-| 8 | All Center | utility | All servos 90° |
+| 1 | Rest | idle | Jaw 32°, Neck 114° |
+| 2 | Listening At The Wall | idle | Jaw 32°, Neck 60° |
+| 3 | Speaking Softly | expression | Jaw 56°, Neck 114° |
+| 4 | Whisper | expression | Jaw 38°, Neck 60° |
+| 5 | The Long Breath | expression | Jaw 56°, Neck 168° |
+| 6 | Startled | performance | Jaw 78°, Neck 168° |
+
+Note: the neck's "centre" is recorded three ways — calibration preset 132°, the poses' 114°,
+and `headTracking.centerDeg` 114° — and the window itself predates the channel change. One
+eyes-on measurement on ch7 should settle all three (see `docs/hardware/OPERATOR-TODO.md`).
 
 ## Coffin Door Wiring Note
 

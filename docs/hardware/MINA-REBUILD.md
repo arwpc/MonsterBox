@@ -47,12 +47,14 @@ These are her standing hardware faults; the rebuild is the one time fixing them 
 1. **USB 5 V rail over-current** (OPERATOR-TODO §4) — her rail has tripped repeatedly.
    The 2026-08-20 plan: remove the USB hub, plug camera and XVF3800 straight into the Pi
    (or fit a POWERED hub). Whatever the wiring ends up as, note it in OPERATOR-TODO.
-2. **Neck/eye dead-channel question — CLOSED BY THE REWIRE (2026-08-22).** The operator
-   re-pinned the whole harness during the rebuild; the old "neck ch8 / eye ch11 shared
-   V+ branch" hypothesis (OPERATOR-TODO §E) described wiring that no longer exists. The
-   NEW map: **eye = ch3, neck = ch7, jaw = ch11, laser/LED = ch15** (part ids unchanged:
-   eye 3, neck 2, jaw 1, laser 10). Verification moves to acceptance: land the map
-   (§3a), then nudge each part and watch it move — no metering unless one still refuses.
+2. **Neck/eye dead-channel question — CLOSED, confirmed at the rig 2026-09-25.** The
+   2026-08-22 claim below was briefly retracted on 2026-08-23 ("harness UNCHANGED") and
+   is now reversed again, this time by the operator's own physical confirmation, not a
+   plan: eye/neck/jaw/laser leads were traced and each servo tested individually, and
+   the old "neck ch8 / eye ch11 shared V+ branch" hypothesis (OPERATOR-TODO §E,
+   historical) described wiring that no longer applies. Confirmed map: **eye = ch3,
+   neck = ch7, jaw = ch11, laser/LED = ch15** (part ids unchanged: eye 3, neck 2, jaw 1,
+   laser 10) — `parts.json` already carries it (§3a acceptance criterion, met).
 3. **Speaker `audioDeviceId` drift** — her node copy had drifted to `"default"` from the
    explicit XVF3800 sink (2026-08-21 finding). When restoring `parts.json`, set the
    speaker part's `audioDeviceId` back to the explicit sink name
@@ -81,7 +83,22 @@ These are her standing hardware faults; the rebuild is the one time fixing them 
 3. Restore the §1 backup to the same paths (repo data files, `/etc/monsterbox/env`,
    crontab). `chown -R remote:remote` the restored data files.
 
-   **3a. ⛔ CANCELLED 2026-08-23 — DO NOT RUN THESE CURLS.** The operator confirmed
+   **3a. ✅ RESOLVED 2026-09-25 — the map these curls describe is now the physical
+   truth, confirmed by the operator at the rig, and `parts.json` already carries it.**
+   Eye = ch3, Neck = ch7, Jaw = ch11, eye LED/laser = ch15 (signal+GND only, no PWM
+   dimming); each servo tested individually and the MDD10A opens/closes the door.
+   This **reverses** the 2026-08-23 cancellation immediately below — that finding is
+   now historical and its "DO NOT RUN" warning is obsolete (running the curls today
+   would be a no-op, since `parts.json` already matches; running the opposite — moving
+   the jaw back to ch4 — would break the confirmed-working harness). See
+   `PCA9685-CHANNEL-MAP-MINA.md` for the full register-readback proof.
+
+   **Acceptance for this step is now: confirm `parts.json` reads jaw 11 / neck 7 /
+   eye 3 / LED 15** (it does — verified 2026-09-25), and change nothing further.
+
+   <details><summary>Historical: 2026-08-23 cancellation notice (superseded 2026-09-25, kept for the record)</summary>
+
+   **⛔ CANCELLED 2026-08-23 — DO NOT RUN THESE CURLS.** The operator confirmed
    directly that Mina's harness was **never re-pinned**; the 2026-08-22 rewire was a
    plan that never became physical. The restored `parts.json` channels (jaw 4, neck 8,
    eye 11, laser 0) are **correct as-is**. Running the curls below would move the jaw
@@ -89,7 +106,6 @@ These are her standing hardware faults; the rebuild is the one time fixing them 
    working part of her head. They are kept only so the cancellation is unambiguous.
    See `PCA9685-CHANNEL-MAP-MINA.md`.
 
-   <details><summary>Cancelled commands (do not execute)</summary>
    ```bash
    B="https://192.168.8.140:3000/setup/calibration/api/parts"
    curl -sk -X POST "$B/1/overrides"  -H 'Content-Type: application/json' -d '{"overrides":{"channel":11}}'  # Jaw
@@ -97,10 +113,11 @@ These are her standing hardware faults; the rebuild is the one time fixing them 
    curl -sk -X POST "$B/3/overrides"  -H 'Content-Type: application/json' -d '{"overrides":{"channel":3}}'   # Eye
    curl -sk -X POST "$B/10/overrides" -H 'Content-Type: application/json' -d '{"overrides":{"channel":15}}'  # Laser/LED
    ```
-   </details>
 
-   Acceptance for this step is now simply: confirm `parts.json` still reads
-   jaw 4 / neck 8 / eye 11 / laser 0, and change nothing.
+   Acceptance stated at the time: confirm `parts.json` still reads
+   jaw 4 / neck 8 / eye 11 / laser 0, and change nothing. **No longer current — see
+   the ✅ RESOLVED note above.**
+   </details>
 4. `sudo systemctl restart monsterbox.service`.
 
 ## 4. Post-rebuild acceptance — run BENCH-CHECKLIST with these Mina-specific additions

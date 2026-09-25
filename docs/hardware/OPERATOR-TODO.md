@@ -3,7 +3,38 @@
 Software cannot close any of these. Each one has been isolated to a physical cause with evidence,
 so none of them needs re-diagnosing from scratch.
 
-Last updated **2026-09-13** (PumpkinHead LED-ring extension isolated — new top entry; previously 2026-08-22, v11.0 audit + bench session).
+Last updated **2026-09-25** (Mina harness confirmation follow-up — new top entry; previously 2026-09-13, PumpkinHead LED-ring extension).
+
+---
+
+# Mina — confirm by eye (2026-09-25, new)
+
+The 2026-09-25 session confirmed Mina's channel map in software and by register readback
+(see §E below and `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`), but acoustic witness was
+inconclusive (room noise 20–28 dB above the August floor) and three things still need a
+human's eyes, not a meter:
+
+1. **Eye LED switches with part 10 on/off.** Register witness showed the PCA9685 duty
+   cycle on ch15 going 0%→100%→0% during `/api/parts/10/test`; confirm the physical LED
+   actually lights.
+2. **Neck's 48–180° inverted window, centre 132, still matches the physical head on ch7.**
+   That window was measured 2026-08-23, before this channel confirmation — the API drove
+   the expected inverted angle tonight, but nobody watched the head do it. Do it stepped:
+   goto 114 first, then ≤10° steps toward each end with a hand on the head, Set Min / Set Max
+   at the first bind. While there, watch the SIGN: `headTracking.invertPan` is true AND the
+   calibration `invert` is true (a double inversion on paper), and the "centre" is recorded
+   as 132 (preset), 114 (poses) and 114 (`headTracking.centerDeg`) — pick the real one and
+   make all three agree.
+3. **API "extend" opens the coffin door (polarity).** The MDD10A moved during this
+   session's jog-raw commands; confirm "extend" = open, not closed, matches
+   `invertDirection: true` in `parts.json`.
+
+**Also an operator action, unrelated to hardware:** Mina's ElevenLabs character quota is
+exhausted (0 credits remaining; the `growing_business` quota of 1,977,285 characters is fully used
+and resets 2026-10-19 23:03 UTC) — every `sayThis` scene step and `/conversation/api/say`
+call fails with `quota_exceeded` until then unless the plan is topped up. Scenes
+continue past a failed `sayThis` (by design), so a show runs silently rather than erroring
+out; that silence is this cause, not a new audio bug.
 
 ---
 
@@ -155,7 +186,25 @@ head has since rotated "all the way around and stressed the wires" more than onc
 bench. Before running BENCH-CHECKLIST K3, inspect the cable loom for chafe/stretch and
 re-slack it; after K3's window is set, confirm the loom stays relaxed at both window ends.
 
-## E. Mina's neck/eye channels — ⚠️ REOPENED: the rewire never happened (2026-08-23)
+## E. Mina's neck/eye channels — ✅ RESOLVED 2026-09-25: harness confirmed jaw 11 / neck 7 / eye 3 / LED 15
+
+**Closed.** On 2026-09-25 the operator confirmed, at the rig, wiring on ALL of Mina's
+parts: Eye = PCA9685 ch3, Neck = ch7, Jaw = ch11, eye LED/laser = ch15 (signal+GND
+only, no PWM dimming). Each servo was tested individually and the MDD10A opens and
+closes the coffin door. `data/character-2/parts.json` carries exactly this map.
+This is the operator's own physical confirmation — the highest-authority evidence
+this file recognizes — and it **supersedes** every note below in this section,
+including the 2026-08-23 "harness UNCHANGED" finding and the "DO NOT run the §3a
+curls" warning, which described the *old* ch4/ch8/ch11/ch0 wiring and would now be
+actively wrong to follow. Full register-readback proof:
+`docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`.
+
+Remaining hands-only items from this session are tracked as a single new item at
+the top of this file (see "Mina — confirm by eye" below).
+
+---
+
+### Historical (superseded 2026-09-25) — "⚠️ REOPENED: the rewire never happened (2026-08-23)"
 
 **Retracted.** This section previously declared the ch8/ch11 fault closed by a
 2026-08-22 harness rewire. Asked directly on 2026-08-23, the operator confirmed
