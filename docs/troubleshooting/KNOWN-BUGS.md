@@ -1665,33 +1665,38 @@ was interrupted before its adversarial verify phase ran and before the tests/doc
 reported, so only the items the lead session reproduced by hand are listed here; the raw reader
 reports were not kept.
 
-- 🔴 **Orchestration cannot reach any Goblin.** `services/orchestrationService.js` loads its
-  Goblin list from `config/animatronics.json` `goblins` (chestwound `192.168.8.160`, goblin2
-  `.161` — no such devices) instead of `data/goblins.json`, speaks `https://` to a plain-HTTP
-  device, and stops via `/stop-video`, which `goblin/server.js` does not serve (it has
-  `/stop-all`). Proven: `POST /api/orchestration/broadcast/goblins {command:'stop'}` answered
-  `total:2, failed:2` naming only the two phantoms. Fleet Emergency Stop never touches a Goblin
-  either. The Fleet Command Center's Goblin row is display-only (it reads
-  `/goblin-management/api/goblins`, so it does show the real three). *Would prove it fixed:*
-  `broadcast/goblins {command:'stop-video'}` returns three results from `.40/.106/.14` and the
-  looping Goblin's screen goes dark.
-- 🟡 **A Scene step reaches a Goblin only if the video name was typed in by hand — the Animation
-  Studio cannot set it.** `executeGoblinVideoStep` → `goblinManagerService.playVideoOnGoblin` →
-  `POST /api/video/play-immediate {filename, returnToQueue}` works: `POST /scenes/api/test-step
-  {type:'goblin-video', goblinId:'goblin-192-168-8-106', videoId:'307 Jb Hd.mp4'}` played the
-  clip on Goblin Two and its queue was untouched afterwards. But `views/scenes/studio.ejs:1136`
-  renders the video `<select>` as a static "Select goblin first" placeholder and nothing ever
-  fills it (the legacy `scene-editor.ejs` did); MonsterBox's own per-Goblin video cache
-  (`GET /goblin-management/api/goblins/:id/videos`) answers "No cached videos. Run scan first"
-  after every restart because nothing calls the scan. Worse, `collectStepData()`
-  (`studio.ejs:1185`) copies every `.sf-input` value back into the step on save, so a
-  `videoId` that was set by hand is blanked the next time the scene is saved in the Studio.
-  Orlok's scene 107 "Left Arm & Goblin Video Test" is the artefact: a `goblin-video` step with `goblinId` and no `videoId`, which
-  the executor rejects with `goblin.step requires videoId`. Loop and Volume on the step are
-  inert end to end (studio stores them top-level, executor reads `step.options`, manager sends
-  neither, device hard-codes `loop:false`). `?dryRun=1` short-circuits the step before any
-  network call, as it should. *Would prove it fixed:* a goblin-video step authored entirely in
-  the Studio plays on a Goblin.
+- ✅ **FIXED 2026-09-25 — orchestration reaches the real Goblins.** Was: `services/orchestrationService.js`
+  took its Goblin list from `config/animatronics.json` `goblins` (chestwound `192.168.8.160`, goblin2
+  `.161` — no such devices), spoke `https://` to plain-HTTP devices and stopped via `/stop-video`,
+  which the device does not serve; `broadcast/goblins {command:'stop'}` answered `total:2, failed:2`
+  naming only the phantoms, and Fleet Emergency Stop never touched a Goblin. Now the list is a
+  getter over the registry (`data/goblins.json`, the same three the Goblin Management and Video
+  Library pages show; the config array is logged as ignored), play/stop/health go through
+  `goblinManagerService` (device API, outcome proven from `/playback-status`), `stop` and
+  `stop-video` are both accepted, and `emergencyStop()` also broadcasts `stop-video` to the
+  Goblins (reported under `goblins`, separately from the animatronic summary). Proven:
+  `broadcast/goblins {command:'health-check'}` → `total:3, successful:3` from `.106/.14/.40`, and
+  the first emergency-stop system-test run after the change really blanked all three screens —
+  which is why the suite now records which Goblins were playing and resumes them, through the new
+  `POST /video-library/api/goblins/:id/resume` (the all-clear: start the Goblin's own queue in the
+  loop mode it already carries). Unit: `tests/unit/goblin-orchestration-targets.test.js`.
+- ✅ **FIXED 2026-09-25 — a goblin-video step is authored entirely in the Animation Studio and
+  survives its own re-save.** Was: `views/scenes/studio.ejs` rendered the video `<select>` as a
+  static "Select goblin first" placeholder that nothing filled, and `collectStepData()` copied
+  that placeholder's empty value over any `videoId` on save — so Orlok's scene 107 ("Left Arm &
+  Goblin Video Test") carried a step with `goblinId` and no `videoId`, which the executor rejects.
+  Now choosing a Goblin lists what is on its disk straight from the device
+  (`GET /video-library/api/goblins/:id/videos`, cached per Goblin for the page), a placeholder
+  select is marked `data-skip` and never collected, a stored video the Goblin no longer has is
+  shown as "(not on this Goblin)" instead of being dropped, and the inert Volume field is gone
+  (the Goblin player has no volume control). Loop is honest end to end: the executor reads the
+  step's own `loop` (Studio stores it top-level; `options.loop` still honoured for old scenes) and
+  defaults to play-ONCE-then-return-to-queue — the old default of loop hijacked a screen for the
+  night — and no longer refuses on the registry's stored offline flag (the manager pings first).
+  Proven headless on port 3100: 72 videos listed from Goblin Three, step saved as
+  `{goblinId, videoId:"307 Jb Hd.mp4", loop:false}`, reload → re-save kept it, zero page errors
+  (`tests/browser/studio-goblin-step.spec.js`, skips when no Goblin is online). Scene 107 itself
+  was left as the operator's to fix: open it in the Studio and pick the video.
 - ✅ **FIXED 2026-09-25 — the Video Library can now deploy to a Goblin and play on it, both
   proven on the device.** Was: "play on Goblin" sent the library's UUID storage name
   (`c1efa5eb-….mp4`), which no Goblin has, and the device answered `success:true` the instant
@@ -1711,17 +1716,18 @@ reports were not kept.
   through MonsterBox (no browser→Goblin mixed content), a Goblin picker, and "play once
   copied" in the deploy modal. Every Goblin was also refused as "not online" for the first
   30 s after a MonsterBox restart (the registry marks all offline at boot); the online check
-  now pings the device before refusing. Still open on this row: the Studio step (below) and
-  loop/volume on a scene step.
-- 🟡 **The registry is rewritten roughly every 50 s for healthy Goblins.** Nothing heartbeats
-  (the device never registers or heartbeats; the `/api/goblins/:id/heartbeat` alias has no
-  caller), so `goblinManagerService`'s 30 s monitor expires each Goblin 120 s after `lastSeen`,
-  re-pings it in the same tick and saves. Measured on Orlok: `data/goblins.json` mtime moved at
-  20:50:50, 20:52:20, 20:52:50, 20:53:20; each Goblin's `lastSeen` advances every 150 s → about
-  1,700 tmp+rename writes a day to the SD card for three perfectly healthy devices, and the
-  file is perpetually dirty in git. The "went offline" log line is throttled, so `.log` shows
-  only 65 lines since 2026-09-21 and hides the churn. *Would prove it fixed:* the mtime holds
-  still for ten minutes while all three stay online.
+  now pings the device before refusing. The Studio step and loop on a scene step were fixed the same night (entry above);
+  volume on a scene step is gone rather than fixed, because the device has no volume control.
+- ✅ **FIXED 2026-09-25 — the registry is no longer rewritten for healthy Goblins.** Was: nothing
+  heartbeats (the device never registers or calls the heartbeat alias), so `goblinManagerService`'s
+  30 s monitor expired each Goblin 120 s after `lastSeen`, re-pinged it in the same tick and saved —
+  a flap to offline and back every ~150 s per Goblin, ~1,700 tmp+rename writes a day to the SD card
+  for three healthy devices, a "went offline" log line each time, and a perpetually dirty
+  `data/goblins.json`. Now a stale-but-online Goblin is pinged BEFORE it is expired and only one
+  that does not answer is marked offline, and `pingGoblin()` persists only a status transition
+  (offline→online); `lastSeen` still advances in memory for the API and the sort. *Proof:* the
+  file's mtime holds still while all three stay online (one write at service start, none after).
+  Unit: `tests/unit/goblin-orchestration-targets.test.js`.
 - 🟡 **The repo's `goblin/systemd/goblin.service` is not what runs, and would not start.** The
   devices run a "goblin-gold" unit (`ExecStart …/goblin/server.js`, `ExecStartPre
   goblin-setup.sh`, `ExecStartPost goblin-autostart.sh`, RT scheduling, the MPV tuning line)

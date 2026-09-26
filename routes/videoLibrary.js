@@ -510,6 +510,20 @@ router.post('/api/goblins/:id/stop', async (req, res) => {
 });
 
 /**
+ * POST /api/goblins/:id/resume - The all-clear: start the Goblin's own queue loop
+ * again after a stop (Emergency Stop, the Stop button, a suite that fired one).
+ */
+router.post('/api/goblins/:id/resume', async (req, res) => {
+    try {
+        const result = await goblinManagerService.resumeGoblinQueue(req.params.id);
+        res.status(result.success ? 200 : 502).json(result);
+    } catch (error) {
+        console.error('Error resuming Goblin queue:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
  * POST /api/search - Advanced video search
  */
 router.post('/api/search', async (req, res) => {

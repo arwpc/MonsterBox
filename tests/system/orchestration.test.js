@@ -42,6 +42,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
   // disables its members; the individual restores then put each back.
   const ARMING_FEATURES = ['lurk', 'jaw', 'head', 'motion', 'idle'];
   const originalArmed = {};
+  const playingGoblins = [];
 
   before(async function () {
     this.timeout(20000);
@@ -70,6 +71,19 @@ describe('Orchestration API (Fleet Command Center)', () => {
     for (const feature of ARMING_FEATURES) {
       try { originalArmed[feature] = await readers[feature](); } catch (_) { originalArmed[feature] = false; }
     }
+
+    // The Goblins are part of the panic stop now (2026-09-25): /emergency-stop
+    // below really stops every Goblin's show loop. Record which of them were
+    // playing so the restore can start their own queues again — the first run of
+    // this suite after that change left all three screens dark.
+    try {
+      const g = await request(BASE_URL).get('/goblin-management/api/goblins');
+      for (const goblin of (g.body && g.body.goblins) || []) {
+        if (goblin.status !== 'online') continue;
+        const pb = await request(BASE_URL).get(`/video-library/api/goblins/${encodeURIComponent(goblin.id)}/playback`);
+        if (pb.body && pb.body.success && pb.body.mpvRunning) playingGoblins.push(goblin.id);
+      }
+    } catch (_) { /* no Goblins registered on this node */ }
   });
 
   after(async function () {
@@ -122,6 +136,13 @@ describe('Orchestration API (Fleet Command Center)', () => {
           .post(`/api/orchestration/superpower/${feature}`)
           .send({ enabled: originalArmed[feature] === true });
       } catch (_) { /* peers disarmed on their next reachable run */ }
+    }
+
+    // Put every Goblin that was showing its loop back on it (see before()).
+    for (const goblinId of playingGoblins) {
+      try {
+        await request(BASE_URL).post(`/video-library/api/goblins/${encodeURIComponent(goblinId)}/resume`);
+      } catch (_) { /* the operator resumes it from the Video Library's On the Goblins panel */ }
     }
   });
 

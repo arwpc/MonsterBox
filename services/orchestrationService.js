@@ -12,6 +12,7 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import nodeDiscoveryService from './nodeDiscoveryService.js';
+import goblinManagerService from './goblinManagerService.js';
 
 // HTTPS agent that accepts self-signed certificates (all MonsterBox nodes use self-signed SSL).
 //
@@ -55,7 +56,7 @@ class OrchestrationService {
     constructor() {
         const config = this.loadAnimatronicsConfig();
         this.animatronics = config.animatronics;
-        this.goblins = config.goblins;
+        // Goblins are NOT taken from config: see the `goblins` getter.
         this._fleetHealthMemo = new Map();
 
         this.sshUser = 'remote';
@@ -196,7 +197,10 @@ class OrchestrationService {
                 console.warn('⚠️ config/animatronics.json contains no animatronics entries');
             }
 
-            console.log(`📡 Loaded ${animatronics.length} animatronics and ${goblins.length} goblins from config`);
+            console.log(`📡 Loaded ${animatronics.length} animatronics from config`);
+            if (goblins.length) {
+                console.log(`📡 config/animatronics.json lists ${goblins.length} goblin(s) — ignored; Goblins come from the registry (data/goblins.json)`);
+            }
             return { animatronics, goblins };
         } catch (error) {
             console.error(`❌ Failed to load config/animatronics.json: ${error.message}`);
@@ -502,6 +506,32 @@ class OrchestrationService {
     }
 
     /**
+     * The Goblins this node can reach: the registry (data/goblins.json), the same
+     * list the Goblin Management and Video Library pages use. This used to be the
+     * `goblins` array in config/animatronics.json, which named two devices that do
+     * not exist (192.168.8.160/.161), so every broadcast reported "2 failed" and
+     * never touched a real Goblin. Each entry keeps the registry record and adds
+     * `ip`/`port` parsed from its endpoint for the callers that address by host.
+     */
+    get goblins() {
+        const out = [];
+        const registry = goblinManagerService && goblinManagerService.goblins;
+        if (!registry || typeof registry.values !== 'function') return out;
+        for (const goblin of registry.values()) {
+            if (!goblin || !goblin.id) continue;
+            let ip = goblin.ip || null;
+            let port = goblin.port || 3001;
+            try {
+                const url = new URL(goblin.endpoint);
+                ip = ip || url.hostname;
+                port = Number(url.port) || port;
+            } catch (_) { /* no endpoint — keep whatever the record carries */ }
+            out.push({ ...goblin, ip, port });
+        }
+        return out;
+    }
+
+    /**
      * Broadcast to Goblins
      */
     async broadcastToGoblins(command, params = {}) {
@@ -542,61 +572,44 @@ class OrchestrationService {
     }
 
     /**
-     * Execute a command on a Goblin
+     * Execute a command on a Goblin. Playback goes through goblinManagerService,
+     * whose methods speak the device's real API (plain HTTP, /api/video/play-immediate,
+     * /stop-all) and prove the outcome from /playback-status; the previous direct
+     * calls used https:// against an http device and a /stop-video route it never had.
+     * The manager reports failure by return value, so it is turned into a throw here
+     * for the broadcast summary to count it.
      */
     async executeOnGoblin(goblin, command, params = {}) {
         const { ip, port } = goblin;
+        const unwrap = (result, what) => {
+            if (!result || result.success === false) {
+                throw new Error(`${what} failed: ${(result && result.error) || 'unknown error'}`);
+            }
+            return result;
+        };
 
         switch (command) {
             case 'reboot':
                 return await this.rebootDevice(ip);
 
             case 'play-video':
-                return await this.playGoblinVideo(ip, port, params.filename);
+                if (!params.filename) throw new Error('play-video requires params.filename');
+                return unwrap(await goblinManagerService.playVideoOnGoblin(goblin.id, params.filename, {
+                    loop: params.loop === true
+                }), 'Play video');
 
+            case 'stop':
             case 'stop-video':
-                return await this.stopGoblinVideo(ip, port);
+                return unwrap(await goblinManagerService.stopGoblin(goblin.id), 'Stop video');
 
-            case 'health-check':
-                return await this.healthCheck(ip, port);
+            case 'health-check': {
+                const ping = await goblinManagerService.pingGoblin(goblin.id);
+                if (!ping.online) throw new Error(`Health check failed: ${ping.error || 'no answer'}`);
+                return { success: true, online: true, endpoint: `${ip}:${port}` };
+            }
 
             default:
                 throw new Error(`Unknown Goblin command: ${command}`);
-        }
-    }
-
-    /**
-     * Play video on a Goblin
-     */
-    async playGoblinVideo(ip, port, filename) {
-        try {
-            const response = await axiosHttps.post(
-                `https://${ip}:${port}/play-video`,
-                { filename, loop: true },
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: 5000
-                }
-            );
-            return { success: true, data: response.data };
-        } catch (error) {
-            throw new Error(`Play video failed: ${error.message}`);
-        }
-    }
-
-    /**
-     * Stop video on a Goblin
-     */
-    async stopGoblinVideo(ip, port) {
-        try {
-            const response = await axiosHttps.post(
-                `https://${ip}:${port}/stop-video`,
-                {},
-                { timeout: 5000 }
-            );
-            return { success: true, data: response.data };
-        } catch (error) {
-            throw new Error(`Stop video failed: ${error.message}`);
         }
     }
 
@@ -818,7 +831,18 @@ class OrchestrationService {
             };
         }));
         const summary = this._summarize(results);
-        return { success: summary.successful > 0, ...summary };
+        // The Goblins are part of the show: a panic that leaves a screen looping
+        // is not a stop. Best effort, and reported separately so a Goblin that is
+        // off the shelf cannot turn the animatronic result red.
+        let goblins = null;
+        if (!ids) {
+            try {
+                goblins = await this.broadcastToGoblins('stop-video');
+            } catch (error) {
+                goblins = { success: false, error: error.message };
+            }
+        }
+        return { success: summary.successful > 0, ...summary, goblins };
     }
 
     /**

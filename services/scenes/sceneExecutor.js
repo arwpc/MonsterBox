@@ -350,14 +350,13 @@ async function executeGoblinVideoStep(step, characterId, emit) {
   emit && emit({ type: 'step', status: 'start', stepType: 'goblin', goblinId, videoId });
 
   try {
-    // Check if Goblin exists and is online
+    // Check if Goblin exists. Its online state is NOT judged here: the registry
+    // marks every Goblin offline at startup and only the manager's check pings the
+    // device before refusing, so a pre-check on the stored flag failed every scene
+    // for the first minute after a restart.
     const goblin = await goblinManagerService.getGoblin(goblinId);
     if (!goblin.success) {
       throw new Error(`Goblin not found: ${goblinId}`);
-    }
-
-    if (goblin.goblin.status !== 'online') {
-      throw new Error(`Goblin is not online: ${goblinId}`);
     }
 
     // Verify character lock if required
@@ -369,11 +368,16 @@ async function executeGoblinVideoStep(step, characterId, emit) {
       throw new Error(`Goblin is locked by ${goblin.goblin.lockedBy}, not character-${characterId}`);
     }
 
-    // Play video on Goblin
+    // Play video on Goblin. The Studio stores `loop` on the step itself (older
+    // scenes carried it under `options`); read both. Unchecked means play ONCE and
+    // hand the screen back to the Goblin's own show loop; checked makes the file
+    // the Goblin's looping queue until something stops it. Defaulting to loop
+    // here used to hijack a display for the night on every scene that forgot the
+    // flag. Volume is not sent: the Goblin player has no volume control.
+    const loop = step.loop === true || options.loop === true;
     const playResult = await goblinManagerService.playVideoOnGoblin(goblinId, videoId, {
-      loop: options.loop !== false, // Default to loop
-      volume: options.volume || 100,
-      ...options
+      loop,
+      returnToQueue: !loop
     });
 
     if (!playResult.success) {

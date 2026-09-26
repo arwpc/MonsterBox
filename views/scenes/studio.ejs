@@ -293,6 +293,7 @@
   var calibrationProfiles = {};
   var sounds = [];
   var goblins = [];
+  var goblinVideos = {}; // goblinId -> { videos: [filenames], error } straight from the device
   var poseTemplates = {};
 
   var currentSceneId = null;
@@ -1124,6 +1125,28 @@
     return html;
   }
 
+  // What is on a Goblin's disk is asked of the device itself (the same listing the
+  // Video Library's "On the Goblins" panel uses), cached per Goblin for the page's
+  // life. The select used to be a static "Select goblin first" placeholder that
+  // nothing ever filled, so a goblin-video step could not be authored here at all.
+  function loadGoblinVideos(goblinId) {
+    if (!goblinId) return Promise.resolve(null);
+    if (goblinVideos[goblinId] && !goblinVideos[goblinId].loading) return Promise.resolve(goblinVideos[goblinId]);
+    if (goblinVideos[goblinId] && goblinVideos[goblinId].loading) return goblinVideos[goblinId].promise;
+    var entry = { loading: true, videos: [], error: null };
+    entry.promise = apiGet('/video-library/api/goblins/' + encodeURIComponent(goblinId) + '/videos').then(function(j) {
+      entry.videos = (j && j.success && Array.isArray(j.videos)) ? j.videos.map(function(v) { return v.filename || v.name || String(v); }) : [];
+      entry.error = (j && j.success) ? null : ((j && j.error) || 'Goblin did not answer');
+      entry.loading = false;
+      return entry;
+    }).catch(function(e) {
+      entry.videos = []; entry.error = e.message || 'Goblin did not answer'; entry.loading = false;
+      return entry;
+    });
+    goblinVideos[goblinId] = entry;
+    return entry.promise;
+  }
+
   function renderGoblinForm(step, idx) {
     var html = '<div class="row g-2">';
     html += '<div class="col-6"><label class="mb-field-label">Goblin</label>';
@@ -1133,11 +1156,32 @@
     });
     html += '</select></div>';
     html += '<div class="col-6"><label class="mb-field-label">Video</label>';
-    html += '<select title="Select a video to play" class="mb-select sf-input video-sel" data-idx="' + idx + '" data-field="videoId"><option value="">Select goblin first</option></select></div>';
-    html += '<div class="col-6"><label class="mb-field-label">Volume %</label>';
-    html += '<input type="number" title="Playback volume as a percentage" class="mb-input sf-input" data-idx="' + idx + '" data-field="volume" value="' + (step.volume || 80) + '" min="0" max="100"></div>';
-    html += '<div class="col-6"><label class="mb-check mt-4" for="gloop' + idx + '"><input title="Loop this media for the duration of the step" type="checkbox" class="sf-input" data-idx="' + idx + '" data-field="loop" id="gloop' + idx + '"' + (step.loop ? ' checked' : '') + '>';
-    html += '<span class="mb-text-sm">Loop</span></label></div>';
+    var cache = step.goblinId ? goblinVideos[step.goblinId] : null;
+    if (!step.goblinId) {
+      // data-skip: collectStepData must not copy a placeholder's empty value over a
+      // videoId the step already carries — that is how saved steps lost their video.
+      html += '<select title="Select a video to play" class="mb-select sf-input video-sel" data-idx="' + idx + '" data-field="videoId" data-skip="1" disabled><option value="">Select goblin first</option></select>';
+    } else if (!cache || cache.loading) {
+      html += '<select title="Select a video to play" class="mb-select sf-input video-sel" data-idx="' + idx + '" data-field="videoId" data-skip="1" disabled><option value="">Loading videos from the Goblin…</option></select>';
+      if (!cache) loadGoblinVideos(step.goblinId).then(function() { renderTimeline(); });
+    } else {
+      html += '<select title="Select a video to play" class="mb-select sf-input video-sel" data-idx="' + idx + '" data-field="videoId"><option value="">Select...</option>';
+      var listed = false;
+      cache.videos.forEach(function(name) {
+        var sel = step.videoId === name;
+        if (sel) listed = true;
+        html += '<option value="' + escHtml(name) + '"' + (sel ? ' selected' : '') + '>' + escHtml(name) + '</option>';
+      });
+      if (step.videoId && !listed) {
+        html += '<option value="' + escHtml(step.videoId) + '" selected>' + escHtml(step.videoId) + ' (not on this Goblin)</option>';
+      }
+      html += '</select>';
+      if (cache.error) html += '<div class="mb-text-sm text-warning mt-1">' + escHtml(cache.error) + '</div>';
+      else if (!cache.videos.length) html += '<div class="mb-text-sm text-muted mt-1">No videos on this Goblin — deploy one from the Video Library.</div>';
+    }
+    html += '</div>';
+    html += '<div class="col-12"><label class="mb-check mt-2" for="gloop' + idx + '"><input title="Checked: this video becomes the Goblin\'s looping show until something stops it. Unchecked: play it once, then the Goblin returns to its own loop." type="checkbox" class="sf-input" data-idx="' + idx + '" data-field="loop" id="gloop' + idx + '"' + (step.loop ? ' checked' : '') + '>';
+    html += '<span class="mb-text-sm">Loop (becomes the Goblin\'s show until stopped; unchecked plays once)</span></label></div>';
     html += '</div>';
     return html;
   }
@@ -1177,6 +1221,10 @@
           currentSteps[idx][field] = val;
           // Re-render if mode changed
           if (field === 'usePreset' || field === 'partId') renderTimeline();
+          if (field === 'goblinId') {
+            renderTimeline();
+            loadGoblinVideos(val).then(function() { renderTimeline(); });
+          }
         }
       });
     });
@@ -1187,6 +1235,7 @@
       var idx = parseInt(input.getAttribute('data-idx'), 10);
       var field = input.getAttribute('data-field');
       if (isNaN(idx) || !field || !currentSteps[idx]) return;
+      if (input.getAttribute('data-skip') === '1') return; // placeholder, not a value
       var val = input.value;
       if (input.type === 'checkbox') val = input.checked;
       else if (input.type === 'number') val = parseFloat(val);
@@ -1211,7 +1260,7 @@
       case 'audio': step.volume = 80; break;
       case 'sayThis': step.text = ''; break;
       case 'askAI': step.question = ''; break;
-      case 'goblin-video': step.volume = 80; break;
+      case 'goblin-video': step.loop = false; break;
       case 'jaw-animation': step.action = 'enable'; break;
       case 'head-tracking': step.action = 'start'; break;
     }

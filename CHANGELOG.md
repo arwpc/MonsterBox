@@ -4,6 +4,22 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Goblins are reachable from orchestration, authorable in the Studio, and no longer wear the
+  SD card (2026-09-25).** Orchestration's Goblin list is now the registry (`data/goblins.json`)
+  instead of two phantom entries in `config/animatronics.json`; Goblin commands go through
+  `goblinManagerService` (device API, outcome proven from the device), `stop`/`stop-video` both
+  work, and Fleet Emergency Stop now stops the Goblins too — with a matching all-clear,
+  `POST /video-library/api/goblins/:id/resume`, that restarts a Goblin's own queue loop. The
+  Animation Studio's goblin-video step lists what is on the chosen Goblin's disk (from the
+  device), keeps its video across re-saves (a placeholder used to blank it), and its Loop box
+  means what it says (checked: the Goblin's show until stopped; unchecked: play once, then back
+  to the Goblin's loop — the executor no longer defaults to loop, and no longer refuses on the
+  registry's stale offline flag). The inert Volume field was removed: the Goblin player has no
+  volume control. The registry is written only on a real status change, not every 50 s for
+  healthy devices. Tests: `tests/unit/goblin-orchestration-targets.test.js`,
+  `tests/browser/studio-goblin-step.spec.js`; the orchestration system suite now records which
+  Goblins were playing before its panic-stop test and resumes them afterwards.
+
 - **Video Library → Goblins works, both ways, proven on the devices (2026-09-25).** Deploy
   copies a library video onto a Goblin's disk over rsync + the fleet SSH credential (no
   base64, no device change) and reports success only when the Goblin lists the file at the

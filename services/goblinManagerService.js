@@ -689,6 +689,41 @@ class GoblinManagerService {
         }
     }
 
+    /**
+     * The all-clear after a stop: start the Goblin's OWN queue again, in the loop
+     * mode it already carries (the device persists its queue across a stop). This
+     * is what puts a screen back on its show after a fleet Emergency Stop, and
+     * what a test suite that fired one owes the devices afterwards. Nothing is
+     * cleared or added; proven by the device reporting mpv on the queue's file.
+     */
+    async resumeGoblinQueue(goblinId) {
+        const { goblin, error } = await this._onlineGoblin(goblinId);
+        if (error) return { success: false, error };
+        try {
+            const before = await this.getGoblinPlayback(goblinId);
+            const loopMode = (before.success && before.queue && before.queue.loopMode) || 'queue';
+            const started = await this._goblinJson(goblin, '/queue/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ loopMode })
+            }, 10000);
+            if (!started.success) return { success: false, goblinName: goblin.name, error: started.error || `${goblin.name} refused to start its queue` };
+            await sleep(1500);
+            const playback = await this.getGoblinPlayback(goblinId);
+            const showing = playback.success && playback.mpvRunning;
+            return {
+                success: showing,
+                goblinName: goblin.name,
+                loopMode,
+                playback: playback.success ? playback : null,
+                error: showing ? undefined : `${goblin.name} started its queue but mpv is not running (is the queue empty?)`
+            };
+        } catch (err) {
+            console.error(`Error resuming queue on goblin ${goblinId}:`, err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
     async _confirmPlaying(goblinId, filename) {
         await sleep(1500);
         const playback = await this.getGoblinPlayback(goblinId);
@@ -718,10 +753,15 @@ class GoblinManagerService {
             });
 
             if (response.status === 200) {
-                // Goblin is responsive, update status
+                // Goblin is responsive. Only a status TRANSITION is persisted: the
+                // registry used to be rewritten on every successful re-ping, which
+                // for three healthy devices was ~1,700 tmp+rename writes a day to the
+                // SD card and a perpetually dirty data/goblins.json. lastSeen still
+                // advances in memory (the API and the sort read it from there).
+                const wasOffline = goblin.status !== 'online';
                 goblin.status = 'online';
                 goblin.lastSeen = new Date().toISOString();
-                await this.saveGoblins();
+                if (wasOffline) await this.saveGoblins();
                 return { success: true, online: true, goblin };
             }
 
@@ -797,11 +837,19 @@ class GoblinManagerService {
                 const lastSeen = new Date(goblin.lastSeen).getTime();
                 const timeSinceLastSeen = now - lastSeen;
 
-                // Mark as offline if no heartbeat for 2 minutes
+                // Nothing heartbeats in (the device never registers or calls the
+                // heartbeat alias), so a Goblin's lastSeen only moves when WE ping it.
+                // Expiring it after 2 minutes and re-pinging it in the same tick made
+                // every healthy Goblin flap offline→online every ~150 s, with a
+                // registry save and a "went offline" line each time. Ask the device
+                // first; only a Goblin that does not answer is marked offline.
                 if (goblin.status === 'online' && timeSinceLastSeen > 2 * 60 * 1000) {
-                    console.log(`💀 Goblin went offline: ${goblinId}${this.isExpectedOffline(goblin) ? ' (expected — reconnect loop will not dial it)' : ''}`);
-                    goblin.status = 'offline';
-                    changed = true;
+                    const alive = !this.isExpectedOffline(goblin) && (await this.pingGoblin(goblinId)).online;
+                    if (!alive) {
+                        console.log(`💀 Goblin went offline: ${goblinId}${this.isExpectedOffline(goblin) ? ' (expected — reconnect loop will not dial it)' : ''}`);
+                        goblin.status = 'offline';
+                        changed = true;
+                    }
                 }
 
                 // Auto-unlock if locked too long without heartbeat
