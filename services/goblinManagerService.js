@@ -81,7 +81,12 @@ class GoblinManagerService {
         this.heartbeatInterval = 30 * 1000; // 30 seconds
 
         this.init();
-        this.startHeartbeatMonitor();
+        // A test process (tests/setup.js sets NODE_ENV=test) must not run a fleet
+        // monitor: the 30 s tick inside a mocha run dialled every Goblin and wrote
+        // data/goblins.json from the TEST process, so the file's mtime moved on every
+        // gate run while the server itself was leaving it alone. A test that wants
+        // the monitor starts it explicitly.
+        if (process.env.NODE_ENV !== 'test') this.startHeartbeatMonitor();
     }
 
     async init() {

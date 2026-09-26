@@ -22,6 +22,7 @@ import {
   getDefaultAiMotionConfig,
   readAiMotionConfig,
   writeAiMotionConfig,
+  invalidateAiMotionCache,
   isMotionAllowed
 } from '../../services/aiMotionSuperPowerService.js';
 
@@ -31,7 +32,10 @@ describe('AI Motion enforcement', function () {
   this.timeout(20000);
 
   let prior = null;
-  before(async () => { prior = await readAiMotionConfig(CHAR); });
+  // The snapshot that after() restores must be what is ON DISK now, not a
+  // config another test left in the service's 5 s read cache: the operator's
+  // AI Motion flag on the dev node flipped on two consecutive gate runs.
+  before(async () => { invalidateAiMotionCache(CHAR); prior = await readAiMotionConfig(CHAR); });
   after(async () => { if (prior) await writeAiMotionConfig(CHAR, prior); });
 
   describe('the ambient trigger — the one that was armed fleet-wide', function () {
