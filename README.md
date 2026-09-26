@@ -905,6 +905,7 @@ Docs: docs/development/AI-Management-Feature.md, docs/integration/ELEVENLABS_INT
 - **Resolution**: 720p (1280x720) @ 30fps
 - **Codec**: H.264 in MP4 container
 - **Directory**: `/home/remote/media/video/` (all Goblins)
+- **Backups**: `scripts/backup-goblins.sh` snapshots every Goblin (OS, app, queue, video manifest) plus the MonsterBox-side settings into `backups/`; the 2026-09-25 gold snapshot with restore steps is in `backups/goblins-gold-2026-09-25/README.md`
 - **Playback**: `--video-sync=display-vdrop` for smooth 30fps on 60Hz displays
 
 **Goblin API:**

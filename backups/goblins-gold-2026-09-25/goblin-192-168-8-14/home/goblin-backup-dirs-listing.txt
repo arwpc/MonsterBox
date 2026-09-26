@@ -1,0 +1,1 @@
+(unavailable: sh -c ls -d "$HOME"/goblin.backup.* 2>/dev/null; for d in "$HOME"/goblin.backup.*; do echo "## $d"; find "$d" -maxdepth 2 -not -path "*/node_modules*"; done)

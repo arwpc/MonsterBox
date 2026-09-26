@@ -1,0 +1,3 @@
+total 8
+drwxr-xr-x 2 remote video  4096 Oct 31  2025 .
+drwxrwxr-x 6 remote remote 4096 Oct 31  2025 ..

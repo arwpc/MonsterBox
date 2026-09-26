@@ -1,0 +1,15 @@
+[Unit]
+Description=Goblin Auto-Queue Starter
+After=goblin.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=remote
+WorkingDirectory=/home/remote/goblin
+ExecStart=/bin/bash /home/remote/goblin/bin/autoqueue.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

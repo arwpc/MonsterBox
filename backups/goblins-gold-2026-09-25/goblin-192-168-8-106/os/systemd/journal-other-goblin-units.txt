@@ -1,0 +1,25 @@
+### monsterbox-goblin
+2026-09-25T20:45:13-05:00 goblin2 systemd[1]: Started monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:14-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Main process exited, code=exited, status=1/FAILURE
+2026-09-25T20:45:14-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Failed with result 'exit-code'.
+2026-09-25T20:45:24-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Scheduled restart job, restart counter is at 263.
+2026-09-25T20:45:24-05:00 goblin2 systemd[1]: Started monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:24-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Main process exited, code=exited, status=1/FAILURE
+2026-09-25T20:45:24-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Failed with result 'exit-code'.
+2026-09-25T20:45:34-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Scheduled restart job, restart counter is at 264.
+2026-09-25T20:45:34-05:00 goblin2 systemd[1]: Started monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:35-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Main process exited, code=exited, status=1/FAILURE
+2026-09-25T20:45:35-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Failed with result 'exit-code'.
+2026-09-25T20:45:45-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Scheduled restart job, restart counter is at 265.
+2026-09-25T20:45:45-05:00 goblin2 systemd[1]: Started monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:46-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Main process exited, code=exited, status=1/FAILURE
+2026-09-25T20:45:46-05:00 goblin2 systemd[1]: monsterbox-goblin.service: Failed with result 'exit-code'.
+### goblin-autoqueue
+-- No entries --
+### goblin-hide-console
+-- No entries --
+### goblin-xserver
+-- No entries --
+### console-blanker
+2025-09-09T03:38:46-05:00 goblin2 systemd[1]: Started console-blanker.service - Console Blanker for Goblin Display.
+2025-09-09T03:38:46-05:00 goblin2 console-blanker.sh[617]: Console blanker started - keeping tty1 blank

@@ -1,0 +1,7 @@
+**** List of CAPTURE Hardware Devices ****
+card 3: Camera [USB Camera], device 0: USB Audio [USB Audio]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+card 4: Array [reSpeaker XVF3800 4-Mic Array], device 0: USB Audio [USB Audio]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0

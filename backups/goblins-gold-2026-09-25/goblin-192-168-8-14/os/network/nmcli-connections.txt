@@ -1,0 +1,3 @@
+preconfigured:71cf1cbb-9e8c-4141-b644-948250341e7d:802-11-wireless:wlan0:yes
+lo:4cd0993d-e309-4a33-930e-afe32d0673f5:loopback:lo:no
+Wired connection 1:4ac9536e-f393-39c5-aa6a-294353b39872:802-3-ethernet::yes

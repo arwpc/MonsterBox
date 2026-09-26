@@ -1,0 +1,20 @@
+/home/remote/goblin.backup.1761008291
+/home/remote/goblin.backup.1761008607
+## /home/remote/goblin.backup.1761008291
+/home/remote/goblin.backup.1761008291
+/home/remote/goblin.backup.1761008291/src
+/home/remote/goblin.backup.1761008291/src/mediaPlayer.js
+/home/remote/goblin.backup.1761008291/src/statusMonitor.js
+/home/remote/goblin.backup.1761008291/src/beacon.js
+/home/remote/goblin.backup.1761008291/src/test.js
+/home/remote/goblin.backup.1761008291/src/videoQueue.js
+/home/remote/goblin.backup.1761008291/src/server.js
+/home/remote/goblin.backup.1761008291/src/fileManager.js
+/home/remote/goblin.backup.1761008291/usb-copy-improved.sh
+/home/remote/goblin.backup.1761008291/queue-state.json
+/home/remote/goblin.backup.1761008291/package.json
+## /home/remote/goblin.backup.1761008607
+/home/remote/goblin.backup.1761008607
+/home/remote/goblin.backup.1761008607/logs
+/home/remote/goblin.backup.1761008607/logs/goblin.log
+/home/remote/goblin.backup.1761008607/logs/goblin.error.log

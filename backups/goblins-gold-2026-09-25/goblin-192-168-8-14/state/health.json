@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "uptime": 3112.175342985,
+  "status": {
+    "videos": [
+      {
+        "id": "1761971937368",
+        "filename": "307 Jb Hd.mp4",
+        "addedAt": "2025-11-01T04:38:57.368Z",
+        "playCount": 3459
+      }
+    ],
+    "currentIndex": 0,
+    "currentVideo": {
+      "id": "1761971937368",
+      "filename": "307 Jb Hd.mp4",
+      "addedAt": "2025-11-01T04:38:57.368Z",
+      "playCount": 3459
+    },
+    "loopMode": "queue",
+    "playing": true,
+    "mpvRunning": true
+  }
+}

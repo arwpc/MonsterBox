@@ -1,0 +1,15 @@
+### /etc/wireplumber/main.lua.d/51-monsterbox-nosuspend.lua
+-- MonsterBox: never suspend the character speaker sink.
+-- Playback is a one-shot mpg123 per utterance; a suspended USB sink adds a
+-- variable resume delay to the first sound and desyncs the jaw timeline.
+-- Scoped to this node's speaker only. Managed by scripts/apply-audio-nosuspend.sh
+table.insert(alsa_monitor.rules, {
+  matches = {
+    {
+      { "node.name", "equals", "alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200027-00.analog-stereo" },
+    },
+  },
+  apply_properties = {
+    ["session.suspend-timeout-seconds"] = 0,
+  },
+})

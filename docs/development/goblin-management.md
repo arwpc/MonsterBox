@@ -377,6 +377,25 @@ systemctl --user enable goblin-video.service
 systemctl --user start goblin-video.service
 ```
 
+## Backups
+
+The whole Goblin estate can be snapshotted into git with `scripts/backup-goblins.sh`: each
+Goblin's OS provisioning (boot config, package lists, systemd units and journals, helper
+scripts, redacted network config), the deployed app with its live `queue.json`, the API state,
+and a sha256 manifest of every video, plus the MonsterBox-side registry, playlists, video
+library and `config/animatronics.json`. Goblins come from `data/goblins.json`, so a newly
+registered unit is included automatically.
+
+```bash
+MONSTERBOX_SSH_PASSWORD=… scripts/backup-goblins.sh goblins-gold-<date>   # take a snapshot
+scripts/backup-goblins.sh --verify backups/<label>                         # prove it intact
+```
+
+The gold snapshot taken 2026-09-25, with a restore procedure, is at
+`backups/goblins-gold-2026-09-25/README.md`. Note that the units actually running on the
+devices are the "goblin-gold" build captured there; `goblin/systemd/goblin.service` in this
+repo is an older, different unit.
+
 ## Troubleshooting
 
 ### Goblin Shows Offline

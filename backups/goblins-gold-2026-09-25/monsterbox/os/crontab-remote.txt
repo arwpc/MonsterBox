@@ -1,0 +1,48 @@
+@reboot /home/remote/start-audio.sh >> /home/remote/audio-startup.log 2>&1
+
+# MonsterBox Yard Theater — Halloween night schedule (America/Chicago)
+# Install:  crontab -e  and paste the block below (or see README).
+# Any one node can conduct the whole yard via the orchestration API.
+#
+# BEFORE INSTALLING (verified 2026-08-16, both are load-bearing):
+#   mkdir -p /home/remote/yard-theater-logs
+#     Without it every line here fails at the redirect and the command never
+#     runs at all — cron cannot create the directory for you.
+#   timedatectl | grep 'Time zone'   ->  must read America/Chicago
+#     cron fires on local time, so these 18:30 / 20:47 / 02:00 slots are only
+#     the times you mean if the node's clock agrees.
+#
+# The `cd /home/remote/MonsterBox &&` on every line is REQUIRED. cron runs with
+# cwd=$HOME and PATH=/usr/bin:/bin, so without the cd, node resolves the script
+# against /home/remote and dies with MODULE_NOT_FOUND. (Proven with a real
+# temporary cron entry, not assumed: /usr/bin/node is on cron's PATH, and both
+# scripts run clean under `env -i`. The ElevenLabs key is read from
+# /etc/monsterbox/elevenlabs.key, which needs no interactive environment.)
+#
+# Rehearse any line before trusting it — --dry-run makes no sound and no calls:
+#   node scripts/yard-theater/perform.mjs moments/dusk-ceremony.json --dry-run
+
+# >>> MONSTERBOX MANAGED — do not edit by hand; use /schedule <<<
+#MB {"id":"the-dusk-ceremony","name":"The Dusk Ceremony","enabled":true,"kind":"moment","description":"The Dusk Ceremony — the yard wakes (sunset in Coralville Oct 31 is ~6:05pm; dusk ~6:30)"}
+# The Dusk Ceremony — the yard wakes (sunset in Coralville Oct 31 is ~6:05pm; dusk ~6:30)
+30 18 31 10 * cd /home/remote/MonsterBox && node scripts/yard-theater/perform.mjs moments/dusk-ceremony.json >> /home/remote/yard-theater-logs/theater.log 2>&1
+
+#MB {"id":"thomas","name":"Thomas","enabled":true,"kind":"moment","description":"Thomas — once. An odd minute, deep in the evening, when the yard is busy."}
+# Thomas — once. An odd minute, deep in the evening, when the yard is busy.
+47 20 31 10 * cd /home/remote/MonsterBox && node scripts/yard-theater/perform.mjs moments/thomas.json >> /home/remote/yard-theater-logs/theater.log 2>&1
+
+#MB {"id":"night-memory","name":"Night Memory","enabled":true,"kind":"raw","description":"Night Memory — harvest the night's real conversations into the Yard Registry (2am Nov 1).\nThe && is deliberate: the PHI suite gates the harvest, so a scrubber that has\nregressed can never publish a real child's surname to the knowledge base.\nThe chain is wrapped in a subshell so the redirect covers BOTH commands. Without\nthe parentheses `>>` binds only to the last command of the && chain, so a scrub\ntest that trips the PHI gate writes its reason to a discarded stdout and the\nharvest log is simply empty — the one night you would need to know why."}
+# Night Memory — harvest the night's real conversations into the Yard Registry (2am Nov 1).
+# The && is deliberate: the PHI suite gates the harvest, so a scrubber that has
+# regressed can never publish a real child's surname to the knowledge base.
+# The chain is wrapped in a subshell so the redirect covers BOTH commands. Without
+# the parentheses `>>` binds only to the last command of the && chain, so a scrub
+# test that trips the PHI gate writes its reason to a discarded stdout and the
+# harvest log is simply empty — the one night you would need to know why.
+0 2 1 11 * cd /home/remote/MonsterBox && (node scripts/night-memory/scrub-test.mjs && node scripts/night-memory/harvest.mjs --hours 12) >> /home/remote/yard-theater-logs/harvest.log 2>&1
+
+#MB {"id":"optional-october-weekend-rehearsal-ceremony","name":"Optional: October weekend rehearsal ceremony","enabled":false,"kind":"moment","description":"Optional: October weekend rehearsal ceremony (Fri+Sat evenings in October)"}
+# Optional: October weekend rehearsal ceremony (Fri+Sat evenings in October)
+# [DISABLED — enable again from /schedule]
+# 30 18 * 10 5,6 cd /home/remote/MonsterBox && node scripts/yard-theater/perform.mjs moments/dusk-ceremony.json >> /home/remote/yard-theater-logs/theater.log 2>&1
+# <<< MONSTERBOX MANAGED END >>>

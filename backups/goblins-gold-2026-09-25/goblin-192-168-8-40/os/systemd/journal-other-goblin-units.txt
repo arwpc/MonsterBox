@@ -1,0 +1,43 @@
+### monsterbox-goblin
+2026-09-25T20:45:23-0500 goblin1 systemd[1]: monsterbox-goblin.service: Scheduled restart job, restart counter is at 282.
+2026-09-25T20:45:23-0500 goblin1 systemd[1]: Stopped monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:23-0500 goblin1 systemd[1]: Started monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:24-0500 goblin1 systemd[1]: monsterbox-goblin.service: Main process exited, code=exited, status=1/FAILURE
+2026-09-25T20:45:24-0500 goblin1 systemd[1]: monsterbox-goblin.service: Failed with result 'exit-code'.
+2026-09-25T20:45:34-0500 goblin1 systemd[1]: monsterbox-goblin.service: Scheduled restart job, restart counter is at 283.
+2026-09-25T20:45:34-0500 goblin1 systemd[1]: Stopped monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:34-0500 goblin1 systemd[1]: Started monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:34-0500 goblin1 systemd[1]: monsterbox-goblin.service: Main process exited, code=exited, status=1/FAILURE
+2026-09-25T20:45:34-0500 goblin1 systemd[1]: monsterbox-goblin.service: Failed with result 'exit-code'.
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: monsterbox-goblin.service: Scheduled restart job, restart counter is at 284.
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: Stopped monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: Started monsterbox-goblin.service - MonsterBox Goblin System 👽.
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: monsterbox-goblin.service: Main process exited, code=exited, status=1/FAILURE
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: monsterbox-goblin.service: Failed with result 'exit-code'.
+### goblin-autoqueue
+2026-09-25T20:45:23-0500 goblin1 systemd[1]: Failed to start goblin-autoqueue.service - Goblin Auto-Queue Starter.
+2026-09-25T20:45:33-0500 goblin1 systemd[1]: goblin-autoqueue.service: Scheduled restart job, restart counter is at 284.
+2026-09-25T20:45:33-0500 goblin1 systemd[1]: Stopped goblin-autoqueue.service - Goblin Auto-Queue Starter.
+2026-09-25T20:45:33-0500 goblin1 systemd[1]: Starting goblin-autoqueue.service - Goblin Auto-Queue Starter...
+2026-09-25T20:45:33-0500 goblin1 bash[10730]: /bin/bash: /home/remote/goblin/bin/autoqueue.sh: No such file or directory
+2026-09-25T20:45:33-0500 goblin1 systemd[1]: goblin-autoqueue.service: Main process exited, code=exited, status=127/n/a
+2026-09-25T20:45:33-0500 goblin1 systemd[1]: goblin-autoqueue.service: Failed with result 'exit-code'.
+2026-09-25T20:45:33-0500 goblin1 systemd[1]: Failed to start goblin-autoqueue.service - Goblin Auto-Queue Starter.
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: goblin-autoqueue.service: Scheduled restart job, restart counter is at 285.
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: Stopped goblin-autoqueue.service - Goblin Auto-Queue Starter.
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: Starting goblin-autoqueue.service - Goblin Auto-Queue Starter...
+2026-09-25T20:45:45-0500 goblin1 bash[10821]: /bin/bash: /home/remote/goblin/bin/autoqueue.sh: No such file or directory
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: goblin-autoqueue.service: Main process exited, code=exited, status=127/n/a
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: goblin-autoqueue.service: Failed with result 'exit-code'.
+2026-09-25T20:45:45-0500 goblin1 systemd[1]: Failed to start goblin-autoqueue.service - Goblin Auto-Queue Starter.
+### goblin-hide-console
+2026-09-25T19:55:20-0500 goblin1 systemd[1]: Starting goblin-hide-console.service - Hide Console for Goblin Video Display...
+2026-09-25T19:55:20-0500 goblin1 bash[378]: setterm: $TERM is not defined.
+2026-09-25T19:55:20-0500 goblin1 systemd[1]: goblin-hide-console.service: Main process exited, code=exited, status=1/FAILURE
+2026-09-25T19:55:20-0500 goblin1 systemd[1]: goblin-hide-console.service: Failed with result 'exit-code'.
+2026-09-25T19:55:20-0500 goblin1 systemd[1]: Failed to start goblin-hide-console.service - Hide Console for Goblin Video Display.
+### goblin-xserver
+-- No entries --
+### console-blanker
+2026-09-25T19:55:20-0500 goblin1 systemd[1]: Started console-blanker.service - Console Blanker for Goblin Display.
+2026-09-25T19:55:20-0500 goblin1 console-blanker.sh[353]: Console blanker started - keeping tty1 blank

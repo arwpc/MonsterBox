@@ -1,0 +1,13 @@
+### /etc/avahi/services/monsterbox.service
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <name replace-wildcards="yes">MonsterBox %h</name>
+  <service>
+    <type>_monsterbox._tcp</type>
+    <port>3000</port>
+    <txt-record>id=3</txt-record>
+    <txt-record>character=Orlok</txt-record>
+    <txt-record>ver=10.6.0</txt-record>
+  </service>
+</service-group>

@@ -1,0 +1,19 @@
+### /etc/NetworkManager/system-connections/preconfigured.nmconnection
+[connection]
+id=preconfigured
+uuid=71cf1cbb-9e8c-4141-b644-948250341e7d
+type=wifi
+[wifi]
+mode=infrastructure
+ssid=MonsterNet
+hidden=true
+[ipv4]
+method=auto
+[ipv6]
+addr-gen-mode=default
+method=auto
+[proxy]
+[wifi-security]
+key-mgmt=wpa-psk
+psk=<REDACTED>
+

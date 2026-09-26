@@ -1,0 +1,13 @@
+[Unit]
+Description=X Server for Goblin Video Display
+Before=monsterbox-goblin.service
+
+[Service]
+Type=simple
+User=remote
+ExecStart=/usr/bin/startx -- -nocursor
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,69 @@
+PipeWire 'pipewire-0' [1.2.7, remote@orlok, cookie:1875263297]
+ └─ Clients:
+        33. pipewire                            [1.2.7, remote@orlok, pid:788]
+        35. WirePlumber                         [1.2.7, remote@orlok, pid:787]
+        36. WirePlumber [export]                [1.2.7, remote@orlok, pid:787]
+        96. wpctl                               [1.2.7, remote@orlok, pid:634885]
+
+Audio
+ ├─ Devices:
+ │      59. Webcam Vitade AF                    [alsa]
+ │      60. reSpeaker XVF3800 4-Mic Array       [alsa]
+ │      61. Built-in Audio                      [alsa]
+ │      62. Built-in Audio                      [alsa]
+ │      63. Built-in Audio                      [alsa]
+ │  
+ ├─ Sinks:
+ │      34. Built-in Audio Stereo               [vol: 1.30]
+ │  *   81. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 1.30]
+ │  
+ ├─ Sink endpoints:
+ │  
+ ├─ Sources:
+ │      80. Webcam Vitade AF Mono               [vol: 1.00]
+ │  *   82. reSpeaker XVF3800 4-Mic Array Analog Stereo [vol: 1.55]
+ │  
+ ├─ Source endpoints:
+ │  
+ └─ Streams:
+
+Video
+ ├─ Devices:
+ │      42. USB Camera: USB Camera              [libcamera]
+ │      43. USB Camera                          [v4l2]
+ │      44. USB Camera                          [v4l2]
+ │      45. rpi-hevc-dec                        [v4l2]
+ │      46. bcm2835-codec-decode                [v4l2]
+ │      47. bcm2835-codec-encode                [v4l2]
+ │      48. bcm2835-codec-isp                   [v4l2]
+ │      49. bcm2835-codec-image_fx              [v4l2]
+ │      50. bcm2835-codec-encode_image          [v4l2]
+ │      51. bcm2835-isp                         [v4l2]
+ │      52. bcm2835-isp                         [v4l2]
+ │      53. bcm2835-isp                         [v4l2]
+ │      54. bcm2835-isp                         [v4l2]
+ │      55. bcm2835-isp                         [v4l2]
+ │      56. bcm2835-isp                         [v4l2]
+ │      57. bcm2835-isp                         [v4l2]
+ │      58. bcm2835-isp                         [v4l2]
+ │  
+ ├─ Sinks:
+ │  
+ ├─ Sink endpoints:
+ │  
+ ├─ Sources:
+ │      64. USB Camera  USB Camera             
+ │  *   66. USB Camera (V4L2)                  
+ │      68. bcm2835-isp (V4L2)                 
+ │      70. bcm2835-isp (V4L2)                 
+ │      72. bcm2835-isp (V4L2)                 
+ │      74. bcm2835-isp (V4L2)                 
+ │  
+ ├─ Source endpoints:
+ │  
+ └─ Streams:
+
+Settings
+ └─ Default Configured Node Names:
+         0. Audio/Sink    alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200027-00.analog-stereo
+         1. Audio/Source  alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback

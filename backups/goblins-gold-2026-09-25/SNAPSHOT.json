@@ -1,0 +1,63 @@
+{
+  "label": "goblins-gold-2026-09-25",
+  "takenAt": "2026-09-26T01:45:33Z",
+  "takenOn": "orlok",
+  "gitCommit": "3edc0674f5d686c3760674deb52b9303b61cd4a7",
+  "monsterboxVersion": "10.6.0",
+  "goblins": [
+    {
+      "id": "goblin-192-168-8-106",
+      "name": "Goblin Two",
+      "endpoint": "http://192.168.8.106:3001",
+      "hostname": "goblin2",
+      "model": "Raspberry Pi 3 Model B Plus Rev 1.4",
+      "os": "Debian GNU/Linux 13 (trixie)",
+      "versions": "node=v20.19.2\nnpm=9.2.0\nmpv=mpv v0.40.0 Copyright © 2000-2025 mpv/MPlayer/mplayer2 projects\nffmpeg=ffmpeg version 7.1.1-1~+rpt1 Copyright (c) 2000-2025 the FFmpeg developers\npython3=Python 3.13.5",
+      "videos": 72,
+      "videosOnDisk": "594M\t/home/remote/media/video",
+      "settings": {
+        "audioEnabled": true,
+        "videoEnabled": true,
+        "volume": 80,
+        "autoLock": false
+      },
+      "files": 70
+    },
+    {
+      "id": "goblin-192-168-8-14",
+      "name": "Goblin Three",
+      "endpoint": "http://192.168.8.14:3001",
+      "hostname": "goblin3",
+      "model": "Raspberry Pi 3 Model B Plus Rev 1.4",
+      "os": "Debian GNU/Linux 13 (trixie)",
+      "versions": "node=v20.19.2\nnpm=9.2.0\nmpv=mpv v0.40.0 Copyright © 2000-2025 mpv/MPlayer/mplayer2 projects\nffmpeg=ffmpeg version 7.1.2-0+deb13u1+rpt1 Copyright (c) 2000-2025 the FFmpeg developers\npython3=Python 3.13.5",
+      "videos": 75,
+      "videosOnDisk": "707M\t/home/remote/media/video",
+      "settings": {
+        "audioEnabled": true,
+        "videoEnabled": true,
+        "volume": 80,
+        "autoLock": false
+      },
+      "files": 69
+    },
+    {
+      "id": "goblin-192-168-8-40",
+      "name": "Goblin One",
+      "endpoint": "http://192.168.8.40:3001",
+      "hostname": "goblin1",
+      "model": "Raspberry Pi 3 Model B Plus Rev 1.4",
+      "os": "Debian GNU/Linux 12 (bookworm)",
+      "versions": "node=v18.20.8\nnpm=10.8.2\nmpv=mpv 0.35.1 Copyright © 2000-2023 mpv/MPlayer/mplayer2 projects\nffmpeg=ffmpeg version 5.1.7-0+deb12u1+rpt1 Copyright (c) 2000-2025 the FFmpeg developers\npython3=Python 3.11.2",
+      "videos": 75,
+      "videosOnDisk": "707M\t/home/remote/media/video",
+      "settings": {
+        "audioEnabled": true,
+        "videoEnabled": true,
+        "volume": 80,
+        "autoLock": false
+      },
+      "files": 78
+    }
+  ]
+}

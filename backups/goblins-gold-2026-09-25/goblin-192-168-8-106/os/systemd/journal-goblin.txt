@@ -1,0 +1,40 @@
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --cache-on-disk=no
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --video-sync=display-resample
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --display-fps=59.94
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --video-sync-max-video-change=0.008
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --timing-window=0.25
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --framedrop=no
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --vd-lavc-threads=1
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --no-audio
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --scale=bilinear
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --dscale=bilinear
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --correct-downscaling=no
+2025-09-09T03:38:51-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --blend-subtitles=no
+2025-09-09T03:39:00-05:00 goblin2 systemd[1]: Starting goblin.service - MonsterBox Goblin Gold Media Player...
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --no-osc
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --no-osd-bar
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --no-sub
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --sub-auto=never
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --cache=yes
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --cache-secs=30
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --demuxer-max-bytes=512MiB
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --demuxer-readahead-secs=30
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --cache-on-disk=no
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --video-sync=display-resample
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --display-fps=59.94
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --video-sync-max-video-change=0.008
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --timing-window=0.25
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --framedrop=no
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --vd-lavc-threads=1
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --no-audio
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --scale=bilinear
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --dscale=bilinear
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --correct-downscaling=no
+2025-09-09T03:39:01-05:00 goblin2 systemd[1]: /etc/systemd/system/goblin.service:20: Invalid environment assignment, ignoring: --blend-subtitles=no
+2025-09-09T03:39:05-05:00 goblin2 node[1022]: Initializing video library cache...
+2025-09-09T03:39:06-05:00 goblin2 node[1022]: Video library scanned: 72 videos cached
+2025-09-09T03:39:06-05:00 goblin2 node[1022]: Goblin API listening on 3001
+2025-09-09T03:39:10-05:00 goblin2 systemd[1]: Started goblin.service - MonsterBox Goblin Gold Media Player.
+2026-09-25T20:01:53-05:00 goblin2 node[1022]: Video library scanned: 72 videos cached
+2026-09-25T20:39:36-05:00 goblin2 node[1022]: Video library scanned: 72 videos cached
+2026-09-25T20:39:37-05:00 goblin2 node[1022]: Video library scanned: 72 videos cached

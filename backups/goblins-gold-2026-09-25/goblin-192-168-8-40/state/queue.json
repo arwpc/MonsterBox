@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "queue": {
+    "videos": [
+      {
+        "id": "1790384570464",
+        "filename": "Pha Poltergeist Ampedup Win H.mp4",
+        "addedAt": "2026-09-26T01:02:50.464Z",
+        "playCount": 2
+      }
+    ],
+    "currentIndex": 1,
+    "loopMode": "none",
+    "playing": false
+  },
+  "currentVideo": null,
+  "mpvRunning": false
+}

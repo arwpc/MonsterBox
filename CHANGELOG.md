@@ -4,6 +4,17 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Goblin gold snapshot (2026-09-25): all three Goblins, the MonsterBox-side Goblin settings and
+  Orlok's OS provisioning are preserved in git** at `backups/goblins-gold-2026-09-25/`, taken with
+  the new repeatable collector `scripts/backup-goblins.sh` (`--verify` proves a snapshot intact;
+  254 files, 1.8 MB, secrets redacted, video files recorded by sha256 manifest rather than
+  copied). The snapshot captured what the repo never held: the devices run a "goblin-gold"
+  systemd unit with real-time scheduling and MPV tuning that exists only on the devices, while
+  `goblin/systemd/goblin.service` in the repo is an older, different unit — restore from the
+  snapshot, not from `goblin/systemd/`. It also recorded, without changing them, two units
+  crash-looping every 10 s on Goblin One and Two (`monsterbox-goblin.service`,
+  `goblin-autoqueue.service`). See the snapshot's README for the inventory and restore steps.
+
 - **Mina session (2026-09-25): her PCA9685 channel map is confirmed and documented.** The
   operator physically confirmed the harness at the rig — jaw ch11, neck ch7, eye ch3, eye
   LED/laser ch15 (signal+GND only, no PWM dimming) — reversing the 2026-08-23 "never

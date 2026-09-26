@@ -1,0 +1,10 @@
+### /etc/systemd/journald.conf.d/monsterbox.conf
+[Journal]
+SystemMaxUse=64M
+SystemMaxFileSize=16M
+MaxRetentionSec=30day
+### /etc/systemd/journald.conf.d/monsterbox.conf.bak-2026-08-30
+[Journal]
+SystemMaxUse=64M
+SystemMaxFileSize=100M
+MaxRetentionSec=30day

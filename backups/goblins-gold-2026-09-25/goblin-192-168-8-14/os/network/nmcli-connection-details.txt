@@ -1,0 +1,33 @@
+### preconfigured
+connection.id:preconfigured
+connection.type:802-11-wireless
+connection.interface-name:
+connection.autoconnect:yes
+802-11-wireless.ssid:MonsterNet
+802-11-wireless.hidden:yes
+802-11-wireless.band:
+ipv4.method:auto
+ipv4.addresses:
+ipv4.gateway:
+ipv4.dns:
+ipv6.method:auto
+### lo
+connection.id:lo
+connection.type:loopback
+connection.interface-name:lo
+connection.autoconnect:no
+ipv4.method:manual
+ipv4.addresses:127.0.0.1/8
+ipv4.gateway:
+ipv4.dns:
+ipv6.method:manual
+### Wired connection 1
+connection.id:Wired connection 1
+connection.type:802-3-ethernet
+connection.interface-name:eth0
+connection.autoconnect:yes
+ipv4.method:auto
+ipv4.addresses:
+ipv4.gateway:
+ipv4.dns:
+ipv6.method:auto

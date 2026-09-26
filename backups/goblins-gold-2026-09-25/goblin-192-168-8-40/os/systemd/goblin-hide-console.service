@@ -1,0 +1,11 @@
+[Unit]
+Description=Hide Console for Goblin Video Display
+Before=monsterbox-goblin.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c "setterm -cursor off > /dev/tty1 && clear > /dev/tty1"
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,4 @@
+MonsterNet:09d8e590-5eed-4f5e-895f-822b2969df8f:802-11-wireless:wlan0:yes
+lo:59863912-282d-46b6-84fb-d259de9eb61c:loopback:lo:no
+preconfigured:34ebcb10-c0be-4816-9fff-3aae0ba34ff7:802-11-wireless::yes
+Wired connection 1:bd12c6e7-755d-3132-852f-d6c4ff588745:802-3-ethernet::yes

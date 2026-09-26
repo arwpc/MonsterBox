@@ -1,0 +1,64 @@
+# /etc/systemd/system/monsterbox.service
+[Unit]
+Description=MonsterBox Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=remote
+WorkingDirectory=/home/remote/MonsterBox
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=GAIN=130
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=3
+StandardOutput=append:/var/log/monsterbox.log
+StandardError=append:/var/log/monsterbox.err
+
+[Install]
+WantedBy=multi-user.target
+
+# /etc/systemd/system/monsterbox.service.d/10-priority.conf
+[Service]
+Nice=-5
+CPUWeight=90
+IOWeight=90
+# Avoid aggressive restart loops; but restart on failure
+Restart=on-failure
+RestartSec=2
+
+# /etc/systemd/system/monsterbox.service.d/20-secrets.conf
+# MonsterBox secrets.
+#
+# Deliberately an EnvironmentFile rather than Environment= lines: `systemctl show
+# monsterbox.service` prints Environment= values to ANY local user, so a secret
+# written there is readable by anyone with a shell. The file is 0600 and owned by
+# the service user, matching the existing /etc/monsterbox/elevenlabs.key.
+#
+# The app does NOT read .env — nothing in the codebase loads dotenv — so this is
+# the only place these two variables can be set and actually take effect.
+#
+#   MB_ADMIN_TOKEN           gates the destructive /api/system endpoints
+#                            (reboot, shutdown, restart-service, ssh key mgmt).
+#                            Send it as the x-mb-admin-token header.
+#   MONSTERBOX_SSH_PASSWORD  inter-node SSH credential for fleet control
+#                            (reboot / restart / config push / deploy).
+[Service]
+EnvironmentFile=/etc/monsterbox/env
+
+# /etc/systemd/system/monsterbox.service.d/30-crontab.conf
+# The Scheduled Events page (/schedule) reads and writes this user's crontab.
+#
+# /usr/bin/crontab is setgid crontab, which is normally how a user reaches
+# /var/spool/cron/crontabs (drwx-wx--T root:crontab -- "other" gets nothing).
+# This unit sets NoNewPrivileges=yes, which blocks that setgid transition, so
+# crontab(1) failed with "crontabs/remote/: fopen: Permission denied".
+#
+# Granting the group directly is the narrow fix: systemd applies supplementary
+# groups before dropping privileges, so it works with NoNewPrivileges intact.
+# Removing this file reverts to the previous behaviour (the page reports the
+# permission error; nothing else in MonsterBox is affected).
+[Service]
+SupplementaryGroups=crontab

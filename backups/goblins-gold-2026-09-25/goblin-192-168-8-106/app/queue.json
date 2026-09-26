@@ -1,0 +1,13 @@
+{
+  "videos": [
+    {
+      "id": "1790384542831",
+      "filename": "Sauron.mp4",
+      "addedAt": "2026-09-26T01:02:22.831Z",
+      "playCount": 2
+    }
+  ],
+  "currentIndex": 1,
+  "loopMode": "none",
+  "playing": false
+}

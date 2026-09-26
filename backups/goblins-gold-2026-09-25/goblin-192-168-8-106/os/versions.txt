@@ -1,0 +1,5 @@
+node=v20.19.2
+npm=9.2.0
+mpv=mpv v0.40.0 Copyright © 2000-2025 mpv/MPlayer/mplayer2 projects
+ffmpeg=ffmpeg version 7.1.1-1~+rpt1 Copyright (c) 2000-2025 the FFmpeg developers
+python3=Python 3.13.5

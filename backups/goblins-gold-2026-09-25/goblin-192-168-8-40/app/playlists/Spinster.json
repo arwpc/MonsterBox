@@ -1,0 +1,13 @@
+{
+  "name": "Spinster",
+  "description": "Spinster character videos for Goblin displays",
+  "videos": [
+    "Spinster/PHA_Spinster_AmpedUp_Lose_H.mp4",
+    "Spinster/PHA_Spinster_AmpedUp_Win_H.mp4",
+    "Spinster/PHA_Spinster_Idle_H.mp4",
+    "Spinster/PHA_Spinster_Intro_H.mp4"
+  ],
+  "loopMode": "sequential",
+  "createdAt": "2025-10-21T05:30:00.000Z"
+}
+

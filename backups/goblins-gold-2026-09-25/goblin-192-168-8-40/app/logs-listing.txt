@@ -1,0 +1,5 @@
+total 26180
+drwxr-xr-x 2 remote video      4096 Oct 21  2025 .
+drwxr-xr-x 8 remote remote     4096 Oct 21  2025 ..
+-rw-r--r-- 1 root   root   26789570 Sep 25 20:45 goblin.error.log
+-rw-r--r-- 1 root   root          0 Oct 21  2025 goblin.log

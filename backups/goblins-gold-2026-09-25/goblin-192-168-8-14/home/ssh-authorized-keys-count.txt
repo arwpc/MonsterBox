@@ -1,0 +1,1 @@
+(unavailable: sh -c wc -l < "$HOME/.ssh/authorized_keys")

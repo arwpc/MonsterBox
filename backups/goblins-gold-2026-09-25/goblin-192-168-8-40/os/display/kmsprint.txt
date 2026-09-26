@@ -1,0 +1,5 @@
+Connector 0 (90) HDMI-A-1 (connected)
+  Encoder 0 (89) TMDS
+    Crtc 0 (88) 1024x768@60.00 65.000 1024/24/136/160/- 768/3/6/29/- 60 (60.00) D 
+      Plane 0 (32) fb-id: 96 (crtcs: 0) 0,0 1024x768 -> 0,0 1024x768 (XR24 AR24 XB24 AB24 RX24 BX24 RG16 RG24 BG24 YU16 YU12 YV12 NV12 NV21 P030)
+        FB 96 1024x768 RG16

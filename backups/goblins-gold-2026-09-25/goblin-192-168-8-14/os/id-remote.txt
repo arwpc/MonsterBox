@@ -1,0 +1,1 @@
+uid=1000(remote) gid=1000(remote) groups=1000(remote),4(adm),20(dialout),24(cdrom),27(sudo),29(audio),44(video),46(plugdev),60(games),100(users),104(netdev),110(lpadmin),986(gpio),987(i2c),989(spi),992(render),996(input)

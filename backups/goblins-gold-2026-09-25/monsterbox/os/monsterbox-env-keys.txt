@@ -1,0 +1,7 @@
+MB_ADMIN_TOKEN
+MONSTERBOX_SSH_PASSWORD
+total 24
+drwxr-xr-x   2 remote remote  4096 Aug 16 02:51 .
+drwxr-xr-x 139 root   root   12288 Sep 25 03:09 ..
+-rw-------   1 remote remote    52 Oct  3  2025 elevenlabs.key
+-rw-------   1 remote remote   114 Aug 16 02:51 env

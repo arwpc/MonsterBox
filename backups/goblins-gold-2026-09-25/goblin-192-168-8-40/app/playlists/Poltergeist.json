@@ -1,0 +1,13 @@
+{
+  "name": "Poltergeist",
+  "description": "Poltergeist character videos for Goblin displays",
+  "videos": [
+    "Poltergeist/PHA_Poltergeist_AmpedUp_Lose_H.mp4",
+    "Poltergeist/PHA_Poltergeist_AmpedUp_Win_H.mp4",
+    "Poltergeist/PHA_Poltergeist_Idle_H.mp4",
+    "Poltergeist/PHA_Poltergeist_Intro_H.mp4"
+  ],
+  "loopMode": "sequential",
+  "createdAt": "2025-10-21T05:30:00.000Z"
+}
+

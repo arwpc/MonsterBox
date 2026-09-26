@@ -1,0 +1,8 @@
+goblin                   enabled=enabled active=active
+console-blanker          enabled=enabled active=active
+monsterbox-goblin        enabled=enabled active=active
+goblin-autoqueue         enabled=enabled active=activating
+goblin-hide-console      enabled=enabled active=failed
+goblin-xserver           enabled=disabled active=inactive
+lightdm                  enabled=enabled active=inactive
+getty@tty1               enabled=disabled active=inactive
