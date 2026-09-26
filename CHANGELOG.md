@@ -6,6 +6,13 @@ All notable changes to MonsterBox are documented in this file.
 
 - **`scripts/goblin-os/provision-goblin.sh` — bring a fresh Pi OS image up as a Goblin** (packages, app,
   gold unit, display config, stabilize). Used to rebuild Goblin 1 (.40) after the operator re-imaged it.
+- **Outdoor power-supply spec for PumpkinHead and Renfield (2026-09-26):** PumpkinHead's supply
+  got wet and cooked, and his 12 V→5 V buck is shorted and kills supplies. `docs/hardware/POWER-SUPPLY-SIZING.md`
+  records the two configurations the Pi, prop and robotics communities run without resets — (A) motor on
+  its own 12 V adapter + Pi on the official Raspberry Pi supply, one weatherproof box, common ground; (B) a
+  battery-backed bus, as one product the Bluetti AC240P — with load budgets, BOMs, rules, the re-energize
+  procedure after the water event, an acceptance checklist and the rejected alternatives. KNOWN-BUGS gains
+  the outage entry. Docs only; no code change.
 - **Goblin registry names equal the device hostnames (2026-09-26, operator-set):** Goblin 1 = .40
   (goblin1), Goblin 2 = .106 (goblin2), Goblin 3 = .14 (goblin3). KNOWN-BUGS gains the measured performance
   finding (hardware decode engages; the CPU burn and thermal throttle come from `--vo=drm`'s

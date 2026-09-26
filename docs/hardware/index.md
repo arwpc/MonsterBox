@@ -89,6 +89,7 @@ value always wins. Parts with no configured limits are pass-through.
 ### Power Management
 - **12V Power Bus**: Linear actuators and large 12V servos are wired into a shared 12V bus
 - **5V Fuse Protection**: The 12V bus is protected by intentionally undersized 5V fuses that blow before harming people or hardware — a safety-first design
+- **Sizing worked example**: [Power-supply sizing — PumpkinHead and Renfield](POWER-SUPPLY-SIZING.md) — one supply per character delivering both 12 V and a regulated 5 V, no buck converter
 - **Power Distribution**: Safe power distribution for multiple devices
 - **Current Monitoring**: Overcurrent protection
 - **Shutdown Procedures**: Safe hardware shutdown
