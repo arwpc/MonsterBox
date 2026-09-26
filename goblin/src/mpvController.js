@@ -25,8 +25,9 @@ const DEFAULT_VO = process.env.GOBLIN_VO || 'drm';
  * ALSA straight to the HDMI card. The card's ALSA id differs by kernel driver
  * ("b1" for bcm2835 on bookworm, "vc4hdmi" on trixie), so it is found in
  * /proc/asound/cards rather than named per node; GOBLIN_AUDIO_DEVICE overrides
- * it (any mpv --audio-device string), and GOBLIN_AUDIO=off restores the silent
- * display. A clip with no audio stream plays exactly as before.
+ * it (any mpv --audio-device string). Sound is OFF unless GOBLIN_AUDIO=on is set in
+ * the unit environment (operator's call for the night). A clip with no audio stream
+ * plays exactly as before either way.
  */
 function detectHdmiAudioDevice() {
   try {
@@ -42,7 +43,9 @@ function detectHdmiAudioDevice() {
 }
 
 const AUDIO_DEVICE = process.env.GOBLIN_AUDIO_DEVICE || detectHdmiAudioDevice();
-const AUDIO_ARGS = String(process.env.GOBLIN_AUDIO || 'on').toLowerCase() === 'off'
+// Silent by default until the operator turns sound on (GOBLIN_AUDIO=on in the unit
+// environment): the audio path is proven, but the show is not ready for it yet.
+const AUDIO_ARGS = String(process.env.GOBLIN_AUDIO || 'off').toLowerCase() !== 'on'
   ? ['--no-audio']
   : ['--audio=auto', `--ao=${process.env.GOBLIN_AO || 'alsa'}`, `--audio-device=${AUDIO_DEVICE}`,
      `--volume=${process.env.GOBLIN_VOLUME || 100}`, '--audio-fallback-to-null=yes'];

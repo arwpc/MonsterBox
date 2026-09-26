@@ -118,7 +118,12 @@ class QueueManager {
 
     // All videos are pre-optimized 720p30 - play directly, no transcoding needed
     const videoPath = await this._originalAbsolute(video.filename);
-    const loop = this.queue.loopMode === 'single';
+    // One clip looping is ONE mpv process (--loop), whether the mode says 'single' or
+    // the whole queue is that one clip. Respawning mpv for every pass flashed the
+    // screen black each time and killed a hardware-decoding mpv every loop — the
+    // kill path this file already guards against for kernel panics (2026-09-26).
+    const loop = this.queue.loopMode === 'single'
+      || (this.queue.loopMode === 'queue' && this.queue.videos.length === 1);
 
     // Play directly - videos are already optimized for Pi3
     await this.mpv.play(videoPath, { loop });
