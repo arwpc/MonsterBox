@@ -1,0 +1,250 @@
+{
+  "stream": "head-tracking",
+  "items": [
+    {
+      "name": "Current chain map (controller -> service -> python); WS :8778 does not exist",
+      "status": "refuted",
+      "risk": "low",
+      "evidence": [
+        "controllers/motionTrackingController.js:101,347 -> startMotionTrackingProcess() spawns `python3 scripts/motion_tracking_service.py` (NOT python_wrappers/head_tracking_cli.py); JSON status lines arrive on the child's stdout at :390 and are handed to maybeDriveHead().",
+        "controllers/motionTrackingController.js:654 maybeDriveHead() -> hardwareService.controlPart(panServoId,'moveToAngle'|'rotateContinuous') -> services/hardwareService/index.js:663 servo.moveToAngle -> python_wrappers/servo_cli.py move_to_pca / move_to_pca_multi / rotate_continuous_pca. No WebSocket anywhere in the runtime path.",
+        "grep -rn 8778 (excluding node_modules/.git) matches ONLY docs/networking.md, docs/setup/HEAD-TRACKING-SETUP.md, docs/hardware/index.md, docs/hardware/head-tracking.md, docs/troubleshooting/head-tracking-troubleshooting.md and two data/*.json telemetry blobs. Zero .js/.py hits.",
+        "`ss -lntp` on the live Orlok node: 8090 (mjpg-streamer) and 3000 (node) are listening; 8778 is NOT.",
+        "docs/hardware/head-tracking.md:22 states '**Port**: 8778' and :122 shows `new WebSocket('ws://localhost:8778')` — describes an architecture that does not exist in this repo.",
+        "python_wrappers/head_tracking_cli.py is vestigial: its only caller is services/hardwareService/index.js:1521 (head_tracking.getPosition), and hardwareService's head_tracking.startTracking/:1508 and stopTracking/:1536 are pure no-op stubs that return success without touching hardware. This is a SECOND, unrelated 'head tracking' surface from the scene step type."
+      ],
+      "files_to_touch": [
+        "docs/hardware/head-tracking.md",
+        "docs/setup/HEAD-TRACKING-SETUP.md",
+        "docs/troubleshooting/head-tracking-troubleshooting.md",
+        "docs/networking.md",
+        "services/hardwareService/index.js"
+      ],
+      "remaining_work": "Delete or rewrite the WS :8778 documentation before v11 planning leans on it. Decide the fate of the hardwareService `head_tracking` stub + head_tracking_cli.py: the scene step type 'head-tracking' currently returns success while doing nothing, which is a success-field lie of exactly the kind this repo keeps getting burned by. Either wire the scene step to motionTrackingController.enableHeadTrackingForWebcam() or make it return an explicit 'not implemented' warning."
+    },
+    {
+      "name": "Servo-kind dispatch: handoff claim is HALF right — the config service throws it away, but the runtime has its own two-way (not three-way) dispatch",
+      "status": "partial",
+      "risk": "medium",
+      "evidence": [
+        "CONFIRMED for the service: services/headAnimationSuperPowerService.js:137 `let servoKind = 'absolute-servo'`, :153 `servoKind = profile.capability.kind`, :206 emitted in the results object. `grep -rn servoKind` across the whole repo (excluding node_modules) returns EXACTLY three hits, all in that one file — no route, view, public/js or test ever reads it. It is emitted into the /setup/head-animation/api/head-tracking/:charId payload and dropped on the floor.",
+        "REFUTED as a blanket claim: the RUNTIME does branch. controllers/motionTrackingController.js:604 detectServoType() reads profile.capability.kind and maps 'continuous-servo'->'continuous', 'absolute-servo'->'standard', with a parts.json `config.servoType === 'continuous'` fallback at :620 and a hard default of 'standard' at :626. maybeDriveHead branches on it at :745 (`if (state.servoType === 'continuous')` -> rotateContinuous) vs :765 (positional -> moveToAngle).",
+        "THE REAL GAP: the dispatch is two-way and everything that is not literally 'continuous-servo' collapses to 'standard'. server/calibration/router.js:231 `KNOWN_CAPABILITY_KINDS = new Set(['absolute-servo','openloop-linear','continuous-servo'])` — there is NO multi-turn capability kind, and router.js:242 rejects any profile whose kind is not in that set. server/calibration/adapters/ contains only AbsoluteServoAdapter.js, ContinuousServoAdapter.js, OpenLoopLinearAdapter.js.",
+        "So Dragomir's neck (servoType 'multi-turn' in parts.json since 543deb46) has no representable calibration kind; its profile is still 'continuous-servo', which makes detectServoType() return 'continuous' and route an ANGLE request to rotateContinuous — the exact spin-instead-of-position failure 543deb46 fixed at the parts.json layer but NOT at the calibration layer.",
+        "Two independent, drifting kind resolvers is itself the defect: headAnimationSuperPowerService.getAvailableServos() (config/UI) and motionTrackingController.detectServoType() (runtime) read the same field and disagree about what to do with it."
+      ],
+      "files_to_touch": [
+        "controllers/motionTrackingController.js",
+        "services/headAnimationSuperPowerService.js",
+        "server/calibration/router.js",
+        "server/calibration/adapters/index.js",
+        "server/calibration/adapters/MultiTurnServoAdapter.js"
+      ],
+      "remaining_work": "DESIGN SKETCH — where kind-dispatch belongs: (1) Add a fourth capability kind 'multiturn-servo' to KNOWN_CAPABILITY_KINDS (server/calibration/router.js:231) plus a MultiTurnServoAdapter that is position-based, NOT time-at-speed — see the unitsPerSec item. Its capability should carry `rangeDeg` (900 for the Stingray-2) so bounds are interpretable. (2) Extract ONE resolver, e.g. `resolveServoKind(partId, characterId) -> {kind, rangeDeg}` in a shared module (services/movement/ or server/calibration/), and have BOTH headAnimationSuperPowerService.getAvailableServos() and motionTrackingController.detectServoType() call it — delete the duplicated logic. (3) In maybeDriveHead, replace the `state.servoType === 'continuous'` if/else with a three-branch dispatch: absolute -> moveToAngle within bounds (today's path); multiturn -> moveToAngle within bounds, same code path, only the bounds scale and the rangeDeg conversion differ; continuous -> rotateContinuous (today's path). (4) Do NOT re-kind Dragomir's profile in code — 543deb46 deliberately left it uncalibrated so the drive path refuses him; the re-kind belongs in the supervised calibration session with eyes on the neck."
+    },
+    {
+      "name": "cameraMount 'head' | 'fixed' does not exist anywhere in code or schema",
+      "status": "open",
+      "risk": "medium",
+      "evidence": [
+        "`grep -rn cameraMount` over the whole repo (excluding node_modules/.git) matches ONLY .claude/commands/mega-session.md:34, docs/development/V11-HANDOFF.md:196 and :291. Zero code, zero schema, zero data.",
+        "config/schemas/super-powers.schema.json:28 is literally `\"headTracking\": { \"type\": \"object\" }` — the entire head-tracking block is unvalidated, so adding a key needs the properties block written from scratch (the whole schema file is 30 lines).",
+        "The config default set is services/headAnimationSuperPowerService.js:28-52 getDefaultHeadTrackingConfig() — 21 keys, none of them describing mount or loop closure.",
+        "There is NO 'offset' setting. `grep -n offset` in views/setup/head-animation.ejs and public/js/head-animation.js returns nothing. The nearest existing knobs are `centerDeg` (views/setup/head-animation.ejs:176-177, 'Servo angle for the looking-straight-ahead position') and `invertPan` (:186). The handoff's 'his offset setting exists for this' maps to centerDeg, which on this node is 90 for Orlok (data/character-3/super-powers.json).",
+        "Live per-character values on this node: Orlok centerDeg 90 / rangeDeg 28 / smoothing 0.65; Dragomir centerDeg 90 / rangeDeg 120 / panServoId \"\" (empty string, not null); Mina's local copy has NO headTracking block at all (see the divergence item)."
+      ],
+      "files_to_touch": [
+        "services/headAnimationSuperPowerService.js",
+        "config/schemas/super-powers.schema.json",
+        "views/setup/head-animation.ejs",
+        "public/js/head-animation.js",
+        "controllers/motionTrackingController.js",
+        "data/character-3/super-powers.json",
+        "data/character-4/super-powers.json"
+      ],
+      "remaining_work": "DESIGN SKETCH — where cameraMount lives: it is per-character head-tracking config, so `headTracking.cameraMount: 'head' | 'fixed'` in super-powers.json, defaulted in getDefaultHeadTrackingConfig() (services/headAnimationSuperPowerService.js:28) to 'fixed' — the conservative default, because 'fixed' makes the loop open and the controller must NOT assume the error signal decays after a move. Add it to config/schemas/super-powers.schema.json with an enum; note the validator is hand-written (services/schemaValidator.js), so confirm it supports `enum` before relying on it. Control-law consequence, which is the whole point of the axis: with cameraMount 'head' the camera moves with the servo, so target-centre error IS feedback and the existing proportional+smoothing law converges — that is today's code, and it is correct for Orlok. With cameraMount 'fixed' the camera never sees the head, so the same law is a pure open-loop map from image-x to servo angle: `angle = centerDeg + (err/50)*rangeDeg`; the `smoothing` term must then be re-read as a slew-rate limiter (rate of change of commanded angle), not as an error-integrator, and the scan-sweep and deadzone semantics are unchanged. Concretely in maybeDriveHead (controllers/motionTrackingController.js:754-790): for 'head', keep `next = lastPanDeg + (target - lastPanDeg) * smoothing`; for 'fixed', compute the absolute target directly and clamp the per-tick DELTA to a max slew (deg/tick at the 50 ms tick from :670). Surfacing it in the UI is a two-field addition next to Center/Range in views/setup/head-animation.ejs:176. NOTE: cameraMount and servo kind are genuinely orthogonal — Orlok is absolute+head, Dragomir is multiturn+fixed, but nothing in the design should couple them."
+    },
+    {
+      "name": "The drive gate is purely angle-bounds-based; a bounds:null part can never qualify",
+      "status": "landed",
+      "risk": "medium",
+      "evidence": [
+        "CONFIRMED verbatim. controllers/motionTrackingController.js:533 loadHeadTrackingGuardrails(): :548 `const profile = await calibrationStore.get(servoId, characterId)`; :550 `if (profile && profile.bounds)` reads minAngle/maxAngle; else falls back to parts.json Min/Max markers at :556-568; :578 `if (Number.isFinite(minAngle) && Number.isFinite(maxAngle) && (maxAngle - minAngle) >= 1) guardrails = {...}`; :591 `console.warn('Head tracking: servo ' + servoId + ' has no usable calibrated window — refusing to drive it until it is calibrated')`.",
+        "The refusal is enforced at BOTH drive sites: scan-sweep at :704-709 and target-tracking at :767-772. Both return without commanding.",
+        "server/calibration/store.js:157 shapeForRead() nulls `bounds` for a placeholder (autoGenerated) profile and re-offers it as `placeholderBounds`, and nulls it for a degenerate (min==max) window as `degenerateBounds`. So a placeholder can never satisfy the gate — by design, and correctly.",
+        "Dragomir part 1 (committed data/character-4/parts.json @ HEAD) has NO `markers` array, so the parts.json fallback is empty too. bounds null + no markers = permanent refusal. This IS the knight's log line.",
+        "This is not a bug to remove — it is the guard that stops an unmeasured servo from being swept across its mechanical span (the comment at :571-577 records the -90..90 default that pinned a head at 0 degrees while the UI showed it tracking)."
+      ],
+      "files_to_touch": [
+        "controllers/motionTrackingController.js"
+      ],
+      "remaining_work": "The gate is CORRECT and must not be loosened. What v11 needs is not a weaker gate but a bounds representation a multi-turn servo can satisfy: once a MultiTurnServoAdapter exists and a supervised session measures Dragomir's neck, the profile gets real (non-autoGenerated) bounds in multi-turn command degrees and the SAME gate passes with no code change to the guard itself. Two small hardening items while in there: (a) :550 `if (profile && profile.bounds)` skips the marker fallback when bounds is a non-null object missing minAngle — make the condition test the numbers, not the object; (b) the guardrails currently express one scale (0-180 absolute). For a multiturn part the clamp must be applied in the same units the drive command uses, so the resolver should return {minAngle, maxAngle, scale} and the clamp must not silently mix a 0-180 window with a 0-1800 command."
+    },
+    {
+      "name": "Multi-turn open-loop drive path — most of it already exists and is unused; rotationRangeDeg is stored but ignored",
+      "status": "partial",
+      "risk": "high",
+      "evidence": [
+        "The positioning primitive EXISTS: python_wrappers/servo_cli.py:253 `def move_to_pca_multi(channel, angle_deg, address=None)` — 'Multi-turn positional servo (GoBilda 2000-series): 500-2500us over 0-1800'. It clamps to 0..1800 and computes `pulse_us = int(round(500 + (clamped / 1800.0) * (2500 - 500)))`.",
+        "The routing EXISTS: services/hardwareService/index.js:668 normalizes servoType 'multi'|'multi_turn'|'multi-turn'|'positional'|'position' -> 'feedback', and :683-686 dispatches `args = ['move_to_pca_multi', channel, angleDeg]`. :705 excludes 'feedback' from the servo-daemon fast path, so multi-turn always goes through servo_cli.py.",
+        "part.config is spread into handler params: services/hardwareService/index.js controlPart() at ~:1726 `const normalized = Object.assign({}, part.config || {})` — so `rotationRangeDeg` ALREADY arrives at moveToAngle as an unused parameter.",
+        "THE SCALE BUG: `grep -rn rotationRangeDeg` over all .js/.mjs/.py (excluding node_modules) matches ONLY controllers/modelsController.js:70 and data/config JSON. servo_cli.py hardcodes 1800. For a 900-degree Stingray-2 the correct map is `500 + (angle/900)*2000`; with the hardcoded 1800 a commanded angle lands at HALF the intended physical degrees (commanded 900 -> 1500us -> physical ~450 deg). Any bounds measured through this path are in 'commanded degrees', not physical degrees, and the two must never be confused in a config the operator reads.",
+        "THE SAFETY HOLE: python_wrappers/servo_cli.py:262-263 comment — 'Multi-turn angles are 0-1800, not a servo travel window, so the configured angle window is NOT applied here — but a quarantine still refuses.' services/hardwareService/safetyLimits.js:181 `isAngular` gates the window clamp on `(type === 'servo' || type === 'continuous_servo') && out.angleDeg != null`, so the Node-side window does apply for a part typed 'servo' — but config/hardware-safety.json for character 4 is `{\"parts\": {}}` with a comment saying 'no limits are asserted here yet'. So Dragomir's 900-degree neck has NO angle window in software from either layer. The ONLY thing standing between it and a cabling-tearing full rotation is the head-tracking calibration gate.",
+        "543deb46 (v10.4.0) fixed the parts.json mislabel: servoType 'continuous' -> 'multi-turn', channel 1 -> 4, + rotationRangeDeg 900, modelId servo_gobilda_stingray2. Commit message explicitly states no motion was commanded and the calibration profile was deliberately left uncalibrated."
+      ],
+      "files_to_touch": [
+        "python_wrappers/servo_cli.py",
+        "services/hardwareService/index.js",
+        "server/calibration/adapters/MultiTurnServoAdapter.js",
+        "server/calibration/router.js",
+        "config/hardware-safety.json"
+      ],
+      "remaining_work": "DESIGN SKETCH — what a multi-turn drive path needs: (1) Parameterize the pulse map. `move_to_pca_multi(channel, angle_deg, address=None, range_deg=1800)` and pass `rotationRangeDeg` through from hardwareService (it is already in scope). Keep 1800 as the default so nothing existing changes. (2) Decide and DOCUMENT one unit convention — recommend physical degrees end-to-end, with the pulse map absorbing rangeDeg — so bounds, centerDeg and rangeDeg in super-powers.json all mean the same thing for every servo kind. (3) Assert a window for Dragomir part 1 in config/hardware-safety.json the moment the supervised session measures one; today the file has none. (4) A multi-turn servo is POSITION-controlled, so the adapter must be a scaled AbsoluteServoAdapter, not an OpenLoopLinearAdapter."
+    },
+    {
+      "name": "unitsPerSec 0.3 autoGenerated guess — real, but it is the WRONG model for a multi-turn servo",
+      "status": "partial",
+      "risk": "medium",
+      "evidence": [
+        "CONFIRMED at source: server/calibration/router.js:163 — in getOrAutoCreateProfile(), for `servoType === 'continuous'`: `motion = { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.3 }], settleMs: 100 }` alongside `bounds = null`. That 0.3 is a literal, never measured.",
+        "The same guess is duplicated in server/calibration/adapters/OpenLoopLinearAdapter.js:25/:38 (0.2 fallback), services/scenes/sceneExecutor.js:123/:452/:521 (`bin.unitsPerSec || 0.2`), routes/api/partsApi.js:322/:394, scripts/migrate-calibration-v15.mjs:51, scripts/fix_calibration_profiles.js:68. Seven independent hardcoded rate guesses.",
+        "OpenLoopLinearAdapter.js:36 does defensively drop non-finite/zero bins, so a corrupt bin cannot divide-by-zero — the risk is a silently wrong DURATION, not a crash.",
+        "REFUTATION OF THE FRAMING: Dragomir's neck is not velocity-controlled. servo_cli.py:253 move_to_pca_multi sets an absolute pulse width and the servo HOLDS. 543deb46's own message says so: 'The neck is now angle-commanded and holds position, so its calibrated window becomes a real hard stop rather than a duration guess.' A time-at-speed motion model with unitsPerSec is therefore structurally inapplicable — it belongs to continuous-servo and openloop-linear only."
+      ],
+      "files_to_touch": [
+        "server/calibration/router.js",
+        "server/calibration/adapters/OpenLoopLinearAdapter.js"
+      ],
+      "remaining_work": "For the head-tracking stream specifically: do NOT carry unitsPerSec into the multi-turn design — a 'multiturn-servo' profile should have `motion: {}` exactly as absolute-servo does (router.js:169). The 0.3 guess only matters here as a trap: if Dragomir's neck profile is re-kinded via the auto-create path while parts.json still said 'continuous' it would be stamped with it. Separately (persistence/calibration stream's call): the seven duplicated fallback rates should collapse to one exported constant, or better, an explicit refusal — an unmeasured rate driving a timed motion is the same class of defect as an unmeasured angle window."
+    },
+    {
+      "name": "Boot-persistence defect: armed state is in-memory only — CONFIRMED, but the handoff's specific disk value is stale",
+      "status": "partial",
+      "risk": "high",
+      "evidence": [
+        "CONFIRMED in-memory: controllers/motionTrackingController.js:20 `const headTrackingConfigs = new Map()`, :21 headTrackingStates, :22 headTrackingGuardrails. Module-scope Maps, nothing else.",
+        "CONFIRMED nothing persists the arm: enableHeadTracking (:842) and enableHeadTrackingForWebcam (:1015) only do `headTrackingConfigs.set(webcamId, cfg)` + claimServo. disableHeadTracking (:880) / disableHeadTrackingForWebcam (:1046) only flip the in-memory flag + releaseServo. Neither ever calls writeHeadTrackingConfig. `grep -rn writeHeadTrackingConfig` has exactly ONE caller in the whole repo: routes/setup/head-animation.js:152 (the settings-page save), which is a different action from arming.",
+        "CONFIRMED nothing re-arms at boot: no startup hook reads headTracking.enabled. The read side is only routes/setup/head-animation.js (:98,:170,:214,:258,:283,:316,:335,:454,:535), routes/conversation.js (:230,:310,:1008,:1059) and services/speechExpressionService.js:114 — all request-scoped.",
+        "The fleet toggle is in-memory too: services/orchestrationService.js:691 `head: (on) => ({method:'post', path:'/conversation/api/head-tracking', body:{enabled:on}})` -> routes/conversation.js:207, which calls enableHeadTracking/disableHeadTracking and never writes disk. So the emergency disarm at orchestrationService.js:759 `disarm.head(false)` is also undone by a restart.",
+        "STALE CLAIM CORRECTED: the handoff says data/character-3/super-powers.json has headTracking.enabled:true. On this node RIGHT NOW it is `false`. `git show HEAD:data/character-3/super-powers.json` has true; `git diff` shows the working tree flipped it true->false (file mtime 2026-08-20 21:43). So the direction of the lie is currently reversed — but the structural defect is identical and worse than described: the disk flag and the runtime flag are two unrelated variables that sync in NEITHER direction.",
+        "THE ARCHETYPE, verified: services/serverPlaybackService.js:142 `this._speakerMuted = this._loadMuteState()` in the constructor; :156 _muteStatePath() -> data/speaker-state.json; :175 _loadMuteState() uses a SYNCHRONOUS readFileSync with the comment 'Reading synchronously is deliberate — it happens exactly once, at construction, and the flag must be correct BEFORE anything can ask whether it may make noise'; :186 _persistMuteState() writes atomically and swallows write errors so a failed persist never breaks the mute itself. tests/system/dashboard-api.test.js:141 asserts the behaviour."
+      ],
+      "files_to_touch": [
+        "controllers/motionTrackingController.js",
+        "routes/setup/head-animation.js",
+        "routes/conversation.js",
+        "server.js",
+        "services/headAnimationSuperPowerService.js"
+      ],
+      "remaining_work": "DESIGN SKETCH — what boot re-arm needs, following the mute archetype but inverted in one important way. The mute fix is 'restore a REFUSAL at boot' — fail-safe. Head-tracking re-arm is 'resume MOTION at boot' — fail-DANGEROUS. So: (1) Make arm/disarm persist. enableHeadTrackingForWebcam / disableHeadTrackingForWebcam should write headTracking.enabled through writeHeadTrackingConfig (which already merges under updateJsonUnderLock at services/headAnimationSuperPowerService.js:113, so it cannot clobber jawAnimation). Persist failures must be logged and swallowed — in-memory stays authoritative for the live process, exactly as _persistMuteState does. (2) Re-arm at boot from an explicit server.js startup step, NOT a module constructor: unlike the mute flag, re-arming needs parts.json, the calibration store and the mjpg-streamer to be up, so it must be async and ordered after hardware init. Iterate data/characters.json (never hardcode 3), read headTracking.enabled + webcamPartId + panServoId, and for each armed character call startTrackingForWebcam then enableHeadTrackingForWebcam. (3) MANDATORY safety preconditions before any auto-re-arm, because this is the one persistence item that makes a machine move by itself after a power cut: the calibration gate must pass (loadHeadTrackingGuardrails returns non-null), the part must not be quarantined, and the speaker-mute-style 'is the house asleep' consideration argues for gating auto-re-arm behind an explicit opt-in key (e.g. `headTracking.autoArmOnBoot`, default FALSE) rather than reusing `enabled`. That keeps `enabled` meaning 'the operator armed it this session' and makes 'move at boot' a separate, deliberate decision. (4) Log one line on restore, matching the mute precedent's '🔇 Speaker mute restored from disk'. (5) Pass characterId into the re-arm cfg — see the character-independence item."
+    },
+    {
+      "name": "New defect: detectServoType() looks up the calibration profile WITHOUT a characterId",
+      "status": "open",
+      "risk": "high",
+      "evidence": [
+        "controllers/motionTrackingController.js:608 `const profile = await calibrationStore.get(servoId);` — no second argument.",
+        "Every OTHER store lookup in the same file is character-scoped: :548 `calibrationStore.get(servoId, characterId)` with the comment at :534-536 'Part ids repeat across characters, so both the store lookup and the cache must be character-scoped — an unscoped cache handed one character's window to another character's servo of the same id.'",
+        "server/calibration/store.js:199 `_resolveCharacter(characterId) { return characterId !== undefined ? characterId : await selectedCharacterId(); }` — an unscoped get resolves against the node's mutable selectedCharacter.",
+        "CLAUDE.md states this explicitly: 'every controlPart() / calibration-store call from a context that knows its character MUST pass it ... omitting it resolves against the node's mutable selectedCharacter and has driven the wrong PCA9685 channel.'",
+        "Failure scenario: maybeDriveHead has already pinned cfg.characterId at :686-693 precisely to stop this, then detectServoType throws that away. If selectedCharacter differs from cfg.characterId, the servo KIND is read from another character's profile — and the kind decides between moveToAngle and a timed SPIN. That is the same class of error as the 99 spin commands on Dragomir's neck."
+      ],
+      "files_to_touch": [
+        "controllers/motionTrackingController.js"
+      ],
+      "remaining_work": "One-line fix: pass cfg.characterId into detectServoType and on to calibrationStore.get. Also cache state.servoType per (characterId, servoId) rather than per webcam — currently it is memoized once at :741 into the per-webcam state and never invalidated, so a re-kind requires a restart. Fold this into the shared resolveServoKind() from the kind-dispatch item."
+    },
+    {
+      "name": "New defect: enable paths never pass characterId, so head tracking re-resolves against selectedCharacter",
+      "status": "open",
+      "risk": "medium",
+      "evidence": [
+        "routes/setup/head-animation.js:296 `enableHeadTrackingForWebcam(webcamId, { panServoId, centerDeg, rangeDeg, invertPan, smoothing, deadzone })` — `charId` is destructured from req.params at :275 and then not passed.",
+        "routes/conversation.js:1069 `motionTrackingController.enableHeadTrackingForWebcam(cam.id, { panServoId, centerDeg, ... })` — `characterId` is in scope and not passed.",
+        "routes/conversation.js:245 `motionTrackingController.enableHeadTracking({ body: { webcamId: cam.id, panServoId, params } }, fRes)` — the `params` object built at :238-244 contains no characterId, and enableHeadTracking at :853 only reads params.characterId / req.body.characterId.",
+        "controllers/motionTrackingController.js:1026 `characterId: config.characterId != null ? config.characterId : null` — so cfg.characterId lands as null and maybeDriveHead falls back at :686-693 to `readConfig().selectedCharacter`, which is exactly what the pinning comment at :681-685 was written to prevent.",
+        "Both files are on the shrink-only resolver allowlist: eslint-rules/no-direct-character-resolution.allowlist.json:24 'controllers/motionTrackingController.js: pending migration' and :34 'routes/setup/head-animation.js: pending migration'."
+      ],
+      "files_to_touch": [
+        "routes/setup/head-animation.js",
+        "routes/conversation.js",
+        "controllers/motionTrackingController.js",
+        "eslint-rules/no-direct-character-resolution.allowlist.json"
+      ],
+      "remaining_work": "Thread characterId from resolveCharacter(req) through all three enable call sites into cfg.characterId. Then the readConfig() fallback in maybeDriveHead becomes dead and both allowlist entries can be removed — a measurable gate win (the independence allowlist is already down to 23 per bdf9d67b)."
+    },
+    {
+      "name": "New defect: centerDeg default is 90 in scan mode and 0 in tracking mode",
+      "status": "open",
+      "risk": "low",
+      "evidence": [
+        "controllers/motionTrackingController.js:711 (scan sweep) `var center = (typeof cfg.centerDeg === 'number' ? cfg.centerDeg : 90);`",
+        "controllers/motionTrackingController.js:758 (target tracking) `var center = (typeof cfg.centerDeg === 'number' ? cfg.centerDeg : 0);`",
+        "The service default is 0: services/headAnimationSuperPowerService.js:34 `centerDeg: 0`. The enable paths default to 0 as well (:854, :1027).",
+        "Live data disagrees with the service default: both Orlok and Dragomir have centerDeg 90 on disk, and 0 is not a sane centre for a 0-180 absolute servo — the comment at :571-577 records that a -90..90 assumption previously pinned a head at its 0-degree floor."
+      ],
+      "files_to_touch": [
+        "controllers/motionTrackingController.js",
+        "services/headAnimationSuperPowerService.js"
+      ],
+      "remaining_work": "Pick one default and use it in all four places. 90 is the defensible one for a 0-180 absolute servo, but the honest answer for a multi-turn part is 'derive the centre from the calibrated window (min+max)/2 and refuse if there is none' — which folds into the guardrails resolver rather than being a literal at all."
+    },
+    {
+      "name": "BLOCKER: Orlok's pan servo calibration was wiped on this node in the last hour — head tracking is currently refused on the one character that had it working",
+      "status": "open",
+      "risk": "high",
+      "evidence": [
+        "data/calibration_profiles.json key '3:15' RIGHT NOW: `{\"partId\":15,\"capability\":{\"kind\":\"absolute-servo\",\"usMin\":500,\"usMax\":2500},\"bounds\":{\"minAngle\":0,\"maxAngle\":180},\"motion\":{},\"version\":1,\"autoGenerated\":true,\"lastCalibratedAt\":\"2026-08-21T02:32:59.248Z\",\"characterId\":3}` — autoGenerated:true, full 0-180 placeholder. File mtime 2026-08-20 22:26.",
+        "It was real before: /var/log/monsterbox.log contains many `Loaded head tracking guardrails for servo 15: 3°..169°` and `Head tracking (positional): target=94.5, smoothed=94.5, limits=[3..169]` lines — matching the handoff §3 claim of a 3-169 window calibrated by Aaron 2026-08-19 23:45.",
+        "It changed at least twice: the LAST guardrail line in the log reads `Loaded head tracking guardrails for servo 15: 25°..180°`, a third distinct window.",
+        "The wipe path is visible: /var/log/monsterbox.log has three `✅ Auto-created calibration profile for part 15 (Head on a Swivel, servo)` lines, emitted by server/calibration/router.js:195 in getOrAutoCreateProfile() — which only fires when store.getRaw() finds NOTHING, and then stamps bounds 0-180 autoGenerated (router.js:167-169).",
+        "data/calibration_profiles.json is UNTRACKED (`git ls-files --error-unmatch` errors), so there is no committed copy to restore from and no diff to review.",
+        "Consequence: because shapeForRead() (store.js:157) withholds a placeholder's bounds, loadHeadTrackingGuardrails now returns null for servo 15 and Orlok's head tracking will log 'no usable calibrated window — refusing to drive it'. The only character with a working head-tracking setup is currently gated off."
+      ],
+      "files_to_touch": [
+        "server/calibration/store.js",
+        "server/calibration/router.js",
+        "data/calibration_profiles.json"
+      ],
+      "remaining_work": "This is the persistence stream's defect but it BLOCKS every head-tracking verification in v11 — nothing in this stream can be proven on real hardware until part 15 has a measured window again. Two actions: (a) operator re-measures Orlok part 15 in a supervised session (3-169 is the last known-good pair from the log); (b) the disappearing-profile root cause must be found before that measurement is repeated, or it will vanish again. Worth investigating whether an unscoped writer, a test run, or a deploy is dropping keys — note the file is untracked so a deploy/rsync exclusion is a live hypothesis."
+    },
+    {
+      "name": "Data divergence: this node's copy of Mina's super-powers.json has no headTracking block at all",
+      "status": "open",
+      "risk": "low",
+      "evidence": [
+        "`node -e Object.keys(require('data/character-2/super-powers.json'))` on this node returns `[ 'jawAnimation' ]`. readHeadTrackingConfig() would return pure defaults for her.",
+        "`git diff data/character-2/super-powers.json` shows the entire headTracking block as a deletion relative to HEAD, plus jaw minAngle 22->17 / maxAngle 91->153 and the loss of audioLeadTimeMs 500.",
+        "Commit 484747d9 (v10.4.0, authored by GitHub Copilot 2026-08-19) added that block: 'Head tracking is materialized for characters 1 and 2 with the service defaults ... Both remain enabled: false — this records the shape, it does not switch anything on.'",
+        "But the working-tree file's mtime is 2026-07-17 19:23 — it PREDATES the commit. So this is not a runtime deletion; it is a committed-elsewhere change that never reached this node's working tree because the file is locally modified (data/character-4/super-powers.json is identical in kind, mtime 2026-07-17, showing panServoId null->\"\").",
+        "Per the monsterbox-fleet skill, super-powers.json is node-local and excluded from deploy, so Orlok's copies of character-2/4 are NOT authoritative for Mina/Dragomir."
+      ],
+      "files_to_touch": [
+        "data/character-2/super-powers.json",
+        "data/character-4/super-powers.json"
+      ],
+      "remaining_work": "Do not 'fix' this from Orlok. Any v11 head-tracking config work for Mina or Dragomir must read and write those characters' files ON THEIR OWN NODES. Flag for the fleet/persistence stream: three-way drift between the committed copy, Orlok's stale local copy, and each node's live copy means every claim of the form 'character N has setting X' needs to name which copy it read."
+    }
+  ],
+  "will_conflict_with": [
+    "persistence — both streams edit controllers/motionTrackingController.js arm/disarm and both depend on data/calibration_profiles.json integrity; the boot re-arm hook and the mute/speaker-state restore should share ONE startup-restore sequencing point in server.js rather than two independent hooks",
+    "calibration — adding a 'multiturn-servo' capability kind touches server/calibration/router.js:231 KNOWN_CAPABILITY_KINDS and server/calibration/adapters/index.js, which any calibration-stream work will also touch",
+    "dashboard/UI (V11-HANDOFF §5.1) — capabilities.headTracking chip work and the new cameraMount field both edit views/setup/head-animation.ejs and public/js/dashboard.js head-tracking loaders",
+    "schema/gate — config/schemas/super-powers.schema.json is currently 30 lines with headTracking unvalidated; if two streams both expand it they will collide"
+  ],
+  "dependencies_on_other_streams": [
+    "BLOCKING: Orlok part 15's calibration profile must be restored/re-measured before any head-tracking change can be proven on hardware — it is a 0-180 autoGenerated placeholder as of 2026-08-21T02:32:59Z and the drive path now refuses it",
+    "BLOCKING for Dragomir: a supervised calibration session with eyes on the neck must establish part 1's real window; 543deb46 deliberately left the profile uncalibrated and nothing in this stream should change that from software",
+    "The persistence stream must resolve WHY calibration_profiles.json entries are disappearing (three auto-create events for part 15 in one log), or re-measurement will be undone again",
+    "The hardware/safety stream owns adding a measured angle window for Dragomir part 1 to config/hardware-safety.json — character 4 currently has `\"parts\": {}`"
+  ],
+  "open_questions": [
+    "Should auto-re-arm at boot reuse headTracking.enabled, or a separate opt-in headTracking.autoArmOnBoot defaulting to false? The mute archetype restores a refusal (fail-safe); re-arming head tracking resumes MOTION unattended (fail-dangerous), and Aaron was woken at 00:20 by animatronics once already.",
+    "Unit convention for a multi-turn servo: does `bounds`/`centerDeg`/`rangeDeg` mean physical degrees (requiring rotationRangeDeg in the pulse map) or raw 0-1800 command degrees? Everything downstream — the UI labels, the safety window, the operator's measurement — depends on picking one and writing it down.",
+    "Does the hand-written validator in services/schemaValidator.js support JSON-Schema `enum`? cameraMount needs it, and config/schemas/super-powers.schema.json has never exercised anything beyond type checks.",
+    "What flipped data/character-3/super-powers.json headTracking.enabled from true to false at 2026-08-20 21:43 — the setup page, tests/system/head-animation.test.js (it does restore in after(), but a crashed run would not), or the operator?",
+    "Should the dead hardwareService `head_tracking` stub + python_wrappers/head_tracking_cli.py be deleted, or wired to the real controller? The scene step type 'head-tracking' currently returns success:true while doing nothing.",
+    "cameraMount 'head' implies the servo and the camera share a body — should the config validate that panServoId and webcamPartId belong to the same character, and refuse 'head' when they do not?"
+  ],
+  "fleet_wide_notes": "Priority interaction verified and healthy: services/movement/priorityManager.js:15-23 PRIORITY = {MICRO_MOVEMENT:10, IDLE:30, JAW:70, HEAD_TRACKING:80, SCENE:100}. Head tracking claims its pan servo through claimServo(panServoId, 'head-tracking:'+webcamId, PRIORITY.HEAD_TRACKING) at controllers/motionTrackingController.js:868 and re-claims opportunistically at :662-669 (isAvailable() is checked first specifically to avoid a DENIED log line 20x/second while a scene holds the servo). Releases are owner-checked and happen on disable (:886), on webcam-owner change (:863), and — importantly — in stopMotionTrackingInternal (:349) with a comment explaining that cfg.enabled deliberately stays TRUE so the arm survives a camera stop. Any boot re-arm must preserve that release-on-tracker-death discipline or the pan servo is frozen out of the idle loop. Two additional cross-cutting notes: (1) there are TWO unrelated head-tracking surfaces — the real one (motionTrackingController) and a no-op stub (hardwareService head_tracking, used by the scene step type) — and confusing them will waste a session; (2) the fleet superpower toggle 'head' (services/orchestrationService.js:691) and the emergency disarm (:759) both route to /conversation/api/head-tracking, which is in-memory only, so a fleet-wide disarm does not survive a node restart on any node."
+}

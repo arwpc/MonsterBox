@@ -1,0 +1,3939 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Aaron Warner">
+      
+      
+        <link rel="canonical" href="https://arwpc.github.io/MonsterBox/development/V9-RETROSPECTIVE-AND-ROADMAP/">
+      
+      
+        <link rel="prev" href="../development-process/">
+      
+      
+        <link rel="next" href="../V9-PERSONA-REVIEWS/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>v9.0 Retrospective & Roadmap - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#v90-retrospective-roadmap" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              v9.0 Retrospective & Roadmap
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directory Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ / Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Character Sheets
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Character Sheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_mina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mina
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_sir_dragomir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sir Dragomir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_groundbreaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/PUMPKINHEAD_COMPLETE_PARTS_LIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead Parts List
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/GROUNDBREAKER_SETUP_INSTRUCTIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/GROUNDBREAKER_INSTALLATION_PACKAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronic Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSH Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/NODE-DISCOVERY-VALIDATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/HEAD-TRACKING-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/LINEAR_ACTUATOR_CALIBRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linear Actuator Calibration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/STT_TUNING_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STT Tuning Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/Noisy_Environment_Preset_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Noisy Environment Preset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/CENTRALIZED-PORT-MANAGEMENT-SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/PORT-MANAGEMENT-INTERFACE-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/HTTPS_DEPLOYMENT_HANDOFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTPS Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/secure-remote-access-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Secure Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/AUDIO-MICROPHONE-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audio & Microphone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ECHO-SUPPRESSION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Echo Suppression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/SCENE-CONCURRENCY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scene Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Log Collection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/head-tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/ORLOK_BTS7960_WIRING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok BTS7960 Wiring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/legacy_hardware_config_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Hardware Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs TTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/ELEVENLABS_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs Full Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/MJPG-STREAMER-INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MJPG-Streamer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/GOBLIN_VIDEO_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Video
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/Hardware-Integration-Layer-Interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Layer Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/api-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Retrospective & Roadmap
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Retrospective & Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-how-the-team-failed-and-the-fixes-that-generalize" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. How the team failed, and the fixes that generalize
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. How the team failed, and the fixes that generalize">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-measuring-in-the-units-of-the-sensor-instead-of-the-units-of-the-constraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Measuring in the units of the sensor instead of the units of the constraint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-trusting-an-instrument-that-was-never-validated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Trusting an instrument that was never validated
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-grep-results-published-as-findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Grep results published as findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-reaching-for-report-it-when-the-fix-was-smaller-than-the-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 Reaching for "report it" when the fix was smaller than the report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-process-changes-worth-adopting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5 Process changes worth adopting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-product-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Product roadmap
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Product roadmap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-hardware-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Hardware &amp; safety
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-python-hardware-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Python hardware layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-voice-ai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Voice &amp; AI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-poses-animation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Poses &amp; animation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-security-ops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5 Security &amp; ops
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#26-docs-information-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.6 Docs &amp; information architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The interface
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. The interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-what-everyone-said" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 What everyone said
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-the-honesty-problem-the-most-important-idea-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 The honesty problem — the most important idea here
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-shared-components-that-would-do-most-of-the-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Shared components that would do most of the work
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-destructive-actions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Destructive actions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-arm-disarm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 Arm / disarm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-information-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 Information architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 Vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#38-on-a-phone-next-to-the-animatronic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.8 On a phone, next to the animatronic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-if-only-a-handful-get-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. If only a handful get built
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-the-argument-for-doing-the-interface-work-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. The argument for doing the interface work first
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../V9-PERSONA-REVIEWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Persona Reviews
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GESTURE-ENGINE-SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gesture Engine Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NODE-DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery (mDNS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orchestration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-integration-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Integration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AI-Management-Feature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Management Feature
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../goblin-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../middleware-audit-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Middleware Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Setup Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/api-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/conversation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conversation Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/DEEP-TESTING-FRAMEWORK-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Testing Framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/KNOWN-BUGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known Bugs & Open Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/head-tracking-troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronics Workshop
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Animatronics Workshop
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Familiarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simple Steps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hands-On Activities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Final Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_19" >
+        
+          
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../v6-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Audit Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../v6-final-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Final Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="v90-retrospective-roadmap">v9.0 Retrospective &amp; Roadmap</h1>
+<p>Six specialists worked the v9.0 build — hardware, Python layer, voice/AI, poses,
+security, docs — plus a test runner. Each was asked, at the end, two questions:
+<em>how could you have performed better?</em> and <em>how should your part of MonsterBox be
+improved?</em>, with a specific brief on interface and UX.</p>
+<p>This is the consolidated answer. It is a working document: <strong>✅ DONE</strong> marks what
+shipped in v9.0.0, everything else is a proposal with a priority.</p>
+<hr />
+<h2 id="1-how-the-team-failed-and-the-fixes-that-generalize">1. How the team failed, and the fixes that generalize</h2>
+<p>Six independent retrospectives converged on the same three failure modes. That
+convergence is the most useful signal in this document, because it means these
+are properties of the work, not of any one agent.</p>
+<h3 id="11-measuring-in-the-units-of-the-sensor-instead-of-the-units-of-the-constraint">1.1 Measuring in the units of the sensor instead of the units of the constraint</h3>
+<p>The voice specialist proved jaw motion with <em>135 register transitions vs 0 at
+rest</em> and called it healthy. The number was real. But the constraint is written
+in degrees, and converting would have shown the jaw sweeping 0–180° on a part
+whose hand-set markers are 63–131 — the exact hardware-damage bug "discovered"
+two rounds later, on a path that had already been certified green.</p>
+<blockquote>
+<p><strong>Rule: convert every measurement into the units of the limit before claiming health.</strong></p>
+</blockquote>
+<h3 id="12-trusting-an-instrument-that-was-never-validated">1.2 Trusting an instrument that was never validated</h3>
+<p>The hardware diagnostician concluded the elbow was silent and therefore probably
+dead. Then calibrated the microphone against known ground truth and found it
+could not hear a servo that provably moved — the instrument, not the servo, was
+the problem. The same agent's first I²C sampler read the wrong registers and
+fabricated a confident "0 transitions." The voice specialist's first jaw tracer
+did the same thing.</p>
+<p>Three instruments, three failures, one root cause: a noise floor feels like
+validation and isn't.</p>
+<blockquote>
+<p><strong>Rule: every instrument needs a positive control (something you know moved) and a
+negative control (something you know didn't) before it may produce evidence. If a
+measurement confirms the story you were handed, distrust the measurement first.</strong></p>
+</blockquote>
+<h3 id="13-grep-results-published-as-findings">1.3 Grep results published as findings</h3>
+<p>The docs scribe listed five <code>profile.bounds</code> readers as having "the same latent
+bug" on the strength of a pattern match. Two of them were benign — a placeholder
+carries exactly 0/180, which is identical to the fallback those two sites already
+used. Reading three lines would have shown it.</p>
+<blockquote>
+<p><strong>Rule: a grep result is a to-do list, not a finding. If a claim names a file and a
+line, someone must have opened that line.</strong></p>
+</blockquote>
+<h3 id="14-reaching-for-report-it-when-the-fix-was-smaller-than-the-report">1.4 Reaching for "report it" when the fix was smaller than the report</h3>
+<p>The Python specialist found <code>services/hardwareService/motor.js</code> — an unreferenced
+module with a friendly API that would drive a GPIO pin derived from a <em>speed</em>
+value — and wrote a paragraph about it, leaving the trap armed. Deleting the file
+or making it throw was three lines. Conservatism should protect working behavior,
+not a live hazard in dead code. ✅ <strong>DONE</strong> — both traps now throw.</p>
+<h3 id="15-process-changes-worth-adopting">1.5 Process changes worth adopting</h3>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Evidence class on every claim</strong> — <code>code-read</code> / <code>measured</code> / <code>reported</code> / <code>inferred</code></td>
+<td>Several reports relayed another agent's numbers in the passive voice, so a reader cannot tell which came from an instrument</td>
+</tr>
+<tr>
+<td><strong>Cheap-certain checks before expensive-uncertain ones</strong></td>
+<td>Lamp poses (90 seconds, GPIO readback, near-zero risk) were left untested while eight actuations were spent on a fragile fuse that could not be observed at all</td>
+</tr>
+<tr>
+<td><strong>Establish observability before actuation</strong></td>
+<td>Especially on hardware with a failure history — actuations on a fragile rail are a budget</td>
+</tr>
+<tr>
+<td><strong>Test the parser on one sample before the timed capture</strong></td>
+<td>A wrong <code>awk</code> field silently discarded the only GPIO evidence in a run</td>
+</tr>
+<tr>
+<td><strong>Say "unproven" early and often</strong></td>
+<td>The most valuable single output of the hardware round was <em>retracting</em> evidence</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-product-roadmap">2. Product roadmap</h2>
+<p>Priorities are the specialists'. <code>[M]</code> must-have · <code>[H]</code> high-value · <code>[N]</code> nice-to-have.</p>
+<h3 id="21-hardware-safety">2.1 Hardware &amp; safety</h3>
+<p>The through-line: <strong>nothing in this system closes the loop.</strong> <code>success</code> means the
+I²C write returned, or the process exited 0.</p>
+<ul>
+<li><code>[M]</code> <strong>Per-rail current sensing (INA219/INA260).</strong> A few dollars, and it answers
+  nearly everything this build could not: did it move, is the elbow connected, why
+  does the fuse blow, is the supply sagging. An entire session was spent unable to
+  distinguish "PWM present, servo dead" from "PWM present, servo fine."</li>
+<li><code>[M]</code> <strong>Stall watchdog</strong> (depends on current sensing). <code>maxDurationMs</code> is a blind
+  timer; cut PWM on sustained over-draw and mark the part faulted.</li>
+<li><code>[M]</code> <strong>Explicit channel release.</strong> Nothing ever de-energizes a PCA9685 channel —
+  ch15 held a 1924 µs pulse all session with <em>no part mapped to it</em>. Needs a
+  <code>release</code> action, a startup reconciliation, and a shutdown park.</li>
+<li><code>[M]</code> <strong>A "prove this part moved" workflow</strong> that writes a persisted verification
+  record (method, evidence, confidence, timestamp). This is the structural answer
+  to <em>API success is not proof of motion</em> — today that truth lives only in prose.</li>
+<li><code>[H]</code> <strong>End-stop limit switches</strong> on open-loop actuators, and until then an
+  honest position model with a growing error band that reads <strong>Unknown</strong> after any
+  power cycle rather than showing a stale number.</li>
+<li><code>[H]</code> <strong>Deny-by-default for uncalibrated parts</strong> — a servo with no real
+  calibration should get a narrow conservative window, not 0–180.</li>
+<li><code>[H]</code> <strong>Validate power groups on load</strong> — warn when members have different
+  voltage classes, which is exactly the latent hazard on the arm rail.</li>
+<li><code>[H]</code> <strong><code>tools/diagnostics/</code></strong> — a validated I²C reader, GPIO sampler, frame-diff
+  and audio band analyzer, plus a harness that refuses to emit a verdict without a
+  declared positive control. Roughly 40% of the hardware round went into building
+  these in <code>/tmp</code> and throwing them away.</li>
+<li><code>[H]</code> <strong>One event timeline</strong> on a monotonic clock. Proving the 405 ms
+  serialization gap required hand-correlating three files.</li>
+<li><code>[N]</code> <strong>Serial-bus servos</strong> for the fused rail — native position, load, voltage
+  and temperature feedback would permanently settle both open questions.</li>
+</ul>
+<h3 id="22-python-hardware-layer">2.2 Python hardware layer</h3>
+<ul>
+<li><code>[M]</code> <strong>Generalize the daemon.</strong> <code>jaw_servo_daemon.py</code>'s own docstring records
+  ~580 ms → &lt;1 ms per command. Someone already ran this experiment, got a 500×
+  result, and applied it to one subsystem. Worse: <code>pca9685_control.py</code> caches the
+  I²C bus to avoid resetting the chip per command, but the cache is per-process
+  and every command is a new process — <strong>so it caches nothing, and every servo
+  move still re-initializes the chip.</strong> The strongest argument isn't speed though:
+  the fused-rail interlock is a cross-part invariant that no one-shot process can
+  enforce. It exists today only as long as everyone goes through Node.</li>
+<li><code>[M]</code> <strong>One response envelope</strong> — <code>{ok, op, part, data, error:{code,message,hint}, timing_ms}</code>.
+  The layer currently returns at least four different shapes.</li>
+<li><code>[M]</code> <strong>Stdout is the result channel, one JSON object, everything else stderr.</strong></li>
+<li><code>[M]</code> <strong>An error taxonomy</strong> (<code>E_CONFIG</code>, <code>E_BUS_IO</code>, <code>E_BUSY</code>, <code>E_SAFETY</code>, …). Today
+  a missing pin in parts.json surfaces to the operator as
+  <code>int() argument must be ... not 'NoneType'</code>.</li>
+<li><code>[M]</code> <strong>Wrappers must be able to refuse.</strong> The bow actuator is quarantined <em>in
+  Node</em>; <code>python3 linear_actuator_control_v2.py '{...}'</code> still moves it. A limit
+  enforced only in the caller is a convention, not a limit.</li>
+<li><code>[H]</code> <strong>Report clamps.</strong> Ask for 8 s, get 5 s, never be told.</li>
+<li><code>[H]</code> <strong>Opt-in simulation only.</strong> <code>stepper_cli.py</code> simulates success when no GPIO
+  backend is present — green in CI, dead in the garage.</li>
+</ul>
+<h3 id="23-voice-ai">2.3 Voice &amp; AI</h3>
+<ul>
+<li><code>[M]</code> <strong>One conversational path.</strong> The ElevenLabs Agent and our own TTS/STT are two
+  brains with different voices, latencies and jaw drivers — which is precisely why
+  per-frame jaw sync existed on one and not the other.</li>
+<li><code>[M]</code> <strong>Attach the jaw driver to the audio sink, not to each caller.</strong> The jaw bug
+  happened because two call sites independently decided how to animate.</li>
+<li><code>[M]</code> <strong>A latency budget, measured and displayed.</strong> Observed round trip was ~10–13 s.
+  A guest walks past in eight.</li>
+<li><code>[M]</code> <strong>Pre-rendered response bank + TTS cache.</strong> On Halloween the network will
+  wobble. A character that degrades to atmospheric-but-not-conversational is a
+  success; one that degrades to silence is a broken prop.</li>
+<li><code>[M]</code> <strong>Session lifecycle tied to presence,</strong> not a toggle — reuse the existing
+  motion detection. Fixes cost, the 600 s cap, and talking to an empty room at once.</li>
+<li><code>[M]</code> <strong>Perceptual jaw mapping.</strong> Linear RMS→angle means conversational speech
+  uses about a third of available travel. Track a rolling loudness percentile and
+  map across the full calibrated range.</li>
+<li><code>[H]</code> <strong>Real barge-in.</strong> Echo suppression currently blinds the mic for the whole
+  utterance plus 2.5 s, so the character <em>cannot</em> be interrupted by construction.</li>
+<li><code>[H]</code> <strong>Version the character's voice identity as one reviewable file.</strong></li>
+</ul>
+<h3 id="24-poses-animation">2.4 Poses &amp; animation</h3>
+<ul>
+<li><code>[M]</code> <strong><code>executePose</code> returns degraded/failed, not <code>.some()</code>.</strong> ✅ <strong>DONE</strong> — it now
+  reports success only when every part succeeded, and names the failures. This is
+  what hid an actuator that never moved behind a head that did.</li>
+<li><code>[M]</code> <strong>Per-pose <code>jitterDeg</code>.</strong> One field, one line: the same pose never lands
+  twice. Highest quality-per-effort change available — eight idle positions
+  repeating is what reads as "machine."</li>
+<li><code>[M]</code> <strong>Per-pose transition duration, and make easing real.</strong> Every motion in the
+  system currently happens at exactly one speed: whatever the servo does on its own.
+  <code>transitionProfile</code> is decorative today.</li>
+<li><code>[M]</code> <strong>Pose health, computed at load</strong> — <code>ok</code> / <code>degraded</code> / <code>blocked</code> from safety
+  config, with <code>blocked</code> poses excluded from idle automatically.</li>
+<li><code>[M]</code> <strong>The editor must refuse to add a quarantined part</strong> and render
+  <code>blockReason</code> verbatim — that text is already written and is good.</li>
+<li><code>[H]</code> <strong>Distance-weighted next-pose selection</strong> so the head stops behaving like a
+  windshield wiper, plus micro-motion during holds.</li>
+<li><code>[H]</code> <strong>Amplitude scaling in scenes.</strong> <code>executePose</code> already accepts a
+  <code>providedPose</code> "e.g. amplitude-scaled". The hook exists and nothing uses it.</li>
+<li><code>[H]</code> <strong>Additive/offset poses</strong> so a breathing or lean layer composes over a scene
+  instead of fighting it.</li>
+</ul>
+<h3 id="25-security-ops">2.5 Security &amp; ops</h3>
+<p>The honest threat model: there is no data worth stealing here. <strong>The asset is
+motion</strong> — the ability to make tens of kilograms of servo-driven hardware move
+unexpectedly near people. Budget accordingly.</p>
+<ul>
+<li><code>[M]</code> <strong>Delete the password.</strong> Every problem in this area is downstream of using
+  SSH password auth: the committed literal, argv exposure, rotation burden, the
+  <code>.env</code> trap, twenty scripts. Per-node ed25519 keys with <code>command=</code> forced
+  commands removes all of it at once.</li>
+<li><code>[M]</code> <strong>Resolve the <code>.env</code> contradiction.</strong> The app never loads <code>.env</code>, yet
+  <code>.env.example</code> advertises <code>MB_ADMIN_TOKEN</code> and <code>MONSTERBOX_SSH_PASSWORD</code>. That is
+  not a gap, it is a documented trap. Decision, not engineering.</li>
+<li><code>[M]</code> <strong>Secret scan as a gate step.</strong> The gate is the natural home for the
+  mechanism that prevents recurrence.</li>
+<li><code>[M]</code> <strong>A <code>/api/system/posture</code> self-check</strong> reporting which variables are set
+  (names and booleans only), whether TLS is self-signed, what control capabilities
+  therefore exist. Converts invisible misconfiguration into visible.</li>
+<li><code>[H]</code> <strong>Pin node certificate fingerprints</strong> — mDNS is unauthenticated and
+  inter-node HTTPS uses <code>rejectUnauthorized: false</code>, so TLS currently provides
+  encryption but no identity.</li>
+<li><code>[H]</code> <strong>Deploy from a git ref and record the deployed SHA.</strong> <code>deploy:all</code> currently
+  pushes the working tree, uncommitted experiments included.</li>
+<li><strong>Explicitly NOT worth doing:</strong> secrets vault, user accounts, RBAC, WAF, IDS,
+  browser-trusted TLS, signed artifacts, rate limiting. A shared admin token, SSH
+  keys with forced commands, pinned node identity and a segmented network is the
+  correct stopping point.</li>
+<li><strong>Worth more than all of the above:</strong> a watchdog that parks servos on loss of
+  operator contact, and a physical cutoff on anything that can pinch.</li>
+</ul>
+<h3 id="26-docs-information-architecture">2.6 Docs &amp; information architecture</h3>
+<ul>
+<li><code>[M]</code> <strong>Four surfaces with declared audiences:</strong> Operator Manual (Aaron, on a
+  phone, on the night), Fleet Status (generated), Engineering Reference (mostly
+  generated), History (CHANGELOG only). README becomes a front door, not a
+  changelog five "What's New" sections deep.</li>
+<li><code>[M]</code> <strong>Generate what is derivable:</strong> API reference from the route tree, character
+  sheets from <code>parts.json</code>, the fleet table from the issue registry. All three were
+  hand-corrected during this build; none should ever have been hand-written.</li>
+<li><code>[M]</code> <strong>The tracker should be data, not prose</strong> — one record per issue, rendered
+  to Markdown. The strikethrough ritual becomes a status flip, and the UI can then
+  query it.</li>
+<li><code>[M]</code> <strong>Extend the version audit to <code>views/</code>, <code>public/js/</code> and <code>docs/</code>.</strong> ✅ <strong>DONE
+  in part</strong> — a hardcoded <code>'6.0.0'</code> fallback was found rendering in the navbar.</li>
+<li><code>[H]</code> <strong>Check that every <code>file:line</code> reference in docs still resolves.</strong></li>
+<li><code>[H]</code> <strong>Staleness banners</strong> — a hardware claim older than N days should render as
+  stale automatically rather than reading as current.</li>
+</ul>
+<hr />
+<h2 id="3-the-interface">3. The interface</h2>
+<p>All six specialists were asked about UX independently. Their convergence was
+strong enough to be treated as a specification.</p>
+<h3 id="31-what-everyone-said">3.1 What everyone said</h3>
+<table>
+<thead>
+<tr>
+<th>Recommendation</th>
+<th>Asked for by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A global control bar with an always-visible emergency stop</strong></td>
+<td>all six</td>
+</tr>
+<tr>
+<td><strong>Mobile is a first-class form factor, thumb-zone, 44px+ targets</strong></td>
+<td>all six</td>
+</tr>
+<tr>
+<td><strong>Consistency must be enforced mechanically, not by intention</strong></td>
+<td>voice, docs</td>
+</tr>
+<tr>
+<td><strong>The UI must express uncertainty honestly</strong></td>
+<td>hardware, pose, docs</td>
+</tr>
+<tr>
+<td><strong>Bounds rendered as unreachable geometry, with provenance</strong></td>
+<td>hardware, pose</td>
+</tr>
+</tbody>
+</table>
+<p>✅ <strong>DONE in v9.0.0:</strong> global control bar with hold-to-fire stop on every page;
+the responsive layer (touch targets, hover scoped to hover-capable devices,
+tables that become cards, full-screen modal sheets, safe-area insets); and
+<code>npm run audit:design-system</code> in the gate as a shrink-only ratchet.</p>
+<h3 id="32-the-honesty-problem-the-most-important-idea-here">3.2 The honesty problem — the most important idea here</h3>
+<p>The interface currently reports success for things it has not established.
+<code>/api/calibration/:partId/goto</code> returns <code>success:true</code> when the I²C write lands;
+there is no encoder. Part 4 accepted six commanded moves in total silence and
+every one was a green success.</p>
+<p>The proposed fix is a three-word vocabulary used product-wide, <strong>never a bare number</strong>:</p>
+<ul>
+<li><strong>Sent</strong> — the write succeeded. <em>This is all <code>success: true</code> ever meant.</em> Grey.</li>
+<li><strong>Believed</strong> — an open-loop estimate. Hollow marker, italic, with age.</li>
+<li><strong>Verified</strong> — corroborated by independent measurement, with method and timestamp.</li>
+</ul>
+<p>Rules that follow: no open-loop write renders as green success; button feedback is
+"Command sent," not "Success"; confidence decays visibly and resets to <strong>Unknown</strong>
+after a power cycle; and <strong>partial failure renders as failure</strong> — the headline
+verdict is the worst outcome, not the best.</p>
+<p>The single highest-value idea proposed by any agent, for how cheap it is:</p>
+<blockquote>
+<p><strong>"Did it move? [Yes] [No]"</strong> after an open-loop actuation. One tap. It makes the
+operator the encoder the hardware lacks, and it generates exactly the data the
+fleet status document is currently hand-written from. Orlok's silent elbow would
+have surfaced the first time anyone poked it.</p>
+</blockquote>
+<h3 id="33-shared-components-that-would-do-most-of-the-work">3.3 Shared components that would do most of the work</h3>
+<ul>
+<li><code>[M]</code> <strong><code>PartStatusChip</code></strong> — one component, used on the dashboard, in pose rows, in
+  calibration and in the fleet view. Resolves in priority order: quarantined →
+  faulted → uncalibrated/placeholder → never-verified → position → energized.
+  Coherence comes from a shared component, not from discipline.</li>
+<li><code>[M]</code> <strong><code>BoundedControl</code></strong> — radial for servos, linear for actuators, switch for
+  lights. Identical bound colouring, provenance disclosure, hover readout and lock
+  states everywhere. The legal arc is the only draggable region, so an unsafe angle
+  cannot be authored because the geometry does not exist.</li>
+<li><code>[M]</code> <strong>One notification mechanism.</strong> There are currently four (<code>alert()</code> ×108,
+  <code>showAlert</code> ×146, <code>showToast</code> ×141, <code>showNotification</code> ×61) plus 40 native
+  <code>confirm()</code> calls. Native dialogs cannot be styled, are unusable on mobile, and
+  cannot show what is about to be destroyed.</li>
+<li><code>[M]</code> <strong>A <code>busy</code> state on every control.</strong> Usually missing and it matters most
+  here: a servo takes 500 ms+, an unacknowledged tap gets tapped again, and a
+  double-tap double-fires a motor.</li>
+</ul>
+<h3 id="34-destructive-actions">3.4 Destructive actions</h3>
+<p>Friction should scale with irreversibility × blast radius, not be applied
+uniformly. A single <code>confirm()</code> treats rebooting one node and wiping a character
+identically, and trains the operator to click through without reading.</p>
+<ul>
+<li><strong>Hold-to-confirm</strong> for physical fleet actions. ✅ <strong>DONE</strong> for stop-everything.</li>
+<li><strong>Undo windows instead of confirmation</strong> for creative work — soft-delete plus an
+  eight-second toast beats a modal in both the common and the error case.</li>
+<li><strong>Every destructive control names its target in its own label.</strong> "Reboot" is
+  ambiguous; "Reboot Orlok" is not.</li>
+<li><strong>Never render a destructive control that will silently fail</strong> — if SSH is
+  unconfigured, the button is visibly disabled and explains why.</li>
+</ul>
+<p><strong>Emergency stop is the exact inverse: one tap, no confirmation, no hold.</strong> Any
+friction on E-stop is a defect. Fixed position, never scrolls away, larger than
+the accessibility minimum, and <strong>one shade of red reserved for it alone</strong> — if red
+means five things, E-stop is no longer findable at a glance, and findability under
+stress is its only requirement. It should latch after firing, and <em>re-arming</em> is
+where hold-to-confirm belongs.</p>
+<p>The honest caveat the UI should not obscure: a web app is not a safety device.
+For anything that can pinch, the physical cutoff is the must-have.</p>
+<h3 id="35-arm-disarm">3.5 Arm / disarm</h3>
+<p>Proposed by hardware and security independently, and completely missing today:
+hardware pages should be <strong>disarmed by default</strong>. Browse, inspect and author
+freely; no command reaches hardware until you deliberately arm. Armed state draws
+a coloured border around the viewport and auto-disarms after inactivity.</p>
+<p>This is standard motion-control practice, and it would have made the dead "Test"
+button obvious to a human immediately.</p>
+<h3 id="36-information-architecture">3.6 Information architecture</h3>
+<p>Today <code>/</code> is not a dashboard — it renders the conversation view, and the
+dashboard, conversation UI, superpowers strip and five accordions are one page
+with a 2,298-line script. The navbar has three items, one of which is a Setup
+dropdown containing twelve links across five unrelated jobs. <code>/live</code> — a whole
+show-night dashboard — is unreachable by navigation, while configuration is one
+click away. That is backwards for the moment that matters.</p>
+<p>Proposed top level: <strong>four verbs, not a gear.</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>[MB]  PERFORM   BUILD   CONFIGURE   FLEET     [Orlok ▾] [● 3/5] [🔇] [STOP]
+</code></pre></div>
+<ul>
+<li><strong>PERFORM</strong> — show night, default on a phone. <code>/live</code> promoted here. Nothing that
+  can reconfigure anything.</li>
+<li><strong>BUILD</strong> — Animation Studio, Pose Editor, Audio, Video.</li>
+<li><strong>CONFIGURE</strong> — grouped by subject (Character, Voice &amp; AI, Audio, System), not by
+  subsystem.</li>
+<li><strong>FLEET</strong> — orchestration, Goblins, discovery, deploy.</li>
+</ul>
+<p>Also: <strong>Help points off-box</strong> to GitHub Pages in a new tab. On a prop that may have
+no WAN on Halloween night, the Help button is a dead end. Ship docs locally at
+<code>/help</code>. <code>[M]</code></p>
+<h3 id="37-vocabulary">3.7 Vocabulary</h3>
+<p>Half of consistent UX is one word per idea. Proposed canon: <strong>Part</strong> (not
+component/device/hardware), <strong>Character</strong> for the persona and <strong>Node</strong> for the Pi
+it runs on (the app conflates these), <strong>Scene</strong>, <strong>Pose</strong>, one name for
+super-power/superpower/Monster Feature, and precise separation of <strong>Markers</strong>
+(operator-set) / <strong>Profile</strong> (stored calibration) / <strong>Safety limits</strong> (the hard
+ceiling) — three different things used interchangeably today.</p>
+<h3 id="38-on-a-phone-next-to-the-animatronic">3.8 On a phone, next to the animatronic</h3>
+<p>This is a <strong>different product mode, not a responsive reflow.</strong> Arm's length from
+the part, one hand, possibly gloves, bad light, ambient noise.</p>
+<ul>
+<li><code>[M]</code> <strong>Hold-to-move deadman switch</strong> — the part moves only while your thumb is
+  down. The single best safety affordance for a phone next to a moving machine.</li>
+<li><code>[M]</code> <strong>"Verify moved"</strong> returning one unambiguous line, including
+  <code>INCONCLUSIVE — no sensor available</code>. An interface that can say "I don't know" is
+  more trustworthy than one that can't.</li>
+<li><code>[M]</code> <strong>Push-to-talk</strong> into the character's agent from the phone's own mic — makes
+  solo testing possible without a second person.</li>
+<li><code>[H]</code> <strong>Haptics</strong> for dispatch, verified motion, and safety block. Over a shop vac
+  you cannot hear and can barely see; buzz is the reliable channel.</li>
+<li><code>[H]</code> <strong>Stale-data honesty</strong> — a connection pill and "updated 40s ago" rather than
+  a silently frozen number. On a diagnostics page a frozen value says "healthy"
+  when it means "disconnected."</li>
+<li><code>[N]</code> <strong>Speak the result through the character's own speaker</strong> — "elbow, eighty-nine
+  point six, unverified" — so your eyes stay on the part. Practical, on-theme, and
+  the most delightful idea anyone proposed.</li>
+</ul>
+<hr />
+<h2 id="4-if-only-a-handful-get-built">4. If only a handful get built</h2>
+<ol>
+<li><strong>Current sensing on the fused rail, surfaced as a "Verify moved" button.</strong>
+   Converts the largest open question in this machine — <em>did it actually move?</em> —
+   from an essay into a green check.</li>
+<li><strong>Sent / Believed / Verified, with a shared <code>PartStatusChip</code>.</strong> Makes the product
+   honest and consistent in one change, and it is mostly front-end.</li>
+<li><strong>Armed-by-exception plus a permanent emergency stop.</strong> Safety and coherence
+   together. ✅ Half done — the stop exists everywhere now; arming does not.</li>
+<li><strong>Per-pose jitter and distance-weighted idle selection.</strong> Two small changes that
+   move the character from "cycling through positions" to "alive."</li>
+<li><strong>Generalize the Python daemon.</strong> The fuse interlock is unenforceable without it,
+   and the chip re-init cache is currently a no-op.</li>
+<li><strong>Finish the design-system migration.</strong> The ratchet is in the gate; the floor is
+   1,429 violations. Every one removed is permanent.</li>
+</ol>
+<hr />
+<h2 id="5-the-argument-for-doing-the-interface-work-first">5. The argument for doing the interface work first</h2>
+<p>The voice specialist put it best, and it applies to the whole system:</p>
+<blockquote>
+<p>The reason all four of these bugs survived this long is a UX problem, not an
+engineering one: <strong>nothing in the interface would have shown any of them.</strong> A
+duty-cycle gauge, a jaw-travel percentage, a live interim transcript and honest
+connection dots would each have made one of these bugs obvious on day one,
+without a specialist.</p>
+</blockquote>
+<p>That is the strongest case for prioritizing the interface — not because it looks
+better, but because <strong>a well-designed instrument panel is how a system tells you it
+is lying to you.</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
