@@ -4,6 +4,17 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Goblin displays: silent by default, one-clip loops in one process, and an operator script to
+  make the OS lean (2026-09-26).** Sound now needs `GOBLIN_AUDIO=on` in the unit environment (the
+  HDMI path is proven; the show is not ready for it). A queue looping a single clip runs one mpv
+  `--loop` instead of respawning mpv every pass (no black flash, no kill of a hardware-decoding
+  mpv per loop). New `scripts/goblin-os/stabilize-goblin.sh` (+ `stabilize-all.sh` from a
+  MonsterBox node): disables the crash-looping leftover units, keeps the box CLI-only, turns off
+  printing/colord/bluetooth/modem/NFS/cloud-init/udisks/VNC, masks the apt and PipeWire units,
+  comments the overclock out of config.txt, makes the journal persistent and bounded, stores the
+  HDMI mixer — the operator runs it (agents are refused remote system writes). KNOWN-BUGS records
+  the audit and the WiFi re-join failures after reboots.
+
 - **Goblin displays play audio (2026-09-26).** The Goblin player launched mpv with `--no-audio`,
   so no clip could make a sound on the night. `goblin/src/mpvController.js` now runs
   `--audio=auto --ao=alsa --audio-device=alsa/sysdefault:CARD=<HDMI card>`, finding the HDMI

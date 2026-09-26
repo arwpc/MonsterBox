@@ -1728,7 +1728,38 @@ reports were not kept.
   (offline→online); `lastSeen` still advances in memory for the API and the sort. *Proof:* the
   file's mtime holds still while all three stay online (one write at service start, none after).
   Unit: `tests/unit/goblin-orchestration-targets.test.js`.
-- 🔴 **Goblin One (192.168.8.40) did not come back from the 2026-09-26 00:32 fleet reboot.** No
+- 🔴 **Goblins drop off the WiFi after a reboot and do not come back on their own (2026-09-26).**
+  All three Goblins are on `wlan0` (NetworkManager, "preconfigured"; `eth0` unavailable). After
+  the 01:09 fleet reboot, Goblin Two re-joined within a minute; Goblin One (.40) never appeared
+  and Goblin Three (.14, MAC `b8:27:eb:b1:c9:22`) answered ping from 01:28 with 10–200 ms jitter but
+  reset every SSH connection (`kex_exchange_identification: Connection reset by peer`) and had
+  nothing listening on :3001 for the next half hour — up on the radio, not booted into service.
+  What settles it is the persistent journal `scripts/goblin-os/stabilize-goblin.sh` configures
+  (today the journal keeps ONE boot, so the moment of every reboot is unrecorded). Until then: a
+  Goblin that is not on the network needs a power cycle, and nothing can be sent to it.
+- 🟡 **The Goblin OS carries the full desktop and a stack of services a display never uses
+  (audited on goblin2, 2026-09-26).** Boots to `multi-user.target` (no desktop RUNNING), but
+  `lightdm` is enabled and chromium/firefox/labwc/lxsession/rpd-* are installed; running:
+  cups + cups-browsed, colord, bluetooth, ModemManager, nfs-blkmap + rpcbind, udisks2, polkit,
+  cloud-init (5 units enabled), wayvnc-control, `apt-daily`/`apt-daily-upgrade` timers live
+  (an upgrade mid-show), and `monsterbox-goblin.service` still enabled and crash-looping
+  (`restarts=6` two minutes after boot — a second server on :3001 if its target ever
+  appeared). A login starts PipeWire + WirePlumber (22% CPU on a Pi 3B+ right after login).
+  `config.txt`: `force_turbo=1 over_voltage=2 arm_freq=1300 core_freq=500 gpu_freq=500` — the
+  SoC never idles and runs over-volted; Goblin One's snapshot flag was `0x50000`
+  (under-voltage occurred), Two's `0x80008` (soft temperature limit). The Raspberry Pi hardware
+  watchdog is armed at 1 min by `raspberrypi-sys-mods` (`RuntimeWatchdogSec=1m`): a stalled
+  PID 1 reboots the box. Fix = `sudo bash scripts/goblin-os/stabilize-goblin.sh` on each Goblin
+  (or `sudo bash scripts/goblin-os/stabilize-all.sh --reboot` from Orlok): disables the
+  leftovers and the unneeded services, masks the apt timers and PipeWire, comments the
+  overclock out of config.txt (backup kept), makes the journal persistent + bounded, stores the
+  HDMI mixer at full. Agents are refused remote system writes, so it is the operator's script.
+- ✅ **FIXED 2026-09-26 — a one-clip loop is one mpv process.** `queueManager.playNext()`
+  respawned mpv for every pass of a single looping clip: a black flash each loop and a kill of a
+  hardware-decoding mpv each time (the code's own comment records kernel panics on that path).
+  Now `loopMode:'queue'` with one video runs mpv `--loop`. Proven on Goblin Two: one pid across
+  75 s of the 31 s Greenskull clip.
+- 🟡 **Goblin One (192.168.8.40) did not come back from the 2026-09-26 00:32 fleet reboot.** No
   ARP/ping answer for 20+ minutes while Two and Three were up within a minute; it had answered
   `/health` at 00:20 and was playing. Its throttle flag at the snapshot was `0x50000`
   (under-voltage occurred) and its `monsterbox-goblin.service` crash-loops every 10 s. Needs
