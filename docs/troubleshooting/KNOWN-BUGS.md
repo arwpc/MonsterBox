@@ -1755,9 +1755,14 @@ reports were not kept.
   has no backoff. *Fix to make:* stop() must wait for exit (SIGTERM → 2 s → SIGKILL → wait), and
   playNext() must back off (e.g. 3 fast exits → 10 s pause) instead of spinning. Until then, do
   not stop/restart a playing Goblin unless you can check `pgrep -c mpv` afterwards.
-- ℹ️ **Registry names now follow the TV labels (2026-09-26 01:55):** Goblin 1 = 192.168.8.106
-  (hostname goblin2), Goblin 2 = 192.168.8.14 (hostname goblin3), Goblin 3 = 192.168.8.40
-  (hostname goblin1). The hostnames on the devices were never changed.
+- ℹ️ **Registry names follow the TV labels — corrected 2026-09-26 11:20:** Goblin 1 = 192.168.8.106
+  (hostname goblin2), **Goblin 2 = 192.168.8.40 (hostname goblin1)**, **Goblin 3 = 192.168.8.14
+  (hostname goblin3)**. The 01:55 mapping had 2 and 3 swapped; it was fixed by playing a one-shot
+  Firepumpkin on `.14` and asking the operator which TV changed (TV 3), after TV 2 showed a stalled
+  kernel boot screen (four raspberry logos, static text) while both networked units were proven to
+  be painting mpv frames on their HDMI outputs (`/sys/kernel/debug/dri/0/state`: plane fb
+  `allocated by = vo`). The hostnames on the devices were never changed. Identify a unit by what it
+  shows, never by what the registry says, until this is proven once more after `.40` returns.
 - 🔴 **Goblins drop off the WiFi after a reboot and do not come back on their own (2026-09-26).**
   All three Goblins are on `wlan0` (NetworkManager, "preconfigured"; `eth0` unavailable). After
   the 01:09 fleet reboot, Goblin Two re-joined within a minute; Goblin One (.40) never appeared
