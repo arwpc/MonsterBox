@@ -225,6 +225,38 @@
                 </div>
             </div>
 
+            <!-- Videos that live on the Goblins' own disks. Listed straight from the
+                 device, played through MonsterBox (no browser→Goblin mixed content). -->
+            <div class="mt-4 vid-hidden" id="goblinVideosPanel">
+                <div class="mb-panel">
+                    <div class="mb-panel-header mb-row-between">
+                        <h2 class="mb-heading-3 mb-0"><i class="bi bi-tv"></i> On the Goblins</h2>
+                        <div class="mb-btn-group" role="group">
+                            <select class="mb-select mb-select-sm" id="goblinVideosSelect" title="Which Goblin's disk to show"
+                                onchange="videoLibrary.loadGoblinVideos()"></select>
+                            <button class="mb-btn mb-btn-sm mb-btn-secondary" title="Ask the Goblin to rescan its media folder"
+                                onclick="videoLibrary.loadGoblinVideos(true)">
+                                <i class="bi bi-arrow-clockwise"></i> Rescan
+                            </button>
+                            <button class="mb-btn mb-btn-sm mb-btn-danger" title="Stop playback and the queue on this Goblin"
+                                onclick="videoLibrary.stopGoblin()">
+                                <i class="bi bi-stop-fill"></i> Stop
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-panel-body">
+                        <div class="mb-row-between mb-2">
+                            <small class="mb-text-muted" id="goblinNowPlaying">—</small>
+                            <input type="search" class="mb-input mb-input-sm" id="goblinVideosFilter" placeholder="Filter files…"
+                                title="Filter the Goblin's files by name" oninput="videoLibrary.renderGoblinVideos()">
+                        </div>
+                        <div class="vid-pick-list" id="goblinVideosList">
+                            <small class="mb-text-muted">Pick a Goblin.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Goblin Status Bar (if any online) -->
             <div class="mt-4 vid-hidden" id="goblinStatusBar">
                 <div class="mb-panel">
@@ -356,6 +388,11 @@
                             </div>
                         </div>
 
+                        <label class="mb-check mt-3" for="deployThenPlay" title="After each copy finishes, start the video on that Goblin">
+                            <input type="checkbox" id="deployThenPlay">
+                            <span>Play on the Goblin once it has been copied</span>
+                        </label>
+
                         <!-- Deployment Progress. Previously carried two inline style
                              attributes; the browser keeps the first and drops the rest, so
                              the display:none never applied and this was always on screen. -->
@@ -371,6 +408,23 @@
                             data-bs-toggle="tooltip" data-bs-placement="top" title="Deploy selected videos to chosen Goblins">
                             <i class="bi bi-broadcast"></i> Deploy Selected
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Goblin picker: which display gets a one-click deploy or play. Was called
+             by the page but never existed, so with more than one Goblin online the
+             per-video buttons threw before sending anything. -->
+        <div class="modal fade" id="goblinPickModal" tabindex="-1">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title mb-heading-3" id="goblinPickTitle">Which Goblin?</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" title="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="vid-pick-list" id="goblinPickList"></div>
                     </div>
                 </div>
             </div>

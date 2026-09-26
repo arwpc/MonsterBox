@@ -12,6 +12,38 @@ import videoLibraryService from '../services/videoLibraryService.js';
 
 const router = express.Router();
 
+/**
+ * The name a library video carries on a Goblin's disk: its original upload name, not
+ * the UUID storage name (`fileName`) that exists only in data/video-library/files.
+ * Sending the UUID name to a Goblin used to "succeed" and show nothing.
+ */
+function goblinFilenameFor(video) {
+    const candidate = video.originalName && videoLibraryService.isValidVideoFormat(video.originalName)
+        ? video.originalName
+        : (video.title && video.format ? `${video.title}.${video.format}` : video.fileName);
+    return path.basename(candidate);
+}
+
+/**
+ * Copy one library video onto one Goblin and remember where it went.
+ */
+async function deployLibraryVideo(videoId, goblinId) {
+    const streamResult = await videoLibraryService.getVideoStream(videoId);
+    if (!streamResult.success) return { status: 404, body: streamResult };
+    const video = streamResult.video;
+    const result = await goblinManagerService.deployVideoToGoblin(goblinId, {
+        sourcePath: streamResult.filePath,
+        targetName: goblinFilenameFor(video),
+        title: video.title
+    });
+    if (result.success) {
+        const deployments = { ...(video.deployments || {}) };
+        deployments[goblinId] = { filename: result.filename, deployedAt: new Date().toISOString(), goblinName: result.goblinName };
+        await videoLibraryService.updateVideo(videoId, { deployments });
+    }
+    return { status: result.success ? 200 : 502, body: { ...result, videoId, goblinId } };
+}
+
 // Configure multer for video file uploads
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -97,37 +129,13 @@ router.get('/api/videos', async (req, res) => {
  * POST /api/deploy - Deploy video to specific Goblin (frontend-compatible endpoint)
  */
 router.post('/api/deploy', async (req, res) => {
-    console.log('🎯 POST /api/deploy called with body:', req.body);
     try {
-        const { videoId, goblinId } = req.body;
-
+        const { videoId, goblinId } = req.body || {};
         if (!videoId || !goblinId) {
             return res.status(400).json({ success: false, error: 'Video ID and Goblin ID are required' });
         }
-
-        // Get video data
-        const videoResult = await videoLibraryService.getVideo(videoId);
-        if (!videoResult.success) {
-            return res.status(404).json(videoResult);
-        }
-
-        const streamResult = await videoLibraryService.getVideoStream(videoId);
-        if (!streamResult.success) {
-            return res.status(404).json(streamResult);
-        }
-
-        // Read video file
-        const videoBuffer = await fs.readFile(streamResult.filePath);
-
-        // Deploy to Goblin
-        const deployResult = await goblinManagerService.deployVideoToGoblin(goblinId, {
-            filename: videoResult.video.fileName,
-            originalName: videoResult.video.originalName,
-            title: videoResult.video.title,
-            data: videoBuffer.toString('base64')
-        });
-
-        res.json(deployResult);
+        const { status, body } = await deployLibraryVideo(videoId, goblinId);
+        res.status(status).json(body);
     } catch (error) {
         console.error('Error deploying video to Goblin:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -347,35 +355,12 @@ router.get('/api/video/:id/thumbnail', async (req, res) => {
  */
 router.post('/api/video/:id/deploy', async (req, res) => {
     try {
-        const { goblinId } = req.body;
-
+        const { goblinId } = req.body || {};
         if (!goblinId) {
             return res.status(400).json({ success: false, error: 'Goblin ID is required' });
         }
-
-        // Get video data
-        const videoResult = await videoLibraryService.getVideo(req.params.id);
-        if (!videoResult.success) {
-            return res.status(404).json(videoResult);
-        }
-
-        const streamResult = await videoLibraryService.getVideoStream(req.params.id);
-        if (!streamResult.success) {
-            return res.status(404).json(streamResult);
-        }
-
-        // Read video file
-        const videoBuffer = await fs.readFile(streamResult.filePath);
-
-        // Deploy to Goblin
-        const deployResult = await goblinManagerService.deployVideoToGoblin(goblinId, {
-            filename: videoResult.video.fileName,
-            originalName: videoResult.video.originalName,
-            title: videoResult.video.title,
-            data: videoBuffer.toString('base64')
-        });
-
-        res.json(deployResult);
+        const { status, body } = await deployLibraryVideo(req.params.id, goblinId);
+        res.status(status).json(body);
     } catch (error) {
         console.error('Error deploying video to Goblin:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -383,36 +368,143 @@ router.post('/api/video/:id/deploy', async (req, res) => {
 });
 
 /**
- * POST /api/video/:id/play-on-goblin - Play video on specific Goblin
+ * POST /api/video/:id/play-on-goblin - Play a library video on a Goblin.
+ * Body: { goblinId, mode: 'once'|'loop', deploy: true }
+ * If the Goblin does not hold the file yet it is copied over first (unless
+ * `deploy:false`). Success means the device reports mpv showing that file.
  */
 router.post('/api/video/:id/play-on-goblin', async (req, res) => {
     try {
-        const { goblinId, loop = true } = req.body;
-
+        const { goblinId, mode, loop, deploy } = req.body || {};
         if (!goblinId) {
             return res.status(400).json({ success: false, error: 'Goblin ID is required' });
         }
-
-        // Get video data
         const videoResult = await videoLibraryService.getVideo(req.params.id);
         if (!videoResult.success) {
             return res.status(404).json(videoResult);
         }
+        const video = videoResult.video;
+        const filename = goblinFilenameFor(video);
+        const wantLoop = mode === 'loop' || (mode === undefined && loop === true);
 
-        // Play on Goblin
-        const playResult = await goblinManagerService.playVideoOnGoblin(goblinId, videoResult.video.fileName, { loop });
+        let playResult = await goblinManagerService.playVideoOnGoblin(goblinId, filename, { loop: wantLoop });
+        let deployed = false;
+        if (!playResult.success && playResult.notOnGoblin && deploy !== false) {
+            const { body } = await deployLibraryVideo(req.params.id, goblinId);
+            if (!body.success) {
+                return res.status(502).json({ ...body, filename });
+            }
+            deployed = true;
+            playResult = await goblinManagerService.playVideoOnGoblin(goblinId, body.filename, { loop: wantLoop, checkPresence: false });
+        }
 
         if (playResult.success) {
-            // Update play count
             await videoLibraryService.updateVideo(req.params.id, {
-                playCount: (videoResult.video.playCount || 0) + 1,
+                playCount: (video.playCount || 0) + 1,
                 lastPlayed: new Date().toISOString()
             });
         }
-
-        res.json(playResult);
+        res.status(playResult.success ? 200 : 502).json({ ...playResult, deployed, filename, mode: wantLoop ? 'loop' : 'once' });
     } catch (error) {
         console.error('Error playing video on Goblin:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/video/:id/favorite - Toggle the favourite flag (the page has called this
+ * since the redesign; it was never served, so every heart click 404'd).
+ */
+router.post('/api/video/:id/favorite', async (req, res) => {
+    try {
+        const videoResult = await videoLibraryService.getVideo(req.params.id);
+        if (!videoResult.success) return res.status(404).json(videoResult);
+        const favorite = typeof req.body?.favorite === 'boolean' ? req.body.favorite : !videoResult.video.favorite;
+        const result = await videoLibraryService.updateVideo(req.params.id, { favorite });
+        res.status(result.success ? 200 : 500).json({ ...result, favorite });
+    } catch (error) {
+        console.error('Error toggling favorite:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/video/:id/play - Record a local preview play (play count + last played).
+ */
+router.post('/api/video/:id/play', async (req, res) => {
+    try {
+        const videoResult = await videoLibraryService.getVideo(req.params.id);
+        if (!videoResult.success) return res.status(404).json(videoResult);
+        const result = await videoLibraryService.updateVideo(req.params.id, {
+            playCount: (videoResult.video.playCount || 0) + 1,
+            lastPlayed: new Date().toISOString()
+        });
+        res.status(result.success ? 200 : 500).json(result);
+    } catch (error) {
+        console.error('Error recording play:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ===== Videos that live on the Goblins themselves =====
+
+/**
+ * GET /api/goblins/:id/videos?rescan=1 - What is on that Goblin's disk right now,
+ * read from the device (not MonsterBox's stale cache), plus its playback state.
+ */
+router.get('/api/goblins/:id/videos', async (req, res) => {
+    try {
+        const rescan = req.query.rescan === '1' || req.query.rescan === 'true';
+        const result = await goblinManagerService.listGoblinVideos(req.params.id, { rescan });
+        res.status(result.success ? 200 : 502).json(result);
+    } catch (error) {
+        console.error('Error listing Goblin videos:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * GET /api/goblins/:id/playback - Live playback status from the device.
+ */
+router.get('/api/goblins/:id/playback', async (req, res) => {
+    try {
+        const result = await goblinManagerService.getGoblinPlayback(req.params.id);
+        res.status(result.success ? 200 : 502).json(result);
+    } catch (error) {
+        console.error('Error reading Goblin playback:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/goblins/:id/play - Play a file already on the Goblin.
+ * Body: { filename, mode: 'once'|'loop' }
+ */
+router.post('/api/goblins/:id/play', async (req, res) => {
+    try {
+        const { filename, mode } = req.body || {};
+        if (!filename || typeof filename !== 'string') {
+            return res.status(400).json({ success: false, error: 'filename is required' });
+        }
+        const result = mode === 'loop'
+            ? await goblinManagerService.loopVideoOnGoblin(req.params.id, filename)
+            : await goblinManagerService.playVideoOnGoblin(req.params.id, filename);
+        res.status(result.success ? 200 : 502).json({ ...result, mode: mode === 'loop' ? 'loop' : 'once' });
+    } catch (error) {
+        console.error('Error playing Goblin video:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/goblins/:id/stop - Stop playback and the queue on a Goblin.
+ */
+router.post('/api/goblins/:id/stop', async (req, res) => {
+    try {
+        const result = await goblinManagerService.stopGoblin(req.params.id);
+        res.status(result.success ? 200 : 502).json(result);
+    } catch (error) {
+        console.error('Error stopping Goblin:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

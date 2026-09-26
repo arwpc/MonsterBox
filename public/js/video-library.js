@@ -141,6 +141,7 @@ class VideoLibrary {
             if (data.success) {
                 this.goblins = data.goblins;
                 this.updateGoblinStatus();
+                this.renderGoblinVideosPanel();
             }
         } catch (error) {
             console.error('Error loading Goblins:', error);
@@ -225,9 +226,14 @@ class VideoLibrary {
                         ` : ''}
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">${this.timeAgo(video.uploadedAt)}</small>
-                            <button class="mb-btn mb-btn-sm mb-btn-secondary" title="Deploy this video to Goblin devices" onclick="event.stopPropagation(); videoLibrary.quickDeploy('${video.id}')">
-                                <i class="bi bi-broadcast"></i>
-                            </button>
+                            <span class="btn-group btn-group-sm">
+                                <button class="mb-btn mb-btn-sm mb-btn-primary" title="Play this video on a Goblin (copies it there first if needed)" onclick="event.stopPropagation(); videoLibrary.playOnGoblin('${video.id}')">
+                                    <i class="bi bi-tv"></i>
+                                </button>
+                                <button class="mb-btn mb-btn-sm mb-btn-secondary" title="Copy this video onto a Goblin" onclick="event.stopPropagation(); videoLibrary.quickDeploy('${video.id}')">
+                                    <i class="bi bi-broadcast"></i>
+                                </button>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -526,59 +532,120 @@ class VideoLibrary {
     }
 
     // Goblin deployment methods
+
+    /**
+     * Let the operator choose a Goblin. One online Goblin → chosen without asking.
+     * Resolves to the goblin object or null on dismiss.
+     */
+    selectGoblin(goblins, title) {
+        if (goblins.length === 1) return Promise.resolve(goblins[0]);
+        return new Promise((resolve) => {
+            const modalEl = document.getElementById('goblinPickModal');
+            const list = document.getElementById('goblinPickList');
+            document.getElementById('goblinPickTitle').textContent = title || 'Which Goblin?';
+            list.innerHTML = goblins.map(g => `
+                <button type="button" class="mb-btn mb-btn-secondary w-100 mb-2 text-start" data-goblin-id="${this.escapeAttr(g.id)}" title="Use ${this.escapeAttr(g.name)}">
+                    <strong class="mb-serif">${this.escapeHtml(g.name)}</strong>
+                    <br><small class="mb-text-muted mb-mono">${this.escapeHtml(g.endpoint || '')}</small>
+                </button>`).join('');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            let picked = null;
+            const onHidden = () => { modalEl.removeEventListener('hidden.bs.modal', onHidden); resolve(picked); };
+            modalEl.addEventListener('hidden.bs.modal', onHidden);
+            list.querySelectorAll('button[data-goblin-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    picked = goblins.find(g => g.id === btn.dataset.goblinId) || null;
+                    modal.hide();
+                });
+            });
+            modal.show();
+        });
+    }
+
+    availableGoblins() {
+        return this.goblins.filter(g => g.status === 'online' && !g.locked);
+    }
+
     async quickDeploy(videoId) {
-        const availableGoblins = this.goblins.filter(g => g.status === 'online' && !g.locked);
-        
-        if (!availableGoblins.length) {
-            this.showError('No available Goblins for deployment');
+        const goblins = this.availableGoblins();
+        if (!goblins.length) {
+            this.showError('No Goblin is online to deploy to');
             return;
         }
+        const goblin = await this.selectGoblin(goblins, 'Copy onto which Goblin?');
+        if (goblin) await this.deployToGoblin(videoId, goblin.id);
+    }
 
-        // If only one Goblin, deploy directly
-        if (availableGoblins.length === 1) {
-            await this.deployToGoblin(videoId, availableGoblins[0].id);
-            return;
+    /**
+     * Copy a library video onto a Goblin's disk. Resolves to the server result.
+     */
+    async deployToGoblin(videoId, goblinId, { quiet = false } = {}) {
+        const video = this.videoFiles.find(v => v.id === videoId);
+        const goblin = this.goblins.find(g => g.id === goblinId);
+        if (!video || !goblin) {
+            this.showError('Video or Goblin not found');
+            return { success: false, error: 'Video or Goblin not found' };
         }
-
-        // Show Goblin selection
-        const goblin = await this.selectGoblin(availableGoblins);
-        if (goblin) {
-            await this.deployToGoblin(videoId, goblin.id);
+        try {
+            if (!quiet) this.showSuccess(`Copying "${video.title}" to ${goblin.name} (${this.formatFileSize(video.fileSize || 0)})…`);
+            const response = await fetch('/video-library/api/deploy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ videoId, goblinId })
+            });
+            const result = await response.json();
+            if (result.success) {
+                if (!quiet) {
+                    this.showSuccess(result.transferred === 0
+                        ? `${goblin.name} already had "${result.filename}"`
+                        : `Copied "${result.filename}" to ${goblin.name} in ${Math.round((result.elapsedMs || 0) / 1000)} s`);
+                }
+                await this.loadVideoLibrary();
+                if (this.currentGoblinVideosId === goblinId) this.loadGoblinVideos();
+            } else if (!quiet) {
+                this.showError(`Copy to ${goblin.name} failed: ${result.error}`);
+            }
+            return result;
+        } catch (error) {
+            console.error('Deployment error:', error);
+            if (!quiet) this.showError('Copy failed: network error');
+            return { success: false, error: error.message };
         }
     }
 
-    async deployToGoblin(videoId, goblinId) {
-        const video = this.videoFiles.find(v => v.id === videoId);
-        const goblin = this.goblins.find(g => g.id === goblinId);
-
-        if (!video || !goblin) {
-            this.showError('Video or Goblin not found');
+    /**
+     * Play a library video on a Goblin now. The server copies it there first if the
+     * Goblin does not have it, and only reports success once the device says mpv is
+     * showing that file.
+     */
+    async playOnGoblin(videoId, mode = 'once') {
+        const goblins = this.availableGoblins();
+        if (!goblins.length) {
+            this.showError('No Goblin is online to play on');
             return;
         }
-
+        const goblin = await this.selectGoblin(goblins, mode === 'loop' ? 'Loop on which Goblin?' : 'Play on which Goblin?');
+        if (!goblin) return;
+        const video = this.videoFiles.find(v => v.id === videoId);
+        if (!video) return;
         try {
-            this.showSuccess(`Deploying "${video.title}" to ${goblin.name}...`);
-
+            this.showSuccess(`Sending "${video.title}" to ${goblin.name}… (copies it first if the Goblin does not have it)`);
             const response = await fetch(`/video-library/api/video/${videoId}/play-on-goblin`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    goblinId: goblinId,
-                    loop: true
-                })
+                body: JSON.stringify({ goblinId: goblin.id, mode })
             });
-
             const result = await response.json();
-
             if (result.success) {
-                this.showSuccess(`Successfully deployed to ${goblin.name}`);
+                this.showSuccess(`${goblin.name} is ${mode === 'loop' ? 'looping' : 'playing'} "${result.filename}"${result.deployed ? ' (copied first)' : ''}`);
+                await this.loadVideoLibrary();
+                if (this.currentGoblinVideosId === goblin.id) this.loadGoblinVideos();
             } else {
-                this.showError(`Deployment failed: ${result.error}`);
+                this.showError(`${goblin.name}: ${result.error}`);
             }
-
         } catch (error) {
-            console.error('Deployment error:', error);
-            this.showError('Deployment failed due to network error');
+            console.error('Play on Goblin error:', error);
+            this.showError('Play on Goblin failed: network error');
         }
     }
 
@@ -589,8 +656,8 @@ class VideoLibrary {
             <label class="mb-check vid-pick-row" for="deployVideo${video.id}">
                 <input type="checkbox" value="${video.id}" id="deployVideo${video.id}" title="Include this video in the deployment">
                 <span>
-                    <strong>${video.title}</strong>
-                    <br><small class="mb-text-muted mb-mono">${video.format?.toUpperCase()} • ${this.formatFileSize(video.fileSize)}</small>
+                    <strong>${this.escapeHtml(video.title)}</strong>
+                    <br><small class="mb-text-muted mb-mono">${video.format?.toUpperCase()} • ${this.formatFileSize(video.fileSize)}${video.deployments && Object.keys(video.deployments).length ? ' • on ' + Object.values(video.deployments).map(d => this.escapeHtml(d.goblinName || '')).filter(Boolean).join(', ') : ''}</small>
                 </span>
             </label>
         `).join('');
@@ -598,24 +665,25 @@ class VideoLibrary {
         // Populate Goblin list
         const goblinList = document.getElementById('deployGoblinList');
         const availableGoblins = this.goblins.filter(g => g.status === 'online');
-        
-        goblinList.innerHTML = availableGoblins.map(goblin => `
+
+        goblinList.innerHTML = availableGoblins.length ? availableGoblins.map(goblin => `
             <label class="mb-check vid-pick-row" for="deployGoblin${goblin.id}">
                 <input type="checkbox" value="${goblin.id}" id="deployGoblin${goblin.id}" title="Deploy to this Goblin"
                        ${goblin.locked ? 'disabled' : ''}>
                 <span>
-                    <strong class="mb-serif">${goblin.name}</strong>
+                    <strong class="mb-serif">${this.escapeHtml(goblin.name)}</strong>
                     <span class="mb-status-badge ${goblin.status}">${goblin.status}</span>
                     ${goblin.locked ? '<br><small class="mb-text-warning">Locked</small>' : ''}
-                    <br><small class="mb-text-muted mb-mono">${goblin.endpoint}</small>
+                    <br><small class="mb-text-muted mb-mono">${this.escapeHtml(goblin.endpoint || '')}</small>
                 </span>
             </label>
-        `).join('');
+        `).join('') : '<small class="mb-text-muted">No Goblin is online.</small>';
     }
 
     async executeDeployment() {
         const selectedVideos = Array.from(document.querySelectorAll('#deployVideoList input:checked')).map(cb => cb.value);
         const selectedGoblins = Array.from(document.querySelectorAll('#deployGoblinList input:checked')).map(cb => cb.value);
+        const thenPlay = !!document.getElementById('deployThenPlay')?.checked;
 
         if (!selectedVideos.length || !selectedGoblins.length) {
             this.showError('Please select at least one video and one Goblin');
@@ -630,37 +698,166 @@ class VideoLibrary {
         progressContainer.classList.remove('vid-hidden');
         statusContainer.innerHTML = '';
 
+        const line = (text, cls) => {
+            const el = document.createElement('div');
+            el.className = 'mb-2';
+            el.innerHTML = text + (cls ? ` <span class="${cls}">` : '') + (cls ? '</span>' : '');
+            statusContainer.appendChild(el);
+            return el;
+        };
+
         try {
-            for (let videoId of selectedVideos) {
-                for (let goblinId of selectedGoblins) {
+            for (const videoId of selectedVideos) {
+                for (const goblinId of selectedGoblins) {
                     const video = this.videoFiles.find(v => v.id === videoId);
                     const goblin = this.goblins.find(g => g.id === goblinId);
-
-                    statusContainer.innerHTML += `<div class="mb-2">Deploying "${video.title}" to ${goblin.name}... <span class="text-warning">In Progress</span></div>`;
-
-                    try {
+                    const el = line(`Copying "${this.escapeHtml(video.title)}" to ${this.escapeHtml(goblin.name)}…`);
+                    const result = await this.deployToGoblin(videoId, goblinId, { quiet: true });
+                    if (!result.success) {
+                        el.innerHTML += ` <span class="text-danger">Failed: ${this.escapeHtml(result.error || 'unknown error')}</span>`;
+                        continue;
+                    }
+                    el.innerHTML += ` <span class="text-success">${result.transferred === 0 ? 'already there' : 'copied'} (${this.formatFileSize(result.size || 0)}, ${Math.round((result.elapsedMs || 0) / 1000)} s)</span>`;
+                    if (thenPlay) {
                         const response = await fetch(`/video-library/api/video/${videoId}/play-on-goblin`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ goblinId, loop: true })
+                            body: JSON.stringify({ goblinId, mode: 'once', deploy: false })
                         });
-
-                        const result = await response.json();
-                        const statusElement = statusContainer.lastElementChild;
-
-                        if (result.success) {
-                            statusElement.innerHTML = statusElement.innerHTML.replace('In Progress', '<span class="text-success">Success</span>');
-                        } else {
-                            statusElement.innerHTML = statusElement.innerHTML.replace('In Progress', `<span class="text-danger">Failed: ${result.error}</span>`);
-                        }
-                    } catch (error) {
-                        const statusElement = statusContainer.lastElementChild;
-                        statusElement.innerHTML = statusElement.innerHTML.replace('In Progress', `<span class="text-danger">Error: ${error.message}</span>`);
+                        const play = await response.json();
+                        el.innerHTML += play.success
+                            ? ' <span class="text-success">· playing</span>'
+                            : ` <span class="text-danger">· play failed: ${this.escapeHtml(play.error || '')}</span>`;
                     }
                 }
             }
         } finally {
             deployBtn.disabled = false;
+            if (this.currentGoblinVideosId && selectedGoblins.includes(this.currentGoblinVideosId)) this.loadGoblinVideos();
+        }
+    }
+
+    // ─── Videos on the Goblins themselves ──────────────────────────────
+
+    renderGoblinVideosPanel() {
+        const panel = document.getElementById('goblinVideosPanel');
+        const select = document.getElementById('goblinVideosSelect');
+        if (!panel || !select) return;
+        const online = this.goblins.filter(g => g.status === 'online');
+        if (!online.length) {
+            panel.classList.add('vid-hidden');
+            return;
+        }
+        const previous = select.value || this.currentGoblinVideosId;
+        select.innerHTML = online.map(g => `<option value="${this.escapeAttr(g.id)}">${this.escapeHtml(g.name)}</option>`).join('');
+        if (previous && online.some(g => g.id === previous)) select.value = previous;
+        panel.classList.remove('vid-hidden');
+        if (select.value !== this.currentGoblinVideosId) this.loadGoblinVideos();
+    }
+
+    async loadGoblinVideos(rescan = false) {
+        const select = document.getElementById('goblinVideosSelect');
+        const list = document.getElementById('goblinVideosList');
+        const now = document.getElementById('goblinNowPlaying');
+        const goblinId = select?.value;
+        if (!goblinId || !list) return;
+        this.currentGoblinVideosId = goblinId;
+        list.innerHTML = `<small class="mb-text-muted">${rescan ? 'Rescanning' : 'Reading'} the Goblin's media folder…</small>`;
+        try {
+            const response = await fetch(`/video-library/api/goblins/${encodeURIComponent(goblinId)}/videos${rescan ? '?rescan=1' : ''}`);
+            const data = await response.json();
+            if (!data.success) {
+                list.innerHTML = `<small class="mb-text-warning">${this.escapeHtml(data.error || 'Could not read the Goblin')}</small>`;
+                if (now) now.textContent = '—';
+                return;
+            }
+            this.goblinVideos = data.videos || [];
+            this.goblinPlayback = data.playback || null;
+            this.renderGoblinVideos();
+        } catch (error) {
+            console.error('Error loading Goblin videos:', error);
+            list.innerHTML = '<small class="mb-text-warning">Network error reading the Goblin</small>';
+        }
+    }
+
+    renderGoblinVideos() {
+        const list = document.getElementById('goblinVideosList');
+        const now = document.getElementById('goblinNowPlaying');
+        const filter = (document.getElementById('goblinVideosFilter')?.value || '').trim().toLowerCase();
+        if (!list) return;
+        const pb = this.goblinPlayback;
+        if (now) {
+            now.textContent = pb
+                ? (pb.mpvRunning && pb.currentVideo
+                    ? `Now showing: ${pb.currentVideo}${pb.queue && pb.queue.loopMode === 'queue' ? ' (looping)' : ''}`
+                    : 'Idle — nothing playing')
+                : 'Playback status unavailable';
+        }
+        const videos = (this.goblinVideos || [])
+            .filter(v => !filter || String(v.filename).toLowerCase().includes(filter))
+            .sort((a, b) => String(a.filename).localeCompare(String(b.filename)));
+        if (!videos.length) {
+            list.innerHTML = `<small class="mb-text-muted">${this.goblinVideos && this.goblinVideos.length ? 'No file matches the filter.' : 'This Goblin has no videos on disk.'}</small>`;
+            return;
+        }
+        list.innerHTML = videos.map(v => {
+            const current = pb && pb.mpvRunning && pb.currentVideo === v.filename;
+            return `
+            <div class="vid-pick-row mb-row-between${current ? ' vid-now-playing' : ''}">
+                <span>
+                    <strong>${this.escapeHtml(v.filename)}</strong>${current ? ' <span class="mb-status-badge online">playing</span>' : ''}
+                    <br><small class="mb-text-muted mb-mono">${this.formatFileSize(v.size || 0)}</small>
+                </span>
+                <span class="btn-group btn-group-sm">
+                    <button class="mb-btn mb-btn-sm mb-btn-primary" data-filename="${this.escapeAttr(v.filename)}" data-mode="once" title="Play once, then the Goblin returns to its queue"><i class="bi bi-play-fill"></i></button>
+                    <button class="mb-btn mb-btn-sm mb-btn-secondary" data-filename="${this.escapeAttr(v.filename)}" data-mode="loop" title="Make this the Goblin's looping queue"><i class="bi bi-arrow-repeat"></i></button>
+                </span>
+            </div>`;
+        }).join('');
+        list.querySelectorAll('button[data-filename]').forEach(btn => {
+            btn.addEventListener('click', () => this.playGoblinVideo(btn.dataset.filename, btn.dataset.mode));
+        });
+    }
+
+    async playGoblinVideo(filename, mode) {
+        const goblinId = this.currentGoblinVideosId;
+        const goblin = this.goblins.find(g => g.id === goblinId);
+        if (!goblin) return;
+        try {
+            this.showSuccess(`${mode === 'loop' ? 'Looping' : 'Playing'} "${filename}" on ${goblin.name}…`);
+            const response = await fetch(`/video-library/api/goblins/${encodeURIComponent(goblinId)}/play`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename, mode })
+            });
+            const result = await response.json();
+            if (result.success) {
+                this.showSuccess(`${goblin.name} is ${mode === 'loop' ? 'looping' : 'playing'} "${filename}"`);
+            } else {
+                this.showError(`${goblin.name}: ${result.error}`);
+            }
+            this.goblinPlayback = result.playback || this.goblinPlayback;
+            this.renderGoblinVideos();
+        } catch (error) {
+            console.error('Error playing Goblin video:', error);
+            this.showError('Play failed: network error');
+        }
+    }
+
+    async stopGoblin() {
+        const goblinId = this.currentGoblinVideosId;
+        const goblin = this.goblins.find(g => g.id === goblinId);
+        if (!goblin) return;
+        try {
+            const response = await fetch(`/video-library/api/goblins/${encodeURIComponent(goblinId)}/stop`, { method: 'POST' });
+            const result = await response.json();
+            if (result.success) this.showSuccess(`${goblin.name} stopped`);
+            else this.showError(`${goblin.name}: ${result.error}`);
+            this.goblinPlayback = result.playback || this.goblinPlayback;
+            this.renderGoblinVideos();
+        } catch (error) {
+            console.error('Error stopping Goblin:', error);
+            this.showError('Stop failed: network error');
         }
     }
 
@@ -750,7 +947,10 @@ class VideoLibrary {
                 '<td class="mb-mono">' + self.formatFileSize(video.fileSize || 0) + '</td>' +
                 '<td>' +
                     '<div class="btn-group btn-group-sm">' +
-                        '<button class="mb-btn mb-btn-sm mb-btn-secondary mb-btn-icon deploy-btn" data-video-id="' + video.id + '" title="Deploy">' +
+                        '<button class="mb-btn mb-btn-sm mb-btn-primary mb-btn-icon goblin-play-btn" data-video-id="' + video.id + '" title="Play on a Goblin">' +
+                            '<i class="bi bi-tv"></i>' +
+                        '</button>' +
+                        '<button class="mb-btn mb-btn-sm mb-btn-secondary mb-btn-icon deploy-btn" data-video-id="' + video.id + '" title="Copy onto a Goblin">' +
                             '<i class="bi bi-broadcast"></i>' +
                         '</button>' +
                         '<button class="mb-btn mb-btn-sm mb-btn-ghost mb-btn-icon delete-btn" data-video-id="' + video.id + '" title="Delete">' +
@@ -782,6 +982,14 @@ class VideoLibrary {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 self.toggleFavorite(btn.dataset.videoId);
+            });
+        });
+
+        // Play-on-Goblin buttons
+        tbody.querySelectorAll('.goblin-play-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                self.playOnGoblin(btn.dataset.videoId);
             });
         });
 

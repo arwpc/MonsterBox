@@ -4,6 +4,20 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Video Library → Goblins works, both ways, proven on the devices (2026-09-25).** Deploy
+  copies a library video onto a Goblin's disk over rsync + the fleet SSH credential (no
+  base64, no device change) and reports success only when the Goblin lists the file at the
+  source size; "Play on Goblin" copies first if needed and succeeds only when the device
+  reports mpv showing that file, after which a one-shot play returns the Goblin to its own
+  loop. The page gained an **On the Goblins** panel — what is on each Goblin's disk, read from
+  the device, with Play / Loop / Stop through MonsterBox — a Goblin picker that the one-click
+  buttons had been calling without it existing, a "play once copied" option in the deploy
+  modal, and the heart / play-count routes the page had been calling into a 404. Goblins are
+  no longer refused as "not online" for the first 30 s after a restart. Endpoints:
+  `POST /video-library/api/deploy {videoId, goblinId}`, `POST …/video/:id/play-on-goblin
+  {goblinId, mode:'once'|'loop'}`, `GET …/goblins/:id/videos[?rescan=1]`, `GET …/goblins/:id/playback`,
+  `POST …/goblins/:id/play {filename, mode}`, `POST …/goblins/:id/stop`.
+
 - **Goblin gold snapshot (2026-09-25): all three Goblins, the MonsterBox-side Goblin settings and
   Orlok's OS provisioning are preserved in git** at `backups/goblins-gold-2026-09-25/`, taken with
   the new repeatable collector `scripts/backup-goblins.sh` (`--verify` proves a snapshot intact;

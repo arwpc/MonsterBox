@@ -5,6 +5,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import { spawn } from 'child_process';
 import goblinDeploymentService from './goblinDeploymentService.js';
 import { writeJsonAtomic } from './atomicStore.js';
 
@@ -21,6 +22,55 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
     } finally {
         clearTimeout(timer);
     }
+}
+
+const GOBLIN_VIDEO_DIR = '/home/remote/media/video';
+const GOBLIN_SSH_USER = 'remote';
+const GOBLIN_VIDEO_EXT = /^[^.].*\.(mp4|mov|avi|mkv)$/i; // a stem, then an extension the player lists
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+function goblinHost(goblin) {
+    try { return new URL(goblin.endpoint).hostname; } catch { return goblin.ipAddress || goblin.ip || null; }
+}
+
+/**
+ * A name the Goblin player will list: a bare basename with a video extension. The
+ * device scans its media directory by extension, so anything else lands on disk but
+ * never becomes playable.
+ */
+export function sanitizeGoblinFilename(name) {
+    if (typeof name !== 'string') return null;
+    const base = path.basename(name.trim()).replace(/[\u0000-\u001f]/g, '');
+    if (!base || base === '.' || base === '..' || !GOBLIN_VIDEO_EXT.test(base)) return null;
+    return base;
+}
+
+/**
+ * rsync one file to a Goblin. Uses the fleet SSH password through `sshpass -e`
+ * (env var, never argv — same rule as orchestrationService) when it is set, else
+ * plain key-based ssh. `-s` keeps a filename with spaces intact on the remote side.
+ */
+function rsyncToGoblin(sourcePath, host, targetName, timeoutMs = 15 * 60 * 1000) {
+    const password = process.env.MONSTERBOX_SSH_PASSWORD || null;
+    const sshCmd = `${password ? 'sshpass -e ' : ''}ssh -o StrictHostKeyChecking=no -o ConnectTimeout=8 -o BatchMode=${password ? 'no' : 'yes'}`;
+    const args = ['-t', '-s', '--partial', '--inplace', '--timeout=90', '--stats',
+        '-e', sshCmd, sourcePath, `${GOBLIN_SSH_USER}@${host}:${GOBLIN_VIDEO_DIR}/${targetName}`];
+    return new Promise((resolve) => {
+        const env = { ...process.env };
+        if (password) env.SSHPASS = password;
+        const child = spawn('rsync', args, { env });
+        let stdout = '', stderr = '';
+        const timer = setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* already gone */ } }, timeoutMs);
+        child.stdout.on('data', d => { stdout += d.toString(); });
+        child.stderr.on('data', d => { stderr += d.toString(); });
+        child.on('error', err => { clearTimeout(timer); resolve({ code: -1, stdout, stderr: err.message, transferred: 0 }); });
+        child.on('close', code => {
+            clearTimeout(timer);
+            const m = /Total transferred file size: ([\d,]+)/.exec(stdout);
+            resolve({ code, stdout, stderr, transferred: m ? Number(m[1].replace(/,/g, '')) : null });
+        });
+    });
 }
 
 class GoblinManagerService {
@@ -408,70 +458,251 @@ class GoblinManagerService {
         }
     }
 
-    async deployVideoToGoblin(goblinId, videoData) {
+    /**
+     * Resolve a registered, online Goblin or explain why not.
+     */
+    async _onlineGoblin(goblinId) {
+        const goblin = this.goblins.get(goblinId);
+        if (!goblin) return { error: 'Goblin not found' };
+        if (goblin.status !== 'online') {
+            // Every Goblin is marked offline at startup and only comes back on the 30 s
+            // reconnect tick, so the first minute after a restart refused real devices.
+            // Ask the device itself before saying no (skipping units shelved on purpose).
+            if (!this.isExpectedOffline(goblin)) await this.pingGoblin(goblinId);
+            if (goblin.status !== 'online') return { error: `${goblin.name || goblinId} is not online` };
+        }
+        return { goblin };
+    }
+
+    async _goblinJson(goblin, pathname, options = {}, timeoutMs = 5000) {
+        const response = await fetchWithTimeout(`${goblin.endpoint}${pathname}`, options, timeoutMs);
+        let body = null;
+        try { body = await response.json(); } catch { body = null; }
+        if (!response.ok) {
+            throw new Error(`${pathname} → HTTP ${response.status}${body && body.error ? `: ${body.error}` : ''}`);
+        }
+        return body || {};
+    }
+
+    /**
+     * What is on the Goblin's own disk, straight from the device (its cached list, or
+     * a fresh directory scan when `rescan` is set), plus what it is playing right now.
+     * The names here are the ONLY names the device can play.
+     */
+    async listGoblinVideos(goblinId, { rescan = false } = {}) {
+        const { goblin, error } = await this._onlineGoblin(goblinId);
+        if (error) return { success: false, error };
         try {
-            const goblin = this.goblins.get(goblinId);
-
-            if (!goblin) {
-                return { success: false, error: 'Goblin not found' };
-            }
-
-            if (goblin.status !== 'online') {
-                return { success: false, error: 'Goblin is not online' };
-            }
-
-            // Deploy video to Goblin
-            const response = await fetchWithTimeout(`${goblin.endpoint}/deploy-video`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(videoData)
-            }, 30000); // 30 second timeout for video uploads
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-
-            if (result.success) {
-                console.log(`📹 Video deployed to goblin ${goblinId}: ${videoData.title}`);
-            }
-
-            return result;
-        } catch (error) {
-            console.error(`Error deploying video to goblin ${goblinId}:`, error);
-            return { success: false, error: error.message };
+            const list = await this._goblinJson(goblin, rescan ? '/api/videos/scan' : '/media', {}, rescan ? 60000 : 8000);
+            const videos = Array.isArray(list.videos) ? list.videos : [];
+            const playback = await this.getGoblinPlayback(goblinId);
+            return { success: true, goblinId, videos, playback: playback.success ? playback : null };
+        } catch (err) {
+            console.error(`Error listing videos on goblin ${goblinId}:`, err.message);
+            return { success: false, error: err.message };
         }
     }
 
-    async playVideoOnGoblin(goblinId, filename, options = {}) {
+    /**
+     * Playback truth from the device: mpv running or not, which file, queue loop mode.
+     * `currentVideo` is normalised to the bare filename (the device reports a full path).
+     */
+    async getGoblinPlayback(goblinId) {
+        const { goblin, error } = await this._onlineGoblin(goblinId);
+        if (error) return { success: false, error };
         try {
-            const goblin = this.goblins.get(goblinId);
+            const st = await this._goblinJson(goblin, '/playback-status', {}, 5000);
+            const current = typeof st.currentVideo === 'string' ? path.basename(st.currentVideo) : null;
+            return {
+                success: true,
+                goblinId,
+                playing: !!st.playing,
+                mpvRunning: !!st.mpvRunning,
+                currentVideo: current,
+                queue: st.queue || null
+            };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    }
 
-            if (!goblin) {
-                return { success: false, error: 'Goblin not found' };
+    async _isOnGoblin(goblin, filename) {
+        const check = async (pathname, timeoutMs) => {
+            const list = await this._goblinJson(goblin, pathname, {}, timeoutMs);
+            return (Array.isArray(list.videos) ? list.videos : []).some(v => v && v.filename === filename);
+        };
+        if (await check('/media', 8000)) return true;
+        // The device caches its listing; a file that just arrived needs a rescan.
+        return check('/api/videos/scan', 60000);
+    }
+
+    /**
+     * Copy a video file from this node onto a Goblin's media directory over SSH.
+     *
+     * The previous implementation POSTed the whole file base64-encoded to a
+     * `/deploy-video` endpoint the device never had, after buffering it in RAM and
+     * tripping the JSON body limit — every deploy failed and some reported success.
+     * rsync over the fleet SSH credential streams it, resumes a partial copy, and
+     * skips a file the Goblin already holds byte-for-byte. Afterwards the device is
+     * asked to rescan and the file is only reported deployed when it lists it at the
+     * expected size.
+     *
+     * @param {string} goblinId
+     * @param {{sourcePath:string, targetName:string, title?:string}} videoData
+     */
+    async deployVideoToGoblin(goblinId, videoData = {}) {
+        const { goblin, error } = await this._onlineGoblin(goblinId);
+        if (error) return { success: false, error };
+        if (!videoData.sourcePath) {
+            return { success: false, error: 'deployVideoToGoblin needs a sourcePath on this node (base64 upload is no longer supported)' };
+        }
+        const targetName = sanitizeGoblinFilename(videoData.targetName);
+        if (!targetName) {
+            return { success: false, error: `"${videoData.targetName}" is not a filename the Goblin player will list (needs .mp4/.mov/.avi/.mkv)` };
+        }
+        let sourceSize;
+        try {
+            sourceSize = (await fs.stat(videoData.sourcePath)).size;
+        } catch (err) {
+            return { success: false, error: `Source file missing on this node: ${err.message}` };
+        }
+        const host = goblinHost(goblin);
+        if (!host) return { success: false, error: 'Goblin has no reachable host in its endpoint' };
+
+        const started = Date.now();
+        const copy = await rsyncToGoblin(videoData.sourcePath, host, targetName);
+        if (copy.code !== 0) {
+            console.error(`Error deploying video to goblin ${goblinId}: rsync exit ${copy.code}: ${copy.stderr.trim()}`);
+            return { success: false, error: `Copy to ${goblin.name || host} failed (rsync exit ${copy.code}): ${copy.stderr.trim().split('\n').pop() || 'no detail'}` };
+        }
+
+        try {
+            const list = await this._goblinJson(goblin, '/api/videos/scan', {}, 60000);
+            const entry = (Array.isArray(list.videos) ? list.videos : []).find(v => v && v.filename === targetName);
+            if (!entry) {
+                return { success: false, error: `Copied, but ${goblin.name || host} does not list "${targetName}" after a rescan` };
             }
-
-            if (goblin.status !== 'online') {
-                return { success: false, error: 'Goblin is not online' };
+            if (Number(entry.size) !== sourceSize) {
+                return { success: false, error: `"${targetName}" on ${goblin.name || host} is ${entry.size} bytes, expected ${sourceSize}` };
             }
+            console.log(`📹 Video deployed to goblin ${goblinId}: ${videoData.title || targetName} (${sourceSize} bytes, ${Date.now() - started} ms${copy.transferred ? '' : ', already present'})`);
+            return {
+                success: true,
+                goblinId,
+                goblinName: goblin.name,
+                filename: targetName,
+                size: sourceSize,
+                transferred: copy.transferred,
+                elapsedMs: Date.now() - started
+            };
+        } catch (err) {
+            console.error(`Error verifying video on goblin ${goblinId}:`, err.message);
+            return { success: false, error: `Copied, but the rescan on ${goblin.name || host} failed: ${err.message}` };
+        }
+    }
 
-            // Play video immediately on Goblin using new API endpoint
-            const response = await fetchWithTimeout(`${goblin.endpoint}/api/video/play-immediate`, {
+    /**
+     * Play a file that is on the Goblin's disk, once, interrupting whatever is showing
+     * (the device returns to its queue afterwards unless told otherwise). The device
+     * answers success the instant it spawns mpv — before mpv can fail on a bad file —
+     * so success here means the device reports mpv running on that file ~1.5 s later.
+     */
+    async playVideoOnGoblin(goblinId, filename, options = {}) {
+        const { goblin, error } = await this._onlineGoblin(goblinId);
+        if (error) return { success: false, error };
+        try {
+            if (options.checkPresence !== false && !(await this._isOnGoblin(goblin, filename))) {
+                return { success: false, notOnGoblin: true, error: `"${filename}" is not on ${goblin.name || goblinId} — deploy it first` };
+            }
+            if (options.loop) {
+                return this.loopVideoOnGoblin(goblinId, filename, { checkPresence: false });
+            }
+            const result = await this._goblinJson(goblin, '/api/video/play-immediate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    filename,
-                    returnToQueue: options.returnToQueue !== false // Default true
-                })
+                body: JSON.stringify({ filename, returnToQueue: options.returnToQueue !== false })
             }, 10000);
-
-            const result = await response.json();
-            return result;
-        } catch (error) {
-            console.error(`Error playing video on goblin ${goblinId}:`, error);
-            return { success: false, error: error.message };
+            if (!result.success) return { ...result, success: false };
+            const proof = await this._confirmPlaying(goblinId, filename);
+            return { ...result, ...proof, goblinName: goblin.name, filename };
+        } catch (err) {
+            console.error(`Error playing video on goblin ${goblinId}:`, err.message);
+            return { success: false, error: err.message };
         }
+    }
+
+    /**
+     * Make one file the Goblin's whole looping queue — what a show display runs all
+     * night. Replaces the current queue; proven by the device reporting the queue
+     * playing that file in loop mode.
+     */
+    async loopVideoOnGoblin(goblinId, filename, options = {}) {
+        const { goblin, error } = await this._onlineGoblin(goblinId);
+        if (error) return { success: false, error };
+        try {
+            if (options.checkPresence !== false && !(await this._isOnGoblin(goblin, filename))) {
+                return { success: false, notOnGoblin: true, error: `"${filename}" is not on ${goblin.name || goblinId} — deploy it first` };
+            }
+            const post = (pathname, body) => this._goblinJson(goblin, pathname, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body || {})
+            }, 10000);
+            await post('/stop-all');
+            await post('/queue/clear');
+            await post('/queue/add', { filename, position: 'end' });
+            await post('/queue/start', { loopMode: 'queue' });
+            const proof = await this._confirmPlaying(goblinId, filename);
+            const looping = !!(proof.playback && proof.playback.queue && proof.playback.queue.loopMode === 'queue');
+            return {
+                ...proof,
+                success: proof.success && looping,
+                loop: looping,
+                goblinName: goblin.name,
+                filename,
+                error: proof.success && !looping ? `${goblin.name} is playing "${filename}" but its queue is not in loop mode` : proof.error
+            };
+        } catch (err) {
+            console.error(`Error looping video on goblin ${goblinId}:`, err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
+    /** Stop mpv and the queue on a Goblin, proven by the device reporting mpv stopped. */
+    async stopGoblin(goblinId) {
+        const { goblin, error } = await this._onlineGoblin(goblinId);
+        if (error) return { success: false, error };
+        try {
+            await this._goblinJson(goblin, '/stop-all', { method: 'POST' }, 10000);
+            await sleep(800);
+            const playback = await this.getGoblinPlayback(goblinId);
+            const stopped = playback.success && !playback.mpvRunning;
+            return {
+                success: stopped,
+                goblinName: goblin.name,
+                playback: playback.success ? playback : null,
+                error: stopped ? undefined : `${goblin.name} still reports mpv running`
+            };
+        } catch (err) {
+            console.error(`Error stopping goblin ${goblinId}:`, err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
+    async _confirmPlaying(goblinId, filename) {
+        await sleep(1500);
+        const playback = await this.getGoblinPlayback(goblinId);
+        if (!playback.success) {
+            return { success: false, accepted: true, error: `Play accepted but the Goblin's status could not be read: ${playback.error}` };
+        }
+        const showing = playback.mpvRunning && playback.currentVideo === filename;
+        return {
+            success: showing,
+            accepted: true,
+            verified: showing,
+            playback,
+            error: showing ? undefined : `Goblin accepted "${filename}" but mpv is ${playback.mpvRunning ? `showing "${playback.currentVideo}"` : 'not running'} — the file is probably unplayable`
+        };
     }
 
     async pingGoblin(goblinId) {

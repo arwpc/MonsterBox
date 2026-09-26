@@ -1692,18 +1692,27 @@ reports were not kept.
   neither, device hard-codes `loop:false`). `?dryRun=1` short-circuits the step before any
   network call, as it should. *Would prove it fixed:* a goblin-video step authored entirely in
   the Studio plays on a Goblin.
-- 🔴 **The Video Library's "play on Goblin" sends a filename no Goblin has, and both sides say
-  success.** `routes/videoLibrary.js:403` sends `video.fileName`, which is the library's UUID
-  storage name (`c1efa5eb-….mp4`), not a name on the device; the device answers
-  `{success:true, playing:…}` the instant it spawns mpv, before mpv fails on the missing file.
-  Proven on Goblin Two: `success:true, playing:"c1efa5eb-4ff4-4112-9c84-15d99f6ec955.mp4",
-  interrupted:"307 Jb Hd.mp4"` — it interrupted the clip that was playing and then showed
-  nothing (`mpvRunning:false` three seconds later). There is no way to get a library file onto a
-  Goblin: the "deploy" routes POST base64 to `/deploy-video`, an endpoint the device does not
-  have (*static*: the device's route table has no such path), after buffering the whole file in
-  Orlok's RAM. The client's favourite and play-count calls hit `/favorite` and `/play`, both
-  404 (proven). *Would prove it fixed:* a library video plays on a Goblin and a missing file is
-  reported as a failure.
+- ✅ **FIXED 2026-09-25 — the Video Library can now deploy to a Goblin and play on it, both
+  proven on the device.** Was: "play on Goblin" sent the library's UUID storage name
+  (`c1efa5eb-….mp4`), which no Goblin has, and the device answered `success:true` the instant
+  it spawned mpv, before mpv failed; "deploy" POSTed the whole file base64 to `/deploy-video`,
+  which the device does not serve, after buffering it in Orlok's RAM; the page's one-click
+  buttons called a `selectGoblin()` that did not exist, so with more than one Goblin online
+  they threw before any request; and the heart/play-count calls hit two routes that 404'd.
+  Now: `goblinManagerService.deployVideoToGoblin()` rsyncs the file over the fleet SSH
+  credential (`sshpass -e`, env not argv) into `/home/remote/media/video/<originalName>`,
+  asks the device to rescan and reports success only when the device lists the file at the
+  source size (3.2 MB to Goblin Two in 2.4 s; a repeat is a 0-byte transfer). `playVideoOnGoblin()`
+  refuses a file the device does not list (`notOnGoblin:true`), and `play-on-goblin` copies it
+  first in that case; success means `/playback-status` reports mpv on that file 1.5 s later,
+  and a one-shot play returns the Goblin to its own loop (Goblin Three: `307 Jb Hd.mp4`
+  resumed within 16 s). New on the page: an **On the Goblins** panel that lists what is on
+  each Goblin's disk straight from the device (72 files), with Play / Loop / Stop routed
+  through MonsterBox (no browser→Goblin mixed content), a Goblin picker, and "play once
+  copied" in the deploy modal. Every Goblin was also refused as "not online" for the first
+  30 s after a MonsterBox restart (the registry marks all offline at boot); the online check
+  now pings the device before refusing. Still open on this row: the Studio step (below) and
+  loop/volume on a scene step.
 - 🟡 **The registry is rewritten roughly every 50 s for healthy Goblins.** Nothing heartbeats
   (the device never registers or heartbeats; the `/api/goblins/:id/heartbeat` alias has no
   caller), so `goblinManagerService`'s 30 s monitor expires each Goblin 120 s after `lastSeen`,

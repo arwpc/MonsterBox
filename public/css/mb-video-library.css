@@ -129,3 +129,6 @@
 /* Bulk-select checkbox floats over the card thumbnail. */
 .vid-bulk-overlay { z-index: 20; }
 .vid-fmt-badge { font-size: 0.65rem; }
+
+/* On the Goblins panel: the file the device reports mpv is showing right now. */
+.vid-now-playing { background: var(--mb-bg-hover); border-left: 3px solid var(--mb-success, #4caf50); }
