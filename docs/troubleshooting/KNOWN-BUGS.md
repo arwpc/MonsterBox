@@ -1755,14 +1755,26 @@ reports were not kept.
   has no backoff. *Fix to make:* stop() must wait for exit (SIGTERM → 2 s → SIGKILL → wait), and
   playNext() must back off (e.g. 3 fast exits → 10 s pause) instead of spinning. Until then, do
   not stop/restart a playing Goblin unless you can check `pgrep -c mpv` afterwards.
-- ℹ️ **Registry names follow the TV labels — corrected 2026-09-26 11:20:** Goblin 1 = 192.168.8.106
-  (hostname goblin2), **Goblin 2 = 192.168.8.40 (hostname goblin1)**, **Goblin 3 = 192.168.8.14
-  (hostname goblin3)**. The 01:55 mapping had 2 and 3 swapped; it was fixed by playing a one-shot
-  Firepumpkin on `.14` and asking the operator which TV changed (TV 3), after TV 2 showed a stalled
-  kernel boot screen (four raspberry logos, static text) while both networked units were proven to
-  be painting mpv frames on their HDMI outputs (`/sys/kernel/debug/dri/0/state`: plane fb
-  `allocated by = vo`). The hostnames on the devices were never changed. Identify a unit by what it
-  shows, never by what the registry says, until this is proven once more after `.40` returns.
+- ✅ **Goblin 1 (192.168.8.40, hostname goblin1) was RE-IMAGED by the operator 2026-09-26 (~11:50) and
+  provisioned from Orlok by 12:35.** The unit that never rejoined WiFi after the 00:32 reboot came back
+  as a fresh Raspberry Pi OS trixie desktop image (new SSH host key — the finisher's SSH was refused on
+  the key change; `ssh-keygen -R 192.168.8.40` cleared it), with no player, no videos, no node/mpv, and no
+  passwordless sudo. Provisioning path (now `scripts/goblin-os/provision-goblin.sh`, run ON the unit as
+  root): Debian `nodejs` 20.19 + `mpv` 0.40 (same as Goblin 3), the working app dir rsync'd from Goblin 3
+  (node_modules included, so no `npm ci` on the Pi), the 72 videos rsync'd from Goblin 3 via Orlok
+  (594 MB), the gold `goblin.service` + `goblin-setup.sh`/`goblin-autostart.sh` from the snapshot,
+  config.txt `hdmi_group=1 hdmi_mode=4 hdmi_force_hotplug=1 hdmi_drive=2 gpu_mem=128` on
+  `vc4-kms-v3d`, then `stabilize-goblin.sh` (multi-user target, lightdm off, cups/bluetooth/cloud-init
+  off, apt timers + PipeWire masked, persistent 48 M journal). Back on `:3001` 35 s after reboot.
+  Still different from the other two: NO `010_pi-nopasswd` sudoers (the agent may not install one;
+  operator does it or keeps using `sudo` with the password) — `finish-goblin.sh`'s `sudo -n systemctl
+  restart` will fail on this unit until then.
+- ℹ️ **Registry names follow the TV labels — set by the operator 2026-09-26 12:15:** Goblin 1 =
+  192.168.8.40 (hostname goblin1), Goblin 2 = 192.168.8.106 (hostname goblin2), Goblin 3 =
+  192.168.8.14 (hostname goblin3) — the names now equal the hostnames. Two earlier mappings that
+  day (01:55 and 11:20) were wrong; the 11:20 one was inferred by elimination from what the TVs
+  showed and the operator overruled it after rebooting the units. Do not infer this mapping from
+  a screen again: ask the operator, and identify a unit by hostname.
 - 🔴 **Goblins drop off the WiFi after a reboot and do not come back on their own (2026-09-26).**
   All three Goblins are on `wlan0` (NetworkManager, "preconfigured"; `eth0` unavailable). After
   the 01:09 fleet reboot, Goblin Two re-joined within a minute; Goblin One (.40) never appeared

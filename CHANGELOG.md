@@ -4,9 +4,10 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
-- **Goblin registry names follow the TV labels (2026-09-26, corrected 11:20):** Goblin 1 = .106,
-  Goblin 2 = .40, Goblin 3 = .14 (device hostnames unchanged; the earlier 2/3 swap was proven wrong
-  by a one-shot clip test). KNOWN-BUGS gains the measured performance
+- **`scripts/goblin-os/provision-goblin.sh` — bring a fresh Pi OS image up as a Goblin** (packages, app,
+  gold unit, display config, stabilize). Used to rebuild Goblin 1 (.40) after the operator re-imaged it.
+- **Goblin registry names equal the device hostnames (2026-09-26, operator-set):** Goblin 1 = .40
+  (goblin1), Goblin 2 = .106 (goblin2), Goblin 3 = .14 (goblin3). KNOWN-BUGS gains the measured performance
   finding (hardware decode engages; the CPU burn and thermal throttle come from `--vo=drm`'s
   software conversion/scaling — daylight fixes listed) and the respawn-storm defect in the
   Goblin server's stop path.
