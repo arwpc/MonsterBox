@@ -17,6 +17,48 @@ const activeTrackers = new Map(); // webcamId -> tracker process
 const trackingConfigs = new Map(); // webcamId -> config
 const trackingStatus = new Map(); // webcamId -> status
 
+// A start that is still in flight owns the camera slot.
+//
+// activeTrackers is only populated AFTER the spawn handshake resolves, and that
+// handshake takes seconds. Inside that window activeTrackers.has() reads false,
+// so a second concurrent start skipped the "stop existing tracker" branch and
+// spawned a COMPETING python process on the same /dev/video0. Its handle then
+// overwrote the first one in the map, orphaning a process that nothing could
+// ever kill.
+//
+// Measured on Sir Dragomir 2026-09-21: two motion_tracking_service.py processes
+// spawned 3 s apart, ~77 % CPU each on a 4-core Pi. Symptoms were "very slow
+// when AI mode is on", webcam video running ~5 s behind, and a continuous KCF
+// re-init storm in monsterbox.err as the two consumers stole frames from each
+// other. Head tracking has several triggers (enable, lurk/AI arming, and every
+// debounced slider nudge on the tuning page), so concurrent starts are normal
+// traffic, not an edge case.
+const startingTrackers = new Map(); // webcamId -> Promise<tracker>
+
+/**
+ * Spawn a tracker for a webcam, guaranteeing at most ONE process per camera.
+ * Concurrent callers await the same in-flight start instead of racing it.
+ */
+async function startTrackerExclusive(webcamId, devicePath, config) {
+  const inFlight = startingTrackers.get(webcamId);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const startPromise = (async () => {
+    const tracker = await startMotionTrackingProcess(webcamId, devicePath, config);
+    activeTrackers.set(webcamId, tracker);
+    return tracker;
+  })();
+
+  startingTrackers.set(webcamId, startPromise);
+  try {
+    return await startPromise;
+  } finally {
+    startingTrackers.delete(webcamId);
+  }
+}
+
 // Head tracking state/config
 const headTrackingConfigs = new Map(); // webcamId -> { enabled, panServoId, tiltServoId, centerDeg, rangeDeg, invertPan, smoothing, deadzone }
 const headTrackingStates = new Map(); // webcamId -> { lastPanDeg, lastCmdAt }
@@ -117,9 +159,8 @@ export const startMotionTracking = async (req, res) => {
     const config = { ...DEFAULT_CONFIG, ...params };
     trackingConfigs.set(webcamId, config);
 
-    // Start motion tracking process
-    const tracker = await startMotionTrackingProcess(webcamId, devicePath, config);
-    activeTrackers.set(webcamId, tracker);
+    // Start motion tracking process (at most one per camera — see startTrackerExclusive)
+    const tracker = await startTrackerExclusive(webcamId, devicePath, config);
 
     // Initialize status
     trackingStatus.set(webcamId, {
@@ -344,6 +385,14 @@ export const checkHeadTrackingRequirements = async (req, res) => {
  * Internal function to stop motion tracking
  */
 async function stopMotionTrackingInternal(webcamId) {
+  // A stop that lands mid-start would otherwise clear the map and then have the
+  // still-running start write its process back in, re-orphaning it. Let the
+  // start finish and register itself first, so there is something to kill.
+  const inFlight = startingTrackers.get(webcamId);
+  if (inFlight) {
+    try { await inFlight; } catch (e) { /* a failed start leaves nothing to stop */ }
+  }
+
   const tracker = activeTrackers.get(webcamId);
   if (tracker) {
     try {
@@ -1188,8 +1237,7 @@ export async function startTrackingForWebcam(webcamId, params = {}) {
   const devicePath = await getWebcamDevicePath(webcamId);
   if (!devicePath) throw new Error('Webcam device not found');
 
-  const tracker = await startMotionTrackingProcess(webcamId, devicePath, config);
-  activeTrackers.set(webcamId, tracker);
+  const tracker = await startTrackerExclusive(webcamId, devicePath, config);
 
   trackingStatus.set(webcamId, {
     active: true,

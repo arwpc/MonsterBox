@@ -293,6 +293,16 @@ router.post('/api/audio/:id/play', async (req, res) => {
                     }
                 });
             } else {
+                // A muted speaker is not a failure — answer in the same shape the
+                // one-shot play path uses so the page can say "muted", not "error".
+                const playbackService = (await import('../services/serverPlaybackService.js')).default;
+                if (playbackService.isSpeakerMuted()) {
+                    return res.json({
+                        success: true,
+                        muted: true,
+                        message: `Speaker is muted — "${audio.title}" was not looped.`
+                    });
+                }
                 return res.status(500).json({
                     success: false,
                     error: 'Failed to start audio loop'

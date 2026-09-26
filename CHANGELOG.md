@@ -4,6 +4,55 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Sir Dragomir is finished and LOCKED, and the session that got him there fixed a lot of shared plumbing.**
+  His head servo fault turned out to be a **bad solder joint inside the servo** — found by the
+  operator, after several software theories had chased it. Those commits are parked, not shipped.
+  He had also been listening through the **webcam mic** the whole time: his microphone part was
+  named "Webcam Microphone" with `deviceId:"default"`, which resolves through a broken ALSA path
+  on that node and returns ZERO frames, while the XVF3800 sink no-suspend rule was not installed
+  (on that array a suspended sink IS a dead mic). Pinned to the array's PipeWire node and proven
+  by frames — 48000 at RMS 786.9 — not by a success field. His jaw was capped at **64% of travel**
+  by `sensitivity: 0.6` multiplying an already-normalized 0..1 openness signal; now 1.6.
+
+- **"The Audio Library fails on every animatronic" and "they all default to Mute" were one bug.**
+  Fleet Emergency Stop called `disarm.mute(true)`, the speaker mute persists to disk and restores
+  at boot, and nothing anywhere un-mutes — so a single panic press silenced the fleet permanently.
+  It hid because muted playback answers `{success:true, muted:true}` and both play paths branched
+  on `success` alone, showing a green "Now Playing" over total silence. Panic now stops audio and
+  disarms every autonomous trigger without latching a restart-surviving mute; the operator's own
+  deliberate mute still persists, because that is what protects the household at night. The Loop
+  button also bypassed the mute check entirely — a muted node was silent on Play and **noisy on Loop**.
+
+- **You can talk over them now.** Barge-in works on every character. They were hard to interrupt
+  structurally: the microphone stays open during playback, but the mic loop replaces it with
+  synthetic room floor before it leaves the node, so ElevenLabs' turn model could never hear a
+  guest and its interruption handler was dead code. That gate stays — it is what stops a
+  character's own reply tail becoming spurious guest turns — and interruption is detected locally
+  against a **learned echo floor**, so an echo-cancelling array and a bare USB mic both
+  self-calibrate. Guarded by a 3-frame run, an absolute floor and a grace period so a door slam
+  or the guest's own question cannot cut the character off. `MB_BARGE_IN=0` backs it out.
+
+- **A camera could be driven by two tracker processes at once.** Both start paths registered the
+  tracker only AFTER a multi-second spawn `await`, so a concurrent start saw an empty map, skipped
+  the stop, and spawned a competitor whose handle orphaned the first beyond any kill. Measured at
+  ~77% CPU each on a 4-core Pi: the operator saw "very slow when AI mode is on", webcam video
+  running ~5s behind, and a continuous KCF re-init storm as the two consumers stole frames.
+
+- **Head-tracking tuning reached the tracker at last.** The hot-update route silently dropped 4 of
+  12 keys — including `detectionMode`, which the preset buttons are mostly defined BY — while still
+  answering `success:true`. Its panel was also still the pre-fix copy of the jaw/LED scroll rule,
+  clipping the Test Sweep / E-Stop panel with nothing able to scroll to it.
+
+- **Turning AI off now switches off what AI drives** — jaw, LED-talk, head tracking, AI motion and
+  follow-orders — instead of leaving the character visibly alive and still taking spoken orders.
+
+- **Tests respect a character lock instead of forcing past it.** Locking a character broke that
+  node's own write-path suites. The obvious fix — the `MB_ALLOW_LOCKED_CHARACTER_WRITES` escape
+  hatch — is a trap: one run with it open **wiped a locked character's `parts.json` from 233 lines
+  to 5**, destroying motor config carrying hard-won PWM limits. The suites now SKIP a locked
+  character and report it as pending, so the coverage gap stays visible.
+
+
 - **Renfield's eye rings are addressable, and the Pi 5 can drive WS2812B at last.**
   `led_ring_daemon.py` had a single backend — `rpi_ws281x`, which drives pixels by poking the
   SoC's PWM and DMA registers through `/dev/mem`. RP1 moved GPIO off the SoC on the Pi 5, so

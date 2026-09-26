@@ -62,6 +62,10 @@ describe('Servo type identity — multi-turn survives UI and writers', function 
       const cfg = await readConfig();
       const characterId = cfg && cfg.selectedCharacter;
       if (characterId == null) this.skip();
+      // A frozen character refuses config writes, and forcing past that with the
+      // escape hatch once wiped a locked character's parts.json. Skip instead.
+      const { skipIfLocked } = await import('../helpers/lockAware.js');
+      if (skipIfLocked(this, characterId)) return;
 
       partsPath = path.join(APP_ROOT, 'data', `character-${characterId}`, 'parts.json');
       try { savedFiles.set(partsPath, await fs.readFile(partsPath, 'utf8')); } catch (_) { savedFiles.set(partsPath, null); }

@@ -186,14 +186,67 @@ export function isConfigLockedError(error) {
  * @param {() => Promise<any>} persist
  * @returns {Promise<{persisted: boolean, locked: boolean, reason?: string}>}
  */
-export async function persistRuntimeToggle(persist) {
+export async function persistRuntimeToggle(persist, override = null) {
     try {
         await persist();
+        // A successful write is the truth now; drop any stale in-memory value.
+        if (override && override.key) forgetRuntimeToggle(override.characterId, override.key);
         return { persisted: true, locked: false };
     } catch (error) {
         if (!isConfigLockedError(error)) throw error;
+        // The toggle still TOOK EFFECT — the caller starts/stops the listener,
+        // daemon or watcher either way — but the frozen file cannot record it.
+        // Without somewhere to remember it, the read path goes straight back to
+        // the locked file and reports the toggle still on, so the UI flips the
+        // switch back and the operator sees "it won't turn off".
+        if (override && override.key) {
+            rememberRuntimeToggle(override.characterId, override.key, override.value);
+        }
         return { persisted: false, locked: true, reason: error.message };
     }
+}
+
+/**
+ * In-memory toggle state for LOCKED characters.
+ *
+ * A locked character still RUNS — only its configuration is frozen. So an
+ * operator must still be able to switch its live features on and off for the
+ * evening; those switches just cannot be written to disk, and therefore do not
+ * survive a restart, which is the correct trade for a finished character.
+ *
+ * Keyed "<characterId>:<key>". Empty for every unlocked character, so this is
+ * inert on a normal node.
+ */
+const runtimeToggles = new Map();
+
+const toggleKey = (characterId, key) => `${characterId}:${key}`;
+
+export function rememberRuntimeToggle(characterId, key, value) {
+    if (characterId == null || !key) return;
+    runtimeToggles.set(toggleKey(characterId, key), value);
+}
+
+export function forgetRuntimeToggle(characterId, key) {
+    if (characterId == null || !key) return;
+    runtimeToggles.delete(toggleKey(characterId, key));
+}
+
+/**
+ * The live value of a toggle, or undefined when nothing has overridden it.
+ */
+export function runtimeToggleOverride(characterId, key) {
+    if (characterId == null || !key) return undefined;
+    const k = toggleKey(characterId, key);
+    return runtimeToggles.has(k) ? runtimeToggles.get(k) : undefined;
+}
+
+/**
+ * Overlay any remembered toggle onto a value read from a frozen config file.
+ * Returns the override when one exists, otherwise the value as read.
+ */
+export function withRuntimeToggle(characterId, key, valueFromDisk) {
+    const override = runtimeToggleOverride(characterId, key);
+    return override === undefined ? valueFromDisk : override;
 }
 
 export default {
@@ -207,5 +260,9 @@ export default {
     reloadLocks,
     isConfigLockedError,
     persistRuntimeToggle,
+    rememberRuntimeToggle,
+    forgetRuntimeToggle,
+    runtimeToggleOverride,
+    withRuntimeToggle,
     CharacterConfigLockedError
 };

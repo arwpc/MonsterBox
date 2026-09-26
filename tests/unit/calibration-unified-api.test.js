@@ -18,6 +18,10 @@ describe('Unified Calibration API', function () {
   let app;
   let linearPartId;  // dynamically found linear actuator
   let servoPartId;   // dynamically found absolute servo
+  // A multi-turn servo reports its capability as 'absolute-servo' too, but its
+  // travel is a full rotationRangeDeg (900 on a geared neck), so a hardcoded
+  // 180 ceiling fails on a node whose first test-safe servo is multi-turn.
+  let servoRotationRangeDeg = 180;
   let characterId;
   const savedProfiles = new Map();
 
@@ -48,6 +52,12 @@ describe('Unified Calibration API', function () {
     const parts = await loadParts();
     linearPartId = await pickTestSafePart(parts, 'linear_actuator');
     servoPartId = await pickTestSafePart(parts, 'servo');
+
+    if (servoPartId) {
+      const servoPart = parts.find(p => String(p.id) === String(servoPartId));
+      const range = servoPart && servoPart.config && servoPart.config.rotationRangeDeg;
+      if (Number.isFinite(range) && range > 0) servoRotationRangeDeg = range;
+    }
 
     // Snapshot the whole calibration file. Restoring via upsert() would re-stamp
     // lastCalibratedAt, making it look like the operator recalibrated the part, so
@@ -90,7 +100,7 @@ describe('Unified Calibration API', function () {
         if (res.body.currentAngle !== null) {
           expect(res.body.currentAngle).to.be.a('number');
           expect(res.body.currentAngle).to.be.at.least(0);
-          expect(res.body.currentAngle).to.be.at.most(180);
+          expect(res.body.currentAngle).to.be.at.most(servoRotationRangeDeg);
         }
       }
     });
