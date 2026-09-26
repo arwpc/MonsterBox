@@ -131,4 +131,24 @@
 .vid-fmt-badge { font-size: 0.65rem; }
 
 /* On the Goblins panel: the file the device reports mpv is showing right now. */
+/* A frame of the file on the Goblin's disk; the film icon shows only when no frame could be had. */
+.vid-goblin-thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 96px;
+  height: 54px;
+  border-radius: var(--mb-radius-sm);
+  border: 1px solid var(--mb-border-default);
+  background: var(--mb-bg-2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mb-fg-muted);
+}
+.vid-goblin-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.vid-goblin-thumb i { visibility: hidden; }
+.vid-goblin-thumb-missing i { visibility: visible; }
+.vid-goblin-meta { flex: 1 1 auto; min-width: 0; }
+
 .vid-now-playing { background: var(--mb-bg-hover); border-left: 3px solid var(--mb-success, #4caf50); }

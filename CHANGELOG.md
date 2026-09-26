@@ -4,6 +4,16 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **The per-Goblin video lists show a frame of each file (2026-09-25).** The Video Library's
+  "On the Goblins" panel and the Goblin Management queue modal showed a film icon for every
+  file because the device serves no pictures. `GET /video-library/api/goblins/:id/thumbnail?filename=…`
+  now answers with a JPEG: from a local cache (`data/video-library/goblin-thumbnails/`, keyed by
+  filename, so one frame serves all three Goblins), else the library's own frame of a
+  same-named video, else one 320-px frame grabbed by ffmpeg ON the Goblin over ssh (niced,
+  one grab at a time per device; ~3 s each, a few kB across the Wi-Fi instead of the video).
+  A file that yields no frame 404s and the page keeps its icon. Unit:
+  `tests/unit/goblin-thumbnail.test.js`.
+
 - **Goblins are reachable from orchestration, authorable in the Studio, and no longer wear the
   SD card (2026-09-25).** Orchestration's Goblin list is now the registry (`data/goblins.json`)
   instead of two phantom entries in `config/animatronics.json`; Goblin commands go through

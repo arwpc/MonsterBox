@@ -88,6 +88,8 @@ data/character-*/lurk-mode-state.json
 # PID-based lock files created by the audio/video library services at runtime.
 data/audio-library/library.lock
 data/video-library/library.lock
+# frames of what is on the Goblins, grabbed on demand (goblinManagerService.getGoblinThumbnail) — a per-node cache
+data/video-library/goblin-thumbnails/
 # Timestamp-only rewrites by the running service that pollute git status without signal.
 data/character-*/audio-config.json
 data/character-*/microphones.json

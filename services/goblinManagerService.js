@@ -6,6 +6,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import { createHash } from 'crypto';
 import goblinDeploymentService from './goblinDeploymentService.js';
 import { writeJsonAtomic } from './atomicStore.js';
 
@@ -27,6 +28,13 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
 const GOBLIN_VIDEO_DIR = '/home/remote/media/video';
 const GOBLIN_SSH_USER = 'remote';
 const GOBLIN_VIDEO_EXT = /^[^.].*\.(mp4|mov|avi|mkv)$/i; // a stem, then an extension the player lists
+// Thumbnails of what is on the Goblins' disks, keyed by filename (all three carry
+// the same files, so one frame serves every Goblin). Made on the device itself: it
+// has ffmpeg, and one 320-px frame over ssh is a few kB — the alternative was
+// pulling 700 MB of video across the Wi-Fi to look at it.
+const GOBLIN_THUMB_DIR = path.resolve('./data/video-library/goblin-thumbnails');
+const GOBLIN_THUMB_MAX_BYTES = 2 * 1024 * 1024;
+const shellQuote = (str) => `'${String(str).replace(/'/g, `'\\''`)}'`;
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -69,6 +77,38 @@ function rsyncToGoblin(sourcePath, host, targetName, timeoutMs = 15 * 60 * 1000)
             clearTimeout(timer);
             const m = /Total transferred file size: ([\d,]+)/.exec(stdout);
             resolve({ code, stdout, stderr, transferred: m ? Number(m[1].replace(/,/g, '')) : null });
+        });
+    });
+}
+
+/**
+ * Run ffmpeg on the Goblin and bring back one JPEG frame on stdout. Same credential
+ * rule as rsyncToGoblin. `-ss 1` skips the black lead-in most of these clips open with.
+ */
+function grabFrameOnGoblin(host, name, timeoutMs = 45000) {
+    const password = process.env.MONSTERBOX_SSH_PASSWORD || null;
+    const remote = `nice -n 10 ffmpeg -nostdin -loglevel error -ss 1 -i ${shellQuote(`${GOBLIN_VIDEO_DIR}/${name}`)} `
+        + `-frames:v 1 -vf 'scale=320:-2' -q:v 6 -f image2 pipe:1`;
+    const args = ['-o', 'StrictHostKeyChecking=no', '-o', 'ConnectTimeout=8', '-o', `BatchMode=${password ? 'no' : 'yes'}`,
+        `${GOBLIN_SSH_USER}@${host}`, remote];
+    return new Promise((resolve) => {
+        const env = { ...process.env };
+        if (password) env.SSHPASS = password;
+        const child = spawn(password ? 'sshpass' : 'ssh', password ? ['-e', 'ssh', ...args] : args, { env });
+        const chunks = []; let size = 0; let stderr = '';
+        const timer = setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* gone */ } }, timeoutMs);
+        child.stdout.on('data', d => { size += d.length; if (size <= GOBLIN_THUMB_MAX_BYTES) chunks.push(d); });
+        child.stderr.on('data', d => { stderr += d.toString(); });
+        child.on('error', err => { clearTimeout(timer); resolve({ success: false, error: err.message }); });
+        child.on('close', code => {
+            clearTimeout(timer);
+            const jpeg = Buffer.concat(chunks);
+            // A JPEG starts FF D8; anything else is ssh/ffmpeg noise, not a frame.
+            if (code !== 0 || jpeg.length < 4 || jpeg[0] !== 0xff || jpeg[1] !== 0xd8) {
+                resolve({ success: false, error: `ffmpeg on ${host} gave no frame (exit ${code}): ${stderr.trim().split('\n').pop() || 'no detail'}` });
+                return;
+            }
+            resolve({ success: true, jpeg });
         });
     });
 }
@@ -506,6 +546,64 @@ class GoblinManagerService {
             console.error(`Error listing videos on goblin ${goblinId}:`, err.message);
             return { success: false, error: err.message };
         }
+    }
+
+    /**
+     * A JPEG frame of a video on a Goblin's disk, as a local file path. Cache first
+     * (`data/video-library/goblin-thumbnails/<sha1 of filename>.jpg`), then the
+     * library's own thumbnail when it holds a video of the same original name, else
+     * one frame grabbed by ffmpeg ON the Goblin over ssh (niced, one at a time per
+     * device so a page of 72 rows cannot stack 72 decoders on a Pi 3B+ that is
+     * playing). `refresh` discards the cached frame first.
+     */
+    async getGoblinThumbnail(goblinId, filename, { refresh = false } = {}) {
+        const name = sanitizeGoblinFilename(filename);
+        if (!name) return { success: false, error: 'not a Goblin video filename' };
+        const dir = this.thumbnailDir || GOBLIN_THUMB_DIR;
+        const key = createHash('sha1').update(name).digest('hex');
+        const cached = path.join(dir, `${key}.jpg`);
+        try {
+            if (refresh) await fs.unlink(cached).catch(() => {});
+            const st = await fs.stat(cached);
+            if (st.size > 0) return { success: true, path: cached, source: 'cache' };
+        } catch (_) { /* not cached */ }
+        await fs.mkdir(dir, { recursive: true });
+
+        // The library may already hold this very video (deployed from here) with a frame.
+        try {
+            const { default: videoLibraryService } = await import('./videoLibraryService.js');
+            const lib = await videoLibraryService.getLibrary({});
+            const match = (lib && lib.success && Array.isArray(lib.videos) ? lib.videos : [])
+                .find(v => v && v.originalName === name && v.thumbnailPath);
+            if (match) {
+                const src = path.join(videoLibraryService.thumbnailsDir, match.thumbnailPath);
+                await fs.copyFile(src, cached);
+                return { success: true, path: cached, source: 'library' };
+            }
+        } catch (_) { /* no library match — ask the device */ }
+
+        const goblin = this.goblins.get(goblinId);
+        if (!goblin) return { success: false, error: 'Goblin not found' };
+        const host = goblinHost(goblin);
+        if (!host) return { success: false, error: 'Goblin has no reachable host in its endpoint' };
+
+        // One grab at a time per device; every waiter for the same file gets the same result.
+        this._thumbQueues = this._thumbQueues || new Map();
+        const prev = this._thumbQueues.get(host) || Promise.resolve();
+        const job = prev.catch(() => {}).then(async () => {
+            try {
+                const st = await fs.stat(cached);
+                if (st.size > 0) return { success: true, path: cached, source: 'cache' };
+            } catch (_) { /* generate */ }
+            const grab = await grabFrameOnGoblin(host, name);
+            if (!grab.success) return grab;
+            const tmp = `${cached}.${process.pid}.tmp`;
+            await fs.writeFile(tmp, grab.jpeg);
+            await fs.rename(tmp, cached);
+            return { success: true, path: cached, source: 'goblin' };
+        });
+        this._thumbQueues.set(host, job);
+        return job;
     }
 
     /**

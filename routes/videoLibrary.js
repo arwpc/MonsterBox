@@ -510,6 +510,26 @@ router.post('/api/goblins/:id/stop', async (req, res) => {
 });
 
 /**
+ * GET /api/goblins/:id/thumbnail?filename=… - A frame of a video on the Goblin's
+ * disk (cached; made on the device when the library has no frame of the same
+ * name). 404 when no frame can be had, so the page keeps its placeholder icon.
+ */
+router.get('/api/goblins/:id/thumbnail', async (req, res) => {
+    try {
+        const result = await goblinManagerService.getGoblinThumbnail(req.params.id, String(req.query.filename || ''), {
+            refresh: req.query.refresh === '1'
+        });
+        if (!result.success) return res.status(404).json({ success: false, error: result.error });
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        createReadStream(result.path).pipe(res);
+    } catch (error) {
+        console.error('Error getting Goblin thumbnail:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
  * POST /api/goblins/:id/resume - The all-clear: start the Goblin's own queue loop
  * again after a stop (Emergency Stop, the Stop button, a suite that fired one).
  */

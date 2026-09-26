@@ -804,7 +804,8 @@ class VideoLibrary {
             const current = pb && pb.mpvRunning && pb.currentVideo === v.filename;
             return `
             <div class="vid-pick-row mb-row-between${current ? ' vid-now-playing' : ''}">
-                <span>
+                <span class="vid-goblin-thumb"><img loading="lazy" alt="" src="/video-library/api/goblins/${encodeURIComponent(this.currentGoblinVideosId)}/thumbnail?filename=${encodeURIComponent(v.filename)}" onerror="this.parentNode.classList.add('vid-goblin-thumb-missing'); this.remove();"><i class="bi bi-film"></i></span>
+                <span class="vid-goblin-meta">
                     <strong>${this.escapeHtml(v.filename)}</strong>${current ? ' <span class="mb-status-badge online">playing</span>' : ''}
                     <br><small class="mb-text-muted mb-mono">${this.formatFileSize(v.size || 0)}</small>
                 </span>

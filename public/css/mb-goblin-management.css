@@ -126,6 +126,8 @@
 /* Video thumbnail placeholder in the queue manager. Was four hardcoded greys
    in an inline style, invisible to the theme system. */
 .gob-video-thumb {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,6 +139,9 @@
   color: var(--mb-fg-muted);
   font-size: var(--mb-text-2xl);
 }
+.gob-video-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.gob-video-thumb:has(img) i { visibility: hidden; }
+.gob-video-thumb-missing i { visibility: visible; }
 
 /* Resource usage bars on a goblin card. The width stays inline — it is a live
    measurement — but the colour is a token, not var(--bs-*). */

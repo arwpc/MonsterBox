@@ -1150,11 +1150,14 @@ class GoblinManager {
         // Always show the card
         card.style.display = 'block';
 
-        // Check if anything is playing
-        const isPlaying = data.playback?.video?.playing || data.queue?.currentVideo;
-        const currentFile = data.queue?.currentVideo || data.playback?.video?.file || null;
-        const queueMode = data.queue?.mode || 'sequential';
-        const queueRunning = data.queue?.running || false;
+        // Check if anything is playing. The device's /playback-status is
+        // { playing, mpvRunning, currentVideo: "<full path>", queue: { loopMode, playing } };
+        // this read the shape of an endpoint the device never had and always said idle.
+        const deviceFile = typeof data.currentVideo === 'string' ? data.currentVideo.split('/').pop() : null;
+        const isPlaying = !!(data.mpvRunning || data.playing || data.playback?.video?.playing || data.queue?.currentVideo);
+        const currentFile = deviceFile || data.queue?.currentVideo || data.playback?.video?.file || null;
+        const queueMode = data.queue?.loopMode || data.queue?.mode || 'sequential';
+        const queueRunning = !!(data.queue?.playing || data.queue?.running);
 
         // If nothing is playing, show idle state
         if (!isPlaying && !currentFile) {
@@ -1254,7 +1257,7 @@ class GoblinManager {
             </div>
             ${this.currentQueue.currentVideo ? `
                 <div class="alert alert-info py-2 mb-2 mb-live">
-                    <strong>Now Playing:</strong> ${this.currentQueue.currentVideo}
+                    <strong>Now Playing:</strong> ${typeof this.currentQueue.currentVideo === 'object' ? (this.currentQueue.currentVideo.filename || '') : this.currentQueue.currentVideo}
                 </div>
             ` : ''}
         `;
@@ -1310,6 +1313,7 @@ class GoblinManager {
             return;
         }
 
+        const thumbGoblinId = this.currentQueueGoblin ? this.currentQueueGoblin.id : null;
         videoList.innerHTML = this.goblinVideos.map(video => {
             // Handle both string filenames (legacy) and video objects (new format)
             const filename = typeof video === 'string' ? video : video.filename;
@@ -1328,8 +1332,9 @@ class GoblinManager {
             return `
                 <div class="list-group-item p-2">
                     <div class="d-flex align-items-start">
-                        <!-- Thumbnail -->
+                        <!-- Thumbnail: a frame from the Goblin's disk via MonsterBox; the icon stays only when none could be had -->
                         <div class="flex-shrink-0 me-3 gob-video-thumb">
+                            ${thumbGoblinId ? `<img loading="lazy" alt="" src="/video-library/api/goblins/${encodeURIComponent(thumbGoblinId)}/thumbnail?filename=${encodeURIComponent(filename)}" onerror="this.parentNode.classList.add('gob-video-thumb-missing'); this.remove();">` : ''}
                             <i class="bi bi-film"></i>
                         </div>
 
