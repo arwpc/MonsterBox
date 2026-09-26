@@ -717,11 +717,11 @@ superpowers after a suite run that predates the `httpNode` guard.
 🔴 **2026-09-26 — DOWN: his power supply got WET and is COOKED, and the 12 V→5 V buck converter is
 dead and SHORTED — it kills any supply it is connected to** (operator report). Supersedes the ✅ line
 below until the replacement is built. Cut the buck out; never reconnect it, not even to test. The
-replacement is specified in `docs/hardware/POWER-SUPPLY-SIZING.md`: ONE battery power station per
-character (Bluetti AC240P class — IP65, 110 V in, LiFePO4, a 12 V/30 A RV port for the motor and USB-C for
-the Pi) run in pass-through, so the battery sits between the wall and both outputs and no 12 V draw can
-brown out the Pi. That closes the 2026-09-07 / 2026-09-20 "the fix is his power supply" thread by
-construction (the two-brick box was considered and declined by the operator the same day). Before
+replacement is specified in `docs/hardware/POWER-SUPPLY-SIZING.md`, which records the two configurations
+the Pi, prop and robotics communities actually run without resets: (A) the motor on its own 12 V adapter
+and the Pi on the official Raspberry Pi supply, both in one weatherproof box with a common ground — the
+standard answer — or (B) a battery-backed bus, as one product the Bluetti AC240P (IP65, 12 V/30 A RV port,
+USB-C). Either closes the 2026-09-07 / 2026-09-20 "the fix is his power supply" thread; operator to pick. Before
 re-energizing: dry the rig 24 h, inspect the MDD10A, Pi, ReSpeaker and webcam for water, bring the 5 V
 rail up alone first, then the 12 V. Acceptance is that doc's checklist (`get_throttled` 0x0 through the
 09-20 bisect combination, zero over-current, no `Undervoltage` in `.err`).

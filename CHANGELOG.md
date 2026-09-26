@@ -6,12 +6,11 @@ All notable changes to MonsterBox are documented in this file.
 
 - **Outdoor power-supply spec for PumpkinHead and Renfield (2026-09-26):** PumpkinHead's supply
   got wet and cooked, and his 12 V→5 V buck is shorted and kills supplies. `docs/hardware/POWER-SUPPLY-SIZING.md`
-  specifies the replacement the operator settled on: ONE battery power station per character (Bluetti
-  AC240P class — IP65, 110 V in, LiFePO4, 12 V/30 A RV port for the motor, USB-C for the Pi) in
-  pass-through, so the battery isolates the Pi from every 12 V event; per-rail load budgets, BOM, station
-  settings (UPS on, ECO off), wiring rules, the re-energize procedure after the water event, an acceptance
-  checklist, and the rejected alternatives (two-brick box, ATX, RD-125A). KNOWN-BUGS gains the outage
-  entry. Docs only; no code change.
+  records the two configurations the Pi, prop and robotics communities run without resets — (A) motor on
+  its own 12 V adapter + Pi on the official Raspberry Pi supply, one weatherproof box, common ground; (B) a
+  battery-backed bus, as one product the Bluetti AC240P — with load budgets, BOMs, rules, the re-energize
+  procedure after the water event, an acceptance checklist and the rejected alternatives. KNOWN-BUGS gains
+  the outage entry. Docs only; no code change.
 - **Goblin registry names follow the TV labels (2026-09-26):** Goblin 1 = .106, Goblin 2 = .14,
   Goblin 3 = .40 (device hostnames unchanged). KNOWN-BUGS gains the measured performance
   finding (hardware decode engages; the CPU burn and thermal throttle come from `--vo=drm`'s
