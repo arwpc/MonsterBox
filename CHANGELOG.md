@@ -4,6 +4,18 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Video Library is now Video Control — the place to run the Goblin displays on the night
+  (2026-09-25).** Same URL (`/video-library`) and every endpoint kept. The browser Preview player,
+  which did not work, is gone; in its place the page opens with a **Goblin board** — one card per
+  Goblin with a frame of what it is showing, its state, and a picker to hand it one of its own
+  videos (play once, loop, stop, resume) — and a **Send to Goblins** panel: pick one video (every
+  file on any Goblin, with frames, plus library uploads not yet on a Goblin), tick the Goblins,
+  and Play once / Loop / Stop / Resume loops on all of them at once, with a per-Goblin result
+  line. Library uploads sit below with upload, search, bulk actions and deploy unchanged; clicking
+  an upload picks it in the Send panel (it is copied onto each Goblin when sent). New endpoints:
+  `GET /video-library/api/goblins/board`, `POST /video-library/api/goblins/control`. The board
+  polls every 6 s. Nav, Goblin Management's button and the docs say Video Control.
+
 - **The per-Goblin video lists show a frame of each file (2026-09-25).** The Video Library's
   "On the Goblins" panel and the Goblin Management queue modal showed a film icon for every
   file because the device serves no pictures. `GET /video-library/api/goblins/:id/thumbnail?filename=…`

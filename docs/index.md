@@ -59,7 +59,7 @@ on each node before relying on it.
 | Goblin Management | `/goblin-management` | Video display control |
 | Head Animation | `/setup/head-animation` | Head tracking & motion detection |
 | Audio Library | `/audio-library` | Audio file management |
-| Video Library | `/video-library` | Video file management |
+| Video Control | `/video-library` | Run the Goblin displays (board, send to many) and manage video uploads |
 | System | `/setup/system` | System settings, telemetry, diagnostics |
 
 ## Quick Start

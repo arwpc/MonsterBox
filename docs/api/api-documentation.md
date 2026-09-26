@@ -346,6 +346,17 @@ POST /audio-library/api/audio/stop-all
 
 ## Video Library API
 
+The page at `/video-library` is **Video Control** (renamed 2026-09-25): the Goblin board and
+the Send panel on top, the library of uploads below. The URL and every endpoint are unchanged.
+
+### Goblin board and control (Video Control)
+
+- `GET /video-library/api/goblins/board[?playbackOnly=1]` → `{ success, online, goblins: [{ id, name, endpoint, status, online, playback, videos: [{filename,size}], error }] }` — every registered Goblin with live playback and (unless `playbackOnly`) the files on its disk.
+- `POST /video-library/api/goblins/control` `{ action: 'play'|'loop'|'stop'|'resume', filename?, goblinIds: [...] }` → per-Goblin results. `play` shows the file once then the Goblin returns to its own loop; `loop` makes it the Goblin's show; `stop`/`resume` need no file.
+- `GET /video-library/api/goblins/:id/thumbnail?filename=…` → JPEG frame of a file on the Goblin (cached; grabbed on the device by ffmpeg when needed).
+- `POST /video-library/api/goblins/:id/resume` → start the Goblin's own queue loop again after a stop.
+
+
 Base path: `/video-library`
 
 The video library manages video files for MonsterBox Goblin deployment. Files are stored in `data/video-library/files/` with metadata in `data/video-library/library.json`.

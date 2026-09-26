@@ -1112,7 +1112,7 @@ test.describe('Phase 10: Error & Edge Cases', () => {
       { path: '/setup/head-animation', name: 'Head Animation' },
       { path: '/setup/system', name: 'System' },
       { path: '/audio-library', name: 'Audio Library' },
-      { path: '/video-library', name: 'Video Library' },
+      { path: '/video-library', name: 'Video Control' },
       { path: '/ai-settings', name: 'AI Settings' },
       { path: '/ai-settings/stt', name: 'STT Settings' },
       { path: '/ai-settings/tts', name: 'TTS Settings' },

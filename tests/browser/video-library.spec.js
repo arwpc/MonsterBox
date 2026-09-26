@@ -1,6 +1,6 @@
 /**
- * Video Library Tests
- * Validates all functionality on /video-library page
+ * Video Control Tests (the page at /video-library)
+ * Validates the Goblin board, the Send panel and the library of uploads.
  */
 
 import { test, expect } from '@playwright/test';
@@ -8,7 +8,7 @@ import { testNavigation, ErrorTracker, getAllInteractiveElements } from './frame
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
-test.describe('Video Library Page', () => {
+test.describe('Video Control Page', () => {
     let page;
     let tracker;
 
@@ -37,6 +37,29 @@ test.describe('Video Library Page', () => {
         // Either we have files or an empty state - both are valid
         expect(videoItems + emptyState).toBeGreaterThanOrEqual(0);
 
+        await tracker.logErrors();
+    });
+
+    test('shows the Goblin board and the Send panel, one card per Goblin that answers', async ({ request }) => {
+        tracker.clear();
+        // The board is the device's truth, so compare with the same endpoint the page calls.
+        const board = await (await request.get(`${BASE_URL}/video-library/api/goblins/board`)).json();
+        expect(board.success).toBe(true);
+        await page.waitForFunction(() => !/Reading the Goblins/.test(document.getElementById('goblinBoard').textContent), null, { timeout: 30000 });
+        const cards = await page.locator('#goblinBoard .vid-board-card').count();
+        expect(cards).toBe(board.goblins.length);
+        const online = board.goblins.filter(g => g.online);
+        // Every online Goblin gets a picker with its files and the four controls.
+        for (const g of online) {
+            const card = page.locator(`#goblinBoard .vid-board-card[data-goblin-id="${g.id}"]`);
+            expect(await card.locator('.vid-board-select option').count()).toBe((g.videos || []).length + 1);
+            expect(await card.locator('button').count()).toBe(4);
+        }
+        // The Send panel ticks every online Goblin by default and lists their files.
+        expect(await page.locator('#sendGoblinList input:checked').count()).toBe(online.length);
+        if (online.length) {
+            expect(await page.locator('#sendVideoList .vid-send-row').count()).toBeGreaterThan(0);
+        }
         await tracker.logErrors();
     });
 

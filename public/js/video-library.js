@@ -1,6 +1,8 @@
 /**
- * Video Library Frontend JavaScript
- * Handles UI interactions, video playback, upload, search, filtering, and Goblin deployment
+ * Video Control — page script.
+ * The Goblin board (what each display is showing, hand it a video one by one),
+ * the Send panel (one video to many Goblins: play once, loop, stop, resume), and
+ * the library of uploads below with upload, search, filtering and deploy.
  */
 
 class VideoLibrary {
@@ -9,12 +11,15 @@ class VideoLibrary {
         this.goblins = [];
         this.categories = [];
         this.selectedFiles = [];
-        this.currentVideo = null;
         this.searchTimeout = null;
         this.bulkSelectMode = false;
         this.selectedVideoIds = new Set();
-        this.currentPlayer = null;
         this.deploymentInProgress = false;
+        // Video Control board state: GET /video-library/api/goblins/board
+        this.board = [];
+        this.sendSelection = null;      // { kind: 'goblin'|'library', filename, id?, title? }
+        this.sendGoblinIds = new Set(); // ticked Goblins in the Send panel
+        this.boardTimer = null;
 
         // View toggle state
         this.currentView = 'grid';
@@ -31,8 +36,9 @@ class VideoLibrary {
         await this.loadGoblins();
         this.populateCategoryFilters();
         this.updateStats();
-        this.startGoblinStatusPolling();
         this.initViewToggle();
+        await this.loadBoard(true);
+        this.startBoardPolling();
     }
 
     setupEventListeners() {
@@ -65,17 +71,6 @@ class VideoLibrary {
 
         document.getElementById('goblinDeployModal').addEventListener('show.bs.modal', () => {
             this.populateDeploymentModal();
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.currentPlayer) {
-                this.stopCurrentVideo();
-            }
-            if (e.key === ' ' && this.currentPlayer && e.target.tagName !== 'INPUT') {
-                e.preventDefault();
-                this.togglePlayPause();
-            }
         });
     }
 
@@ -140,8 +135,7 @@ class VideoLibrary {
             
             if (data.success) {
                 this.goblins = data.goblins;
-                this.updateGoblinStatus();
-                this.renderGoblinVideosPanel();
+                this.updateStats();
             }
         } catch (error) {
             console.error('Error loading Goblins:', error);
@@ -177,7 +171,7 @@ class VideoLibrary {
 
         grid.innerHTML = this.videoFiles.map(video => `
             <div class="col-12 mb-2">
-                <div class="mb-media-card card position-relative" data-video-id="${video.id}" onclick="videoLibrary.playVideo('${video.id}')">
+                <div class="mb-media-card card position-relative" data-video-id="${video.id}" onclick="videoLibrary.sendFromLibrary('${video.id}')">
                     ${this.bulkSelectMode ? `
                         <div class="position-absolute top-0 start-0 p-2 vid-bulk-overlay">
                             <input type="checkbox" class="video-select-checkbox" title="Select this video for bulk actions"
@@ -198,7 +192,7 @@ class VideoLibrary {
                         <div class="mb-media-overlay"></div>
                         
                         <div class="mb-media-controls">
-                            <button class="mb-btn mb-btn-primary btn-lg rounded-circle" title="Play this video in the preview player">
+                            <button class="mb-btn mb-btn-primary btn-lg rounded-circle" title="Pick this video in Send to Goblins">
                                 <i class="bi bi-play-fill"></i>
                             </button>
                         </div>
@@ -239,98 +233,6 @@ class VideoLibrary {
                 </div>
             </div>
         `).join('');
-    }
-
-    async playVideo(videoId) {
-        try {
-            const video = this.videoFiles.find(v => v.id === videoId);
-            if (!video) {
-                console.error('Video not found:', videoId);
-                return;
-            }
-
-            this.currentVideo = video;
-
-            // Update main player
-            const playerContainer = document.getElementById('mainVideoPlayer');
-            const playerControls = document.getElementById('videoPlayerControls');
-            const playerInfo = document.getElementById('videoPlayerInfo');
-
-            playerContainer.innerHTML = `
-                <video class="video-preview-player" controls autoplay>
-                    <source src="/video-library/api/video/${videoId}/stream" type="${video.mimeType || 'video/mp4'}">
-                    Your browser does not support the video tag.
-                </video>
-            `;
-
-            this.currentPlayer = playerContainer.querySelector('video');
-
-            // Update player info
-            document.getElementById('currentVideoTitle').textContent = video.title;
-            document.getElementById('currentVideoInfo').textContent = 
-                `${video.format?.toUpperCase() || 'VIDEO'} • ${this.formatDuration(video.duration || 0)} • ${this.formatFileSize(video.fileSize || 0)}`;
-
-            const tagsContainer = document.getElementById('currentVideoTags');
-            if (video.tags && video.tags.length) {
-                tagsContainer.innerHTML = video.tags.map(tag => 
-                    `<span class="mb-tag-badge badge bg-secondary">${tag}</span>`
-                ).join('');
-            } else {
-                tagsContainer.innerHTML = '';
-            }
-
-            playerControls.classList.remove('vid-hidden');
-            playerInfo.classList.remove('vid-hidden');
-
-            // Update play count
-            this.incrementPlayCount(videoId);
-
-        } catch (error) {
-            console.error('Error playing video:', error);
-            this.showError('Error playing video');
-        }
-    }
-
-    stopCurrentVideo() {
-        if (this.currentPlayer) {
-            this.currentPlayer.pause();
-            this.currentPlayer = null;
-        }
-        
-        document.getElementById('mainVideoPlayer').innerHTML = `
-            <div class="player-placeholder">
-                <i class="bi bi-camera-video vid-empty-icon"></i>
-                <h3 class="mb-heading-3 mt-3">Select a video to preview</h3>
-                <p class="mb-text-muted">Click any video from the library to start playing</p>
-            </div>
-        `;
-        
-        document.getElementById('videoPlayerControls').classList.add('vid-hidden');
-        document.getElementById('videoPlayerInfo').classList.add('vid-hidden');
-        
-        this.currentVideo = null;
-    }
-
-    togglePlayPause() {
-        if (this.currentPlayer) {
-            if (this.currentPlayer.paused) {
-                this.currentPlayer.play();
-            } else {
-                this.currentPlayer.pause();
-            }
-        }
-    }
-
-    toggleFullscreen() {
-        if (this.currentPlayer) {
-            if (this.currentPlayer.requestFullscreen) {
-                this.currentPlayer.requestFullscreen();
-            } else if (this.currentPlayer.webkitRequestFullscreen) {
-                this.currentPlayer.webkitRequestFullscreen();
-            } else if (this.currentPlayer.msRequestFullscreen) {
-                this.currentPlayer.msRequestFullscreen();
-            }
-        }
     }
 
     async toggleFavorite(videoId) {
@@ -601,7 +503,7 @@ class VideoLibrary {
                         : `Copied "${result.filename}" to ${goblin.name} in ${Math.round((result.elapsedMs || 0) / 1000)} s`);
                 }
                 await this.loadVideoLibrary();
-                if (this.currentGoblinVideosId === goblinId) this.loadGoblinVideos();
+                this.loadBoard(true);
             } else if (!quiet) {
                 this.showError(`Copy to ${goblin.name} failed: ${result.error}`);
             }
@@ -639,7 +541,7 @@ class VideoLibrary {
             if (result.success) {
                 this.showSuccess(`${goblin.name} is ${mode === 'loop' ? 'looping' : 'playing'} "${result.filename}"${result.deployed ? ' (copied first)' : ''}`);
                 await this.loadVideoLibrary();
-                if (this.currentGoblinVideosId === goblin.id) this.loadGoblinVideos();
+                this.loadBoard(true);
             } else {
                 this.showError(`${goblin.name}: ${result.error}`);
             }
@@ -733,133 +635,278 @@ class VideoLibrary {
             }
         } finally {
             deployBtn.disabled = false;
-            if (this.currentGoblinVideosId && selectedGoblins.includes(this.currentGoblinVideosId)) this.loadGoblinVideos();
+            this.loadBoard(true);
         }
     }
 
     // ─── Videos on the Goblins themselves ──────────────────────────────
 
-    renderGoblinVideosPanel() {
-        const panel = document.getElementById('goblinVideosPanel');
-        const select = document.getElementById('goblinVideosSelect');
-        if (!panel || !select) return;
-        const online = this.goblins.filter(g => g.status === 'online');
-        if (!online.length) {
-            panel.classList.add('vid-hidden');
-            return;
-        }
-        const previous = select.value || this.currentGoblinVideosId;
-        select.innerHTML = online.map(g => `<option value="${this.escapeAttr(g.id)}">${this.escapeHtml(g.name)}</option>`).join('');
-        if (previous && online.some(g => g.id === previous)) select.value = previous;
-        panel.classList.remove('vid-hidden');
-        if (select.value !== this.currentGoblinVideosId) this.loadGoblinVideos();
+
+    // ─── Video Control: the Goblin board and the Send panel ──────────
+
+    thumbUrl(goblinId, filename) {
+        return `/video-library/api/goblins/${encodeURIComponent(goblinId)}/thumbnail?filename=${encodeURIComponent(filename)}`;
     }
 
-    async loadGoblinVideos(rescan = false) {
-        const select = document.getElementById('goblinVideosSelect');
-        const list = document.getElementById('goblinVideosList');
-        const now = document.getElementById('goblinNowPlaying');
-        const goblinId = select?.value;
-        if (!goblinId || !list) return;
-        this.currentGoblinVideosId = goblinId;
-        list.innerHTML = `<small class="mb-text-muted">${rescan ? 'Rescanning' : 'Reading'} the Goblin's media folder…</small>`;
+    /**
+     * One call for the whole board. `full` re-reads every Goblin's disk; the poll
+     * only re-reads playback and keeps the file lists it already has.
+     */
+    async loadBoard(full = false) {
+        const haveLists = this.board.some(g => Array.isArray(g.videos));
+        const playbackOnly = !full && haveLists;
         try {
-            const response = await fetch(`/video-library/api/goblins/${encodeURIComponent(goblinId)}/videos${rescan ? '?rescan=1' : ''}`);
+            const response = await fetch(`/video-library/api/goblins/board${playbackOnly ? '?playbackOnly=1' : ''}`);
             const data = await response.json();
-            if (!data.success) {
-                list.innerHTML = `<small class="mb-text-warning">${this.escapeHtml(data.error || 'Could not read the Goblin')}</small>`;
-                if (now) now.textContent = '—';
-                return;
-            }
-            this.goblinVideos = data.videos || [];
-            this.goblinPlayback = data.playback || null;
-            this.renderGoblinVideos();
+            if (!data.success) return;
+            const previous = new Map(this.board.map(g => [g.id, g]));
+            this.board = (data.goblins || []).map(g => {
+                const old = previous.get(g.id);
+                return (playbackOnly && old) ? { ...g, videos: old.videos } : g;
+            });
+            // Newly online Goblins have no list yet — fetch once more in full.
+            if (playbackOnly && this.board.some(g => g.online && !Array.isArray(g.videos))) return this.loadBoard(true);
+            for (const g of this.board) if (!g.online) this.sendGoblinIds.delete(g.id);
+            if (!this.sendGoblinIds.size) this.board.filter(g => g.online).forEach(g => this.sendGoblinIds.add(g.id));
+            this.renderBoard();
+            this.renderSendChooser();
+            this.renderSendGoblins();
         } catch (error) {
-            console.error('Error loading Goblin videos:', error);
-            list.innerHTML = '<small class="mb-text-warning">Network error reading the Goblin</small>';
+            console.error('Error loading the Goblin board:', error);
         }
     }
 
-    renderGoblinVideos() {
-        const list = document.getElementById('goblinVideosList');
-        const now = document.getElementById('goblinNowPlaying');
-        const filter = (document.getElementById('goblinVideosFilter')?.value || '').trim().toLowerCase();
-        if (!list) return;
-        const pb = this.goblinPlayback;
-        if (now) {
-            now.textContent = pb
-                ? (pb.mpvRunning && pb.currentVideo
-                    ? `Now showing: ${pb.currentVideo}${pb.queue && pb.queue.loopMode === 'queue' ? ' (looping)' : ''}`
-                    : 'Idle — nothing playing')
-                : 'Playback status unavailable';
+    startBoardPolling() {
+        if (this.boardTimer) clearInterval(this.boardTimer);
+        this.boardTimer = setInterval(() => { if (!document.hidden) this.loadBoard(false); }, 6000);
+    }
+
+    describePlayback(pb) {
+        if (!pb) return { text: 'Status unavailable', file: null, looping: false };
+        if (pb.mpvRunning && pb.currentVideo) {
+            const looping = !!(pb.queue && pb.queue.loopMode === 'queue');
+            return { text: `Now showing: ${pb.currentVideo}${looping ? ' (looping)' : ''}`, file: pb.currentVideo, looping };
         }
-        const videos = (this.goblinVideos || [])
-            .filter(v => !filter || String(v.filename).toLowerCase().includes(filter))
-            .sort((a, b) => String(a.filename).localeCompare(String(b.filename)));
-        if (!videos.length) {
-            list.innerHTML = `<small class="mb-text-muted">${this.goblinVideos && this.goblinVideos.length ? 'No file matches the filter.' : 'This Goblin has no videos on disk.'}</small>`;
+        return { text: 'Idle — nothing on screen', file: null, looping: false };
+    }
+
+    renderBoard() {
+        const grid = document.getElementById('goblinBoard');
+        if (!grid) return;
+        if (!this.board.length) {
+            grid.innerHTML = '<div class="col-12"><small class="mb-text-muted">No Goblin is registered. Add one on the Goblin Management page.</small></div>';
             return;
         }
-        list.innerHTML = videos.map(v => {
-            const current = pb && pb.mpvRunning && pb.currentVideo === v.filename;
+        grid.innerHTML = this.board.map(g => {
+            const pb = this.describePlayback(g.playback);
+            const videos = (g.videos || []).slice().sort((a, b) => String(a.filename).localeCompare(String(b.filename)));
+            const status = g.online ? 'online' : (g.expectedOffline ? 'shelved' : 'offline');
+            const thumb = g.online && pb.file
+                ? `<img alt="" src="${this.thumbUrl(g.id, pb.file)}" onerror="this.parentNode.classList.add('vid-goblin-thumb-missing'); this.remove();">`
+                : '';
             return `
-            <div class="vid-pick-row mb-row-between${current ? ' vid-now-playing' : ''}">
-                <span class="vid-goblin-thumb"><img loading="lazy" alt="" src="/video-library/api/goblins/${encodeURIComponent(this.currentGoblinVideosId)}/thumbnail?filename=${encodeURIComponent(v.filename)}" onerror="this.parentNode.classList.add('vid-goblin-thumb-missing'); this.remove();"><i class="bi bi-film"></i></span>
-                <span class="vid-goblin-meta">
-                    <strong>${this.escapeHtml(v.filename)}</strong>${current ? ' <span class="mb-status-badge online">playing</span>' : ''}
-                    <br><small class="mb-text-muted mb-mono">${this.formatFileSize(v.size || 0)}</small>
-                </span>
-                <span class="btn-group btn-group-sm">
-                    <button class="mb-btn mb-btn-sm mb-btn-primary" data-filename="${this.escapeAttr(v.filename)}" data-mode="once" title="Play once, then the Goblin returns to its queue"><i class="bi bi-play-fill"></i></button>
-                    <button class="mb-btn mb-btn-sm mb-btn-secondary" data-filename="${this.escapeAttr(v.filename)}" data-mode="loop" title="Make this the Goblin's looping queue"><i class="bi bi-arrow-repeat"></i></button>
-                </span>
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="mb-card vid-board-card${g.online ? '' : ' vid-board-offline'}" data-goblin-id="${this.escapeAttr(g.id)}">
+                    <div class="vid-board-head">
+                        <strong class="mb-serif">${this.escapeHtml(g.name)}</strong>
+                        <span class="mb-status-badge ${g.online ? 'online' : 'offline'}">${status}</span>
+                    </div>
+                    <div class="vid-goblin-thumb vid-board-thumb${thumb ? '' : ' vid-goblin-thumb-missing'}">${thumb}<i class="bi ${g.online ? 'bi-moon-stars' : 'bi-plug'}"></i></div>
+                    <div class="vid-board-now${pb.file ? ' vid-board-live' : ''}">${this.escapeHtml(g.online ? pb.text : (g.error || 'Not reachable'))}</div>
+                    ${g.online ? `
+                    <div class="vid-board-pick">
+                        <select class="mb-select mb-select-sm vid-board-select" title="A video on ${this.escapeAttr(g.name)}'s disk" data-goblin-id="${this.escapeAttr(g.id)}">
+                            <option value="">Pick a video on this Goblin…</option>
+                            ${videos.map(v => `<option value="${this.escapeAttr(v.filename)}"${pb.file === v.filename ? ' selected' : ''}>${this.escapeHtml(v.filename)}</option>`).join('')}
+                        </select>
+                        <span class="mb-btn-group" role="group">
+                            <button class="mb-btn mb-btn-sm mb-btn-primary" title="Show the picked video once, then back to this Goblin's loop" onclick="videoLibrary.boardControl('${this.escapeAttr(g.id)}', 'play')"><i class="bi bi-play-fill"></i></button>
+                            <button class="mb-btn mb-btn-sm mb-btn-primary" title="Make the picked video this Goblin's show until stopped" onclick="videoLibrary.boardControl('${this.escapeAttr(g.id)}', 'loop')"><i class="bi bi-arrow-repeat"></i></button>
+                            <button class="mb-btn mb-btn-sm mb-btn-danger" title="Stop this Goblin" onclick="videoLibrary.boardControl('${this.escapeAttr(g.id)}', 'stop')"><i class="bi bi-stop-fill"></i></button>
+                            <button class="mb-btn mb-btn-sm mb-btn-secondary" title="Put this Goblin back on its own loop" onclick="videoLibrary.boardControl('${this.escapeAttr(g.id)}', 'resume')"><i class="bi bi-skip-forward-fill"></i></button>
+                        </span>
+                    </div>` : ''}
+                </div>
             </div>`;
         }).join('');
-        list.querySelectorAll('button[data-filename]').forEach(btn => {
-            btn.addEventListener('click', () => this.playGoblinVideo(btn.dataset.filename, btn.dataset.mode));
-        });
     }
 
-    async playGoblinVideo(filename, mode) {
-        const goblinId = this.currentGoblinVideosId;
-        const goblin = this.goblins.find(g => g.id === goblinId);
-        if (!goblin) return;
+    /** The per-card controls: one Goblin, the file its select shows. */
+    async boardControl(goblinId, action) {
+        const g = this.board.find(x => x.id === goblinId);
+        if (!g) return;
+        let filename = null;
+        if (action === 'play' || action === 'loop') {
+            const sel = document.querySelector(`.vid-board-select[data-goblin-id="${CSS.escape(goblinId)}"]`);
+            filename = sel && sel.value;
+            if (!filename) { this.showError(`Pick a video on ${g.name} first`); return; }
+        }
+        await this.runControl(action, filename, [goblinId]);
+    }
+
+    /** Every file on any online Goblin, plus library uploads no Goblin holds yet. */
+    sendCandidates() {
+        const byName = new Map();
+        for (const g of this.board) {
+            if (!g.online) continue;
+            for (const v of g.videos || []) {
+                const entry = byName.get(v.filename) || { kind: 'goblin', filename: v.filename, size: v.size, on: [] };
+                entry.on.push(g.id);
+                byName.set(v.filename, entry);
+            }
+        }
+        for (const v of this.videoFiles) {
+            const name = v.originalName || v.title;
+            if (!name || byName.has(name)) continue;
+            byName.set(name, { kind: 'library', id: v.id, filename: name, title: v.title, size: v.fileSize, on: [], thumb: v.thumbnailPath ? `/video-library/api/video/${v.id}/thumbnail` : null });
+        }
+        return Array.from(byName.values()).sort((a, b) => a.filename.localeCompare(b.filename));
+    }
+
+    renderSendChooser() {
+        const list = document.getElementById('sendVideoList');
+        if (!list) return;
+        const filter = (document.getElementById('sendFilter')?.value || '').trim().toLowerCase();
+        const online = this.board.filter(g => g.online);
+        const items = this.sendCandidates().filter(c => !filter || c.filename.toLowerCase().includes(filter));
+        if (!items.length) {
+            list.innerHTML = `<small class="mb-text-muted">${online.length ? 'No video matches.' : 'No Goblin is online, so there is nothing to send to.'}</small>`;
+            return;
+        }
+        const anyGoblin = online[0] && online[0].id;
+        list.innerHTML = items.map(c => {
+            const selected = this.sendSelection && this.sendSelection.filename === c.filename;
+            const thumbSrc = c.kind === 'goblin' ? this.thumbUrl(c.on[0] || anyGoblin, c.filename) : c.thumb;
+            const where = c.kind === 'goblin'
+                ? (c.on.length === online.length ? 'on every Goblin' : `on ${c.on.map(id => (this.board.find(g => g.id === id) || {}).name || id).join(', ')}`)
+                : 'library upload — copied onto a Goblin when sent';
+            return `
+            <label class="vid-pick-row vid-send-row${selected ? ' vid-send-selected' : ''}" title="${this.escapeAttr(c.filename)}">
+                <input type="radio" name="sendVideo" value="${this.escapeAttr(c.filename)}" ${selected ? 'checked' : ''} onchange="videoLibrary.pickSendVideo(this.value)">
+                <span class="vid-goblin-thumb${thumbSrc ? '' : ' vid-goblin-thumb-missing'}">${thumbSrc ? `<img loading="lazy" alt="" src="${thumbSrc}" onerror="this.parentNode.classList.add('vid-goblin-thumb-missing'); this.remove();">` : ''}<i class="bi bi-film"></i></span>
+                <span class="vid-goblin-meta">
+                    <strong>${this.escapeHtml(c.filename)}</strong>
+                    <br><small class="mb-text-muted">${this.escapeHtml(where)}${c.size ? ` · <span class="mb-mono">${this.formatFileSize(c.size)}</span>` : ''}</small>
+                </span>
+            </label>`;
+        }).join('');
+    }
+
+    pickSendVideo(filename) {
+        this.sendSelection = this.sendCandidates().find(c => c.filename === filename) || null;
+        this.renderSendChooser();
+    }
+
+    /** A library card was clicked: make it the picked video and show the Send panel. */
+    sendFromLibrary(videoId) {
+        const v = this.videoFiles.find(x => x.id === videoId);
+        if (!v) return;
+        this.sendSelection = this.sendCandidates().find(c => c.filename === (v.originalName || v.title)) || { kind: 'library', id: v.id, filename: v.originalName || v.title, title: v.title, on: [] };
+        const filter = document.getElementById('sendFilter'); if (filter) filter.value = '';
+        this.renderSendChooser();
+        document.getElementById('sendPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        this.showSuccess(`Picked "${this.sendSelection.filename}" — tick the Goblins and press Play once or Loop`);
+    }
+
+    renderSendGoblins() {
+        const list = document.getElementById('sendGoblinList');
+        if (!list) return;
+        const online = this.board.filter(g => g.online);
+        if (!online.length) { list.innerHTML = '<small class="mb-text-muted">No Goblin online.</small>'; return; }
+        list.innerHTML = online.map(g => {
+            const pb = this.describePlayback(g.playback);
+            return `
+            <label class="vid-pick-row" title="${this.escapeAttr(g.name)}">
+                <input type="checkbox" value="${this.escapeAttr(g.id)}" ${this.sendGoblinIds.has(g.id) ? 'checked' : ''} onchange="videoLibrary.toggleSendGoblin(this.value, this.checked)">
+                <span><strong>${this.escapeHtml(g.name)}</strong><br><small class="mb-text-muted">${this.escapeHtml(pb.text)}</small></span>
+            </label>`;
+        }).join('');
+    }
+
+    toggleSendGoblin(goblinId, on) {
+        if (on) this.sendGoblinIds.add(goblinId); else this.sendGoblinIds.delete(goblinId);
+    }
+
+    selectAllSendGoblins(on) {
+        this.sendGoblinIds.clear();
+        if (on) this.board.filter(g => g.online).forEach(g => this.sendGoblinIds.add(g.id));
+        this.renderSendGoblins();
+    }
+
+    /** The Send panel's buttons: the picked video to every ticked Goblin. */
+    async sendControl(action) {
+        const ids = Array.from(this.sendGoblinIds);
+        if (!ids.length) { this.showError('Tick at least one Goblin'); return; }
+        const needsVideo = action === 'play' || action === 'loop';
+        if (needsVideo && !this.sendSelection) { this.showError('Pick a video first'); return; }
+        if (needsVideo && this.sendSelection.kind === 'library') {
+            // A library upload: the server copies it onto each Goblin before playing.
+            await this.runLibraryOnMany(this.sendSelection, ids, action === 'loop' ? 'loop' : 'once');
+            return;
+        }
+        await this.runControl(action, needsVideo ? this.sendSelection.filename : null, ids);
+    }
+
+    async runControl(action, filename, goblinIds) {
+        const verbs = { play: 'Playing', loop: 'Looping', stop: 'Stopping', resume: 'Resuming' };
+        const names = goblinIds.map(id => (this.board.find(g => g.id === id) || {}).name || id).join(', ');
+        this.showSuccess(`${verbs[action]}${filename ? ` "${filename}"` : ''} on ${names}…`);
+        this.setSendBusy(true);
         try {
-            this.showSuccess(`${mode === 'loop' ? 'Looping' : 'Playing'} "${filename}" on ${goblin.name}…`);
-            const response = await fetch(`/video-library/api/goblins/${encodeURIComponent(goblinId)}/play`, {
+            const response = await fetch('/video-library/api/goblins/control', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename, mode })
+                body: JSON.stringify({ action, filename, goblinIds })
             });
-            const result = await response.json();
-            if (result.success) {
-                this.showSuccess(`${goblin.name} is ${mode === 'loop' ? 'looping' : 'playing'} "${filename}"`);
-            } else {
-                this.showError(`${goblin.name}: ${result.error}`);
-            }
-            this.goblinPlayback = result.playback || this.goblinPlayback;
-            this.renderGoblinVideos();
+            const data = await response.json();
+            this.renderSendResults(data.results || [{ goblinId: '', success: false, error: data.error }]);
+            if (data.success && data.failed === 0) this.showSuccess(`${verbs[action].replace('ing', 'ed')} on ${data.successful} Goblin${data.successful === 1 ? '' : 's'}`);
+            else this.showError(`${data.failed || goblinIds.length} of ${goblinIds.length} did not answer as expected — see the list`);
         } catch (error) {
-            console.error('Error playing Goblin video:', error);
-            this.showError('Play failed: network error');
+            console.error('Goblin control error:', error);
+            this.showError('Goblin control failed: network error');
+        } finally {
+            this.setSendBusy(false);
+            this.loadBoard(false);
         }
     }
 
-    async stopGoblin() {
-        const goblinId = this.currentGoblinVideosId;
-        const goblin = this.goblins.find(g => g.id === goblinId);
-        if (!goblin) return;
+    async runLibraryOnMany(selection, goblinIds, mode) {
+        this.showSuccess(`Sending "${selection.filename}" to ${goblinIds.length} Goblin${goblinIds.length === 1 ? '' : 's'} (copied first where missing)…`);
+        this.setSendBusy(true);
         try {
-            const response = await fetch(`/video-library/api/goblins/${encodeURIComponent(goblinId)}/stop`, { method: 'POST' });
-            const result = await response.json();
-            if (result.success) this.showSuccess(`${goblin.name} stopped`);
-            else this.showError(`${goblin.name}: ${result.error}`);
-            this.goblinPlayback = result.playback || this.goblinPlayback;
-            this.renderGoblinVideos();
-        } catch (error) {
-            console.error('Error stopping Goblin:', error);
-            this.showError('Stop failed: network error');
+            const results = await Promise.all(goblinIds.map(async (goblinId) => {
+                try {
+                    const r = await fetch(`/video-library/api/video/${selection.id}/play-on-goblin`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ goblinId, mode })
+                    });
+                    const d = await r.json();
+                    return { goblinId, goblinName: d.goblinName, success: !!d.success, error: d.error, deployed: !!d.deployed };
+                } catch (e) { return { goblinId, success: false, error: e.message }; }
+            }));
+            this.renderSendResults(results);
+            const ok = results.filter(r => r.success).length;
+            if (ok === results.length) this.showSuccess(`"${selection.filename}" is ${mode === 'loop' ? 'looping' : 'playing'} on ${ok} Goblin${ok === 1 ? '' : 's'}`);
+            else this.showError(`${results.length - ok} of ${results.length} did not play — see the list`);
+            await this.loadVideoLibrary();
+        } finally {
+            this.setSendBusy(false);
+            this.loadBoard(true);
         }
+    }
+
+    setSendBusy(busy) {
+        ['sendPlayBtn', 'sendLoopBtn', 'sendStopBtn', 'sendResumeBtn'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = busy; });
+    }
+
+    renderSendResults(results) {
+        const box = document.getElementById('sendResults');
+        if (!box) return;
+        box.innerHTML = results.map(r => {
+            const name = r.goblinName || (this.board.find(g => g.id === r.goblinId) || {}).name || r.goblinId;
+            return `<div class="vid-send-result"><span class="mb-status-badge ${r.success ? 'online' : 'offline'}">${r.success ? 'ok' : 'failed'}</span> <strong>${this.escapeHtml(name)}</strong>${r.error ? ` <small class="mb-text-muted">— ${this.escapeHtml(r.error)}</small>` : ''}${r.deployed ? ' <small class="mb-text-muted">(copied first)</small>' : ''}</div>`;
+        }).join('');
     }
 
     // ─── View Toggle ──────────────────────────────────────────────────
@@ -974,7 +1021,7 @@ class VideoLibrary {
             row.addEventListener('click', function(e) {
                 if (e.target.closest('button') || e.target.closest('input')) return;
                 var videoId = row.dataset.videoId;
-                self.playVideo(videoId);
+                self.sendFromLibrary(videoId);
             });
         });
 
@@ -1169,37 +1216,6 @@ class VideoLibrary {
         document.getElementById('totalSize').textContent = this.formatFileSize(totalSize);
         document.getElementById('totalCategories').textContent = totalCategories;
         document.getElementById('totalGoblins').textContent = this.goblins.filter(g => g.status === 'online').length;
-    }
-
-    updateGoblinStatus() {
-        const onlineGoblins = this.goblins.filter(g => g.status === 'online');
-        const statusBar = document.getElementById('goblinStatusBar');
-        const statusList = document.getElementById('goblinStatusList');
-
-        if (onlineGoblins.length > 0) {
-            statusBar.classList.remove('vid-hidden');
-            statusList.innerHTML = onlineGoblins.map(goblin => `
-                <span class="mb-status-badge ${goblin.status} me-2">${goblin.name}</span>
-            `).join('');
-        } else {
-            statusBar.classList.add('vid-hidden');
-        }
-    }
-
-    startGoblinStatusPolling() {
-        setInterval(async () => {
-            await this.loadGoblins();
-        }, 30000); // Update every 30 seconds
-    }
-
-    showGoblinManager() {
-        window.location.href = '/goblin-management';
-    }
-
-    deployCurrentVideo() {
-        if (this.currentVideo) {
-            this.quickDeploy(this.currentVideo.id);
-        }
     }
 
     formatDuration(seconds) {

@@ -1623,7 +1623,7 @@ test.describe('20. Full Navigation Smoke Test', () => {
     { url: '/setup/models', name: 'Models' },
     { url: '/setup/system', name: 'System' },
     { url: '/audio-library', name: 'Audio Library' },
-    { url: '/video-library', name: 'Video Library' },
+    { url: '/video-library', name: 'Video Control' },
     { url: '/goblin-management', name: 'Goblin Management' },
     { url: '/ai-settings', name: 'AI Settings' },
     { url: '/ai-settings/stt', name: 'AI Settings STT' },

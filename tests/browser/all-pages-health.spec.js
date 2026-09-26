@@ -37,7 +37,7 @@ const PAGES = [
   { name: 'AI Settings — STT', url: '/ai-settings/stt' },
   { name: 'AI Settings — TTS', url: '/ai-settings/tts' },
   { name: 'Audio Library', url: '/audio-library' },
-  { name: 'Video Library', url: '/video-library' },
+  { name: 'Video Control', url: '/video-library' },
   { name: 'Goblin Management', url: '/goblin-management' },
   { name: 'Orchestration', url: '/orchestration' },
   { name: 'Conversation', url: '/conversation' },

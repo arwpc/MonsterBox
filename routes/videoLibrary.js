@@ -64,9 +64,9 @@ const upload = multer({
 // Main video library page
 router.get('/', (req, res) => {
     res.renderWithLayout('video-library/index', {
-        title: 'Video Library - MonsterBox',
+        title: 'Video Control - MonsterBox',
         page: 'video-library',
-        pageTitle: 'Video Library',
+        pageTitle: 'Video Control',
         styles: ['/css/mb-video-library.css']
     });
 });
@@ -505,6 +505,80 @@ router.post('/api/goblins/:id/stop', async (req, res) => {
         res.status(result.success ? 200 : 502).json(result);
     } catch (error) {
         console.error('Error stopping Goblin:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * GET /api/goblins/board - The whole control board in one call: every registered
+ * Goblin with its live playback and (when online) the files on its disk. This is
+ * what Video Control renders and polls; one request instead of three per Goblin.
+ * `?playbackOnly=1` skips the disk listings for the poll.
+ */
+router.get('/api/goblins/board', async (req, res) => {
+    try {
+        const playbackOnly = req.query.playbackOnly === '1';
+        const registry = await goblinManagerService.getGoblins({});
+        const goblins = (registry && registry.goblins) || [];
+        const board = await Promise.all(goblins.map(async (g) => {
+            const entry = {
+                id: g.id, name: g.name || g.id, endpoint: g.endpoint, status: g.status,
+                expectedOffline: goblinManagerService.isExpectedOffline(g),
+                online: false, playback: null, videos: null, error: null
+            };
+            if (entry.expectedOffline && g.status !== 'online') return entry;
+            const pb = await goblinManagerService.getGoblinPlayback(g.id);
+            if (!pb.success) { entry.error = pb.error; return entry; }
+            entry.online = true;
+            entry.playback = pb;
+            if (!playbackOnly) {
+                const list = await goblinManagerService.listGoblinVideos(g.id);
+                entry.videos = list.success ? list.videos.map(v => ({ filename: v.filename, size: v.size })) : [];
+                if (!list.success) entry.error = list.error;
+            }
+            return entry;
+        }));
+        res.json({ success: true, goblins: board, online: board.filter(b => b.online).length });
+    } catch (error) {
+        console.error('Error building the Goblin board:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/goblins/control - One action on many Goblins at once.
+ * { action: 'play'|'loop'|'stop'|'resume', filename?, goblinIds: [...] }
+ * `play` shows the file once and hands the screen back to the Goblin's loop;
+ * `loop` makes it the Goblin's show; `stop` and `resume` need no file. Every
+ * Goblin answers for itself (device-proven, as the single-Goblin routes are).
+ */
+router.post('/api/goblins/control', async (req, res) => {
+    try {
+        const { action, filename, goblinIds } = req.body || {};
+        const ids = Array.isArray(goblinIds) ? goblinIds.map(String).filter(Boolean) : [];
+        if (!['play', 'loop', 'stop', 'resume'].includes(action)) {
+            return res.status(400).json({ success: false, error: 'action must be play, loop, stop or resume' });
+        }
+        if (!ids.length) return res.status(400).json({ success: false, error: 'goblinIds is required' });
+        if ((action === 'play' || action === 'loop') && (!filename || typeof filename !== 'string')) {
+            return res.status(400).json({ success: false, error: `${action} needs a filename` });
+        }
+        const results = await Promise.all(ids.map(async (goblinId) => {
+            try {
+                let r;
+                if (action === 'play') r = await goblinManagerService.playVideoOnGoblin(goblinId, filename);
+                else if (action === 'loop') r = await goblinManagerService.loopVideoOnGoblin(goblinId, filename);
+                else if (action === 'stop') r = await goblinManagerService.stopGoblin(goblinId);
+                else r = await goblinManagerService.resumeGoblinQueue(goblinId);
+                return { goblinId, goblinName: r.goblinName, success: !!r.success, error: r.error, notOnGoblin: !!r.notOnGoblin, playback: r.playback || null };
+            } catch (err) {
+                return { goblinId, success: false, error: err.message };
+            }
+        }));
+        const successful = results.filter(r => r.success).length;
+        res.status(successful ? 200 : 502).json({ success: successful > 0, action, filename: filename || null, total: results.length, successful, failed: results.length - successful, results });
+    } catch (error) {
+        console.error('Error controlling Goblins:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

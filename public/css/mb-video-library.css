@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Video Library — page styles
+   Video Control — page styles
    --------------------------------------------------------------------------
    Page-specific rules only; shared components come from components.css and
    every value resolves to a --mb-* token so the three themes reach this page.
@@ -152,3 +152,57 @@
 .vid-goblin-meta { flex: 1 1 auto; min-width: 0; }
 
 .vid-now-playing { background: var(--mb-bg-hover); border-left: 3px solid var(--mb-success, #4caf50); }
+
+/* ---- Video Control: the Goblin board ------------------------------------
+   One card per Goblin: name + state, a frame of what it is showing, the
+   now-showing line, and a picker to hand it one video. Offline cards are
+   dimmed but stay on the board so the operator sees who is missing.
+   -------------------------------------------------------------------------- */
+.vid-board-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mb-space-2);
+  height: 100%;
+}
+.vid-board-offline { opacity: 0.6; }
+.vid-board-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mb-space-2);
+}
+.vid-board-thumb {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  font-size: var(--mb-text-2xl);
+}
+.vid-board-now {
+  font-size: var(--mb-text-sm);
+  color: var(--mb-fg-secondary);
+  min-height: 1.4em;
+  overflow-wrap: anywhere;
+}
+.vid-board-live { color: var(--mb-success, #4caf50); }
+.vid-board-pick {
+  display: flex;
+  gap: var(--mb-space-2);
+  align-items: center;
+}
+.vid-board-select { flex: 1 1 auto; min-width: 0; }
+
+/* ---- Video Control: the Send panel -------------------------------------- */
+.vid-send-list { max-height: 420px; }
+#sendFilter { max-width: 240px; }
+.vid-send-row { cursor: pointer; align-items: center; }
+.vid-send-row input[type="radio"] { flex: 0 0 auto; accent-color: var(--mb-primary); }
+.vid-send-selected {
+  background: var(--mb-bg-hover);
+  border-left: 3px solid var(--mb-primary);
+}
+.vid-send-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mb-space-2);
+}
+.vid-send-result { font-size: var(--mb-text-sm); margin-top: var(--mb-space-1); }
