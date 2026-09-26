@@ -4,6 +4,12 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Goblin registry names follow the TV labels (2026-09-26):** Goblin 1 = .106, Goblin 2 = .14,
+  Goblin 3 = .40 (device hostnames unchanged). KNOWN-BUGS gains the measured performance
+  finding (hardware decode engages; the CPU burn and thermal throttle come from `--vo=drm`'s
+  software conversion/scaling — daylight fixes listed) and the respawn-storm defect in the
+  Goblin server's stop path.
+
 - **Goblin displays: silent by default, one-clip loops in one process, and an operator script to
   make the OS lean (2026-09-26).** Sound now needs `GOBLIN_AUDIO=on` in the unit environment (the
   HDMI path is proven; the show is not ready for it). A queue looping a single clip runs one mpv

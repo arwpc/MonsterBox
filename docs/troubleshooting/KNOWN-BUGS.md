@@ -1728,6 +1728,36 @@ reports were not kept.
   (offline→online); `lastSeen` still advances in memory for the API and the sort. *Proof:* the
   file's mtime holds still while all three stay online (one write at service start, none after).
   Unit: `tests/unit/goblin-orchestration-targets.test.js`.
+- 🟡 **Goblin playback burns ~240% CPU and runs a unit into thermal throttle, and it is NOT the
+  decoder (measured 2026-09-26 02:05).** Off-screen decode tests on both live units:
+  `--hwdec=v4l2m2m-copy` engages ("Using hardware decoding (v4l2m2m-copy)", ~52% CPU for a
+  flat-out 150-frame run) — yet the display mpv sits at 235–258% CPU on both. The cost is
+  `--vo=drm` (the dumb DRM output): every decoded frame is copied out of the codec, converted
+  NV12→XRGB in software and scaled in software to the framebuffer — 1920×1080 on Goblin 1
+  (`hdmi_mode=16`, `framebuffer_width/height=1920/1080` for 720p content), 720p on Goblin 2
+  (`hdmi_mode=4`). Goblin 1 reads 70.9 °C, `throttled=0x80008` (soft temperature limit ACTIVE)
+  and 1200 MHz while looping one clip; Goblin 2 50.5 °C. *Daylight test, not at night on a
+  working screen:* (1) `--drm-draw-surface-size=1280x720` so the DRM plane scales in hardware
+  and mpv stops software-scaling; (2) `hdmi_mode=4` (720p60) + drop the 1080p framebuffer lines on
+  Goblin 1 so output matches content; (3) re-try `--vo=gpu --gpu-context=drm` on today's
+  kernel (the code comment that it "does NOT work on Pi3" is from 2025); (4) `--video-sync=audio`
+  or default sync instead of `display-resample` once audio is on. Expect ~50% CPU and ~15–20 °C
+  cooler; then the overclock is no longer needed at all. Measure with `ps -o pcpu -C mpv`,
+  `vcgencmd measure_temp`, `vcgencmd get_throttled`, and the mpv `--log-file` drop counters.
+- 🔴 **A stop that does not kill mpv puts the Goblin server into a one-per-second respawn storm
+  (seen on Goblin 2, 2026-09-26 01:57).** After a `goblin.service` restart the queue's mpv
+  (looping `542 Jb Hd.mp4` at 234% CPU) survived `/stop-all`; the next clip's mpv could not take
+  the DRM display, exited, and `onVideoEnd → playNext` respawned it every second (`playCount`
+  went 5 → 50 in a minute; `ps` showed a 40 s-old mpv beside a 1 s-old one, both children of
+  the server). `kill -9` of the stuck mpv did not end it either — only `systemctl restart
+  goblin.service` (KillMode=control-group) cleared it. *Static:* `mpvController.stop()` returns
+  early when it thinks the process is gone and never confirms exit; `queueManager.onVideoEnd()`
+  has no backoff. *Fix to make:* stop() must wait for exit (SIGTERM → 2 s → SIGKILL → wait), and
+  playNext() must back off (e.g. 3 fast exits → 10 s pause) instead of spinning. Until then, do
+  not stop/restart a playing Goblin unless you can check `pgrep -c mpv` afterwards.
+- ℹ️ **Registry names now follow the TV labels (2026-09-26 01:55):** Goblin 1 = 192.168.8.106
+  (hostname goblin2), Goblin 2 = 192.168.8.14 (hostname goblin3), Goblin 3 = 192.168.8.40
+  (hostname goblin1). The hostnames on the devices were never changed.
 - 🔴 **Goblins drop off the WiFi after a reboot and do not come back on their own (2026-09-26).**
   All three Goblins are on `wlan0` (NetworkManager, "preconfigured"; `eth0` unavailable). After
   the 01:09 fleet reboot, Goblin Two re-joined within a minute; Goblin One (.40) never appeared
