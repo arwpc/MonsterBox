@@ -714,6 +714,17 @@ emergency stop (see Security / Ops). It has been **restored**, but re-check any 
 superpowers after a suite run that predates the `httpNode` guard.
 
 ### PumpkinHead — char 1 · `192.168.8.150`
+🔴 **2026-09-26 — DOWN: his power supply got WET and is COOKED, and the 12 V→5 V buck converter is
+dead and SHORTED — it kills any supply it is connected to** (operator report). Supersedes the ✅ line
+below until the replacement is built. Cut the buck out; never reconnect it, not even to test. The
+replacement is specified in `docs/hardware/POWER-SUPPLY-SIZING.md`: ONE waterproof unit per character —
+a NEMA 4X box on one 110 V cord carrying two potted IP67 bricks, Mean Well HLG-320H-12 for the 12 V rail
+and LPV-100-5 for the 5 V rail — so the rails are galvanically isolated and no 12 V draw can brown out the
+Pi. That closes the 2026-09-07 / 2026-09-20 "the fix is his power supply" thread by construction. Before
+re-energizing: dry the rig 24 h, inspect the MDD10A, Pi, ReSpeaker and webcam for water, bring the 5 V
+rail up alone first, then the 12 V. Acceptance is that doc's checklist (`get_throttled` 0x0 through the
+09-20 bisect combination, zero over-current, no `Undervoltage` in `.err`).
+
 ✅ **OPERATIONAL — working 100% (operator-confirmed 2026-09-13).** Motor, camera, mic, speaker, and the
 WS2812B eye rings all functional; LED eye animation + speech/AI sync built and tuned this session. The
 under-voltage note below is a known hard-start limitation, mitigated in software (drive the motor at
