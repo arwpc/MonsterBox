@@ -1652,6 +1652,102 @@ needs, and only one holder can capture at a time.
   and Groundbreaker's own entries were landed in git in `1bbf0d67`, so those two casualties no
   longer disappear on the next deploy.
 
+### Goblins (video displays) — opened from the 2026-09-25 gold-snapshot review
+
+Context: the three Goblins (Pi 3B+ video nodes at `192.168.8.40` / `.106` / `.14`, port 3001,
+registry `data/goblins.json`) were declared "running and working perfectly" by the operator on
+2026-09-25 and snapshotted into `backups/goblins-gold-2026-09-25/` (see its README). The review
+that followed asked three questions — does the code match the device, is it cheap on a Pi, and
+can a Goblin be driven from Orchestration, a Scene step and the Video Library. Everything below
+was proven on the live system that evening unless marked *static*. The six-reader review that
+fed it (`services`, `routes/ui`, `goblin/` device app, orchestration, scenes/Studio, tests/docs)
+was interrupted before its adversarial verify phase ran and before the tests/docs reader
+reported, so only the items the lead session reproduced by hand are listed here; the raw reader
+reports were not kept.
+
+- 🔴 **Orchestration cannot reach any Goblin.** `services/orchestrationService.js` loads its
+  Goblin list from `config/animatronics.json` `goblins` (chestwound `192.168.8.160`, goblin2
+  `.161` — no such devices) instead of `data/goblins.json`, speaks `https://` to a plain-HTTP
+  device, and stops via `/stop-video`, which `goblin/server.js` does not serve (it has
+  `/stop-all`). Proven: `POST /api/orchestration/broadcast/goblins {command:'stop'}` answered
+  `total:2, failed:2` naming only the two phantoms. Fleet Emergency Stop never touches a Goblin
+  either. The Fleet Command Center's Goblin row is display-only (it reads
+  `/goblin-management/api/goblins`, so it does show the real three). *Would prove it fixed:*
+  `broadcast/goblins {command:'stop-video'}` returns three results from `.40/.106/.14` and the
+  looping Goblin's screen goes dark.
+- 🟡 **A Scene step reaches a Goblin only if the video name was typed in by hand — the Animation
+  Studio cannot set it.** `executeGoblinVideoStep` → `goblinManagerService.playVideoOnGoblin` →
+  `POST /api/video/play-immediate {filename, returnToQueue}` works: `POST /scenes/api/test-step
+  {type:'goblin-video', goblinId:'goblin-192-168-8-106', videoId:'307 Jb Hd.mp4'}` played the
+  clip on Goblin Two and its queue was untouched afterwards. But `views/scenes/studio.ejs:1136`
+  renders the video `<select>` as a static "Select goblin first" placeholder and nothing ever
+  fills it (the legacy `scene-editor.ejs` did); MonsterBox's own per-Goblin video cache
+  (`GET /goblin-management/api/goblins/:id/videos`) answers "No cached videos. Run scan first"
+  after every restart because nothing calls the scan. Worse, `collectStepData()`
+  (`studio.ejs:1185`) copies every `.sf-input` value back into the step on save, so a
+  `videoId` that was set by hand is blanked the next time the scene is saved in the Studio.
+  Orlok's scene 107 "Left Arm & Goblin Video Test" is the artefact: a `goblin-video` step with `goblinId` and no `videoId`, which
+  the executor rejects with `goblin.step requires videoId`. Loop and Volume on the step are
+  inert end to end (studio stores them top-level, executor reads `step.options`, manager sends
+  neither, device hard-codes `loop:false`). `?dryRun=1` short-circuits the step before any
+  network call, as it should. *Would prove it fixed:* a goblin-video step authored entirely in
+  the Studio plays on a Goblin.
+- 🔴 **The Video Library's "play on Goblin" sends a filename no Goblin has, and both sides say
+  success.** `routes/videoLibrary.js:403` sends `video.fileName`, which is the library's UUID
+  storage name (`c1efa5eb-….mp4`), not a name on the device; the device answers
+  `{success:true, playing:…}` the instant it spawns mpv, before mpv fails on the missing file.
+  Proven on Goblin Two: `success:true, playing:"c1efa5eb-4ff4-4112-9c84-15d99f6ec955.mp4",
+  interrupted:"307 Jb Hd.mp4"` — it interrupted the clip that was playing and then showed
+  nothing (`mpvRunning:false` three seconds later). There is no way to get a library file onto a
+  Goblin: the "deploy" routes POST base64 to `/deploy-video`, an endpoint the device does not
+  have (*static*: the device's route table has no such path), after buffering the whole file in
+  Orlok's RAM. The client's favourite and play-count calls hit `/favorite` and `/play`, both
+  404 (proven). *Would prove it fixed:* a library video plays on a Goblin and a missing file is
+  reported as a failure.
+- 🟡 **The registry is rewritten roughly every 50 s for healthy Goblins.** Nothing heartbeats
+  (the device never registers or heartbeats; the `/api/goblins/:id/heartbeat` alias has no
+  caller), so `goblinManagerService`'s 30 s monitor expires each Goblin 120 s after `lastSeen`,
+  re-pings it in the same tick and saves. Measured on Orlok: `data/goblins.json` mtime moved at
+  20:50:50, 20:52:20, 20:52:50, 20:53:20; each Goblin's `lastSeen` advances every 150 s → about
+  1,700 tmp+rename writes a day to the SD card for three perfectly healthy devices, and the
+  file is perpetually dirty in git. The "went offline" log line is throttled, so `.log` shows
+  only 65 lines since 2026-09-21 and hides the churn. *Would prove it fixed:* the mtime holds
+  still for ten minutes while all three stay online.
+- 🟡 **The repo's `goblin/systemd/goblin.service` is not what runs, and would not start.** The
+  devices run a "goblin-gold" unit (`ExecStart …/goblin/server.js`, `ExecStartPre
+  goblin-setup.sh`, `ExecStartPost goblin-autostart.sh`, RT scheduling, the MPV tuning line)
+  that existed only on the devices until the snapshot; the repo unit points at
+  `src/server.js` (absent), sets `WatchdogSec=60` for a server that never calls `sd_notify`,
+  and `MONSTERBOX_URL=http://192.168.8.140:3000` (Mina). `goblin/README.md` describes a
+  Docker/upload/WebSocket design that was never built. Restore from
+  `backups/goblins-gold-2026-09-25/<goblin>/os/systemd/`, never from `goblin/systemd/`.
+- 🟡 **Provisioning debris crash-loops on Goblin One and Two.** `monsterbox-goblin.service`
+  (ExecStart `src/server.js`, absent) restarts every 10 s on both — restart counter 284 fifty
+  minutes after boot on Goblin One — and Goblin One also loops `goblin-autoqueue.service`
+  (`bin/autoqueue.sh` absent) and fails `goblin-hide-console.service` once per boot. Harmless
+  today; a `src/server.js` appearing would start a second server on :3001. Goblin Three is
+  clean. Left alone at the operator's "working perfectly"; the fix is
+  `sudo systemctl disable --now monsterbox-goblin goblin-autoqueue goblin-hide-console` on
+  `.40` and `monsterbox-goblin` on `.106`. Throttle flags at snapshot: One `0x50000`
+  (under-voltage occurred), Two `0x80008` (soft temperature limit active), Three `0x0`.
+- 🟡 **`data/goblin-playlists.json` is 69 test artefacts.** Every playlist targets
+  `goblinId: "goblin-three"` — an id no registered Goblin has — with names like "Test Playlist"
+  and "Deploy Test" written on 2025-10-21…11-01 by a browser spec against the live data file.
+  The Playlists panel therefore shows nothing usable for a real Goblin. The snapshot preserved
+  the file as found.
+- 🟡 **The queue loop respawns mpv per clip and retries an unplayable file once a second.**
+  Goblin Three's single looping clip shows `playCount 3459`; its journal on 2026-09-25 logs
+  "MPV exited with code 2" every second for over half a minute at 20:00 (*static* for the
+  cause: `queueManager.playNext` advances and wraps unconditionally with no existence check or
+  backoff). Also *static*: `/queue/enqueue-priority` passes `position:'start'`, which
+  `QueueManager.add` does not recognise, so "priority" videos append to the end.
+- ⚪ **Not reproduced — mixed content.** The Goblin Management queue modal fetches
+  `http://<goblin>:3001/…` straight from the browser. In headless Chromium (Playwright 1.56)
+  loaded from `https://192.168.8.120:3000` every such request returned 200 with only a
+  "Mixed Content … should also be served over HTTPS" warning and the modal rendered the queue;
+  a stricter desktop browser may block it. Check once in the real browser before treating it
+  as a bug.
+
 ### Opened from the 2026-09-03/04 session
 
 - 🟡 **Each ephemeral ask-ai is memoryless — the greeting is gone, but conversation memory

@@ -14,6 +14,12 @@ All notable changes to MonsterBox are documented in this file.
   snapshot, not from `goblin/systemd/`. It also recorded, without changing them, two units
   crash-looping every 10 s on Goblin One and Two (`monsterbox-goblin.service`,
   `goblin-autoqueue.service`). See the snapshot's README for the inventory and restore steps.
+  The review that followed opened a **Goblins** section in `docs/troubleshooting/KNOWN-BUGS.md`:
+  orchestration cannot reach any real Goblin (it reads the phantom list in
+  `config/animatronics.json`), the Studio cannot author a `goblin-video` step and blanks a
+  hand-typed one on save, the Video Library's play-on-Goblin sends a UUID filename no Goblin has
+  while both sides report success, and the registry is rewritten to the SD card about every 50 s
+  for three healthy devices. All proven live; none changed.
 
 - **Mina session (2026-09-25): her PCA9685 channel map is confirmed and documented.** The
   operator physically confirmed the harness at the rig — jaw ch11, neck ch7, eye ch3, eye
