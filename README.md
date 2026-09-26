@@ -459,7 +459,7 @@ contract changes.
 - **Telemetry flowing** — Movement tab on System page now shows live cycle time, latency, and command rate data
 
 ### Tooltips Everywhere
-- Comprehensive tooltip coverage added to Audio Library, AI Settings, Video Library, Navigation, Calibration, Pose Editor, Characters, and Dashboard controls
+- Comprehensive tooltip coverage added to Audio Library, AI Settings, Video Library (now Video Control), Navigation, Calibration, Pose Editor, Characters, and Dashboard controls
 
 ### Previous: v7.8.0 (March 2026)
 
@@ -900,6 +900,15 @@ Docs: docs/development/AI-Management-Feature.md, docs/integration/ELEVENLABS_INT
 - **Queue Management**: Video queues with loop modes (single, queue, off)
 - **REST API**: HTTP API for remote control and immediate playback
 - **MonsterBox Integration**: Full integration with playlist management and Step execution
+
+**Running the displays — Video Control (`/video-library`):** the page that coordinates the
+Goblins on the night, outside of scenes. A **Goblin board** shows one card per Goblin (a frame of
+what it is showing, its state, and a picker of its own files with play once / loop / stop /
+resume), and a **Send to Goblins** panel sends one video to every ticked Goblin at once (play
+once, loop, stop, resume loops) with a result line per Goblin. Library uploads sit below; sending
+an upload copies it onto each Goblin first. Frames of the Goblins' files come from ffmpeg on the
+device, cached per node. Scenes reach a Goblin through the Animation Studio's goblin-video step,
+whose video list is read from the chosen Goblin's disk.
 
 **Video Format (Standardized):**
 - **Resolution**: 720p (1280x720) @ 30fps
