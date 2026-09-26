@@ -18,11 +18,40 @@ const ENV_EXTRA_ARGS = (process.env.GOBLIN_MPV_EXTRA_ARGS || '')
 
 const DEFAULT_VO = process.env.GOBLIN_VO || 'drm';
 
+/**
+ * Audio goes out of the HDMI port with the picture (2026-09-26, operator direction).
+ * mpv used to run with --no-audio, so no clip could make a sound. The Goblin boots
+ * headless with no PipeWire (it only appears when someone logs in), so mpv talks
+ * ALSA straight to the HDMI card. The card's ALSA id differs by kernel driver
+ * ("b1" for bcm2835 on bookworm, "vc4hdmi" on trixie), so it is found in
+ * /proc/asound/cards rather than named per node; GOBLIN_AUDIO_DEVICE overrides
+ * it (any mpv --audio-device string), and GOBLIN_AUDIO=off restores the silent
+ * display. A clip with no audio stream plays exactly as before.
+ */
+function detectHdmiAudioDevice() {
+  try {
+    const cards = fs.readFileSync('/proc/asound/cards', 'utf8');
+    const re = /^\s*(\d+)\s+\[([^\]]+)\]:\s+(.*)$/gm;
+    let m;
+    while ((m = re.exec(cards)) !== null) {
+      const id = m[2].trim();
+      if (/hdmi/i.test(id) || /hdmi/i.test(m[3])) return `alsa/sysdefault:CARD=${id}`;
+    }
+  } catch (_) { /* no ALSA — mpv's own default below */ }
+  return 'auto';
+}
+
+const AUDIO_DEVICE = process.env.GOBLIN_AUDIO_DEVICE || detectHdmiAudioDevice();
+const AUDIO_ARGS = String(process.env.GOBLIN_AUDIO || 'on').toLowerCase() === 'off'
+  ? ['--no-audio']
+  : ['--audio=auto', `--ao=${process.env.GOBLIN_AO || 'alsa'}`, `--audio-device=${AUDIO_DEVICE}`,
+     `--volume=${process.env.GOBLIN_VOLUME || 100}`, '--audio-fallback-to-null=yes'];
+
 const MPV_BASE_ARGS = [
   `--vo=${DEFAULT_VO}`,
   `--hwdec=${DEFAULT_HWDEC}`,
   '--fs',
-  '--no-audio',  // Disable audio for video displays
+  ...AUDIO_ARGS,
   // Back to original working settings - slight judder is normal for 30fps on 60Hz
   '--video-sync=display-resample',
   '--interpolation=no',

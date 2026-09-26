@@ -80,6 +80,18 @@ inventory; `/etc/monsterbox/env` by key name only).
   three. Throttle flags at snapshot: One `0x50000` (under-voltage occurred since boot), Two
   `0x80008` (soft temperature limit active), Three `0x0`.
 
+## Changed on the devices AFTER this snapshot (2026-09-26)
+
+- **Audio is on.** `/home/remote/goblin/src/mpvController.js` on Goblin Two and Three (and
+  Goblin One once it is reachable again) is the repo's `goblin/src/mpvController.js` from
+  commit "Goblin displays play audio": `--no-audio` is gone; mpv runs `--audio=auto --ao=alsa
+  --audio-device=alsa/sysdefault:CARD=<the HDMI card from /proc/asound/cards>`. Restoring
+  `app/src/mpvController.js` from this snapshot silences them again. `GOBLIN_AUDIO=off` in the
+  unit environment restores the silent display without a file change.
+- Still as snapshotted: the systemd unit, `server.js`, the queues. Goblin Two's HDMI mixer
+  (`amixer -c 0 sget PCM`) reads 78% / -19.88 dB from the OS image; `amixer -c 0 sset PCM 100%
+  && sudo alsactl store` is the operator's to run.
+
 ## Restore a Goblin from this snapshot
 
 Start from a fresh Raspberry Pi OS Lite of the same release as `os/os-release.txt`, then:

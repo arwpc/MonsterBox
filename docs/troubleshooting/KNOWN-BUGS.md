@@ -1728,6 +1728,22 @@ reports were not kept.
   (offline→online); `lastSeen` still advances in memory for the API and the sort. *Proof:* the
   file's mtime holds still while all three stay online (one write at service start, none after).
   Unit: `tests/unit/goblin-orchestration-targets.test.js`.
+- 🔴 **Goblin One (192.168.8.40) did not come back from the 2026-09-26 00:32 fleet reboot.** No
+  ARP/ping answer for 20+ minutes while Two and Three were up within a minute; it had answered
+  `/health` at 00:20 and was playing. Its throttle flag at the snapshot was `0x50000`
+  (under-voltage occurred) and its `monsterbox-goblin.service` crash-loops every 10 s. Needs
+  hands: power/SD/HDMI check on the unit. When it answers, it still needs tonight's audio-enabled
+  `goblin/src/mpvController.js` copied to `/home/remote/goblin/src/` and `goblin.service`
+  restarted (Two and Three have it).
+- 🟡 **Goblin Two's HDMI mixer sits at 78% (-19.88 dB).** `amixer -c 0 sget PCM` on 192.168.8.106;
+  Goblin Three's vc4 HDMI has no such control (full scale). Fix on the device:
+  `amixer -c 0 sset PCM 100% && sudo alsactl store`. Not applied by the agent (system write).
+  Optional hardening for both: `systemctl --user mask pipewire.socket pipewire.service
+  pipewire-pulse.socket pipewire-pulse.service wireplumber.service` so a login can never let
+  PipeWire hold the HDMI card against mpv (it did not in tonight's proof, but it can).
+- 🟡 **Goblin Two boots with an EMPTY queue** (`queue.json` 81 bytes after the reboot) — nothing on
+  its screen until something is sent. Its last operator queue (a single non-looping clip) did not
+  survive. Set its show from Video Control (Loop) before the night.
 - 🟡 **The repo's `goblin/systemd/goblin.service` is not what runs, and would not start.** The
   devices run a "goblin-gold" unit (`ExecStart …/goblin/server.js`, `ExecStartPre
   goblin-setup.sh`, `ExecStartPost goblin-autostart.sh`, RT scheduling, the MPV tuning line)

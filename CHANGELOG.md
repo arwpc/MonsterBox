@@ -4,6 +4,17 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Goblin displays play audio (2026-09-26).** The Goblin player launched mpv with `--no-audio`,
+  so no clip could make a sound on the night. `goblin/src/mpvController.js` now runs
+  `--audio=auto --ao=alsa --audio-device=alsa/sysdefault:CARD=<HDMI card>`, finding the HDMI
+  card in `/proc/asound/cards` (`b1` on bookworm's bcm2835, `vc4hdmi` on trixie) so no per-node
+  config is needed; `GOBLIN_AUDIO_DEVICE` overrides it and `GOBLIN_AUDIO=off` restores the silent
+  display. ALSA is driven directly because a headless Goblin has no PipeWire at boot (it only
+  starts on a login). Proven on Goblin Two and Three: while `Firepumpkin.mp4` played, each HDMI
+  PCM read RUNNING at 48 kHz stereo. 24 of the 72 clips carry an audio track; the rest are silent
+  by content. Deployed to the two reachable Goblins; Goblin One (192.168.8.40) did not return
+  from the fleet reboot.
+
 - **Video Library is now Video Control — the place to run the Goblin displays on the night
   (2026-09-25).** Same URL (`/video-library`) and every endpoint kept. The browser Preview player,
   which did not work, is gone; in its place the page opens with a **Goblin board** — one card per
