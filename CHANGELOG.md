@@ -12,7 +12,9 @@ All notable changes to MonsterBox are documented in this file.
   executor. Same session: the parts-page Test button no longer runs the linear-actuator travel clamp
   on a `motor` (it had shortened his shake to 0 ms once the position tracker "reached the end"),
   gains a `led_ring` handler (a 1.5 s red flash — it used to answer "No controller found"), and his
-  PIR on GPIO 16 is registered as part 6. See KNOWN-BUGS → Renfield.
+  PIR on GPIO 16 is registered as part 6. **Pi 5:** `gpio_pin_watcher.py` and `gpio_read.py` sample
+  the PIR through `lgpio` when `/dev/gpiomem` is absent — until now a Pi 5 node's motion mode could
+  never trigger (watcher exit 1 → poll fallback → `-1` forever). Pi 4 path unchanged. See KNOWN-BUGS → Renfield.
 - **`scripts/goblin-os/provision-goblin.sh` — bring a fresh Pi OS image up as a Goblin** (packages, app,
   gold unit, display config, stabilize). Used to rebuild Goblin 1 (.40) after the operator re-imaged it.
 - **Outdoor power-supply spec for PumpkinHead and Renfield (2026-09-26):** PumpkinHead's supply

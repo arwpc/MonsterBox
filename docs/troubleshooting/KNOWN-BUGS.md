@@ -1410,6 +1410,17 @@ and fingerprinted it. The first bench test after the operator wired the motor th
   pin 16, `pir_generic`, retrigger 5 s); `/api/parts/6/test` reads the pin through `sensor_cli.py`.
   A 12 s `lgpio` sample and the app read both saw LOW with nobody confirmed in front of it —
   unproven either way; wave at it and re-test, and remember a PIR needs ~60 s after power-up.
+- **PIR could never trigger on a Pi 5 — both read paths wanted `/dev/gpiomem`.** Arming motion spawned
+  `gpio_pin_watcher.py`, which exited 1 three times (`cannot open /dev/gpiomem`) and "degraded to
+  per-poll reads" — but the poll path, `gpio_read.py`, mmaps the same missing device and prints `-1`,
+  so a Pi 5 never sees a `1`. A Pi 5 has `/dev/gpiomem0..4` (RP1, different register map). **Fixed:**
+  both scripts sample through `lgpio` when `/dev/gpiomem` is absent (claim-input-with-pull-down, read,
+  free per sample, so a one-shot `sensor_cli.py read` still gets the line — proven concurrently on
+  his node). Pi 4 nodes keep the read-only mmap path unchanged (Orlok's pin 17 still reports). After
+  the restart the resident watcher stays up and motion re-arms at startup.
+- **Wake path proven by simulation:** `POST /conversation/api/motion-sensor/simulate` started a
+  headless agent session, streamed the first audio chunk through the XVF3800 sink, opened continuous
+  mic capture, and set eyes + aiMotion on. Motion mode is left ARMED on Renfield.
 - Same session: `POST /api/parts/:id/test` for a motor reads `params.speed/duration`, not top-level
   body fields — a bare `{action:'control', speed:40}` runs at the 100 % / 1000 ms default.
 
