@@ -1426,7 +1426,11 @@ and fingerprinted it. The first bench test after the operator wired the motor th
   registered as part 7 (`type: servo`, `controllerType: gpio`, 500–2400 µs), the fleet's first servo on a
   bare GPIO pin (`servo_cli.py move_to <pin> <pulse_us>` via `lgpio.tx_servo`, no PCA9685). Pulses proven
   at the pad (65 highs in 2134 fast `pinctrl` samples during a move). Scenes 1 and 4 gained a scribble
-  beat (sequential 120/60/120 moves between his lines). **Still to do:** Set Min/Max on the calibration
+  beat (sequential 120/60/120 moves between his lines). **"The pen doesn't work" (later that evening) was the
+  servo's POWER lead on 3.3 V:** the pulse train on GPIO 26 measured textbook (50 Hz, 20 ms period, 2.1 ms
+  pulse at 2400 µs) while the horn stayed still; an MG90S needs 4.8–6 V. Moved to the Pi's 5 V rail (same
+  net as the rings) — operator confirmed it moves; a full 0/180 sweep afterwards logged 0 USB over-current
+  trips with `EXT5V` at 5.13 V. Still to do: Set Min/Max so scenes stay inside the real travel. **Still to do:** Set Min/Max on the calibration
   page so the pen's real travel is measured.
 - **GPIO servo angle mapping was −90..+90 → 1000–2000 µs.** `services/hardwareService/servo.js`
   `moveToAngle()` fell back to that legacy convention when no `servo_calibrations.json` entry existed, so
