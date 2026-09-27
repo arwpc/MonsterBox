@@ -1426,11 +1426,16 @@ and fingerprinted it. The first bench test after the operator wired the motor th
   registered as part 7 (`type: servo`, `controllerType: gpio`, 500–2400 µs), the fleet's first servo on a
   bare GPIO pin (`servo_cli.py move_to <pin> <pulse_us>` via `lgpio.tx_servo`, no PCA9685). Pulses proven
   at the pad (65 highs in 2134 fast `pinctrl` samples during a move). Scenes 1 and 4 gained a scribble
-  beat (sequential 120/60/120 moves between his lines). **"The pen doesn't work" (later that evening) was the
-  servo's POWER lead on 3.3 V:** the pulse train on GPIO 26 measured textbook (50 Hz, 20 ms period, 2.1 ms
-  pulse at 2400 µs) while the horn stayed still; an MG90S needs 4.8–6 V. Moved to the Pi's 5 V rail (same
-  net as the rings) — operator confirmed it moves; a full 0/180 sweep afterwards logged 0 USB over-current
-  trips with `EXT5V` at 5.13 V. Still to do: Set Min/Max so scenes stay inside the real travel. **Still to do:** Set Min/Max on the calibration
+  beat (sequential 120/60/120 moves between his lines). **⚠️ OPEN — "the pen doesn't work" (later that evening).** The pulse train on GPIO 26 measures textbook
+  (50 Hz, 20 ms period, 2.1 ms pulse at 2400 µs, positive-going) while the horn stays still; the servo moves
+  on a bench tester. Its power lead was first found on 3.3 V (an MG90S needs 4.8–6 V) and moved to the Pi's
+  5 V rail — a full 0/180 sweep then logged 0 USB over-current trips with `EXT5V` at 5.13 V — but the
+  operator reports **still no movement**. Software is exhausted here. Remaining suspects, in order: the
+  orange lead not on physical pin 37 (pin 1 is at the SD-card end; 37 is the inner row, second from the
+  USB end — counted from the wrong end it lands on pin 4, a 5 V pin, i.e. a constant high); the 3.3 V
+  logic level being below this unit's threshold (the tester drives 5 V — a level shifter or transistor
+  buffer fixes it); a broken signal lead. Cross-check offered: move the signal to GPIO 16 (physical 36)
+  and drive that. Set Min/Max still to do once it moves. **Still to do:** Set Min/Max on the calibration
   page so the pen's real travel is measured.
 - **GPIO servo angle mapping was −90..+90 → 1000–2000 µs.** `services/hardwareService/servo.js`
   `moveToAngle()` fell back to that legacy convention when no `servo_calibrations.json` entry existed, so
