@@ -1914,7 +1914,7 @@ reports were not kept.
     ~300% CPU and the bare Pi 3B hit 70 °C in 40 s. Pinned to 720p with the drop-in
     `/etc/systemd/system/goblin.service.d/display-720p.conf` (`GOBLIN_DRM_MODE=1280x720`): ~240% CPU,
     matching Goblin 3, but it still settles near 71 °C against Goblin 3's 53 °C, with `throttled=0x0`.
-    **Needs a heatsink or fan (hands).** No NOPASSWD sudo on it yet (operator to install).
+    **Needs a heatsink or fan (hands).** NOPASSWD sudo installed by the operator 16:07.
 
 - ✅ **FIXED 2026-09-25 — orchestration reaches the real Goblins.** Was: `services/orchestrationService.js`
   took its Goblin list from `config/animatronics.json` `goblins` (chestwound `192.168.8.160`, goblin2
