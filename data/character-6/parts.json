@@ -232,7 +232,7 @@
     "characterId": 6,
     "name": "Writing Pen",
     "type": "servo",
-    "pin": 26,
+    "pin": 21,
     "controllerType": "gpio",
     "servoType": "standard",
     "rotationRangeDeg": 180,
@@ -241,7 +241,7 @@
     "neutralPulse": 1500,
     "modelId": "servo_miuzei_mg90s",
     "model": "servo_miuzei_mg90s",
-    "description": "Miuzei MG90S 180-degree micro servo that moves Renfield's writing pen. Driven DIRECTLY from BCM GPIO 26 (operator-stated wiring, 2026-09-26) with lgpio tx_servo through servo_cli.py move_to \u2014 there is no PCA9685 on this Pi 5. Pulse 500-2400 us, 50 Hz. Servo power must come from a 5-6 V rail with a common ground to the Pi, never the Pi's 3.3 V. WIRING CONFLICT TO RESOLVE: the shake motor (part 1) was recorded on DIR=26 / PWM=13 on 2026-09-13; the pen now owns GPIO 26, so the motor's DIR line must be on another pin \u2014 confirm with the operator and update part 1. Not yet calibrated: run Set Min/Max on /setup/calibration so the pen's real travel is measured before scenes push it to its ends.",
+    "description": "Miuzei MG90S 180-degree micro servo that moves Renfield's writing pen. Driven DIRECTLY from BCM GPIO 21 = physical pin 40 (operator-stated wiring, 2026-09-26 late; it was on GPIO 26 earlier that evening) with lgpio tx_servo through servo_cli.py move_to \u2014 there is no PCA9685 on this Pi 5. Pulse 500-2400 us, 50 Hz. Servo power must come from a 5-6 V rail with a common ground to the Pi, never the Pi's 3.3 V. POWER: red on physical pin 2 or 4 (5 V), brown on a GROUND pin (6, 9, 14, 20, 25, 30, 34 or 39) \u2014 pin 4 is 5 V, not ground. Not yet calibrated: run Set Min/Max on /setup/calibration so the pen's real travel is measured before scenes push it to its ends.",
     "config": {
       "minPulse": 500,
       "maxPulse": 2400,
@@ -251,7 +251,7 @@
       "controllerType": "gpio"
     },
     "created": "2026-09-26T00:30:00.000Z",
-    "updated": "2026-09-26T00:30:00.000Z",
+    "updated": "2026-09-26T21:20:00.000Z",
     "enabled": true
   }
 ]
