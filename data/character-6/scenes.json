@@ -9,8 +9,31 @@
         "concurrent": false
       },
       {
-        "type": "wait",
-        "duration": 1500,
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 350,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 350,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 350,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 350,
         "concurrent": false
       },
       {
@@ -73,6 +96,27 @@
       {
         "type": "sayThis",
         "text": "…dear master — per my last four hundred correspondences — I remain available. Punctual.",
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 350,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 350,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 350,
         "concurrent": false
       },
       {

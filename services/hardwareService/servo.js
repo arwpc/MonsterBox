@@ -146,12 +146,42 @@ export function angleToPulse(angleDeg, calibration) {
  */
 export async function moveToAngle({ partId, angleDeg, duration = 1000 }) {
     const calibration = await getCalibration(partId);
-    const pulseUs = angleToPulse(angleDeg, calibration);
+    const part = await getServoPart(partId);
 
-    // Get channel from parts.json
-    const channel = await getServoChannel(partId);
+    // Legacy servo_calibrations.json entries carry their own pulse/angle pairs and
+    // keep the -90..+90 convention they were measured in. Without one, the part
+    // itself is the spec: MonsterBox angles are 0..rotationRangeDeg (a jaw at 84°,
+    // a pen at 120°), and the model's pulse range is what the horn actually spans.
+    // The old fallback mapped -90..90 onto 1000..2000 µs, so a 0..180 caller asking
+    // for 90° (centre) got 2000 µs — one end of the travel — and 0°..90° collapsed
+    // into the top half (Renfield's Writing Pen, first GPIO servo in the fleet,
+    // 2026-09-26).
+    const pulseUs = (calibration && calibration.positions)
+        ? angleToPulse(angleDeg, calibration)
+        : angleToPulseFromPart(angleDeg, part);
+
+    const channel = servoChannelOf(part);
 
     return await moveTo({ channel, pulseUs, duration });
+}
+
+/**
+ * Map a 0..rotationRangeDeg angle onto the part's own pulse span.
+ * @param {number} angleDeg - Target angle, 0..rotationRangeDeg
+ * @param {Object|null} part - parts.json entry (minPulse/maxPulse/rotationRangeDeg, at root or in config)
+ * @returns {number} - Pulse width in microseconds
+ */
+export function angleToPulseFromPart(angleDeg, part) {
+    const cfg = (part && part.config) || {};
+    const num = (...vals) => {
+        for (const v of vals) { const n = Number(v); if (Number.isFinite(n) && n > 0) return n; }
+        return null;
+    };
+    const minUs = num(part && part.minPulse, cfg.minPulse) || 1000;
+    const maxUs = num(part && part.maxPulse, cfg.maxPulse) || 2000;
+    const rangeDeg = num(part && part.rotationRangeDeg, cfg.rotationRangeDeg) || 180;
+    const clamped = Math.max(0, Math.min(rangeDeg, Number(angleDeg) || 0));
+    return Math.round(minUs + (clamped / rangeDeg) * (maxUs - minUs));
 }
 
 /**
@@ -159,7 +189,7 @@ export async function moveToAngle({ partId, angleDeg, duration = 1000 }) {
  * @param {number} partId - Part ID
  * @returns {Promise<number>} - Servo channel/pin
  */
-async function getServoChannel(partId) {
+async function getServoPart(partId) {
     try {
         const cfg = await readConfig();
         const appRoot = path.resolve(__dirname, '../..');
@@ -172,12 +202,20 @@ async function getServoChannel(partId) {
         if (!part) {
             throw new Error(`Part ${partId} not found`);
         }
-
-        return part.gpioPin || part.channel || part.pin || 18; // Default to GPIO 18
+        return part;
     } catch (error) {
-        console.warn(`⚠️ Could not get channel for part ${partId}:`, error.message);
-        return 18; // Default channel
+        console.warn(`⚠️ Could not load part ${partId}:`, error.message);
+        return null;
     }
+}
+
+function servoChannelOf(part) {
+    if (!part) return 18; // Default channel (legacy behaviour)
+    return part.gpioPin || part.channel || part.pin || 18; // Default to GPIO 18
+}
+
+async function getServoChannel(partId) {
+    return servoChannelOf(await getServoPart(partId));
 }
 
 export default {
@@ -186,5 +224,6 @@ export default {
     stop,
     getCalibration,
     angleToPulse,
+    angleToPulseFromPart,
     moveToAngle
 };

@@ -1421,6 +1421,26 @@ and fingerprinted it. The first bench test after the operator wired the motor th
 - **Wake path proven by simulation:** `POST /conversation/api/motion-sensor/simulate` started a
   headless agent session, streamed the first audio chunk through the XVF3800 sink, opened continuous
   mic capture, and set eyes + aiMotion on. Motion mode is left ARMED on Renfield.
+- **Later the same evening (operator at the rig):** PIR is on **GPIO 22**, not 16 (part 6 corrected; the
+  watcher now runs `gpio_pin_watcher.py 22`); a new **Writing Pen** — Miuzei MG90S 180° — is on **GPIO 26**,
+  registered as part 7 (`type: servo`, `controllerType: gpio`, 500–2400 µs), the fleet's first servo on a
+  bare GPIO pin (`servo_cli.py move_to <pin> <pulse_us>` via `lgpio.tx_servo`, no PCA9685). Pulses proven
+  at the pad (65 highs in 2134 fast `pinctrl` samples during a move). Scenes 1 and 4 gained a scribble
+  beat (sequential 120/60/120 moves between his lines). **Still to do:** Set Min/Max on the calibration
+  page so the pen's real travel is measured.
+- **GPIO servo angle mapping was −90..+90 → 1000–2000 µs.** `services/hardwareService/servo.js`
+  `moveToAngle()` fell back to that legacy convention when no `servo_calibrations.json` entry existed, so
+  a 0–180 caller asking for 90° (centre) sent 2000 µs — one end of the MG90S — and 0°..90° collapsed into
+  the top half. **Fixed:** without a legacy entry the angle maps 0..`rotationRangeDeg` onto the part's own
+  `minPulse`..`maxPulse` (`angleToPulseFromPart`); legacy entries keep their own pairs. No other GPIO servo
+  exists in the fleet, so nothing else changes.
+- **⚠️ OPEN — motor DIR pin conflict.** Part 1 still records the shake motor on DIR=26 / PWM=13 (2026-09-13),
+  but the pen now owns GPIO 26. The motor's real DIR line is unknown until the operator says; until then a
+  motor drive and a pen move on the same pin will collide (`GPIO busy`) and the motor's direction line may
+  be floating (pull-down → forward only).
+- **⚠️ OPEN — eyes dark.** The ring daemon is healthy (RP1 PIO on GPIO 18, one process, data line idles low
+  and bursts on frames); the operator sees no light. Software has nothing left to prove here — check the
+  rings' 5 V, common ground, and that the data wire is on physical pin 12 (GPIO 18) after the rewiring.
 - Same session: `POST /api/parts/:id/test` for a motor reads `params.speed/duration`, not top-level
   body fields — a bare `{action:'control', speed:40}` runs at the 100 % / 1000 ms default.
 

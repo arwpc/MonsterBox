@@ -14,7 +14,12 @@ All notable changes to MonsterBox are documented in this file.
   gains a `led_ring` handler (a 1.5 s red flash — it used to answer "No controller found"), and his
   PIR on GPIO 16 is registered as part 6. **Pi 5:** `gpio_pin_watcher.py` and `gpio_read.py` sample
   the PIR through `lgpio` when `/dev/gpiomem` is absent — until now a Pi 5 node's motion mode could
-  never trigger (watcher exit 1 → poll fallback → `-1` forever). Pi 4 path unchanged. See KNOWN-BUGS → Renfield.
+  never trigger (watcher exit 1 → poll fallback → `-1` forever). Pi 4 path unchanged. Later that
+  evening: PIR corrected to GPIO 22; a **Writing Pen** MG90S servo on GPIO 26 registered as part 7 —
+  the fleet's first bare-GPIO servo — and the GPIO servo path now maps 0..`rotationRangeDeg` onto the
+  part's `minPulse`..`maxPulse` instead of the legacy −90..+90 → 1000–2000 µs guess; scenes 1 and 4
+  gained a scribble beat. Open: the motor's DIR pin (26 is now the pen's) and the dark eye rings are
+  hardware questions for the operator. See KNOWN-BUGS → Renfield.
 - **`scripts/goblin-os/provision-goblin.sh` — bring a fresh Pi OS image up as a Goblin** (packages, app,
   gold unit, display config, stabilize). Used to rebuild Goblin 1 (.40) after the operator re-imaged it.
 - **Outdoor power-supply spec for PumpkinHead and Renfield (2026-09-26):** PumpkinHead's supply

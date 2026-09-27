@@ -51,18 +51,18 @@
     {
       "characterId": 6,
       "name": "Renfield",
-      "lockedAt": "2026-09-27T00:23:38.410Z",
+      "lockedAt": "2026-09-27T01:14:47.979Z",
       "lockedBy": "Aaron Warner",
-      "reason": "Finished and verified at 100% (2026-09-20); on 2026-09-26 the shake motor was restored to its Cytron MDD wiring (DIR 26 / PWM 13) and enabled, and the PIR on GPIO 16 was registered as part 6. Eye rings, voice, shake and PIR config frozen at operator direction.",
+      "reason": "Finished and verified at 100% (2026-09-20). 2026-09-26: shake motor restored to its Cytron MDD record and enabled, PIR on GPIO 22 registered as part 6, Writing Pen MG90S on GPIO 26 registered as part 7, scenes 1 and 4 carry the pen's scribble beat. Eye rings, voice, shake, pen and PIR config frozen at operator direction. Open hardware questions (motor DIR pin, eye-ring power/data) are recorded in KNOWN-BUGS.",
       "fingerprints": {
         "ai-config/stt-config.json": "868d8f25c406cf7696912c45103405a9338ef7e42beacd4e51e03a00b095a4d4",
         "ai-config/tts-config.json": "cea01852e7d3a956a2a1297ff7f6757dba04256fa3ed1dc979eee32b338b9fdb",
         "images/renfield.jpg": "b98de7adacffb81e42f57ae3cb8712dd3649fc0d6fff29c999ac9e8942cd60cd",
         "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "movement-config.json": "9e03520ea87663d9d48446c635101ac60705b4e538e4971b429f11a11746360f",
-        "parts.json": "888cb12873790ac28fa68978a2e43c6270254b7c7c8b0c134e6de2c49c2c6b80",
+        "parts.json": "2dd7465b4aea3e25bc32320c27a8cb1b074deff15af649b2760c39cf4b4f6f20",
         "poses.json": "cadff6e91df6d009cab240d9c06efea84543043836c91a6bb811b1f433010291",
-        "scenes.json": "524c136b3393bfa80f0794a428e9b83e81a0a866bac0d2ff65e5967531974f0d",
+        "scenes.json": "cc61979af99fc3e0a85ec7666a4a97f0a679b804e43b1de2de1361aaf65a7144",
         "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "servos.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
         "super-powers.json": "f60a98960bc9ea8b9f509c07c4da3d226b57de19f9945c5b3ff48a26d38696b1"
