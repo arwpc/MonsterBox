@@ -1372,6 +1372,29 @@ verified. Still offline for the entire v9.2.0 session." Also the historical v9.2
 line above scoring Groundbreaker `OFFLINE — untestable, not passing` is now obsolete.
 
 ### Renfield — char 6 · *no address (`ip: null` by design)*
+🟢 **2026-09-26 — "the motor isn't firing" was a LOST CONFIG, not wiring: the lock had frozen a stale
+BTS7960 part.** Commit `3b32a1ec` (2026-09-13) retyped part 1 to the Cytron MDD (DIR=26, PWM=13,
+`enabled:true`) but never reached his node; the 2026-09-20 lock commit pulled the node's OLD copy
+(`rpwmPin:12 / lpwmPin:13`, `controlBoard:BTS7960`, `enabled:false`, "NOT WIRED") back into the repo
+and fingerprinted it. The first bench test after the operator wired the motor therefore ran
+`linear_actuator_control_v2.py` on GPIO 12/13 and reported success into open air (`.log`, 18:5x CDT).
+- **Fixed:** unlocked, part 1 restored to the `3b32a1ec` shape (`directionPin:26, pwmPin:13,
+  controlBoard:MDD10A, enabled:true`, four-pin keys and `disabledReason` dropped), the
+  `physical-faults.json` NOT-WIRED entry for 6:1 cleared, the super-powers `_note` rewritten (it still
+  called him audio-only), files pushed to his node, service restarted, **relocked** with fresh
+  fingerprints (`lock:verify` clean on the node; `PUT /api/parts/1` → 423).
+- **Proven on the node:** `pinctrl` sampled during drives — forward: DIR 26 low, PWM 13 high/toggling
+  for the burst; reverse: DIR 26 high; 40/50/65/100 % all took the `motor_cli.py … 26 13` path;
+  `get_throttled=0x0` after a 100 % / 1 s burst; scene 3 "Giggle and Shake" drove the motor at 65 %
+  for 1400 ms through the executor (the faults gate no longer skips it) and spoke its line. **Physical
+  rotation is the operator's confirmation, not this entry's** — the pins are right, the driver side
+  (12 V rail, MDD board, motor) is his to witness.
+- **Lesson (lock procedure):** "pull the node's config into the repo, then lock" assumes the node is
+  truth — it was not here, because the node had never been deployed to. Before locking, diff the
+  node's copy against the repo's HEAD for that character and reconcile deliberately.
+- Same session: `POST /api/parts/:id/test` for a motor reads `params.speed/duration`, not top-level
+  body fields — a bare `{action:'control', speed:40}` runs at the 100 % / 1000 ms default.
+
 🟢 **2026-09-07 — finalized.** Pi 5 / Debian 13 / PipeWire 1.4, `pw-play --raw` present and used.
 Ear-check AUDIBLE with a verbatim transcript on BOTH his mics (XVF3800 recall 100 %, webcam recall 100 %).
 Camera serves frames; mic captures; agent resolves; sink at canon 1.00. Passwordless sudo now works
