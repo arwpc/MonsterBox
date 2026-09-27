@@ -87,6 +87,9 @@ Type=simple
 RuntimeDirectory=monsterbox-led
 RuntimeDirectoryMode=0755
 ExecStart=/usr/bin/python3 $REPO_DIR/python_wrappers/led_ring_daemon.py --count $COUNT --split $SPLIT --pin $PIN --dma $DMA --channel $CHANNEL --freq $FREQ --color-order $ORDER --socket $SOCKET_PATH
+# Report started only once the socket answers, so monsterbox.service (ordered
+# after this unit) never races ahead and tries its own sudo spawn at boot.
+ExecStartPost=/bin/sh -c 'for i in \$\$(seq 1 100); do [ -S $SOCKET_PATH ] && exit 0; sleep 0.1; done; exit 0'
 Restart=always
 RestartSec=3
 StandardOutput=append:/var/log/monsterbox.log
