@@ -20,7 +20,10 @@ All notable changes to MonsterBox are documented in this file.
   part's `minPulse`..`maxPulse` instead of the legacy −90..+90 → 1000–2000 µs guess; scenes 1 and 4
   gained a scribble beat. The eye rings lit once the operator wired them (daemon was healthy all along). The shake motor's wiring was then settled by
   the operator: a BTS7960 on RPWM 12 / LPWM 13 with the enables tied to 5 V — part 1 rewritten to that,
-  both channels proven at the pads. See KNOWN-BUGS → Renfield.
+  both channels proven at the pads.
+  **Renfield's canonical `sinkVolume` is capped at 0.70:** every motion wake at 1.00 tripped the Pi 5's
+  shared USB over-current sense and rebooted the ReSpeaker mid-sentence (10 trips/min at 1.00, 2 at 0.85,
+  0 at 0.70) — the array's own amp at full scale is the load. Lift only after a powered USB hub. See KNOWN-BUGS → Renfield.
 - **`scripts/goblin-os/provision-goblin.sh` — bring a fresh Pi OS image up as a Goblin** (packages, app,
   gold unit, display config, stabilize). Used to rebuild Goblin 1 (.40) after the operator re-imaged it.
 - **Outdoor power-supply spec for PumpkinHead and Renfield (2026-09-26):** PumpkinHead's supply

@@ -1461,10 +1461,18 @@ and fingerprinted it. The first bench test after the operator wired the motor th
   motor 60 % 1.5 s, a 60 s idle, and a speech-only scene at sink volume 1.00. The two trips inside the
   test's first idle window were the tail of the storm (20:35:20–21). The storm's two clusters coincide
   exactly with the operator's hands-on work at the rig (wiring the eyes; confirming the motor pins), so
-  the best reading is a disturbed USB plug/cable or a momentary touch on a 5 V/GND lead near the ports —
-  not a load the software can drive. Watch for a recurrence with `dmesg | grep -c over-current`; if it
-  returns with nobody touching the rig, put the ReSpeaker on a powered hub. A bootloader update is
-  available (`rpi-eeprom-update`) — apply on mains only, never mid-show.
+  that reading was WRONG — see the resolution below. A bootloader update is available
+  (`rpi-eeprom-update`) — apply on mains only, never mid-show.
+- **✅ RESOLVED (same night, measured): the storm is the motion wake's AGENT AUDIO at full scale.** The
+  trips restarted at 20:52:44, two seconds after `motion-armed-state.json` recorded a wake, and every
+  cluster since boot sits inside an agent session. Controlled wakes via `/conversation/api/motion-sensor/simulate`,
+  45 s each, trip counter on `usb3-port1`: **sink 0.0 (mic + session, no sound) → 0; 0.5 → 0; 0.7 → 0;
+  0.85 → 2; 1.0 → 10.** Disarmed and silent for 90 s → 0. So it is the XVF3800's own amplifier at full
+  scale on the Pi 5's shared USB rail — the earlier phased load test missed it because a `sayThis` scene
+  is shorter and quieter than an agent turn. **Fix shipped:** `config/animatronics.json` caps Renfield's
+  canonical `sinkVolume` at **0.70** (−9 dB on the array's hardware attenuator, the highest clean level);
+  room level goes on the powered speakers' knob. Motion mode re-armed at 0.70 and a confirmation wake
+  logged 0 trips. Lift the cap only after the ReSpeaker is on a **powered USB hub**, re-measured the same way.
 - **✅ Eyes — RESOLVED at the rig (operator, same evening: "wired eyes up they're working!").** The ring
   daemon had been healthy throughout (RP1 PIO on GPIO 18, one process, data line idling low and bursting
   on frames); the rings were not wired. Software unchanged.
