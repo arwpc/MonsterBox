@@ -210,5 +210,21 @@
     "updated": "2026-09-20T17:41:29.000Z",
     "enabled": true,
     "modelId": "led_ring_diymall_x0040mb5ln_8bit"
+  },
+  {
+    "id": "6",
+    "characterId": 6,
+    "name": "PIR Motion Sensor",
+    "type": "motion_sensor",
+    "pin": 16,
+    "description": "PIR motion sensor on BCM GPIO 16 (operator-stated wiring, 2026-09-26). Output goes HIGH on motion; read with an internal pull-down. Arms the Motion toggle: detection -> AI + eye rings + shake. Same pin PumpkinHead uses for his PIR.",
+    "config": {
+      "sensitivity": 50,
+      "retriggerMs": 5000
+    },
+    "created": "2026-09-26T00:00:00.000Z",
+    "updated": "2026-09-26T00:00:00.000Z",
+    "enabled": true,
+    "modelId": "pir_generic"
   }
 ]

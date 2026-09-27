@@ -1392,6 +1392,24 @@ and fingerprinted it. The first bench test after the operator wired the motor th
 - **Lesson (lock procedure):** "pull the node's config into the repo, then lock" assumes the node is
   truth — it was not here, because the node had never been deployed to. Before locking, diff the
   node's copy against the repo's HEAD for that character and reconcile deliberately.
+- **Second cause, same symptom — the Test button was clamping the motor to 0 ms.** His motor carried
+  a linear-actuator calibration profile (`openloop-linear`, bounds 0–1, motion bins) from 2026-09-20,
+  and `data/actuator-positions.json` had walked `6:1` to `currentP ≈ 1.0` over 44 "forward" tests, so
+  the motor branch of `POST /api/parts/:id/test` projected "already at maximum extension" and ran the
+  drive for **0 ms** while reporting success (`duration: 0` in the log is the operator's first test
+  today). A wiper motor has no position. **Fixed:** the motor branch no longer runs the actuator
+  travel clamp (`routes/api/partsApi.js`); the bogus `6:1` profile and tracker entry were removed on
+  his node (copies in `/home/remote/calibration-backup-keep/`). Scenes never clamped.
+- **"LED eyes aren't working" — the parts-page Test button had no `led_ring` handler.** Four
+  `Error controlling part 5: No controller found for part type: led_ring` in his `.err` are the Test
+  presses. The daemon itself was healthy (one process, `owning 16 pixels on GPIO18 via RP1 PIO`,
+  `/dev/pio0` root:gpio, `neopixel` + `adafruit_raspberry_pi5_neopixel_write` import). **Fixed:** the
+  test route now flashes a `led_ring` full-red for 1.5 s and returns to idle. Whether the rings light
+  physically is the operator's confirmation (a white-both-eyes state was also pushed via `/api/led/state`).
+- **PIR sensor was not registered at all.** Operator: PIR on GPIO 16. Added part 6 (`motion_sensor`,
+  pin 16, `pir_generic`, retrigger 5 s); `/api/parts/6/test` reads the pin through `sensor_cli.py`.
+  A 12 s `lgpio` sample and the app read both saw LOW with nobody confirmed in front of it —
+  unproven either way; wave at it and re-test, and remember a PIR needs ~60 s after power-up.
 - Same session: `POST /api/parts/:id/test` for a motor reads `params.speed/duration`, not top-level
   body fields — a bare `{action:'control', speed:40}` runs at the 100 % / 1000 ms default.
 

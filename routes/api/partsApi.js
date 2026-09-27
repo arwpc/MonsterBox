@@ -13,6 +13,7 @@ import { execFile } from 'child_process';
 import hardwareService from '../../services/hardwareService/index.js';
 import { getCalibrationStore } from '../../server/calibration/store.js';
 import actuatorPositionStore from '../../services/actuatorPositionStore.js';
+import ledController from '../../services/ledController.js';
 
 const { controlPart, HARDWARE_CONTROLLERS } = hardwareService;
 import * as configService from '../../services/configService.js';
@@ -366,6 +367,21 @@ router.post('/:id/test', express.json(), async (req, res) => {
             }
 
             return testResponse(res, result, part, `Actuator ${part.name} ${direction}`);
+        } else if (partType === 'led_ring') {
+            // The eye rings are driven by the LED daemon through ledController, not
+            // by a hardwareService controller, so the generic fallback below answered
+            // "No controller found for part type: led_ring" for every press of Test —
+            // four times in Renfield's log on 2026-09-26, read at the rig as "the LED
+            // eyes aren't working". A test is a visible flash: full-red 'error' for
+            // 1.5 s, then back to the character's idle colours. Nothing is persisted.
+            await ledController.initialize(hw.characterId);
+            const flash = await ledController.setState('error', { characterId: hw.characterId });
+            setTimeout(() => {
+                ledController.setState('idle', { characterId: hw.characterId })
+                    .catch((e) => console.warn(`[PartsAPI] led_ring test restore failed for part ${part.id}:`, e.message));
+            }, 1500);
+            return testResponse(res, { success: !!(flash && flash.success !== false), ...flash, partType: 'led_ring' }, part,
+                `LED ring ${part.name} flashed (red 1.5 s, then idle)`);
         } else if (partType === 'motor') {
             // The calibration page's red Stop sends {action:'stop'}. This branch
             // never read `action`, so Stop fell through to direction 'forward' at
@@ -378,47 +394,17 @@ router.post('/:id/test', express.json(), async (req, res) => {
             const direction = (params && params.direction) || 'forward';
             let duration = Math.min((params && params.duration) || 1000, 2000);
             const speed = (params && params.speed) || 100;
-            let projectedP = null;
-
-            // Enforce calibration bounds (non-fatal)
-            try {
-                const store = getCalibrationStore();
-                const profile = await store.get(parseInt(part.id, 10), hw.characterId);
-                if (profile && profile.bounds && profile.bounds.minP != null && profile.bounds.maxP != null) {
-                    const posState = actuatorPositionStore.load(parseInt(part.id, 10), hw.characterId);
-                    const currentP = (posState && posState.currentP != null) ? posState.currentP : 0.5;
-                    const motion = profile.motion;
-                    if (motion && motion.bins && motion.bins.length > 0) {
-                        const bin = motion.bins.reduce((best, b) =>
-                            Math.abs(b.pwmPct - speed) < Math.abs(best.pwmPct - speed) ? b : best
-                        );
-                        const rate = bin.unitsPerSec || 0.2;
-                        const moveDist = rate * (duration / 1000);
-                        const isForward = direction === 'forward' || direction === 'extend';
-                        const projected = isForward ? currentP + moveDist : currentP - moveDist;
-                        if (projected > profile.bounds.maxP) {
-                            const safeDistance = Math.max(0, profile.bounds.maxP - currentP);
-                            duration = Math.max(0, Math.round((safeDistance / rate) * 1000));
-                        } else if (projected < profile.bounds.minP) {
-                            const safeDistance = Math.max(0, currentP - profile.bounds.minP);
-                            duration = Math.max(0, Math.round((safeDistance / rate) * 1000));
-                        }
-                        const actualDist = rate * (duration / 1000);
-                        projectedP = isForward
-                            ? Math.min(1, currentP + actualDist)
-                            : Math.max(0, currentP - actualDist);
-                    }
-                }
-            } catch (e) {
-                console.warn(`[PartsAPI] Could not enforce bounds for motor part ${part.id}:`, e.message);
-            }
-
+            // A `motor` part is a rotating shaft (every one in the fleet is a 12 V
+            // wiper motor), so it has no position to project and no travel to clamp.
+            // This branch used to run the linear-actuator bounds check anyway: the
+            // calibration page can hand a motor an openloop-linear profile (0..1), the
+            // position tracker then walks toward 1.0 over successive "forward" tests,
+            // and the projected-travel clamp shortens each run until the Test button
+            // drives for 0 ms while still reporting success (Renfield, 2026-09-26 —
+            // `duration: 0` in the log, read at the rig as "the motor isn't firing").
+            // Scenes never clamped, which is why they kept working. Motion bounds for
+            // positional hardware live in the linear-actuator branch above.
             const result = await controlPart(part.id, 'control', { direction, speed, duration }, hw);
-
-            // Persist updated position estimate
-            if (projectedP != null) {
-                try { actuatorPositionStore.markStopped(parseInt(part.id, 10), projectedP, hw.characterId); } catch (_) {}
-            }
 
             return testResponse(res, result, part, `Motor ${part.name} ${direction}`);
         } else {

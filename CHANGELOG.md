@@ -9,7 +9,10 @@ All notable changes to MonsterBox are documented in this file.
   2026-09-13, so the first test after wiring drove the wrong pins. Part 1 is back on DIR 26 / PWM 13,
   enabled, its physical-faults entry cleared, the super-powers note no longer calls him audio-only, and
   the lock re-fingerprinted. Pins proven by `pinctrl` in both directions; scene 3 drives it through the
-  executor. See KNOWN-BUGS → Renfield.
+  executor. Same session: the parts-page Test button no longer runs the linear-actuator travel clamp
+  on a `motor` (it had shortened his shake to 0 ms once the position tracker "reached the end"),
+  gains a `led_ring` handler (a 1.5 s red flash — it used to answer "No controller found"), and his
+  PIR on GPIO 16 is registered as part 6. See KNOWN-BUGS → Renfield.
 - **`scripts/goblin-os/provision-goblin.sh` — bring a fresh Pi OS image up as a Goblin** (packages, app,
   gold unit, display config, stabilize). Used to rebuild Goblin 1 (.40) after the operator re-imaged it.
 - **Outdoor power-supply spec for PumpkinHead and Renfield (2026-09-26):** PumpkinHead's supply
