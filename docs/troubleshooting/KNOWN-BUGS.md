@@ -1371,7 +1371,46 @@ running 5.5.0 over plain HTTP — identical to PumpkinHead. 🔴 Offline (long-t
 verified. Still offline for the entire v9.2.0 session." Also the historical v9.2.0 ear-check
 line above scoring Groundbreaker `OFFLINE — untestable, not passing` is now obsolete.
 
-### Renfield — char 6 · *no address (`ip: null` by design)*
+### Renfield — char 6 · `192.168.8.249` · Raspberry Pi 4B (since 2026-09-27)
+🟡 **2026-09-27 — his Pi 5 fried; fresh install on a replacement Raspberry Pi 4B (4 GB, Debian 13 trixie,
+Python 3.13) at `192.168.8.249`.** Installed from origin/main with `install.sh` (made trixie-tolerant this
+session, see CHANGELOG), `scripts/install-led-ring-service.sh`, reboot, then a hard reset by the operator.
+Wiring is the guidance given for this rebuild and confirmed by the operator — motor RPWM 12 / LPWM 13
+(pins 32/33), rings 18 (pin 12), PIR 22 (pin 15), MG90S pen 26 (pin 37) — see `docs/hardware/gpio_assignments.md`.
+Hostname auto-select → character 6; service, LED unit, mjpg-streamer, avahi and watchdog active;
+`throttled=0x0` throughout; character-6 data md5s unchanged across both reboots. **Unlocked.**
+Per part, judged on independent evidence (read-only GPLEV0 pad sampler, JPEG bytes, operator's eyes):
+- ✅ **Webcam (part 4)** — live 640×480 JPEGs (two snapshots differ), app MJPEG proxy 98 frames / 4 s.
+- ✅ **Eye rings (part 5)** — rpi_ws281x PWM0 + DMA 10 as root in `monsterbox-led.service` (GPIO 18 = `a5 PWM0_0`,
+  PWM clock 2.43 MHz). Operator confirmed a held all-green frame on both rings and left = pixels 0-7 (red/blue
+  split). Same library, blacklist and part config as PumpkinHead; only the launcher differs (see the entry below).
+- ✅ **Shake motor (part 1) forward** — 60 % / 900 ms: 1782 pulses at ~2 kHz, 300 µs high on GPIO 12, GPIO 13
+  silent; operator saw it shake. 🔴 **Reverse does not move**: the LPWM train on GPIO 13 is identical (1782 pulses,
+  300 µs) while nothing turns — the fault is past the Pi, on the BTS7960's reverse side. Check **L_EN tied to 5 V**
+  and the **LPWM lead at the module**. Every Renfield scene drives forward only, so shows are unaffected.
+- 🔴 **Writing Pen (part 7, MG90S on GPIO 26)** — `servo_cli.py probe 26` reads LOADED (rise > 400 µs,
+  `heldHighWhenDrivenLow: false`, so no reversed plug); GPIO 20 probes healthy (8-18 µs) and empty. The full
+  50 Hz train reaches the pad at distinct widths — 60° → ~1100 µs, 90° → ~1560 µs, 120° → ~2095 µs (stretched by
+  the input's RC load; nothing lost) — and the operator saw **no movement** over two sweeps. Same result as both
+  MG90S units on the Pi 5: this servo's RC-filtered input does not trigger from a 3.3 V pad. Fix is physical: a
+  5 V buffer (74AHCT125 / one transistor), a PCA9685, or the FITEC FS90R that ran from a bare pin.
+- ⏳ **PIR (part 6, GPIO 22)** — LOW for every window so far (10 M samples, 0 rises), but no motion was presented
+  (operator busy). A constant LOW proves nothing; needs a wave test (`python3 /tmp/mb-padsample.py 22 60`).
+- 🔴 **ReSpeaker XVF3800 (parts 2, 3) — never enumerates; two brand-new units dark.** The Pi 4's internal hub
+  reports ganged power ON at all four ports and the webcam runs, yet no connect attempt appears. At 16:41:28 the
+  kernel logged **over-current on all four ports at once** and reset the webcam (also at 15:29:55 on first boot;
+  the webcam re-enumerated at 16:40:04 with no flag) while the Pi's own supply stayed clean. That is the array
+  pulling past the Pi 4's shared ~1.2 A USB limit and browning out before its USB comes up — the operator's
+  "audio keeps rebooting", then "doesn't even turn on". **Fix: put the XVF3800 on a POWERED USB hub** (the standing
+  Renfield recommendation from the Pi 5), try it once with its speakers unplugged to rule out the amp, and use a
+  known data cable. Speaker, microphone and the ear-check (witness: the webcam mic, card 2 on this boot) are
+  **BLOCKED** until it enumerates; then re-point parts 2/3 to the new unit's `pactl` names (per-unit serial) and
+  re-run `scripts/apply-audio-nosuspend.sh`.
+- ⚪ **Launcher note (eye rings):** PumpkinHead's app spawns the daemon with `sudo -n`. On a fresh install that
+  cannot work — install.sh's unit sets `NoNewPrivileges=true`, and this node has no passwordless sudo — so the same
+  daemon runs as `monsterbox-led.service` (socket `/run/monsterbox-led/led.sock`, `MB_LED_SOCKET` drop-in). To
+  match PumpkinHead exactly instead, grant `remote` NOPASSWD sudo and drop NoNewPrivileges from the unit.
+
 🔴 **2026-09-26 23:30 — Writing Pen (part 7, MG90S signal on GPIO 20 / physical pin 38): the pin is
 electrically LOADED. The software sends the right command; the pad cannot deliver it.** This supersedes
 the 3.3 V pulse-height theory in the handoff below — the tester works "on the same wires" because the
@@ -1775,6 +1814,21 @@ needs, and only one holder can capture at a time.
 ---
 
 ## Cross-Cutting Software Bugs
+
+- 🟡 **Two service-unit sources disagree, and every deploy silently picks the older one (found
+  2026-09-27, Renfield rebuild; not changed).** `scripts/deploy-to-animatronic.sh:262` tests
+  `[ ! -f \"$SERVICE_FILE\" ]` inside a double-quoted remote command, so `$SERVICE_FILE` expands on the
+  DEPLOYING machine (empty) and the test is always true: every deploy rewrites `monsterbox.service` with
+  its minimal `npm start` unit. That rewrite is why fleet nodes lack install.sh's `NoNewPrivileges=true`
+  — and therefore why `sudo -n` still works for PumpkinHead's LED daemon and for reboot there. A node
+  built by install.sh and never deployed to (Renfield today) runs the hardened unit, where `sudo` from
+  the app is refused. Deciding which unit is canonical is an operator call; the one-character quoting
+  fix (`\$SERVICE_FILE`) would freeze whichever unit each node already has. Drop-ins in
+  `monsterbox.service.d/` (secrets, priority, crontab, `30-led-socket.conf`) survive either way.
+- 🟡 **install.sh Step 0 on a re-run resets the checkout to `origin/main` with `git reset --hard`**
+  (2026-09-27). Local commits and node-local tracked edits are discarded; `config/app-config.json` is
+  re-derived from the hostname at startup, so a node's own state survives, but anything unpushed does not.
+  Push first, or move the checkout to origin/main yourself before re-running (as done for Renfield).
 
 - 🟡 **Recoverable since 2026-09-12 (afternoon); the button itself is unchanged.** Every
   write that drops or demotes a measured profile — single-part Clear, `clear-all`, a
@@ -3164,6 +3218,21 @@ each is scoped small enough to fix in a single wave.
   other nodes still have no AEC at all.
 
 ## Test Suite (known-flaky)
+
+- 🔴 **`npm run test:unit` / `test:smoke` / `npm run gate` drive REAL hardware on any node where
+  `MB_TEST_MODE` is unset — including from a checkout that is not the node's own (2026-09-27).**
+  `tests/setup.js` sets `NODE_ENV=test` but not `MB_TEST_MODE`, and `exec.js` simulates only with
+  `MB_TEST_MODE=1` AND `CI=true`. `tests/unit/calibration-unified-api.test.js` picks the SELECTED
+  character's first test-safe servo and linear actuator (physical-faults excludes only broken parts) and
+  runs goto / nudge / set-min / set-max through the real calibration router. The calibration file is
+  restored afterwards; the hardware position is not. Seen this session: a scratch worktree on Mina (its
+  git app-config selects character 3) ran the unit suite and the gate, which drove **Orlok's part 10 "Jaw"
+  — PCA9685 ch3 — on Mina's chip, i.e. her Eye servo**, left held at 1924 µs (135°), and pulsed Orlok's
+  part 1 actuator pins (GPIO 23/12, unassigned on Mina). Every push from Orlok runs the same gate there,
+  exercising Orlok's right arm and jaw. **Rule:** off-node or in a scratch tree run
+  `MB_TEST_MODE=1 CI=true npm run gate` (what `.github/workflows/ci.yml` does); run the hardware-driving
+  form only on the character's own node, with the operator present. A lasting fix is for the calibration
+  suites to require an explicit opt-in (e.g. `MB_HW_TESTS=1`) before commanding hardware.
 
 Intermittent failures noted in `CLAUDE.md` — they pass on retry and are treated as
 non-blocking. Listed so a genuine regression here isn't dismissed as "the usual flake":

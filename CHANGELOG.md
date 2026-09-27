@@ -4,6 +4,34 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Renfield rebuilt on a Raspberry Pi 4B after his Pi 5 fried (2026-09-27).** Fresh install at
+  `192.168.8.249` (Debian 13 trixie, Python 3.13) from origin/main with `install.sh`; roster IP updated;
+  part 7 back to a Miuzei MG90S on GPIO 26 (pin 37) per the rebuild wiring, and the Pi-5-only wording in
+  his parts and in `docs/hardware/gpio_assignments.md` corrected. Tested part by part on independent
+  evidence: webcam, eye rings (colour, both rings, left/right) and shake-motor forward pass; motor reverse,
+  the MG90S pen (full pulse train at the pad, no movement from a 3.3 V pin) and the ReSpeaker XVF3800
+  (trips the Pi 4's shared USB current limit and never enumerates; needs a powered hub) are hardware items;
+  the PIR awaits a wave test. Details in KNOWN-BUGS → Renfield.
+- **install.sh completes on Debian trixie.** Packages that trixie dropped or renamed are skipped with a
+  warning instead of aborting under `set -e` (software-properties-common, pigpio, libatlas-base-dev,
+  libhdf5-serial-dev); pigpiod is optional; Node.js 22 via NodeSource (Node 20 is EOL); python3-audioop-lts;
+  RPi OS trixie's `python3-rpi-lgpio` is kept; rpi-ws281x is installed for root on non-Pi-5 boards;
+  avahi-daemon + avahi-utils are installed and re-enabled after the performance script disables them; the
+  character prompt runs only on a terminal (over plain ssh it had consumed a piped sudo password as a
+  character name, and on EOF aborted before the service unit was written); a re-run keeps the tracked
+  `package-lock.json`; `$USER_HOME` → `$ACTUAL_HOME`; `data/ai-config` is chowned to the service user;
+  an existing ElevenLabs key file is recognised; `MB_SKIP_PLAYWRIGHT=1` skips the browser on a show node.
+- **`scripts/install-led-ring-service.sh` (new): Pi 4 WS2812B rings under the hardened service unit.**
+  Runs `led_ring_daemon.py` as root in `monsterbox-led.service` (socket under `/run`, `MB_LED_SOCKET`
+  drop-in, ready only once the socket answers) and turns off onboard analog audio, which shares PWM0.
+  install.sh's `NoNewPrivileges=true` refuses the app's `sudo -n` spawn, so a fresh Pi 4 never lit its rings.
+- **Mic capture survives Python 3.13.** `microphone_cli.py` imported pyaudio and audioop in one try block,
+  so a missing audioop nulled pyaudio and every capture failed as "PyAudio not available"; RMS now falls
+  back to an array computation that matches `audioop.rms` (same fix in `scripts/fleet-audio/mictune.py`).
+- **A bare-GPIO servo command uses the pin resolved for its character** and refuses when none is known,
+  instead of re-reading parts through the node's selected character and defaulting to GPIO 18 (Renfield's
+  eye-ring data line). `tests/unit/gpio-servo-pin-resolution.test.js`.
+
 - **Goblin 4 joins the video fleet (2026-09-27).** New Pi 3B at `192.168.8.244` provisioned as a Goblin, registered, and proven from Video Control and orchestration; pinned to 720p because its TV's 1080p mode overheats a Pi 3B. See KNOWN-BUGS → Goblins.
 - **Renfield's Writing Pen (GPIO 20) — traced to the pin, and the wrapper now says so (2026-09-26 late).**
   Every driver put the right servo command on GPIO 20 and every layer reported success, while the pad was
