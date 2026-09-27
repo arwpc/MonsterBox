@@ -152,7 +152,7 @@ export function angleToPulse(angleDeg, calibration) {
  * @param {number} params.duration - Movement duration in ms
  * @returns {Promise<string>} - Command result
  */
-export async function moveToAngle({ partId, angleDeg, duration = 1000 }) {
+export async function moveToAngle({ partId, angleDeg, duration = 1000, pin }) {
     const calibration = await getCalibration(partId);
     const part = await getServoPart(partId);
 
@@ -168,9 +168,32 @@ export async function moveToAngle({ partId, angleDeg, duration = 1000 }) {
         ? angleToPulse(angleDeg, calibration)
         : angleToPulseFromPart(angleDeg, part);
 
-    const channel = servoChannelOf(part);
+    const channel = resolveServoPin(pin, part);
+    if (channel == null) {
+        throw new Error(`Servo part ${partId}: no GPIO pin known — refusing to guess one`);
+    }
 
     return await moveTo({ channel, pulseUs, duration });
+}
+
+/**
+ * The GPIO pin a bare-GPIO servo command goes to.
+ *
+ * The dispatcher resolves the part against the character the call is for, so its
+ * pin wins. The part re-read here goes through the node's selectedCharacter, and
+ * part ids are only unique within a character. When neither knows a pin this
+ * returns null: the old default was GPIO 18, which on Renfield is the eye rings'
+ * WS2812B data line.
+ * @param {number|string|null|undefined} pin - pin from the dispatcher's resolved part
+ * @param {Object|null} part - parts.json entry re-read by id
+ * @returns {number|null}
+ */
+export function resolveServoPin(pin, part) {
+    const explicit = Number(pin);
+    if (pin !== null && pin !== undefined && pin !== '' && Number.isInteger(explicit) && explicit >= 0) {
+        return explicit;
+    }
+    return servoChannelOf(part);
 }
 
 /**
@@ -218,8 +241,9 @@ async function getServoPart(partId) {
 }
 
 function servoChannelOf(part) {
-    if (!part) return 18; // Default channel (legacy behaviour)
-    return part.gpioPin || part.channel || part.pin || 18; // Default to GPIO 18
+    if (!part) return null;
+    const pin = Number(part.gpioPin || part.channel || part.pin);
+    return Number.isInteger(pin) && pin > 0 ? pin : null;
 }
 
 async function getServoChannel(partId) {
@@ -233,5 +257,6 @@ export default {
     getCalibration,
     angleToPulse,
     angleToPulseFromPart,
+    resolveServoPin,
     moveToAngle
 };

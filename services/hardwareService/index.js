@@ -1201,7 +1201,7 @@ const HARDWARE_CONTROLLERS = {
                     // scribble beat ran three times slower than authored. Floor at
                     // 150 ms so a short step still sends a handful of 50 Hz pulses.
                     const holdMs = Math.max(150, Math.round(Number(duration)) || 1000);
-                    const result = await servoService.moveToAngle({ partId, angleDeg, duration: holdMs });
+                    const result = await servoService.moveToAngle({ partId, angleDeg, duration: holdMs, pin });
 
                     // Convert string result to structured response
                     const parsed = parsePythonJSON(result);
