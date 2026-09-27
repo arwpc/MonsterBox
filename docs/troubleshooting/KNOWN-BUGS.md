@@ -1408,8 +1408,8 @@ and fingerprinted it. The first bench test after the operator wired the motor th
   physically is the operator's confirmation (a white-both-eyes state was also pushed via `/api/led/state`).
 - **PIR sensor was not registered at all.** Operator: PIR on GPIO 16. Added part 6 (`motion_sensor`,
   pin 16, `pir_generic`, retrigger 5 s); `/api/parts/6/test` reads the pin through `sensor_cli.py`.
-  A 12 s `lgpio` sample and the app read both saw LOW with nobody confirmed in front of it —
-  unproven either way; wave at it and re-test, and remember a PIR needs ~60 s after power-up.
+  Later corrected to GPIO 22 and **proven: the armed watcher recorded a real detection at 20:37:26 CDT**
+  (`lastMotionAt` on `/conversation/api/motion-sensor`), with the operator moving at the rig.
 - **PIR could never trigger on a Pi 5 — both read paths wanted `/dev/gpiomem`.** Arming motion spawned
   `gpio_pin_watcher.py`, which exited 1 three times (`cannot open /dev/gpiomem`) and "degraded to
   per-poll reads" — but the poll path, `gpio_read.py`, mmaps the same missing device and prints `-1`,
@@ -1442,6 +1442,20 @@ and fingerprinted it. The first bench test after the operator wired the motor th
   reverse = on 13, at 50 % and 70 %, `get_throttled 0x0`. GPIO 26 belongs to the pen; no conflict remains.
   **Operator, at the rig: "Bingo - movement!!!!!! And no reboot yet."** — the shake is witnessed and the Pi
   stays up through scene 3's 65 % / 1400 ms burst.
+- **🟡 USB over-current storm 20:26–20:35 CDT — the ReSpeaker re-enumerated over and over ("power keeps
+  cycling… killing sound").** `dmesg`: 170 `over-current change` events on ALL four root ports at once
+  (the Pi 5's shared USB current sense, see the 2026-09-20 entry), device numbers climbing 23→26, none
+  before 20:26:13 (boot 20:06:51) and none after 20:35:21. This time the budget was NOT the cause:
+  `/proc/device-tree/chosen/power/max_current` = 3000 mA (PD contract present, USB limit 1.6 A),
+  declared draw XVF3800 400 + webcam 500 mA, `EXT5V` 5.11 V, `get_throttled 0x0`. **Phased load test
+  with the trip counter, all 0 trips:** eyes full white 15 s, eyes idle, pen 0/180/0/180, pen held at 90,
+  motor 60 % 1.5 s, a 60 s idle, and a speech-only scene at sink volume 1.00. The two trips inside the
+  test's first idle window were the tail of the storm (20:35:20–21). The storm's two clusters coincide
+  exactly with the operator's hands-on work at the rig (wiring the eyes; confirming the motor pins), so
+  the best reading is a disturbed USB plug/cable or a momentary touch on a 5 V/GND lead near the ports —
+  not a load the software can drive. Watch for a recurrence with `dmesg | grep -c over-current`; if it
+  returns with nobody touching the rig, put the ReSpeaker on a powered hub. A bootloader update is
+  available (`rpi-eeprom-update`) — apply on mains only, never mid-show.
 - **✅ Eyes — RESOLVED at the rig (operator, same evening: "wired eyes up they're working!").** The ring
   daemon had been healthy throughout (RP1 PIO on GPIO 18, one process, data line idling low and bursting
   on frames); the rings were not wired. Software unchanged.
