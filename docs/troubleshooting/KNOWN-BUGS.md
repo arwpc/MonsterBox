@@ -1426,7 +1426,28 @@ and fingerprinted it. The first bench test after the operator wired the motor th
   registered as part 7 (`type: servo`, `controllerType: gpio`, 500–2400 µs), the fleet's first servo on a
   bare GPIO pin (`servo_cli.py move_to <pin> <pulse_us>` via `lgpio.tx_servo`, no PCA9685). Pulses proven
   at the pad (65 highs in 2134 fast `pinctrl` samples during a move). Scenes 1 and 4 gained a scribble
-  beat (sequential 120/60/120 moves between his lines). **🟢 Pen MOVES (operator, ~21:25: "fixed wiring and it looks like servo moved").** Part 7 is on **GPIO 21 (physical pin 40)**, red on pin 4, brown on pin 30, after a wiring fix at the rig — an earlier landing had a servo lead on a 5 V pin instead of ground (pin 4 is 5 V), which matched every reading: clean pulses, zero current, no motion. Full-arc confirmation and Set Min/Max still pending; **Renfield is UNLOCKED at operator direction until he is done.** History of the hunt: **"the pen doesn't work" (later that evening).** The pulse train on GPIO 26 measures textbook
+  beat (sequential 120/60/120 moves between his lines). **🔴 OPEN — HANDOFF 2026-09-26 23:00: the Writing Pen does NOT move, and this session could not make it.**
+  Final wiring per the operator (confirmed repeatedly): red = physical pin 4 (5 V), brown = pin 39 (GND),
+  orange = pin 38 (**GPIO 20**); part 7 records `pin: 20`. The servo runs on a bench servo tester.
+  **Everything measurable on the Pi is correct:** GPIO 20 sampled at the pad during a drive = 50 Hz,
+  20 ms period, 2.4 ms pulse at 2400 µs, positive-going (`/tmp/servo_wave.py 20` on his node); `pinctrl`
+  shows the pad toggling as an output; as an input with pull-down it reads LOW (no stray voltage); the
+  5 V rail never sags during a sweep and the 3V3 rail current barely moves — i.e. the servo draws nothing
+  when pulsed. Ten-position, 3 s-per-step drives (`/tmp/run20.py`) and app sweeps via
+  `POST /api/parts/7/test {angle}` (→ `servo_cli.py move_to 20 <us> 1000`, `lgpio.tx_servo`) all report
+  success; no movement seen. Earlier in the evening the servo's leads WERE misplaced at least twice (a lead
+  on a 5 V pin; GPIO 21 read HIGH as an input, i.e. a power lead on the signal pin) — those are fixed.
+  **Operator, last word of the night: the servo tester moves it "on these same wires"** — same servo, same
+  leads, tester signal instead of the Pi's. So the servo and the leads are good and the difference is the
+  pulse: 5 V from the tester, 3.3 V from GPIO 20. **Working theory, now strongly supported:** the unit will
+  not trigger on a 3.3 V pulse. **For the next session, in order:** (1) cross-check — servo powered from the Pi (pins 4/39),
+  signal from the TESTER: if it moves, it is pulse height; (2) 5 V pulses with one 4.7–10 kΩ pull-up from
+  orange to 5 V and the staged open-drain driver `/tmp/od_servo.py 20 30` on his node; (3) a level-shifter
+  module on the orange lead; (4) if you distrust `lgpio.tx_servo` on RP1, try the kernel hardware PWM on
+  GPIO 19 (pin 35, free): `dtoverlay=pwm-2chan` + `/sys/class/pwm` (needs sudo + reboot), or an
+  oscilloscope on pin 38. Also re-verify at the servo PLUG with a meter: red 5.1 V, orange averaging
+  ~0.4 V at 2400 µs / ~0.08 V at 500 µs. **Renfield is UNLOCKED; motion mode ARMED at sink 0.70;
+  everything else on him (motor, PIR, eyes, audio, wake chain) is proven.** History of the hunt follows. The pulse train on GPIO 26 measures textbook
   (50 Hz, 20 ms period, 2.1 ms pulse at 2400 µs, positive-going) while the horn stays still; the servo moves
   on a bench tester. Its power lead was first found on 3.3 V (an MG90S needs 4.8–6 V) and moved to the Pi's
   5 V rail — a full 0/180 sweep then logged 0 USB over-current trips with `EXT5V` at 5.13 V — but the
