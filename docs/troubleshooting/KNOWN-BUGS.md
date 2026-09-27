@@ -1435,7 +1435,17 @@ Pi's pad is not in that circuit at all.
   servo on channel 0 (brown GND, red V+, orange PWM). Then part 7 becomes
   `controllerType: pca9685, channel: 0, address: 64` and the calibration page treats it exactly like the
   Magic Box. `scripts/probe-watch.sh <gpio>` prints a live healthy/LOADED line per second for bench work.
-- **Still open:** the PCA9685 (or a 5 V push-pull buffer) and calibration; movement by eye is the operator's call.
+- **RESULT 2026-09-27 midday — no movement, and no software path left.** Operator confirmed: three wires
+  straight into the Pi, power right, servo proven on a 5 V tester, no PCA9685 available. With the pad at
+  its maximum (12 mA; fast slew changed nothing measurable) and swings across 1000–2400 µs delivered
+  within ~100 µs at the pad, the pen did not move. **This servo's input does not trigger from a 3.3 V
+  RP1 pad; it needs a 5 V signal.** Nothing above the pad can add that. Physical options, any one of
+  them: (a) a different MG90S on the same three pins — a normal MG90S input is light and runs from a
+  Pi pin; (b) a one-transistor 5 V level shifter (NPN, base ← GPIO 20 via 1 kΩ, emitter → GND,
+  collector → servo signal with a 1 kΩ pull-up to 5 V; note it inverts, so pair it with a second stage
+  or use a proper 74AHCT125-class buffer); (c) a PCA9685 when one is to hand (wiring above). Every
+  measurement, the probe tool and the 12 mA default are in place so this is never re-diagnosed.
+- **Still open:** the 5 V signal source (any of a, b, c) and calibration once it moves.
 
 🟢 **2026-09-26 — "the motor isn't firing" was a LOST CONFIG, not wiring: the lock had frozen a stale
 BTS7960 part.** Commit `3b32a1ec` (2026-09-13) retyped part 1 to the Cytron MDD (DIR=26, PWM=13,

@@ -23,6 +23,9 @@ All notable changes to MonsterBox are documented in this file.
   within ~100 µs; ≤800 µs still compressed). The fleet's proven servo path is the PCA9685 (5 V, 25 mA per
   channel, all 12 other servos); fitting one on Renfield is the recommendation. `scripts/probe-watch.sh`
   added.
+  **Result:** with no PCA9685 to hand and the pad at its maximum, the pen still did not move — this servo's
+  input does not trigger from a 3.3 V pad and needs a 5 V signal (spare MG90S, one-transistor level
+  shifter, or a PCA9685 later). Recorded in KNOWN-BUGS → Renfield so it is not re-diagnosed.
 - **Renfield's shake motor config restored and relocked (2026-09-26).** His 2026-09-20 lock had frozen the
   node's stale BTS7960 part (pins 12/13, disabled, "NOT WIRED") over the Cytron MDD shape committed on
   2026-09-13, so the first test after wiring drove the wrong pins. Part 1 is back on DIR 26 / PWM 13,
