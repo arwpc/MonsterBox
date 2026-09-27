@@ -4,6 +4,7 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Goblin 4 joins the video fleet (2026-09-27).** New Pi 3B at `192.168.8.244` provisioned as a Goblin, registered, and proven from Video Control and orchestration; pinned to 720p because its TV's 1080p mode overheats a Pi 3B. See KNOWN-BUGS → Goblins.
 - **Renfield's Writing Pen (GPIO 20) — traced to the pin, and the wrapper now says so (2026-09-26 late).**
   Every driver put the right servo command on GPIO 20 and every layer reported success, while the pad was
   loaded by whatever is on physical pin 38: a 1450 µs pulse measured ~770 µs at the pin, 500 µs never

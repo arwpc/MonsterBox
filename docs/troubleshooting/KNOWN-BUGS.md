@@ -1899,6 +1899,23 @@ was interrupted before its adversarial verify phase ran and before the tests/doc
 reported, so only the items the lead session reproduced by hand are listed here; the raw reader
 reports were not kept.
 
+- ✅ **2026-09-27 — Goblin 4 added (`192.168.8.244`, hostname goblin4, Pi 3B Rev 1.2, trixie).**
+  Built with `scripts/goblin-os/provision-goblin.sh` from app + 72 videos staged off Goblin 3
+  (checksum-verified, 0 differing), gold unit + helpers from the snapshot, registered through
+  `POST /goblin-management/api/register`. Proven: Video Control board lists its 72 files, thumbnail
+  frame served, `broadcast/goblins health-check` reaches it, a one-shot Firepumpkin returned to the
+  Greenskull `--loop` by itself with `pgrep -c mpv` == 1, and the operator saw the skull on HDMI.
+  Two node-specific findings:
+  - **The first boot died in an mpv respawn storm** ("MPV exited with code 2" every second for
+    ~80 s, then the operator power-cycled it). mpv plays cleanly by hand with the same args, so the
+    cause was the boot moment, most likely HDMI not yet attached. *Open:* the queue loop still
+    retries an unplayable clip once per second with no backoff.
+  - **Its TV negotiates 1080p; `hdmi_mode=4` is ignored under vc4-kms-v3d.** At 1080p mpv burned
+    ~300% CPU and the bare Pi 3B hit 70 °C in 40 s. Pinned to 720p with the drop-in
+    `/etc/systemd/system/goblin.service.d/display-720p.conf` (`GOBLIN_DRM_MODE=1280x720`): ~240% CPU,
+    matching Goblin 3, but it still settles near 71 °C against Goblin 3's 53 °C, with `throttled=0x0`.
+    **Needs a heatsink or fan (hands).** No NOPASSWD sudo on it yet (operator to install).
+
 - ✅ **FIXED 2026-09-25 — orchestration reaches the real Goblins.** Was: `services/orchestrationService.js`
   took its Goblin list from `config/animatronics.json` `goblins` (chestwound `192.168.8.160`, goblin2
   `.161` — no such devices), spoke `https://` to plain-HTTP devices and stopped via `/stop-video`,
