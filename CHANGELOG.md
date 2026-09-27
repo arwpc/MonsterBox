@@ -18,8 +18,8 @@ All notable changes to MonsterBox are documented in this file.
   evening: PIR corrected to GPIO 22; a **Writing Pen** MG90S servo on GPIO 26 registered as part 7 —
   the fleet's first bare-GPIO servo — and the GPIO servo path now maps 0..`rotationRangeDeg` onto the
   part's `minPulse`..`maxPulse` instead of the legacy −90..+90 → 1000–2000 µs guess; scenes 1 and 4
-  gained a scribble beat. Open: the motor's DIR pin (26 is now the pen's) and the dark eye rings are
-  hardware questions for the operator. See KNOWN-BUGS → Renfield.
+  gained a scribble beat. The eye rings lit once the operator wired them (daemon was healthy all along). Open: the motor's DIR
+  pin (26 is now the pen's) is a hardware question for the operator. See KNOWN-BUGS → Renfield.
 - **`scripts/goblin-os/provision-goblin.sh` — bring a fresh Pi OS image up as a Goblin** (packages, app,
   gold unit, display config, stabilize). Used to rebuild Goblin 1 (.40) after the operator re-imaged it.
 - **Outdoor power-supply spec for PumpkinHead and Renfield (2026-09-26):** PumpkinHead's supply

@@ -1438,9 +1438,9 @@ and fingerprinted it. The first bench test after the operator wired the motor th
   but the pen now owns GPIO 26. The motor's real DIR line is unknown until the operator says; until then a
   motor drive and a pen move on the same pin will collide (`GPIO busy`) and the motor's direction line may
   be floating (pull-down → forward only).
-- **⚠️ OPEN — eyes dark.** The ring daemon is healthy (RP1 PIO on GPIO 18, one process, data line idles low
-  and bursts on frames); the operator sees no light. Software has nothing left to prove here — check the
-  rings' 5 V, common ground, and that the data wire is on physical pin 12 (GPIO 18) after the rewiring.
+- **✅ Eyes — RESOLVED at the rig (operator, same evening: "wired eyes up they're working!").** The ring
+  daemon had been healthy throughout (RP1 PIO on GPIO 18, one process, data line idling low and bursting
+  on frames); the rings were not wired. Software unchanged.
 - Same session: `POST /api/parts/:id/test` for a motor reads `params.speed/duration`, not top-level
   body fields — a bare `{action:'control', speed:40}` runs at the 100 % / 1000 ms default.
 
