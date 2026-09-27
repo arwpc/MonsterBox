@@ -48,6 +48,31 @@ print_status "User home directory: $ACTUAL_HOME"
 print_status "Repository directory: $REPO_DIR"
 print_status "Boot config: $BOOT_CONFIG"
 
+# Install only the packages this release can resolve. Debian 13 (trixie) dropped
+# software-properties-common, the pigpio daemon, libatlas-base-dev and
+# libhdf5-serial-dev, and renamed libasound2/libgtk-3-0 to t64 variants; under
+# set -e a single missing name aborted the whole install (Renfield's replacement
+# Pi 4, 2026-09-27). On bookworm every name resolves, so nothing changes there.
+apt_install_available() {
+    local want=() skipped=() pkg cand
+    for pkg in "$@"; do
+        cand=$(apt-cache policy "$pkg" 2>/dev/null | awk '/Candidate:/ {print $2}')
+        if [ -n "$cand" ] && [ "$cand" != "(none)" ]; then
+            want+=("$pkg")
+        elif apt-cache showpkg "$pkg" 2>/dev/null | sed -n '/^Reverse Provides:/,$p' | tail -n +2 | grep -q .; then
+            want+=("$pkg")   # virtual name with a provider (t64 rename) — apt selects it
+        else
+            skipped+=("$pkg")
+        fi
+    done
+    if [ ${#skipped[@]} -gt 0 ]; then
+        print_warning "Not available on this release, skipped: ${skipped[*]}"
+    fi
+    if [ ${#want[@]} -gt 0 ]; then
+        apt-get install -y "${want[@]}"
+    fi
+}
+
 # ============================================================
 # 0. Handle Existing Installation (if upgrading)
 # ============================================================
@@ -86,7 +111,8 @@ if [ -f "$REPO_DIR/package.json" ] && [ -d "$REPO_DIR/node_modules" ]; then
 
     # Remove stale node_modules and reinstall clean
     print_status "Removing old node_modules for clean install..."
-    rm -rf "$REPO_DIR/node_modules" "$REPO_DIR/package-lock.json"
+    # package-lock.json is tracked: deleting it made the next `npm ci` abort under set -e.
+    rm -rf "$REPO_DIR/node_modules"
 
     # Remove any outdated global npm packages from previous installs
     npm ls -g --depth=0 2>/dev/null | grep -E 'puppeteer|claude@' | awk -F@ '{print $1}' | while read pkg; do
@@ -103,15 +129,16 @@ fi
 # ============================================================
 print_status "Step 1: Updating system packages..."
 apt-get update
-apt-get upgrade -y
-apt-get dist-upgrade -y
+export DEBIAN_FRONTEND=noninteractive
+apt-get -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade -y
+apt-get -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold dist-upgrade -y
 apt-get autoremove -y
 
 # ============================================================
 # 2. Install Core System Dependencies
 # ============================================================
 print_status "Step 2: Installing core system dependencies..."
-apt-get install -y \
+apt_install_available \
     curl \
     wget \
     git \
@@ -124,13 +151,17 @@ apt-get install -y \
     apt-transport-https \
     ca-certificates \
     gnupg \
-    lsb-release
+    lsb-release \
+    avahi-daemon \
+    avahi-utils
 
 # ============================================================
-# 3. Install Node.js 20 LTS (official NodeSource repository)
+# 3. Install Node.js 22 LTS (official NodeSource repository)
 # ============================================================
-print_status "Step 3: Installing Node.js 20 LTS..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+# 22, not 20: Node 20 reached end of life in April 2026, and Orlok — the node
+# the code is developed and tested on — runs 22.
+print_status "Step 3: Installing Node.js 22 LTS..."
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs
 
 # Verify Node.js installation
@@ -143,7 +174,7 @@ print_success "npm installed: $NPM_VERSION"
 # 4. Install Python and Core Python Packages
 # ============================================================
 print_status "Step 4: Installing Python dependencies..."
-apt-get install -y \
+apt_install_available \
     python3 \
     python3-pip \
     python3-dev \
@@ -152,7 +183,8 @@ apt-get install -y \
     python3-wheel \
     python3-numpy \
     python3-scipy \
-    python3-pil
+    python3-pil \
+    python3-audioop-lts
 
 # python3-pil (Pillow) renders the avatar thumbnails (python_wrappers/image_thumb.py);
 # without it every page falls back to the full ~300 KB character portrait.
@@ -161,8 +193,8 @@ apt-get install -y \
 # 5. Install Hardware Control Libraries
 # ============================================================
 print_status "Step 5: Installing hardware control libraries..."
-apt-get install -y \
-    python3-rpi.gpio \
+apt_install_available \
+    $(dpkg -s python3-rpi-lgpio >/dev/null 2>&1 || echo python3-rpi.gpio) \
     python3-gpiozero \
     python3-lgpio \
     python3-smbus \
@@ -179,7 +211,7 @@ apt-get install -y \
 print_status "Step 6: Installing audio system dependencies..."
 # Remove PulseAudio to avoid conflicts with PipeWire
 apt-get purge -y 'pulseaudio*' || true
-apt-get install -y \
+apt_install_available \
     alsa-utils \
     libasound2 \
     libasound2-dev \
@@ -199,7 +231,7 @@ apt-get install -y \
 # 7. Install Video/Camera Dependencies
 # ============================================================
 print_status "Step 7: Installing video and camera dependencies..."
-apt-get install -y \
+apt_install_available \
     v4l-utils \
     fswebcam \
     libv4l-dev \
@@ -212,7 +244,7 @@ apt-get install -y \
 # 8. Install OpenCV and Computer Vision Dependencies
 # ============================================================
 print_status "Step 8: Installing OpenCV dependencies..."
-apt-get install -y \
+apt_install_available \
     python3-opencv \
     libopencv-dev \
     libatlas-base-dev \
@@ -227,7 +259,7 @@ apt-get install -y \
 # 9. Install MJPG-Streamer Dependencies
 # ============================================================
 print_status "Step 9: Installing MJPG-Streamer dependencies..."
-apt-get install -y \
+apt_install_available \
     libjpeg-dev \
     imagemagick
 
@@ -285,10 +317,27 @@ print_success "User groups and permissions configured"
 # ============================================================
 print_status "Step 13: Enabling and starting system services..."
 
-# Enable and start pigpiod for GPIO control
-systemctl enable pigpiod
-systemctl start pigpiod
-print_success "pigpiod service enabled and started"
+# Enable and start pigpiod for GPIO control. Trixie ships no pigpio daemon;
+# nothing on the bare-GPIO paths needs it (lgpio drives servos, motors, sensors).
+if systemctl list-unit-files pigpiod.service >/dev/null 2>&1 && systemctl cat pigpiod.service >/dev/null 2>&1; then
+    systemctl enable pigpiod
+    systemctl start pigpiod
+    print_success "pigpiod service enabled and started"
+else
+    print_warning "pigpiod is not packaged on this release — skipped (lgpio covers GPIO control)"
+fi
+
+# Pi 4 WS2812B eye rings drive GPIO18 through rpi_ws281x (PWM0 + DMA, root),
+# which no apt package provides. Install it for root's python3 so the LED
+# daemon can import it; the rest of the Pi 4 setup (analog audio off, a root
+# daemon unit) is per-node — see scripts/install-led-ring-service.sh.
+if ! grep -q "Raspberry Pi 5" /proc/device-tree/model 2>/dev/null; then
+    if ! python3 -c "import rpi_ws281x" >/dev/null 2>&1; then
+        pip3 install --break-system-packages rpi-ws281x \
+            || print_warning "rpi-ws281x install failed — WS2812B rings on a Pi 4 will stay dark"
+    fi
+    print_warning "Pi 4 with a led_ring part? Run: sudo bash scripts/install-led-ring-service.sh (disables the 3.5 mm jack; PWM0 is shared)"
+fi
 
 # Enable I2C and SPI modules (idempotent — only add if not already present)
 grep -qxF 'i2c-dev' /etc/modules || echo "i2c-dev" >> /etc/modules
@@ -380,7 +429,7 @@ done
 # file predated the array and hung every recording). The pipewire-alsa bridge
 # installed above provides "default" for BOTH directions; a hw-pinning
 # override must not survive provisioning.
-for alsa_override in /etc/asound.conf "$USER_HOME/.asoundrc"; do
+for alsa_override in /etc/asound.conf "$ACTUAL_HOME/.asoundrc"; do
     if [ -f "$alsa_override" ] && grep -qE 'slave\.pcm[[:space:]]*"?hw:' "$alsa_override" 2>/dev/null; then
         mv "$alsa_override" "${alsa_override}.pre-pipewire.bak"
         print_warning "$alsa_override pinned ALSA default to raw hardware — moved to ${alsa_override}.pre-pipewire.bak (PipeWire's bridge now provides default; capture from an XVF3800 through raw hw: hangs with zero frames)"
@@ -411,6 +460,9 @@ fi
 if [ -f "$REPO_DIR/scripts/optimize-pi-performance.sh" ]; then
     bash "$REPO_DIR/scripts/optimize-pi-performance.sh" || print_warning "optimize-pi-performance.sh reported a non-fatal issue"
 fi
+# That script disables avahi-daemon, but node discovery (mDNS, _monsterbox._tcp)
+# runs on it — a fresh node stayed invisible to the fleet until a deploy.
+systemctl enable --now avahi-daemon 2>/dev/null || print_warning "avahi-daemon could not be enabled — mDNS discovery will not see this node"
 
 # NOTE (2026-08-23 perf audit): install used to call tune-mjpg.sh here with a
 # hardcoded '/dev/video0 640x480 24 80', silently overriding the canonical
@@ -442,6 +494,7 @@ fi
 # Provision default AI config (TTS: eleven_v3, STT: scribe_v2)
 AI_CONFIG_DIR="$REPO_DIR/data/ai-config"
 mkdir -p "$AI_CONFIG_DIR"
+chown "$ACTUAL_USER":"$ACTUAL_USER" "$AI_CONFIG_DIR"
 
 if [ ! -f "$AI_CONFIG_DIR/tts-config.json" ]; then
     cat > "$AI_CONFIG_DIR/tts-config.json" << 'TTSCFG'
@@ -548,9 +601,13 @@ systemctl daemon-reload 2>/dev/null || true
 print_success "Node OS baseline applied (apply-baseline.sh: avahi perms, journald 64M, logrotate, Wi-Fi power-save, drop-ins, log ownership, secrets scaffold; plus boot-check and liveness watchdog)"
 
 # Install Playwright browsers for testing (optional, non-fatal)
-sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null && \
-    print_success "Playwright browsers installed for testing" || \
+if [ "${MB_SKIP_PLAYWRIGHT:-0}" = "1" ]; then
+    print_warning "Playwright browser install skipped (MB_SKIP_PLAYWRIGHT=1)"
+elif sudo -u "$ACTUAL_USER" npx playwright install --with-deps chromium 2>/dev/null; then
+    print_success "Playwright browsers installed for testing"
+else
     print_warning "Playwright browser install skipped (run 'npx playwright install --with-deps chromium' later for testing)"
+fi
 
 # Verify no outdated/removed packages linger
 if npm ls 2>&1 | grep -q "WARN deprecated"; then
@@ -562,7 +619,9 @@ fi
 # ============================================================
 print_status "Step 20: Creating and selecting a new Character..."
 
-read -rp "Enter new Character name (or press Enter to skip): " NEW_CHAR_NAME
+# `|| NEW_CHAR_NAME=""`: without a TTY (install over plain ssh) read hits EOF and
+# returns 1, and set -e used to abort here — before the service unit was written.
+read -rp "Enter new Character name (or press Enter to skip): " NEW_CHAR_NAME || NEW_CHAR_NAME=""
 if [ -z "$NEW_CHAR_NAME" ]; then
     print_warning "No character name entered; skipping character creation."
 else

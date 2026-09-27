@@ -4,7 +4,20 @@ Judges on FRAMES and LEVEL, never on "the device opened". Prints a per-0.25s
 level trace plus a verdict, so a mic that is alive-but-deaf is distinguishable
 from one that is simply not streaming.
 """
-import sys, time, math, audioop, pyaudio
+import sys, time, math, array, pyaudio
+
+try:
+    import audioop  # removed from the stdlib in Python 3.13 (Debian trixie)
+except ImportError:
+    audioop = None
+
+
+def rms16(data):
+    if audioop is not None:
+        return audioop.rms(data, 2)
+    samples = array.array('h')
+    samples.frombytes(data[:len(data) - (len(data) % 2)])
+    return int(math.sqrt(sum(s * s for s in samples) / len(samples))) if samples else 0
 
 device = sys.argv[1] if len(sys.argv) > 1 else "default"
 seconds = float(sys.argv[2]) if len(sys.argv) > 2 else 6.0
@@ -47,7 +60,7 @@ while time.time() - t0 < seconds:
     data = stream.read(CHUNK, exception_on_overflow=False)
     frames += 1
     total_bytes += len(data)
-    r = audioop.rms(data, 2)
+    r = rms16(data)
     peak = max(peak, r)
     acc.append(r)
     if len(acc) >= int(0.25 * RATE / CHUNK):

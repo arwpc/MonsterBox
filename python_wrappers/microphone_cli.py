@@ -14,14 +14,33 @@ def fail(msg, **extra):
     sys.exit(1)
 
 import warnings
+import array
+import math
 try:
     import pyaudio
+except Exception:
+    pyaudio = None
+
+# audioop left the stdlib in Python 3.13 (Debian trixie). It used to share one
+# try block with pyaudio, so its ImportError nulled pyaudio too and every capture
+# on a trixie node failed as "PyAudio not available" (Renfield, 2026-09-27).
+try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         import audioop
 except Exception:
-    pyaudio = None
     audioop = None
+
+
+def _rms16(data):
+    """RMS of 16-bit signed native-endian PCM; same value as audioop.rms(data, 2)."""
+    if audioop is not None:
+        return float(audioop.rms(data, 2))
+    samples = array.array('h')
+    samples.frombytes(data[:len(data) - (len(data) % 2)])
+    if not samples:
+        return 0.0
+    return math.sqrt(sum(sample * sample for sample in samples) / len(samples))
 
 
 def _setup_pipewire_source(device_id):
@@ -326,8 +345,8 @@ if __name__ == '__main__':
             channels = int(sys.argv[4]) if len(sys.argv) > 4 else 1
             duration = float(sys.argv[5]) if len(sys.argv) > 5 else 0.2
 
-            if pyaudio is None or audioop is None:
-                fail("PyAudio/audioop not available")
+            if pyaudio is None:
+                fail("PyAudio not available")
 
             if not _setup_pipewire_source(device_id):
                 fail(f"Failed to setup PipeWire source: {device_id}")
@@ -361,7 +380,7 @@ if __name__ == '__main__':
                     try:
                         data = stream.read(frames_per_buffer, exception_on_overflow=False)
                         frames += 1
-                        rms = float(audioop.rms(data, 2))
+                        rms = _rms16(data)
                         norm = (rms / 32768.0)
                         levels_sum += norm
                         if norm > peak:
