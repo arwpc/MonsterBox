@@ -22,12 +22,17 @@ export default class ContinuousServoAdapter {
    * @param {number} channel - PCA9685 channel (default: 0)
    * @param {number} address - I2C address (default: 0x40 = 64)
    */
-  constructor(partId, motion, invert = false, channel = 0, address = 64) {
+  constructor(partId, motion, invert = false, channel = 0, address = 64, gpioPin = null) {
     this.partId = partId;
     this.motion = motion || { defaultSpeedPct: 30, defaultDurationMs: 500 };
     this.invert = invert;
     this.channel = channel;
     this.address = address;
+    // A continuous servo on a bare GPIO pin (no PCA9685 on the node — Renfield's
+    // FS90R pen, 2026-09-27). Every command here used to be rotate_continuous_pca,
+    // so the calibration page drove PCA channel 0 of a board that does not exist
+    // while the runtime paths drove the pin fine. When set, commands go to the pin.
+    this.gpioPin = (gpioPin != null && Number.isFinite(Number(gpioPin))) ? Number(gpioPin) : null;
 
     // Estimated position tracking (0 = neutral, -1 = max CCW, +1 = max CW)
     this.estimatedPosition = 0;
@@ -46,6 +51,18 @@ export default class ContinuousServoAdapter {
 
   /** Settle time (post-movement delay for mechanical damping) */
   get settleMs() { return this.motion.settleMs || 150; }
+
+  /** servo_cli.py argv for one timed rotation: the pin's command or the PCA9685's. */
+  wrapperArgs(direction, speedPct, durationMs) {
+    if (this.gpioPin != null) {
+      return ['rotate_continuous', String(this.gpioPin), direction, String(speedPct), String(durationMs)];
+    }
+    const args = ['rotate_continuous_pca', String(this.channel), direction, String(speedPct), String(durationMs)];
+    if (this.address !== 64) {
+      args.push(String(this.address));
+    }
+    return args;
+  }
 
   /**
    * Convert direction based on invert setting
@@ -74,10 +91,7 @@ export default class ContinuousServoAdapter {
 
     try {
       this.isRunning = true;
-      const args = ['rotate_continuous_pca', String(this.channel), direction, String(speedPct), String(durationMs)];
-      if (this.address !== 64) {
-        args.push(String(this.address));
-      }
+      const args = this.wrapperArgs(direction, speedPct, durationMs);
 
       await runWrapper('servo_cli.py', args, { timeoutMs: durationMs + 5000 });
 
@@ -104,10 +118,7 @@ export default class ContinuousServoAdapter {
   async stop() {
     console.log(`ContinuousServoAdapter: stop partId=${this.partId}`);
     try {
-      const args = ['rotate_continuous_pca', String(this.channel), 'stop', '0', '100'];
-      if (this.address !== 64) {
-        args.push(String(this.address));
-      }
+      const args = this.wrapperArgs('stop', '0', '100');
       await runWrapper('servo_cli.py', args, { timeoutMs: 2000 });
       this.isRunning = false;
       return { success: true };
@@ -138,10 +149,7 @@ export default class ContinuousServoAdapter {
 
     try {
       this.isRunning = true;
-      const args = ['rotate_continuous_pca', String(this.channel), servoDir, String(speed), String(duration)];
-      if (this.address !== 64) {
-        args.push(String(this.address));
-      }
+      const args = this.wrapperArgs(servoDir, speed, duration);
       await runWrapper('servo_cli.py', args, { timeoutMs: duration + 5000 });
       // Wait for mechanical settling
       await new Promise(r => setTimeout(r, this.settleMs));
@@ -202,10 +210,7 @@ export default class ContinuousServoAdapter {
 
     try {
       this.isRunning = true;
-      const args = ['rotate_continuous_pca', String(this.channel), direction, String(speedPct), String(durationMs)];
-      if (this.address !== 64) {
-        args.push(String(this.address));
-      }
+      const args = this.wrapperArgs(direction, speedPct, durationMs);
       await runWrapper('servo_cli.py', args, { timeoutMs: durationMs + 5000 });
       // Wait for mechanical settling after motor stops
       await new Promise(r => setTimeout(r, this.settleMs));

@@ -26,6 +26,11 @@ All notable changes to MonsterBox are documented in this file.
   **Result:** with no PCA9685 to hand and the pad at its maximum, the pen still did not move — this servo's
   input does not trigger from a 3.3 V pad and needs a 5 V signal (spare MG90S, one-transistor level
   shifter, or a PCA9685 later). Recorded in KNOWN-BUGS → Renfield so it is not re-diagnosed.
+  **Resolved:** a FITEC FS90R (continuous) on the same three wires runs from the pin — its input is a normal
+  high-impedance pin; the Miuzei units' RC-filtered input was the whole problem. Part 7 re-typed to a continuous
+  servo (angle on a scene step = speed axis, 90 = stop). `ContinuousServoAdapter` learned to drive a bare GPIO
+  pin (`gpioPin` on the profile capability) instead of assuming a PCA9685 channel; `probe` now flags a pin held
+  HIGH while driven low (a reversed servo plug).
 - **Renfield's shake motor config restored and relocked (2026-09-26).** His 2026-09-20 lock had frozen the
   node's stale BTS7960 part (pins 12/13, disabled, "NOT WIRED") over the Cytron MDD shape committed on
   2026-09-13, so the first test after wiring drove the wrong pins. Part 1 is back on DIR 26 / PWM 13,

@@ -46,6 +46,18 @@ try {
 }
 
 /** Check if a profile represents an absolute servo */
+// A servo part driven straight from a GPIO pin rather than a PCA9685 channel.
+// Returns the BCM pin number, or null for PCA9685 parts.
+function gpioPinOf(part) {
+  if (!part) return null;
+  const pca = part.usePCA9685 === true || part.controllerType === 'pca9685'
+    || (part.config && part.config.controllerType === 'pca9685');
+  if (pca) return null;
+  const pin = part.pin != null ? part.pin : (part.gpioPin != null ? part.gpioPin : (part.config && part.config.gpioPin));
+  const n = Number(pin);
+  return Number.isFinite(n) ? n : null;
+}
+
 // The wrapper's loaded-signal-line warning for a bare-GPIO servo, when the last
 // move raised one; empty otherwise so the response shape is unchanged.
 function lineWarningOf(adapter) {
@@ -207,7 +219,8 @@ async function getOrAutoCreateProfile(partId) {
               profile.bounds = { minAngle: 0, maxAngle: maxDeg };
               profile.motion = {};
             } else {
-              profile.capability = { kind: 'continuous-servo', channel: (part.config && part.config.channel) || 0, address: (part.config && part.config.address) || 64 };
+              profile.capability = { kind: 'continuous-servo', channel: (part.config && part.config.channel) || 0, address: (part.config && part.config.address) || 64,
+                ...(gpioPinOf(part) != null ? { gpioPin: gpioPinOf(part) } : {}) };
               profile.motion = { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.3 }], settleMs: 100 };
               profile.bounds = null;
             }
@@ -226,10 +239,13 @@ async function getOrAutoCreateProfile(partId) {
         if (part && part.config) {
           const partChannel = part.config.channel != null ? part.config.channel : 0;
           const partAddress = part.config.address != null ? part.config.address : 64;
-          if (profile.capability.channel !== partChannel || profile.capability.address !== partAddress) {
-            console.log(`🔄 Calibration profile for part ${partId} stale: ch ${profile.capability.channel}→${partChannel}, addr ${profile.capability.address}→${partAddress}. Syncing from parts.json.`);
+          const partGpio = gpioPinOf(part);
+          const gpioStale = (partGpio != null ? profile.capability.gpioPin !== partGpio : profile.capability.gpioPin != null);
+          if (profile.capability.channel !== partChannel || profile.capability.address !== partAddress || gpioStale) {
+            console.log(`🔄 Calibration profile for part ${partId} stale: ch ${profile.capability.channel}→${partChannel}, addr ${profile.capability.address}→${partAddress}, gpio ${profile.capability.gpioPin}→${partGpio}. Syncing from parts.json.`);
             profile.capability.channel = partChannel;
             profile.capability.address = partAddress;
+            if (partGpio != null) profile.capability.gpioPin = partGpio; else delete profile.capability.gpioPin;
             adapterCache.delete(partId); // force adapter rebuild with new channel
             await store.upsert(profile);
           }
@@ -281,7 +297,8 @@ async function getOrAutoCreateProfile(partId) {
     } else if (part.type === 'servo') {
       const servoType = part.config && part.config.servoType;
       if (servoType === 'continuous') {
-        capability = { kind: 'continuous-servo', channel: part.config.channel || 0, address: part.config.address || 64 };
+        capability = { kind: 'continuous-servo', channel: part.config.channel || 0, address: part.config.address || 64,
+          ...(gpioPinOf(part) != null ? { gpioPin: gpioPinOf(part) } : {}) };
         motion = { type: 'time-at-speed', bins: [{ pwmPct: 50, unitsPerSec: 0.3 }], settleMs: 100 };
         bounds = null;
       } else {
@@ -1091,7 +1108,9 @@ function getOrCreateAdapter(partId, profile) {
   } else if (cap.kind === 'continuous-servo') {
     const channel = profile.channel || cap.channel || 0;
     const address = profile.address || cap.address || 64;
-    adapter = new ContinuousServoAdapter(partId, profile.motion, cap.invert || false, channel, address);
+    // gpioPin set on the capability = a continuous servo on a bare pin (no PCA9685).
+    adapter = new ContinuousServoAdapter(partId, profile.motion, cap.invert || false, channel, address,
+      cap.gpioPin != null ? cap.gpioPin : null);
     // Set initial position for continuous servo too
     if (adapter.currentP !== undefined) adapter.currentP = initialP;
   } else {

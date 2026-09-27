@@ -1445,7 +1445,26 @@ Pi's pad is not in that circuit at all.
   collector → servo signal with a 1 kΩ pull-up to 5 V; note it inverts, so pair it with a second stage
   or use a proper 74AHCT125-class buffer); (c) a PCA9685 when one is to hand (wiring above). Every
   measurement, the probe tool and the 12 mA default are in place so this is never re-diagnosed.
-- **Still open:** the 5 V signal source (any of a, b, c) and calibration once it moves.
+- **🟢 RESOLVED 2026-09-27 afternoon — a FITEC FS90R on the same three wires runs from the pin.** The operator
+  swapped in a FS90R (continuous-rotation micro servo): its signal line probes `healthy` (rise 3–20 µs, high
+  under pull-up, not held high) and stays healthy through spins, so the pin was never the problem — the two
+  Miuzei MG90S units carry an RC-filtered, pulled-down signal input (~1 kΩ series, ~1 µF) that a 3.3 V pad
+  cannot push a pulse through, while a 5 V push-pull tester can. Part 7 is now `servo_fitec_fs90r`,
+  `servoType: continuous`, pulses 1000–2000 µs (1500 = stop), `rotationRangeDeg: 180` on purpose so a scene
+  step's `angle` is a speed axis on this part (90 = stop, 60/120 = the scribble each way for the step's
+  duration); scenes 1 and 4 are unchanged. Proven on the node through every app path: the parts Test
+  (`move_to 20 1333` / `1667`), the calibration page's nudge and stop (`rotate_continuous 20 cw 30 500`,
+  `… stop 0 100`), and the wrapper directly. **`ContinuousServoAdapter` was PCA9685-only** — every command
+  was `rotate_continuous_pca <channel>`, so a continuous servo on a bare pin would have had its calibration
+  page driving channel 0 of a board that does not exist; it now takes `gpioPin` from the profile capability
+  (the router sets it from the part) and issues `rotate_continuous <pin>`. Operator confirmation of the
+  rotation by eye: pending at the time of this entry.
+- **Two wrong turns on the way, recorded so they are not repeated:** (1) the "swap the outer pins at the
+  servo plug" instruction was wrong — it put the servo's ground on the GPIO, which reads HIGH while driven
+  low; `probe` now reports `heldHighWhenDrivenLow` and names a reversed plug in one second, and the pins were
+  swapped back. (2) A PCA9685 was recommended twice after the operator said there was none. Neither was the
+  wiring: pin 4 = 5 V, pin 6 = GND, pin 38 = GPIO 20 was right throughout.
+
 
 🟢 **2026-09-26 — "the motor isn't firing" was a LOST CONFIG, not wiring: the lock had frozen a stale
 BTS7960 part.** Commit `3b32a1ec` (2026-09-13) retyped part 1 to the Cytron MDD (DIR=26, PWM=13,

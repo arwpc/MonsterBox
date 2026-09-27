@@ -730,6 +730,14 @@ def probe(pin):
         lgpio.gpio_free(handle, pin)
 
         _claim_output(handle, pin)
+        # Driven LOW, a signal line reads low. Reading HIGH here means the wire is
+        # sourcing current into the pad harder than the pad can sink: the pin is on
+        # a servo's supply or ground node, not its signal input (a reversed plug).
+        # The rise-time test cannot see this — the line is already high — and it
+        # is the one state that can damage the pad, so it is reported first.
+        lgpio.gpio_write(handle, pin, 0)
+        time.sleep(0.002)
+        held_high = lgpio.gpio_read(handle, pin) == 1
         rises = []
         warnings = []
         for _ in range(3):
@@ -746,6 +754,10 @@ def probe(pin):
         except Exception:
             pass
 
+    if held_high:
+        warning = (f'GPIO {pin} reads HIGH while driven LOW: the wire is forcing the pin '
+                   f'high — this pin is on the servo\'s power or ground lead, not its '
+                   f'signal lead (plug reversed?). Unplug it now; this can damage the pad.')
     loaded = warning is not None
     if warning:
         warn(warning)
@@ -756,6 +768,7 @@ def probe(pin):
     return {
         'part': part.get('id') if part else None,
         'data': {'pin': pin, 'riseUs': rises, 'pullUpReadsHigh': pull_up_high,
+                 'heldHighWhenDrivenLow': held_high,
                  'loaded': loaded, 'driveMa': drive_ma, 'warning': warning},
         'clamps': [],
         'message': f'GPIO {pin} signal line: {verdict}',
