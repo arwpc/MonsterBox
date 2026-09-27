@@ -8,7 +8,7 @@
     "minSpeed": 0,
     "maxSpeed": 100,
     "maxDuration": 5000,
-    "description": "12V shake motor - 'the signature', Renfield's tremble. BTS7960 H-bridge, operator-confirmed wiring 2026-09-26: RPWM = BCM GPIO 12, LPWM = BCM GPIO 13, R_EN and L_EN tied to 5 V (always enabled - no enable pins in software; leave renPin/lenPin absent). Driven by linear_actuator_control_v2.py (lgpio, works on this Pi 5): 'forward' puts PWM on GPIO 12, 'reverse' on GPIO 13. The 12 V motor supply is separate from the Pi; common ground on the logic side only. HISTORY: specced as a BTS7960 on 27/22/17/23 (never built), recorded as a Cytron MDD on DIR 26 / PWM 13 on 2026-09-13, and frozen by the 2026-09-20 lock as a disabled BTS7960 on 12/13. On 2026-09-26 the operator confirmed the BTS7960 on 12/13 with hard-wired enables; GPIO 26 belongs to the Writing Pen (part 7). STALL: a wiper-class motor stalls at roughly 24-40 A; short bursts only - scenes run 900-2000 ms at 50-80 %, maxDuration caps any single energization at 5000 ms. PWM outlives the process: killInFlightDrive() ends an overlapping drive before starting another.",
+    "description": "12V shake motor - 'the signature', Renfield's tremble. BTS7960 H-bridge, operator-confirmed wiring 2026-09-26: RPWM = BCM GPIO 12, LPWM = BCM GPIO 13, R_EN and L_EN tied to 5 V (always enabled - no enable pins in software; leave renPin/lenPin absent). Driven by linear_actuator_control_v2.py (lgpio software PWM on /dev/gpiochip0 - board-agnostic: it ran on his Pi 5 and runs on the Raspberry Pi 4B that replaced it on 2026-09-27): 'forward' puts PWM on GPIO 12, 'reverse' on GPIO 13. The 12 V motor supply is separate from the Pi; common ground on the logic side only. HISTORY: specced as a BTS7960 on 27/22/17/23 (never built), recorded as a Cytron MDD on DIR 26 / PWM 13 on 2026-09-13, and frozen by the 2026-09-20 lock as a disabled BTS7960 on 12/13. On 2026-09-26 the operator confirmed the BTS7960 on 12/13 with hard-wired enables; GPIO 26 belongs to the Writing Pen (part 7). STALL: a wiper-class motor stalls at roughly 24-40 A; short bursts only - scenes run 900-2000 ms at 50-80 %, maxDuration caps any single energization at 5000 ms. PWM outlives the process: killInFlightDrive() ends an overlapping drive before starting another.",
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true,
     "config": {
@@ -16,7 +16,7 @@
       "controlBoard": "BTS7960"
     },
     "controlBoard": "BTS7960",
-    "updated": "2026-09-26T21:00:00.000Z",
+    "updated": "2026-09-27T21:00:00.000Z",
     "modelId": "motor_jeep_wagoneer_wiper",
     "rpwmPin": 12,
     "lpwmPin": 13
@@ -26,7 +26,7 @@
     "characterId": 6,
     "name": "Speaker Renfield (ReSpeaker XVF3800)",
     "type": "speaker",
-    "description": "powered speakers on the ReSpeaker XVF3800 line-out (the Pi 5 has no analog jack, so this is the only non-HDMI output). OPERATOR 2026-08-31: these are a good set of powered speakers, the SAME set as Sir Dragomir (character 4) uses - his speaker part carries the same modelId speaker_respeaker_xvf3800. Treat his tuning as the nearest reference point for Renfield.",
+    "description": "powered speakers on the ReSpeaker XVF3800 line-out (his Pi 4B has a 3.5 mm jack but it is switched off - snd_bcm2835 shares PWM0 with the eye rings on GPIO18 - so this stays the only non-HDMI output). OPERATOR 2026-08-31: these are a good set of powered speakers, the SAME set as Sir Dragomir (character 4) uses - his speaker part carries the same modelId speaker_respeaker_xvf3800. Treat his tuning as the nearest reference point for Renfield.",
     "config": {
       "audioDeviceId": "alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200044-00.analog-stereo",
       "volume": 100,
@@ -36,7 +36,7 @@
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true,
     "modelId": "speaker_respeaker_xvf3800",
-    "updated": "2026-09-01T03:17:43.595Z"
+    "updated": "2026-09-27T21:00:00.000Z"
   },
   {
     "id": "3",
@@ -77,7 +77,7 @@
     "characterId": 6,
     "name": "Renfield Eye Rings",
     "type": "led_ring",
-    "description": "Two chained DIYMall X0040MB5LN 8-bit WS2812B rings on GPIO18 - left eye pixels 0-7, right eye 8-15. Same hardware and same wiring as PumpkinHead's Pumpkin Eyes.\n\nThis part was registered as a plain switched `light` until 2026-09-20, which is why Renfield could toggle his eyes on and off and had no speech sync, no AI interaction colours and nothing on /setup/led-animation: every one of those paths selects parts by `type === 'led_ring'` and a `light` is invisible to all of them.\n\nThe old description claimed the rings were NOT addressable because rpi_ws281x cannot drive pixels on a Pi 5. The premise was right and the conclusion was wrong: rpi_ws281x fails because RP1 moved GPIO off the SoC, but RP1's own PIO block clocks WS2812B fine and needs no root (/dev/pio0 is root:gpio, and the service user is in the gpio group). led_ring_daemon.py picks that backend automatically on a Pi 5. Measured here: 500 frames at a steady 50 Hz with flat RSS.\n\nGPIO18 is free on this node - the motor holds 12 and 13. It is also the Pi's I2S PCM_CLK line, unused because Renfield's audio is entirely USB (ReSpeaker XVF3800); move these rings first if I2S is ever enabled here. The PWM0/snd_bcm2835 contention that matters on a Pi 4 does not apply on this board, because the PIO path never touches PWM0.",
+    "description": "Two chained DIYMall X0040MB5LN 8-bit WS2812B rings on GPIO18 - left eye pixels 0-7, right eye 8-15. Same hardware and same wiring as PumpkinHead's Pumpkin Eyes.\n\nThis part was registered as a plain switched `light` until 2026-09-20, which is why Renfield could toggle his eyes on and off and had no speech sync, no AI interaction colours and nothing on /setup/led-animation: every one of those paths selects parts by `type === 'led_ring'` and a `light` is invisible to all of them.\n\nBOARD (2026-09-27): his Pi 5 fried and a Raspberry Pi 4B replaced it. On a Pi 4 led_ring_daemon.py drives the chain with rpi_ws281x (PWM0 + DMA 10 on GPIO18), which needs root: the daemon runs as monsterbox-led.service and the app reaches it at MB_LED_SOCKET=/run/monsterbox-led/led.sock (scripts/install-led-ring-service.sh; the hardened monsterbox.service sets NoNewPrivileges, so the old `sudo -n` spawn cannot work there). Onboard analog audio is off (dtparam=audio=off, snd_bcm2835 blacklisted) because it drives the same PWM block. If the ring geometry below changes, re-run that script with the new values - the unit carries them on its command line. On the Pi 5 the same config ran through the RP1 PIO backend without root.",
     "config": {
       "gpioPin": 18,
       "pixelCount": 16,
@@ -207,7 +207,7 @@
       "dataRateHz": 800000
     },
     "created": "2026-09-13T00:00:00.000Z",
-    "updated": "2026-09-20T17:41:29.000Z",
+    "updated": "2026-09-27T21:00:00.000Z",
     "enabled": true,
     "modelId": "led_ring_diymall_x0040mb5ln_8bit"
   },
@@ -217,13 +217,13 @@
     "name": "PIR Motion Sensor",
     "type": "motion_sensor",
     "pin": 22,
-    "description": "PIR motion sensor on BCM GPIO 22 (operator-stated wiring, 2026-09-26; first recorded as GPIO 16 the same evening, corrected by the operator). Output goes HIGH on motion; read with an internal pull-down (lgpio on this Pi 5 \u2014 no /dev/gpiomem). Arms the Motion toggle: detection -> AI + eye rings + shake + pen.",
+    "description": "PIR motion sensor on BCM GPIO 22 (operator-stated wiring, 2026-09-26; first recorded as GPIO 16 the same evening, corrected by the operator). Output goes HIGH on motion; read with an internal pull-down (the resident watcher reads /dev/gpiomem on his Pi 4B; the parts-page Test reads through lgpio). Arms the Motion toggle: detection -> AI + eye rings + shake + pen.",
     "config": {
       "sensitivity": 50,
       "retriggerMs": 5000
     },
     "created": "2026-09-26T00:00:00.000Z",
-    "updated": "2026-09-26T00:30:00.000Z",
+    "updated": "2026-09-27T21:00:00.000Z",
     "enabled": true,
     "modelId": "pir_generic"
   },
@@ -232,26 +232,26 @@
     "characterId": 6,
     "name": "Writing Pen",
     "type": "servo",
-    "pin": 20,
+    "pin": 26,
     "controllerType": "gpio",
-    "servoType": "continuous",
+    "servoType": "standard",
     "rotationRangeDeg": 180,
-    "minPulse": 1000,
-    "maxPulse": 2000,
+    "minPulse": 500,
+    "maxPulse": 2400,
     "neutralPulse": 1500,
-    "modelId": "servo_fitec_fs90r",
-    "model": "servo_fitec_fs90r",
-    "description": "FITEC FS90R continuous-rotation micro servo that sweeps Renfield's writing pen (fitted 2026-09-27 after two Miuzei MG90S units would not respond to a 3.3 V pin \u2014 their signal input carries an RC filter that only a 5 V push-pull driver gets through; the FS90R's input is a normal high-impedance pin and probes healthy). Signal on BCM GPIO 20 = physical pin 38, red on 5 V (pin 4), brown on GND (pin 6); driven directly by lgpio through servo_cli.py \u2014 no PCA9685 on this Pi 5; the wrapper sets the pad to 12 mA. CONTINUOUS: a pulse is direction + speed, not a position. 1500 us = stop, under 1500 = one way, over 1500 = the other (1000-2000 us). The angle field on servo scene steps is therefore a speed axis on this part: 90 = stop, 0 = full one way, 180 = full the other, and the step's duration is how long it runs \u2014 scenes 1 and 4 alternate 60/120 for 350 ms each, which is the scribble. The calibration page uses its jog/nudge controls (rotate_continuous on the pin). Check the line with `python3 python_wrappers/servo_cli.py probe 20`.",
+    "modelId": "servo_miuzei_mg90s",
+    "model": "servo_miuzei_mg90s",
+    "description": "Miuzei MG90S 180-degree positional micro servo that moves Renfield's writing pen. Wiring given to the operator for the 2026-09-27 rebuild on the replacement Raspberry Pi 4B: signal on BCM GPIO 26 = physical pin 37, red on 5 V (pin 4), brown on GND (pin 39) - the operator confirmed pin 37, and a passive probe of the new Pi read GPIO 26 loaded and GPIO 20 free. Driven directly by lgpio tx_servo through servo_cli.py move_to - there is no PCA9685 on this node. Pulse 500-2400 us, 50 Hz; angles 0..180 map onto that span (servo.js angleToPulseFromPart), so scenes 1 and 4's 60/120 scribble is two positions (1133 / 1767 us). HISTORY: on the fried Pi 5 the pen went GPIO 26 -> 21 -> 20; two MG90S units would not respond to the RP1's 3.3 V pad and a FITEC FS90R continuous servo stood in (81384573); the operator fitted an MG90S again for the Pi 4. Check the line with `python3 python_wrappers/servo_cli.py probe 26`; calibrate Set Min/Max on /setup/calibration.",
     "config": {
-      "minPulse": 1000,
-      "maxPulse": 2000,
+      "minPulse": 500,
+      "maxPulse": 2400,
       "neutralPulse": 1500,
       "rotationRangeDeg": 180,
-      "servoType": "continuous",
+      "servoType": "standard",
       "controllerType": "gpio"
     },
     "created": "2026-09-26T00:30:00.000Z",
-    "updated": "2026-09-27T19:30:00.000Z",
+    "updated": "2026-09-27T21:00:00.000Z",
     "enabled": true
   }
 ]
