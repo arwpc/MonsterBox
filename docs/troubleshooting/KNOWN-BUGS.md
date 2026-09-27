@@ -1434,10 +1434,14 @@ and fingerprinted it. The first bench test after the operator wired the motor th
   the top half. **Fixed:** without a legacy entry the angle maps 0..`rotationRangeDeg` onto the part's own
   `minPulse`..`maxPulse` (`angleToPulseFromPart`); legacy entries keep their own pairs. No other GPIO servo
   exists in the fleet, so nothing else changes.
-- **⚠️ OPEN — motor DIR pin conflict.** Part 1 still records the shake motor on DIR=26 / PWM=13 (2026-09-13),
-  but the pen now owns GPIO 26. The motor's real DIR line is unknown until the operator says; until then a
-  motor drive and a pen move on the same pin will collide (`GPIO busy`) and the motor's direction line may
-  be floating (pull-down → forward only).
+- **✅ Motor wiring settled by the operator (same evening): it is a BTS7960 — RPWM = GPIO 12, LPWM = GPIO 13,
+  R_EN and L_EN tied to 5 V.** So the Cytron MDD record from 2026-09-13 (DIR 26 / PWM 13) was the wrong board,
+  and the node's frozen BTS7960-on-12/13 shape had the right pins but was disabled and clamped to 0 ms. Part 1
+  is now `controlBoard: BTS7960, rpwmPin: 12, lpwmPin: 13`, no enable pins, enabled; it drives through
+  `linear_actuator_control_v2.py` (lgpio, fine on the Pi 5). Proven at the pads: forward = PWM train on 12,
+  reverse = on 13, at 50 % and 70 %, `get_throttled 0x0`. GPIO 26 belongs to the pen; no conflict remains.
+  **Operator, at the rig: "Bingo - movement!!!!!! And no reboot yet."** — the shake is witnessed and the Pi
+  stays up through scene 3's 65 % / 1400 ms burst.
 - **✅ Eyes — RESOLVED at the rig (operator, same evening: "wired eyes up they're working!").** The ring
   daemon had been healthy throughout (RP1 PIO on GPIO 18, one process, data line idling low and bursting
   on frames); the rings were not wired. Software unchanged.

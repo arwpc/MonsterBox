@@ -8,18 +8,18 @@
     "minSpeed": 0,
     "maxSpeed": 100,
     "maxDuration": 5000,
-    "description": "12V shake motor - 'the signature', Renfield's tremble. Cytron MDD (MDD10A-class, DIR+PWM per channel) on channel 1. BCM GPIO: DIR1=26, PWM1=13.\n\nThis MATCHES fleet convention - GPIO 13 is the PWM line on every MDD10A in MonsterBox, and PumpkinHead uses the identical pair (DIR=26, PWM=13). The pins were briefly wired the other way round on 2026-09-13 and the operator swapped them back the same day; if you find a note anywhere claiming Renfield is reversed, it is stale. DIR and PWM are still not interchangeable: swapped, motor_control.py puts the 2kHz PWM train on the DIR line and a static level on the PWM line, so the board sees a permanently-asserted enable with direction chattering - the motor runs flat out and speed does nothing.\n\nTWO-PIN BOARD - do not re-add rpwmPin/lpwmPin/renPin/lenPin. This part was specced for a BTS7960 and never built; the driver changed at the bench. services/hardwareService/index.js dispatches on controlBoard === 'BTS7960' && rpwmPin != null && lpwmPin != null, and killInFlightDrive() tests rpwmPin BEFORE directionPin - so stale four-pin keys send both the drive and the stop down the BTS7960 path, against pins this board does not have, while still reporting success.\n\nPOWER: 12V PSU -> slow-blow fuse -> NTC inrush limiter (5-10 ohm) -> B+. 10,000uF/25V+ across B+/B- at the board, stripe to B-; without the NTC that cap is a dead short at power-on and trips the PSU's OCP. RC snubber (0.1uF film + 10-47 ohm 1W) across the MOTOR terminals at the motor - a bare cap with no series resistor shorts the H-bridge on every PWM edge and cooks the MOSFETs. Star ground at B-; Pi GND runs to the control header GND only, carrying signal return, never motor current. The 12V motor supply must NOT share the Pi's 5V rail.\n\nPULL-DOWNS: 10k from DIR and PWM to GND at the driver end. scripts/motor_control.py calls gpio_free() on both pins when a run ends and a Pi reboot returns them to input, so both float otherwise - on a yard prop that reads as the motor running when nobody is home.\n\nSTALL: a wiper-class motor stalls at roughly 24-40A, above the MDD10A's 30A peak. Short bursts only - scenes run 900-2000ms at 50-80% and maxDuration caps any single energization at 5000ms. Groundbreaker's wiper motor stalled mid-test 2026-08-30 and its 12V rail is still dead; a stalled motor cooks until the fuse opens, and PWM outlives the process.\n\nHISTORY 2026-09-26: this MDD shape was first committed 2026-09-13 (3b32a1ec) but never reached the node; the 2026-09-20 lock pulled the node's stale BTS7960 copy (rpwmPin 12 / lpwmPin 13, enabled:false) back into the repo and froze it, so the first bench test after wiring drove GPIO 12/13 down the BTS7960 path and the motor stayed still. Operator confirmed the wiring 2026-09-26; part restored, enabled, and its physical-faults entry cleared.",
+    "description": "12V shake motor - 'the signature', Renfield's tremble. BTS7960 H-bridge, operator-confirmed wiring 2026-09-26: RPWM = BCM GPIO 12, LPWM = BCM GPIO 13, R_EN and L_EN tied to 5 V (always enabled - no enable pins in software; leave renPin/lenPin absent). Driven by linear_actuator_control_v2.py (lgpio, works on this Pi 5): 'forward' puts PWM on GPIO 12, 'reverse' on GPIO 13. The 12 V motor supply is separate from the Pi; common ground on the logic side only. HISTORY: specced as a BTS7960 on 27/22/17/23 (never built), recorded as a Cytron MDD on DIR 26 / PWM 13 on 2026-09-13, and frozen by the 2026-09-20 lock as a disabled BTS7960 on 12/13. On 2026-09-26 the operator confirmed the BTS7960 on 12/13 with hard-wired enables; GPIO 26 belongs to the Writing Pen (part 7). STALL: a wiper-class motor stalls at roughly 24-40 A; short bursts only - scenes run 900-2000 ms at 50-80 %, maxDuration caps any single energization at 5000 ms. PWM outlives the process: killInFlightDrive() ends an overlapping drive before starting another.",
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true,
     "config": {
       "maxDuration": 5000,
-      "controlBoard": "MDD10A"
+      "controlBoard": "BTS7960"
     },
-    "controlBoard": "MDD10A",
-    "updated": "2026-09-26T00:00:00.000Z",
+    "controlBoard": "BTS7960",
+    "updated": "2026-09-26T21:00:00.000Z",
     "modelId": "motor_jeep_wagoneer_wiper",
-    "directionPin": 26,
-    "pwmPin": 13
+    "rpwmPin": 12,
+    "lpwmPin": 13
   },
   {
     "id": "2",
