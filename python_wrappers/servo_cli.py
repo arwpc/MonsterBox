@@ -208,9 +208,10 @@ def _signal_line_check(handle, pin, announce=True):
     seen = f'{rise_us} us' if rise_us is not None else f'over {SIGNAL_PROBE_MAX_US} us'
     warning = (f'GPIO {pin} signal line is loaded: the pad was still low {int(last_low_us)} us '
                f'after being driven high and took {seen} to read high (a free pin takes '
-               f'~15 us), so servo pulses cannot reach a valid level. Check which lead is '
-               f'on this pin — the signal lead, not the servo\'s red/5 V or ground — and '
-               f'the servo power wiring.')
+               f'~15 us). Short pulses (under ~1 ms, the bottom of the travel) are '
+               f'shortened or lost; longer ones arrive nearly full width at the 12 mA '
+               f'drive this wrapper sets on a Pi 5. If the servo still does not move, '
+               f'its input needs a 5 V push-pull buffer, or use a lighter servo.')
     if announce:
         warn(warning)
     return rise_us, warning
@@ -218,6 +219,52 @@ def _signal_line_check(handle, pin, announce=True):
 
 def _with_line_warning(message, warning):
     return f'{message} — WARNING: {warning}' if warning else message
+
+
+# Raspberry Pi 5 (RP1) pad drive strength. RP1 pads default to 4 mA, and a servo
+# whose signal input is heavier than a bare CMOS pin (Renfield's MG90S, 2026-09-27)
+# turned that into a ~1 ms edge: 1450 us commanded arrived as ~770 us and the pen
+# never moved, while a 5 V bench tester with a strong push-pull output drove it
+# fine. At 12 mA the same pin delivers 1450 -> ~1360 us and 2400 -> ~2380 us.
+# There is no reason for a servo signal line to sit at 4 mA, so every GPIO servo
+# command on an RP1 board raises its pin to the maximum before driving. The pad
+# register survives lgpio's line claim (measured) and is only ever written when
+# /dev/gpiomem0 exists, i.e. on a Pi 5; other boards are untouched.
+RP1_GPIOMEM = '/dev/gpiomem0'
+RP1_PADS_BANK0 = 0x20000          # inside the /dev/gpiomem0 window (IO_BANK0 at 0)
+RP1_GPIOMEM_LEN = 0x30000         # the device refuses shorter mappings (EINVAL)
+RP1_DRIVE_CODES = {2: 0, 4: 1, 8: 2, 12: 3}
+
+
+def _rp1_set_drive(pin, milliamps=12):
+    """Set an RP1 GPIO pad's drive strength; returns the mA now set, or None."""
+    if not os.path.exists(RP1_GPIOMEM):
+        return None
+    import mmap
+    import struct
+    code = RP1_DRIVE_CODES[milliamps]
+    fd = None
+    mem = None
+    try:
+        fd = os.open(RP1_GPIOMEM, os.O_RDWR | os.O_SYNC)
+        mem = mmap.mmap(fd, RP1_GPIOMEM_LEN, mmap.MAP_SHARED,
+                        mmap.PROT_READ | mmap.PROT_WRITE)
+        offset = RP1_PADS_BANK0 + 4 + 4 * pin   # +0 is VOLTAGE_SELECT
+        mem.seek(offset)
+        value = struct.unpack('<I', mem.read(4))[0]
+        wanted = (value & ~0x30) | (code << 4)
+        if wanted != value:
+            mem.seek(offset)
+            mem.write(struct.pack('<I', wanted))
+        return milliamps
+    except Exception as exc:  # noqa: BLE001 - advisory: the move still runs
+        warn(f'could not set RP1 drive strength on GPIO {pin}: {exc}')
+        return None
+    finally:
+        if mem is not None:
+            mem.close()
+        if fd is not None:
+            os.close(fd)
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +284,7 @@ def move_to(pin, pulse_us, duration_ms=1000):
     duration_ms = int(values['duration_ms'] if values['duration_ms'] is not None else 0)
 
     with mb_safety.power_group(_character(), safety):
+        drive_ma = _rp1_set_drive(pin)
         handle = lgpio.gpiochip_open(0)
         try:
             _claim_output(handle, pin)
@@ -255,7 +303,8 @@ def move_to(pin, pulse_us, duration_ms=1000):
     return {
         'part': part.get('id') if part else None,
         'data': {'pin': pin, 'pulse_us': pulse_us, 'duration_ms': duration_ms,
-                 'signalLine': {'riseUs': rise_us, 'loaded': line_warning is not None},
+                 'signalLine': {'riseUs': rise_us, 'loaded': line_warning is not None,
+                                'driveMa': drive_ma},
                  'warning': line_warning},
         'clamps': clamps,
         'message': _with_line_warning(
@@ -294,6 +343,7 @@ def rotate_continuous(pin, direction, speed, duration_ms):
     hold_s = max(0.0, duration_ms / 1000.0)
 
     with mb_safety.power_group(_character(), safety):
+        drive_ma = _rp1_set_drive(pin)
         handle = lgpio.gpiochip_open(0)
         try:
             _claim_output(handle, pin)
@@ -316,7 +366,8 @@ def rotate_continuous(pin, direction, speed, duration_ms):
         'part': part.get('id') if part else None,
         'data': {'pin': pin, 'direction': direction, 'speed': speed,
                  'duration_ms': duration_ms, 'pulse_us': pulse_us,
-                 'signalLine': {'riseUs': rise_us, 'loaded': line_warning is not None},
+                 'signalLine': {'riseUs': rise_us, 'loaded': line_warning is not None,
+                                'driveMa': drive_ma},
                  'warning': line_warning},
         'clamps': clamps,
         'message': _with_line_warning(
@@ -670,6 +721,7 @@ def probe(pin):
     pin = _int_arg(pin, 'gpio_pin')
     part = mb_safety.find_part_by_pins(_character(), {'pin': pin, 'gpioPin': pin})
 
+    drive_ma = _rp1_set_drive(pin)
     handle = lgpio.gpiochip_open(0)
     try:
         lgpio.gpio_claim_input(handle, pin, lgpio.SET_PULL_UP)
@@ -704,7 +756,7 @@ def probe(pin):
     return {
         'part': part.get('id') if part else None,
         'data': {'pin': pin, 'riseUs': rises, 'pullUpReadsHigh': pull_up_high,
-                 'loaded': loaded, 'warning': warning},
+                 'loaded': loaded, 'driveMa': drive_ma, 'warning': warning},
         'clamps': [],
         'message': f'GPIO {pin} signal line: {verdict}',
     }

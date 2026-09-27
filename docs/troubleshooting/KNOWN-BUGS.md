@@ -1418,8 +1418,24 @@ Pi's pad is not in that circuit at all.
   1.5 s and classified `E_BUSY` (I2C EBUSY keeps its bus hint). The GPIO branch of `moveToAngle`
   honours the step's `duration` as the hold (floor 150 ms; the wrapper timeout follows the hold): scenes
   1/4's 350 ms scribble beats were each holding 1000 ms.
-- **Still open:** the lead check, the rewire or pin move, and calibration — the operator confirms
-  movement by eye.
+- **2026-09-27 morning — the load IS this servo, and the fix that exists in this fleet is the PCA9685.**
+  With the leads and power re-verified by the operator (three days of it), the pin reads `healthy`
+  whenever this servo is off pin 38 (it read healthy while the servo sat on the bench tester) and
+  `LOADED` the moment it is plugged back in. Its signal input is heavier than an RP1 pad can drive at
+  the Pi 5 default of **4 mA**; the tester drives it because it is a 5 V push-pull output. Raising the
+  pad to **12 mA** (now automatic: `servo_cli.py` writes the RP1 pad register before every GPIO servo
+  command on a Pi 5, `data.signalLine.driveMa`) brings everything from 1000 µs up to within ~100 µs
+  at the pad — 1450 → ~1400, 2400 → ~2380 — while 800 µs still arrives as ~480 and 700 is lost, so the
+  bottom ~45° of travel stays unreachable from a bare Pi pin. **Every other servo in the fleet (12 across
+  PumpkinHead, Mina, Orlok, Sir Dragomir, the Magic Box included) runs on a PCA9685**, whose channels are
+  5 V push-pull at 25 mA — that is why they configure in three minutes. Renfield is the only bare-GPIO
+  servo. **Recommendation: fit a PCA9685 on Renfield.** I2C bus 1 is enabled and empty (`i2cdetect -y 1`
+  shows nothing at 0x40), `smbus`/`smbus2` are installed. Wiring: VCC → pin 1 (3.3 V), GND → pin 6,
+  SDA → pin 3, SCL → pin 5, V+ → 5 V (pin 2/4 is enough for one MG90S; a separate 5 V supply is better),
+  servo on channel 0 (brown GND, red V+, orange PWM). Then part 7 becomes
+  `controllerType: pca9685, channel: 0, address: 64` and the calibration page treats it exactly like the
+  Magic Box. `scripts/probe-watch.sh <gpio>` prints a live healthy/LOADED line per second for bench work.
+- **Still open:** the PCA9685 (or a 5 V push-pull buffer) and calibration; movement by eye is the operator's call.
 
 🟢 **2026-09-26 — "the motor isn't firing" was a LOST CONFIG, not wiring: the lock had frozen a stale
 BTS7960 part.** Commit `3b32a1ec` (2026-09-13) retyped part 1 to the Cytron MDD (DIR=26, PWM=13,

@@ -17,6 +17,12 @@ All notable changes to MonsterBox are documented in this file.
   pull-up read reported as corroboration). lgpio `'GPIO busy'` from two moves overlapping on one pin is
   waited out (≤1.5 s) and classified `E_BUSY`. The GPIO branch of `moveToAngle` honours the step `duration`
   as the hold (floor 150 ms; wrapper timeout follows the hold) instead of always 1000 ms.
+  **Morning update (2026-09-27):** the load is the servo itself — the pin is healthy with the servo unplugged
+  and loaded with it on, power verified — its input is too heavy for a Pi 5 pad at the default 4 mA.
+  `servo_cli.py` now raises the RP1 pad to 12 mA before every GPIO servo command (pulses ≥1000 µs arrive
+  within ~100 µs; ≤800 µs still compressed). The fleet's proven servo path is the PCA9685 (5 V, 25 mA per
+  channel, all 12 other servos); fitting one on Renfield is the recommendation. `scripts/probe-watch.sh`
+  added.
 - **Renfield's shake motor config restored and relocked (2026-09-26).** His 2026-09-20 lock had frozen the
   node's stale BTS7960 part (pins 12/13, disabled, "NOT WIRED") over the Cytron MDD shape committed on
   2026-09-13, so the first test after wiring drove the wrong pins. Part 1 is back on DIR 26 / PWM 13,
