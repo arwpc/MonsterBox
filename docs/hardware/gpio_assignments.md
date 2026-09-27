@@ -61,22 +61,34 @@
 > timed spin. Its full rotation tears the head cabling, so keep travel inside the
 > calibrated window.
 
-### Renfield (Character 6, Raspberry Pi 5 — no PCA9685)
+### Renfield (Character 6, Raspberry Pi 4B at 192.168.8.249 — no PCA9685)
 
-Every part is bare-GPIO on the RP1 header. lgpio drives servos and motors (`/dev/gpiochip0`);
-the eye rings use the RP1 PIO block (`/dev/pio0`, no root).
+His Pi 5 fried on 2026-09-27; this is the wiring given to the operator for the
+replacement Pi 4B, and the operator confirmed it. The 40-pin header is the same
+on both boards. Every part is bare-GPIO: lgpio drives the servo and motor
+(`/dev/gpiochip0`, bcm2711), and on the Pi 4 the eye rings run on rpi_ws281x
+(PWM0 + DMA 10, root) as `monsterbox-led.service` — see
+`scripts/install-led-ring-service.sh`, which also turns off onboard analog audio
+because it shares PWM0.
 
-| Pin | Part | Direction |
-|-----|------|-----------|
-| 12 | Shake motor RPWM (BTS7960, enables tied to 5 V) | Output |
-| 13 | Shake motor LPWM (BTS7960) | Output |
-| 18 | Eye rings WS2812B data (2×8, RP1 PIO) | Output |
-| 20 | Writing Pen MG90S signal (physical pin 38) | Output (lgpio `tx_servo`, 50 Hz) |
-| 22 | PIR Motion Sensor | Input (pull-down, sampled via lgpio) |
+| BCM | Header pin | Part | Direction | Power / ground |
+|-----|-----------|------|-----------|----------------|
+| 12 | 32 | Shake motor RPWM (BTS7960, R_EN/L_EN tied to 5 V) | Output (lgpio software PWM) | logic GND pin 34; 12 V side separate |
+| 13 | 33 | Shake motor LPWM (BTS7960) | Output (lgpio software PWM) | — |
+| 18 | 12 | Eye rings WS2812B data (2×8) | Output (rpi_ws281x PWM0) | 5 V pin 2, GND pin 6 |
+| 22 | 15 | PIR Motion Sensor | Input (pull-down; watcher reads /dev/gpiomem) | 5 V spliced, GND pin 14 |
+| 26 | 37 | Writing Pen MG90S signal | Output (lgpio `tx_servo`, 50 Hz) | red 5 V pin 4, brown GND pin 39 |
+
+Only pins 2 and 4 carry 5 V: share them through a terminal block or splice,
+never two crimps on one pin. The ReSpeaker XVF3800 and the webcam are USB.
+
+History: on the Pi 5 the pen moved GPIO 26 → 21 → 20 and a FITEC FS90R stood in
+for two MG90S units that would not respond to a 3.3 V RP1 pad (commit 81384573);
+the operator refitted an MG90S for the Pi 4.
 
 > **Bare-GPIO servo rule (2026-09-26):** before trusting any move, run
 > `python3 python_wrappers/servo_cli.py probe <gpio>`. Healthy = `pullUpReadsHigh: true` and
-> `riseUs` ≈ 15. A loaded line (pin 20 read LOW under pull-up and took ~1040 µs to rise) shortens
+> `riseUs` ≈ 15. A loaded line (on the Pi 5, pin 20 read LOW under pull-up and took ~1040 µs to rise) shortens
 > every pulse — 1450 µs arrived as ~770 µs, 500 µs never — while every driver reports success.
 > Measure at the pad with `pinctrl poll <gpio>`; it prints edge timestamps and needs no extra hardware.
 

@@ -486,6 +486,8 @@ if [ -n "$ELEVEN_KEY" ]; then
     chown "$ACTUAL_USER":"$ACTUAL_USER" /etc/monsterbox/elevenlabs.key || true
     chmod 600 /etc/monsterbox/elevenlabs.key
     print_success "Wrote ElevenLabs API key to /etc/monsterbox/elevenlabs.key"
+elif [ -s /etc/monsterbox/elevenlabs.key ]; then
+    print_success "ElevenLabs API key already present in /etc/monsterbox/elevenlabs.key"
 else
     print_warning "No ELEVENLABS_API_KEY (or XI_API_KEY) found in environment. You can set it later with:"
     echo "    sudo mkdir -p /etc/monsterbox && echo -n 'sk_...' | sudo tee /etc/monsterbox/elevenlabs.key >/dev/null && sudo chmod 600 /etc/monsterbox/elevenlabs.key"
@@ -619,9 +621,15 @@ fi
 # ============================================================
 print_status "Step 20: Creating and selecting a new Character..."
 
-# `|| NEW_CHAR_NAME=""`: without a TTY (install over plain ssh) read hits EOF and
-# returns 1, and set -e used to abort here — before the service unit was written.
-read -rp "Enter new Character name (or press Enter to skip): " NEW_CHAR_NAME || NEW_CHAR_NAME=""
+# Prompt only on a terminal. Without one (install over plain ssh) read either hit
+# EOF — and set -e aborted before the service unit was written — or consumed
+# whatever was left on stdin as a character name (a piped sudo password, on
+# Renfield's rebuild 2026-09-27; the next prompt's EOF stopped it before anything
+# was created).
+NEW_CHAR_NAME=""
+if [ -t 0 ]; then
+    read -rp "Enter new Character name (or press Enter to skip): " NEW_CHAR_NAME || NEW_CHAR_NAME=""
+fi
 if [ -z "$NEW_CHAR_NAME" ]; then
     print_warning "No character name entered; skipping character creation."
 else
