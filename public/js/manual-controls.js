@@ -772,7 +772,7 @@
       body: JSON.stringify(body)
     }).then(function (r) { return r.json(); }).then(function (j) {
       if (j.success) {
-        setCtrlStatus('Position: ' + (j.currentP != null ? Number(j.currentP).toFixed(2) : '?'));
+        setCtrlStatus('Position: ' + (j.currentP != null ? Number(j.currentP).toFixed(2) : '?') + lineWarningNote(j));
         var slider = $('bmSlider');
         var disp = $('bmPosText');
         if (slider && j.currentP != null) slider.value = Math.round(j.currentP * 100);
@@ -781,6 +781,13 @@
         setCtrlStatus(failureText(j));
       }
     }).catch(function (e) { setCtrlStatus('Error: ' + (e && e.message ? e.message : 'request failed')); });
+  }
+
+  // A bare-GPIO servo move can succeed at the pin while the signal line is
+  // electrically loaded (the servo never sees a valid pulse). The server puts
+  // that in j.warning; it belongs next to the position, not only in the log.
+  function lineWarningNote(j) {
+    return (j && j.warning) ? ' \u2014 WARNING: ' + j.warning : '';
   }
 
   function gotoPart(partId, p) {
@@ -792,7 +799,7 @@
     }).then(function (r) { return r.json(); }).then(function (j) {
       if (j.success) {
         var pos = j.targetP != null ? j.targetP : p;
-        setCtrlStatus('Position: ' + Number(pos).toFixed(2));
+        setCtrlStatus('Position: ' + Number(pos).toFixed(2) + lineWarningNote(j));
         var slider = $('bmSlider');
         var disp = $('bmPosText');
         if (slider) slider.value = Math.round(pos * 100);

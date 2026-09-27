@@ -46,6 +46,12 @@ try {
 }
 
 /** Check if a profile represents an absolute servo */
+// The wrapper's loaded-signal-line warning for a bare-GPIO servo, when the last
+// move raised one; empty otherwise so the response shape is unchanged.
+function lineWarningOf(adapter) {
+  return (adapter && adapter.lastWarning) ? { warning: adapter.lastWarning } : {};
+}
+
 function isAbsoluteServo(profile) {
   return profile && profile.capability && profile.capability.kind === 'absolute-servo';
 }
@@ -533,7 +539,7 @@ router.post('/:partId/nudge', express.json(), async (req, res) => {
         const currentAngle = adapter.currentAngle;
         const drivenAngle = Number.isFinite(adapter.lastDrivenAngle) ? adapter.lastDrivenAngle : currentAngle;
         persistServoPosition(partId, currentAngle, maxAngleOf(profile), nudgeCharOpt.characterId);
-        res.json({ success: true, message: `Nudged ${dir} at ${scale} — ${describeServoMove('now at', currentAngle, drivenAngle, profile)}`, currentAngle, drivenAngle, currentP: angleToP(currentAngle, maxAngleOf(profile)) });
+        res.json({ success: true, message: `Nudged ${dir} at ${scale} — ${describeServoMove('now at', currentAngle, drivenAngle, profile)}`, currentAngle, drivenAngle, currentP: angleToP(currentAngle, maxAngleOf(profile)), ...lineWarningOf(adapter) });
       } else {
         const currentP = adapter.currentP !== undefined ? adapter.currentP : 0.5;
         persistPosition(partId, currentP);
@@ -794,7 +800,7 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       }
       const drivenAngle = await adapter.gotoAngle(targetAngle, { speedPct, calibrationOverride: calOverride, ...gotoCharOpt });
       persistServoPosition(partId, targetAngle, maxDeg, gotoCharOpt.characterId);
-      res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle, profile), targetAngle, drivenAngle, targetP: angleToP(targetAngle, maxDeg), requestedAngle: angle, clamped: targetAngle !== angle });
+      res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle, profile), targetAngle, drivenAngle, targetP: angleToP(targetAngle, maxDeg), requestedAngle: angle, clamped: targetAngle !== angle, ...lineWarningOf(adapter) });
     } else {
       const { p, speedPct } = req.body;
       if (typeof p !== 'number' || p < 0 || p > 1) {
@@ -827,7 +833,7 @@ router.post('/:partId/goto', express.json(), async (req, res) => {
       if (isAbsoluteServo(profile)) {
         const targetAngle = pToAngle(clampedP, maxAngleOf(profile));
         persistServoPosition(partId, targetAngle, maxAngleOf(profile), gotoCharOpt.characterId);
-        res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle, profile), targetP: clampedP, targetAngle, drivenAngle });
+        res.json({ success: true, message: describeServoMove('Moved to', targetAngle, drivenAngle, profile), targetP: clampedP, targetAngle, drivenAngle, ...lineWarningOf(adapter) });
       } else {
         persistPosition(partId, clampedP);
         res.json({

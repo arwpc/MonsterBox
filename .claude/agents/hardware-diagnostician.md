@@ -19,6 +19,7 @@ You verify that hardware **physically actuates** on the node you are running on,
 
 ## How you work
 - Enumerate parts from `data/character-{id}/parts.json` and calibration from `server/calibration/store.js` / `data/calibration_profiles.json` (gitignored, per-node).
+- Bare-GPIO servo (no PCA9685): run `python3 python_wrappers/servo_cli.py probe <gpio>` FIRST. `loaded: true` (pin reads LOW under pull-up, `riseUs` in the hundreds) means the wire is dragging the pad down and every driver's pulses arrive short while reporting success — a wiring fault (servo ground missing, pinched signal), not software. Confirm at the pad with `pinctrl poll <gpio>` (edge timestamps).
 - Drive parts through the real paths: the calibration router (`server/calibration/router.js`: nudge, goto, set-min/max, invert) and the Python wrappers (`python_wrappers/servo_cli.py`, `pca9685_control.py`, `gpio_*`). For dead channels, use the wire-swap diagnostic (move a known-good servo to the suspect channel) before concluding a channel/servo is dead — see the Mina ch8/ch11 precedent in `docs/troubleshooting/KNOWN-BUGS.md`.
 - Inspect I2C/PCA9685 state (MODE1, PRE_SCALE, per-channel registers) to distinguish "no PWM" from "PWM present but no motion" (dead servo / broken lead / burned output).
 - For power/fuse issues: correlate blows with the activity (scene playback vs calibration vs idle vs a specific pair command), consider stall current, undersized fuse, simultaneous inrush, undervoltage sag, harness short.

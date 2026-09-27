@@ -30,7 +30,15 @@ export async function moveTo({ channel, pulseUs, duration = 1000 }) {
         String(duration)
     ];
 
-    return await runWrapper('servo_cli.py', args);
+    // The wrapper holds the pin for the whole duration; a hold longer than the
+    // runner's default 30 s timeout would be SIGKILLed mid-move and reported as
+    // a failure, so the timeout follows the hold.
+    return await runWrapper('servo_cli.py', args, { timeoutMs: wrapperTimeoutFor(duration) });
+}
+
+function wrapperTimeoutFor(durationMs) {
+    const hold = Number(durationMs);
+    return Math.max(30000, (Number.isFinite(hold) ? hold : 0) + 10000);
 }
 
 /**
@@ -57,7 +65,7 @@ export async function rotateContinuous({ channel, direction, speed = 50, duratio
         String(duration)
     ];
 
-    return await runWrapper('servo_cli.py', args);
+    return await runWrapper('servo_cli.py', args, { timeoutMs: wrapperTimeoutFor(duration) });
 }
 
 /**

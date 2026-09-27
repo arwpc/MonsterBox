@@ -4,6 +4,19 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Renfield's Writing Pen (GPIO 20) — traced to the pin, and the wrapper now says so (2026-09-26 late).**
+  Every driver put the right servo command on GPIO 20 and every layer reported success, while the pad was
+  loaded by whatever is on physical pin 38: a 1450 µs pulse measured ~770 µs at the pin, 500 µs never
+  reached a valid level, the pad takes ~1 ms to rise and ~1 ms to fall (free pins ~15 µs) and reads LOW
+  under its internal pull-up for 2 s. That is a capacitor-plus-DC load — a servo's supply node, i.e. the
+  red lead on the signal pin — not a damaged pad; the lead check in KNOWN-BUGS → Renfield settles it in
+  five minutes. `servo_cli.py move_to`/`rotate_continuous` now time the pad's rise before each pulse train
+  (judged on the last observed LOW, probe pulse capped at 400 µs) and surface `WARNING: GPIO N signal line
+  is loaded…` in the message, the JSON, stderr, `.err`, the parts Test response, the calibration goto/nudge
+  responses and their client status lines; new `servo_cli.py probe <gpio>` (majority-of-three rise timings;
+  pull-up read reported as corroboration). lgpio `'GPIO busy'` from two moves overlapping on one pin is
+  waited out (≤1.5 s) and classified `E_BUSY`. The GPIO branch of `moveToAngle` honours the step `duration`
+  as the hold (floor 150 ms; wrapper timeout follows the hold) instead of always 1000 ms.
 - **Renfield's shake motor config restored and relocked (2026-09-26).** His 2026-09-20 lock had frozen the
   node's stale BTS7960 part (pins 12/13, disabled, "NOT WIRED") over the Cytron MDD shape committed on
   2026-09-13, so the first test after wiring drove the wrong pins. Part 1 is back on DIR 26 / PWM 13,

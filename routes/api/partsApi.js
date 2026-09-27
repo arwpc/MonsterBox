@@ -285,10 +285,15 @@ router.post('/:id/test', express.json(), async (req, res) => {
                 ? Number(result.appliedParams.angleDeg)
                 : NaN;
             const drivenField = Number.isFinite(drivenAngle) ? { drivenAngle } : {};
+            // A GPIO servo move can succeed at the pin and still be unreadable by the
+            // servo (loaded signal line). The wrapper's warning must reach the person
+            // pressing Test, not just the log.
+            const lineWarning = result && result.warning ? String(result.warning) : null;
+            const moveMessage = describeServoMove(`Part ${part.name} moved to`, angle, drivenAngle);
             return testResponse(
                 res, result, part,
-                describeServoMove(`Part ${part.name} moved to`, angle, drivenAngle),
-                drivenField
+                lineWarning ? `${moveMessage} — WARNING: ${lineWarning}` : moveMessage,
+                lineWarning ? { ...drivenField, warning: lineWarning } : drivenField
             );
         } else if (partType === 'light' || partType === 'led') {
             const rawAction = action || 'on';

@@ -61,6 +61,25 @@
 > timed spin. Its full rotation tears the head cabling, so keep travel inside the
 > calibrated window.
 
+### Renfield (Character 6, Raspberry Pi 5 — no PCA9685)
+
+Every part is bare-GPIO on the RP1 header. lgpio drives servos and motors (`/dev/gpiochip0`);
+the eye rings use the RP1 PIO block (`/dev/pio0`, no root).
+
+| Pin | Part | Direction |
+|-----|------|-----------|
+| 12 | Shake motor RPWM (BTS7960, enables tied to 5 V) | Output |
+| 13 | Shake motor LPWM (BTS7960) | Output |
+| 18 | Eye rings WS2812B data (2×8, RP1 PIO) | Output |
+| 20 | Writing Pen MG90S signal (physical pin 38) | Output (lgpio `tx_servo`, 50 Hz) |
+| 22 | PIR Motion Sensor | Input (pull-down, sampled via lgpio) |
+
+> **Bare-GPIO servo rule (2026-09-26):** before trusting any move, run
+> `python3 python_wrappers/servo_cli.py probe <gpio>`. Healthy = `pullUpReadsHigh: true` and
+> `riseUs` ≈ 15. A loaded line (pin 20 read LOW under pull-up and took ~1040 µs to rise) shortens
+> every pulse — 1450 µs arrived as ~770 µs, 500 µs never — while every driver reports success.
+> Measure at the pad with `pinctrl poll <gpio>`; it prints edge timestamps and needs no extra hardware.
+
 ### PumpkinHead (Character 1, 192.168.8.150)
 
 **PCA9685 I2C (0x40, 50Hz):**

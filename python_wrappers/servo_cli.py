@@ -18,6 +18,7 @@ depend on the argv shape exactly as it is):
   get_duty_pca <channel> [i2c_address]              read a channel's duty back
   release <channel> [i2c_address]           (new) de-energize ONE channel
   reconcile [i2c_address] [--release-unmapped]  (new) audit driven channels
+  probe <gpio_pin>                          is a GPIO servo signal line electrically healthy?
 
 Two things changed underneath, and both are deliberate:
 
@@ -133,6 +134,93 @@ def _float_arg(value, name):
 
 
 # ---------------------------------------------------------------------------
+# GPIO line helpers
+# ---------------------------------------------------------------------------
+
+CLAIM_RETRY_S = 1.5          # the default hold; longer holds (a long scene step) still
+                             # fail E_BUSY after this — a 1.5 s stall is the most a
+                             # calibration slider or pose should ever queue behind
+CLAIM_RETRY_STEP_S = 0.025
+SIGNAL_RISE_LIMIT_US = 200   # a free pad reads back high in ~10-25 us (measured, Pi 5)
+SIGNAL_PROBE_MAX_US = 400    # shorter than any servo's minimum pulse, so the probe can
+                             # never be decoded as a command, loaded line or not
+
+
+def _claim_output(handle, pin, timeout_s=CLAIM_RETRY_S):
+    """Claim `pin` as an output, waiting out a sibling that still holds it.
+
+    move_to holds its pin for the whole hold time, so two calls a few hundred
+    ms apart (a calibration slider, a scene's scribble beat) collided with
+    lgpio's 'GPIO busy' and the second move was reported as a failure
+    (Renfield's Writing Pen, 2026-09-26). Waiting the length of one hold turns
+    the collision into a short queue; a pin that stays busy longer than that
+    is genuinely owned by something else and still fails, as E_BUSY.
+    """
+    deadline = time.monotonic() + timeout_s
+    while True:
+        try:
+            lgpio.gpio_claim_output(handle, pin)
+            return
+        except Exception as exc:  # lgpio.error carries text, not a code
+            if 'busy' not in str(exc).lower() or time.monotonic() >= deadline:
+                raise
+            time.sleep(CLAIM_RETRY_STEP_S)
+
+
+def _signal_line_check(handle, pin, announce=True):
+    """Drive the claimed pin high and time how long the pad takes to READ high.
+
+    A servo signal input is high impedance, so a healthy line reads back high
+    within ~25 us. Renfield's Writing Pen (2026-09-26): lgpio, the kernel
+    pwm-gpio driver and a busy-wait bit-bang all measured ~700 us SHORT on
+    GPIO 20 while reporting success, because the wire was loading the pad —
+    1040 us to read high (and ~975 us to read low again) against 15 us on a
+    free pin: a capacitor-class load, the signature of the pin sitting on a
+    servo's supply lead rather than its signal input. Pulses under ~1.1 ms
+    never reached a valid level at all, so the servo sat at one end whatever
+    angle was asked.
+
+    The verdict rests on the last read that came back LOW, never on the clock:
+    a preempted process that reads high on its first look has no evidence of a
+    slow pad and is called healthy. The probe pulse ends the moment the pad
+    reads high (a few us on a good line) and is capped at SIGNAL_PROBE_MAX_US,
+    under any servo's minimum pulse, so it can never be decoded as a command.
+
+    Returns (rise_us or None, warning or None). Advisory: the move still runs,
+    because the operator needs the pulses on the pin while they fix the wire.
+    """
+    rise_us = None
+    last_low_us = None
+    start = time.perf_counter()
+    try:
+        lgpio.gpio_write(handle, pin, 1)
+        while (time.perf_counter() - start) * 1e6 < SIGNAL_PROBE_MAX_US:
+            now_us = (time.perf_counter() - start) * 1e6
+            if lgpio.gpio_read(handle, pin) == 1:
+                rise_us = int(now_us)
+                break
+            last_low_us = now_us
+    finally:
+        lgpio.gpio_write(handle, pin, 0)
+    # Healthy unless the pad was actually SEEN low past the limit.
+    if last_low_us is None or last_low_us <= SIGNAL_RISE_LIMIT_US:
+        return (rise_us if rise_us is not None else 0), None
+    seen = f'{rise_us} us' if rise_us is not None else f'over {SIGNAL_PROBE_MAX_US} us'
+    warning = (f'GPIO {pin} signal line is loaded: the pad was still low {int(last_low_us)} us '
+               f'after being driven high and took {seen} to read high (a free pin takes '
+               f'~15 us), so servo pulses cannot reach a valid level. Check which lead is '
+               f'on this pin — the signal lead, not the servo\'s red/5 V or ground — and '
+               f'the servo power wiring.')
+    if announce:
+        warn(warning)
+    return rise_us, warning
+
+
+def _with_line_warning(message, warning):
+    return f'{message} — WARNING: {warning}' if warning else message
+
+
+# ---------------------------------------------------------------------------
 # GPIO servos
 # ---------------------------------------------------------------------------
 
@@ -151,7 +239,8 @@ def move_to(pin, pulse_us, duration_ms=1000):
     with mb_safety.power_group(_character(), safety):
         handle = lgpio.gpiochip_open(0)
         try:
-            lgpio.gpio_claim_output(handle, pin)
+            _claim_output(handle, pin)
+            rise_us, line_warning = _signal_line_check(handle, pin)
             lgpio.tx_servo(handle, pin, pulse_us, 50, 0, 0)
             time.sleep(duration_ms / 1000.0)
             lgpio.tx_servo(handle, pin, 0)
@@ -165,9 +254,12 @@ def move_to(pin, pulse_us, duration_ms=1000):
 
     return {
         'part': part.get('id') if part else None,
-        'data': {'pin': pin, 'pulse_us': pulse_us, 'duration_ms': duration_ms},
+        'data': {'pin': pin, 'pulse_us': pulse_us, 'duration_ms': duration_ms,
+                 'signalLine': {'riseUs': rise_us, 'loaded': line_warning is not None},
+                 'warning': line_warning},
         'clamps': clamps,
-        'message': f'GPIO servo on pin {pin} set to {pulse_us}us',
+        'message': _with_line_warning(
+            f'GPIO servo on pin {pin} set to {pulse_us}us', line_warning),
     }
 
 
@@ -204,7 +296,8 @@ def rotate_continuous(pin, direction, speed, duration_ms):
     with mb_safety.power_group(_character(), safety):
         handle = lgpio.gpiochip_open(0)
         try:
-            lgpio.gpio_claim_output(handle, pin)
+            _claim_output(handle, pin)
+            rise_us, line_warning = _signal_line_check(handle, pin)
             lgpio.tx_servo(handle, pin, pulse_us, 50, 0, 0)
             time.sleep(hold_s)
         finally:
@@ -222,9 +315,13 @@ def rotate_continuous(pin, direction, speed, duration_ms):
     return {
         'part': part.get('id') if part else None,
         'data': {'pin': pin, 'direction': direction, 'speed': speed,
-                 'duration_ms': duration_ms, 'pulse_us': pulse_us},
+                 'duration_ms': duration_ms, 'pulse_us': pulse_us,
+                 'signalLine': {'riseUs': rise_us, 'loaded': line_warning is not None},
+                 'warning': line_warning},
         'clamps': clamps,
-        'message': f'GPIO continuous servo on pin {pin} rotated {direction} at {speed}%',
+        'message': _with_line_warning(
+            f'GPIO continuous servo on pin {pin} rotated {direction} at {speed}%',
+            line_warning),
     }
 
 
@@ -554,6 +651,65 @@ def reconcile(address=None, release_unmapped=False):
     }
 
 
+def probe(pin):
+    """Report whether a GPIO servo signal line is electrically healthy.
+
+    Two reads, neither of which moves the servo:
+      * rise time — driven high, a free pad reads back high in ~15 us; a loaded
+        one takes hundreds of us or never (see _signal_line_check). This alone
+        decides `loaded`.
+      * pull-up read — as an input with the internal (~50 kohm) pull-up for
+        20 ms, a free line reads HIGH. Reported as corroboration only: a signal
+        input with its own pull-down reads LOW here while being perfectly
+        driveable, and a large capacitor reads LOW simply because it has not
+        charged yet.
+    This is the check that separates "the software sent the pulse" from "the
+    servo could have seen it" — the gap every success field hid on 2026-09-26.
+    """
+    _require_gpio()
+    pin = _int_arg(pin, 'gpio_pin')
+    part = mb_safety.find_part_by_pins(_character(), {'pin': pin, 'gpioPin': pin})
+
+    handle = lgpio.gpiochip_open(0)
+    try:
+        lgpio.gpio_claim_input(handle, pin, lgpio.SET_PULL_UP)
+        time.sleep(0.02)
+        pull_up_high = lgpio.gpio_read(handle, pin) == 1
+        lgpio.gpio_free(handle, pin)
+
+        _claim_output(handle, pin)
+        rises = []
+        warnings = []
+        for _ in range(3):
+            rise_us, line_warning = _signal_line_check(handle, pin, announce=False)
+            rises.append(rise_us)
+            warnings.append(line_warning)
+            time.sleep(0.05)  # not a servo frame interval
+        # Majority of three, so one preempted sample cannot flip the verdict.
+        flagged = [w for w in warnings if w]
+        warning = flagged[0] if len(flagged) >= 2 else None
+    finally:
+        try:
+            lgpio.gpiochip_close(handle)
+        except Exception:
+            pass
+
+    loaded = warning is not None
+    if warning:
+        warn(warning)
+    verdict = 'LOADED — fix the wiring before trusting any servo command on this pin' \
+        if loaded else 'healthy — the pad rises normally'
+    if not loaded and not pull_up_high:
+        verdict += ' (reads LOW under the internal pull-up: the attached input has its own pull-down, or is still charging)'
+    return {
+        'part': part.get('id') if part else None,
+        'data': {'pin': pin, 'riseUs': rises, 'pullUpReadsHigh': pull_up_high,
+                 'loaded': loaded, 'warning': warning},
+        'clamps': [],
+        'message': f'GPIO {pin} signal line: {verdict}',
+    }
+
+
 def test_servo(pin):
     """Sweep a GPIO servo through a short, bounded connectivity check."""
     _require_gpio()
@@ -582,6 +738,7 @@ Commands:
   batch_pca <ch:angle> [<ch:angle> ...] [i2c_address]
   release <channel> [i2c_address]
   reconcile [i2c_address] [--release-unmapped]
+  probe <gpio_pin>
   test <channel>"""
 
 
@@ -672,6 +829,11 @@ def main():
             if not args:
                 raise WrapperError(E_ARGS, 'test requires <channel>')
             result = test_servo(args[0])
+
+        elif command == 'probe':
+            if not args:
+                raise WrapperError(E_ARGS, 'probe requires <gpio_pin>')
+            result = probe(args[0])
 
         else:
             raise WrapperError(E_UNSUPPORTED, f'Unknown command: {command}', hint=USAGE)

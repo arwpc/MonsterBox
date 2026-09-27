@@ -430,7 +430,10 @@
 
     setStatus('Testing ' + (part.name || 'part') + '...');
     apiPost('/api/parts/' + part.id + '/test', body).then(function(j) {
-      setStatus(j.success ? 'Test complete' : 'Test failed');
+      // A GPIO servo can "succeed" while its signal line is electrically loaded;
+      // the server says so in j.warning and the operator must see it here.
+      var note = (j && j.warning) ? ' \u2014 WARNING: ' + j.warning : '';
+      setStatus(j.success ? ('Test complete' + note) : 'Test failed');
     }).catch(function() {
       setStatus('Test error');
     });

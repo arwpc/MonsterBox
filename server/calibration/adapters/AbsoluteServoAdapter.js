@@ -40,6 +40,7 @@ export class AbsoluteServoAdapter {
     // Angle actually written to the controller (differs from the request on
     // inverted servos); null until a move succeeds.
     this.lastDrivenAngle = null;
+    this.lastWarning = null;
   }
 
   get positionKnown() { return this.currentAngle !== null; }
@@ -138,6 +139,9 @@ export class AbsoluteServoAdapter {
       // echoed the request back told the operator "moved to 60°" while the
       // register went to 119.6°.
       const applied = result && result.appliedParams && result.appliedParams.angleDeg;
+      // A bare-GPIO servo's wrapper reports an electrically loaded signal line
+      // alongside success; keep it so the router can put it on the page.
+      this.lastWarning = (result && result.warning) ? String(result.warning) : null;
       this.lastDrivenAngle = Number.isFinite(applied)
         ? applied
         : (result && Number.isFinite(result.angleDeg) ? result.angleDeg : clamped);

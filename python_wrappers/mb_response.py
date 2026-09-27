@@ -197,6 +197,16 @@ def classify(exc):
 
     text = str(exc)
 
+    # lgpio raises its own `error` (not an OSError) with the text 'GPIO busy'
+    # when another process still holds the line — most often the previous
+    # move_to on the same pin, still inside its hold. That is a wait, not an
+    # internal fault, and E_INTERNAL sent operators hunting through the driver.
+    if 'busy' in text.lower() and not isinstance(exc, OSError):
+        return WrapperError(E_BUSY, text,
+                            hint='Another process holds this GPIO line or bus — '
+                                 'usually the previous command on the same pin, '
+                                 'still holding it. Retry in a moment.')
+
     if isinstance(exc, TypeError) and 'NoneType' in text:
         return WrapperError(
             E_CONFIG,

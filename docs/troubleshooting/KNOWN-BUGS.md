@@ -1372,6 +1372,55 @@ verified. Still offline for the entire v9.2.0 session." Also the historical v9.2
 line above scoring Groundbreaker `OFFLINE — untestable, not passing` is now obsolete.
 
 ### Renfield — char 6 · *no address (`ip: null` by design)*
+🔴 **2026-09-26 23:30 — Writing Pen (part 7, MG90S signal on GPIO 20 / physical pin 38): the pin is
+electrically LOADED. The software sends the right command; the pad cannot deliver it.** This supersedes
+the 3.3 V pulse-height theory in the handoff below — the tester works "on the same wires" because the
+Pi's pad is not in that circuit at all.
+- **Measured at the pad with `pinctrl poll 20`** (edge timestamps; tool validated: a bit-banged 100 ms
+  pulse reads 99.96 ms, 5 ms reads 4.9 ms): a commanded **1450 µs pulse arrives as ~770 µs**, 2400 → ~2100,
+  1766 → ~1240, 1133 → ~100, and **500 µs never reaches a valid level**. Period stays 20 ms. Three
+  independent drivers agree — lgpio `tx_servo` (the app path), the kernel `pwm-gpio` hrtimer driver
+  (loaded at runtime with `sudo dtoverlay pwm-gpio,gpio=20`, then removed) and a busy-wait bit-bang — so
+  this is not lgpio, not RP1 timing, and not pulse height: a servo that ignores 3.3 V would still show
+  full-width pulses at the pad.
+- **What the pin looks like electrically:** driven high it takes **~1040 µs** to read back high, and
+  driven low again **~975 µs** to read back low (free pins 19/21/26: ~15 µs both ways); as an input
+  with the internal ~50 kΩ pull-up it reads **LOW and stays LOW for 2 s**. Symmetric ~1 ms edges are a
+  **capacitor-class load** (order 5–15 µF against the pad's own driver), and a pull-up that never lifts
+  it means the node also sinks DC. That is what a servo's **supply (V+) node** looks like — bulk
+  capacitor plus the controller's quiescent draw — not a signal input. An adversarial review of the raw
+  captures (three independent skeptics, 2026-09-27 00:00) fitted a single-pole RC, τ ≈ 1.5 ms, rms 48 µs;
+  a DC pull-down, a damaged pad (fast edges, static divider) and a missing ground (node pushed HIGH) all
+  fit worse. **Top suspect: the servo's RED lead is on pin 38** — a red↔orange swap, or the row counted
+  from the wrong end (the earlier miscount that "lands on pin 4" is recorded below). The earlier 5 V
+  mis-plug (commit `92e1bc2b`) makes that geometry the one already seen once tonight.
+- **Morning check, in order (five minutes):** (1) Look at physical pin 38: the lead on it must be the
+  **signal** lead (orange/yellow/white). Red goes on 2 or 4, brown on a GND pin (39 is right there). If
+  red is on 38, that is the whole bug — re-seat and go to (3). (2) If orange truly is on 38, pull that one
+  lead and run `python3 python_wrappers/servo_cli.py probe 20` with nothing on pin 38. `healthy`
+  (`riseUs` ≈ 15) → the load arrives through that lead: check its **other** end at the servo connector
+  (signal socket, not the red one). Still `LOADED` bare → header-side fault (bridge or a pad that really
+  is dead): move the signal lead one pin over to **physical pin 40 = GPIO 21** (probed healthy, and the
+  pen already moved on it earlier tonight, commit `9ff82eef`) and set `pin` to 21 on `/parts` part 7.
+  (3) With `probe` healthy, `python3 python_wrappers/servo_cli.py move_to <gpio> 1450 1000` centres it.
+  (4) Then calibrate on `/setup/calibration`; the slider status there, the Pose Editor's Test status and
+  the `/api/parts/:id/test` response all now carry `WARNING: GPIO N signal line is loaded…` whenever
+  this comes back.
+- **Software shipped tonight** (live on Renfield's node, committed from Orlok): `servo_cli.py move_to` /
+  `rotate_continuous` time the pad's rise before every pulse train — judged on the last read that came
+  back LOW, never on the clock, with the probe pulse capped at 400 µs so no servo can decode it — and
+  append the warning to the message, the JSON (`data.signalLine`, `data.warning`) and stderr; Node
+  (`services/hardwareService/index.js`) writes it to `.err` and passes it up; the parts Test route, the
+  calibration router (goto/nudge) and their clients show it. New `servo_cli.py probe <gpio>` (majority of
+  three rise timings decides; the pull-up read is corroboration only, because a signal input with its
+  own pull-down reads LOW there while being perfectly driveable). lgpio's `'GPIO busy'` — a second move
+  landing while the previous one still held the pin, seen in `.err` tonight — is waited out for up to
+  1.5 s and classified `E_BUSY` (I2C EBUSY keeps its bus hint). The GPIO branch of `moveToAngle`
+  honours the step's `duration` as the hold (floor 150 ms; the wrapper timeout follows the hold): scenes
+  1/4's 350 ms scribble beats were each holding 1000 ms.
+- **Still open:** the lead check, the rewire or pin move, and calibration — the operator confirms
+  movement by eye.
+
 🟢 **2026-09-26 — "the motor isn't firing" was a LOST CONFIG, not wiring: the lock had frozen a stale
 BTS7960 part.** Commit `3b32a1ec` (2026-09-13) retyped part 1 to the Cytron MDD (DIR=26, PWM=13,
 `enabled:true`) but never reached his node; the 2026-09-20 lock commit pulled the node's OLD copy

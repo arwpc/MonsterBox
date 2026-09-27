@@ -1027,7 +1027,7 @@ const HARDWARE_CONTROLLERS = {
 
     // 🦷 Servo - precise angle control: standard, continuous, feedback
     servo: {
-        async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address, servoType = 'standard', rotationRangeDeg }) {
+        async moveToAngle({ partId, pin, channel, angleDeg, controllerType = 'gpio', address, servoType = 'standard', rotationRangeDeg, duration }) {
             try {
                 // Normalize servoType to robustly route commands
                 const st = String(servoType || '').toLowerCase();
@@ -1195,10 +1195,24 @@ const HARDWARE_CONTROLLERS = {
                         message: success ? `PCA9685 ch${channel} ${commandType} to ${angleDeg}°` : `Servo command failed: ${result}`
                     };
                 } else {
-                    const result = await servoService.moveToAngle({ partId, angleDeg });
+                    // A bare-GPIO servo is only driven while servo_cli.py holds the
+                    // pin, so the step's duration IS the hold. It was dropped here
+                    // and every move held for the 1000 ms default: a scene's 350 ms
+                    // scribble beat ran three times slower than authored. Floor at
+                    // 150 ms so a short step still sends a handful of 50 Hz pulses.
+                    const holdMs = Math.max(150, Math.round(Number(duration)) || 1000);
+                    const result = await servoService.moveToAngle({ partId, angleDeg, duration: holdMs });
 
                     // Convert string result to structured response
-                    const success = wrapperSucceeded(result, parsePythonJSON(result));
+                    const parsed = parsePythonJSON(result);
+                    const success = wrapperSucceeded(result, parsed);
+                    // The wrapper times how long the pad takes to read back high
+                    // before it sends the pulse train. A loaded signal line (a servo
+                    // with no ground, a pinched wire) makes every driver's pulses
+                    // come out short while the command still "succeeds"; that
+                    // warning has to reach the operator, and .err.
+                    const lineWarning = parsed && parsed.data && parsed.data.warning ? String(parsed.data.warning) : null;
+                    if (lineWarning) console.warn(`⚠️  Servo part ${partId} on GPIO ${pin}: ${lineWarning}`);
 
                     return {
                         success: success,
@@ -1207,7 +1221,10 @@ const HARDWARE_CONTROLLERS = {
                         angleDeg: angleDeg,
                         controllerType: 'gpio',
                         rawOutput: result,
-                        message: success ? `Servo on pin ${pin} moved to ${angleDeg}°` : `Servo command failed: ${result}`
+                        ...(lineWarning ? { warning: lineWarning } : {}),
+                        message: success
+                            ? `Servo on pin ${pin} moved to ${angleDeg}°${lineWarning ? ` — WARNING: ${lineWarning}` : ''}`
+                            : `Servo command failed: ${result}`
                     };
                 }
             } catch (error) {

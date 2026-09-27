@@ -241,7 +241,7 @@
     "neutralPulse": 1500,
     "modelId": "servo_miuzei_mg90s",
     "model": "servo_miuzei_mg90s",
-    "description": "Miuzei MG90S 180-degree micro servo that moves Renfield's writing pen. Driven DIRECTLY from BCM GPIO 20 = physical pin 38 (operator-stated wiring, 2026-09-26 late; it was on GPIO 26 then 21 earlier that evening) with lgpio tx_servo through servo_cli.py move_to \u2014 there is no PCA9685 on this Pi 5. Pulse 500-2400 us, 50 Hz. Servo power must come from a 5-6 V rail with a common ground to the Pi, never the Pi's 3.3 V. POWER: red on physical pin 2 or 4 (5 V), brown on a GROUND pin (6, 9, 14, 20, 25, 30, 34 or 39) \u2014 pin 4 is 5 V, not ground. Not yet calibrated: run Set Min/Max on /setup/calibration so the pen's real travel is measured before scenes push it to its ends.",
+    "description": "Miuzei MG90S 180-degree micro servo that moves Renfield's writing pen. Driven DIRECTLY from BCM GPIO 20 = physical pin 38 (operator-stated 2026-09-26 late: orange pin 38, red pin 4 = 5 V, brown pin 39 = GND; it was on GPIO 26 then 21 earlier that evening) with lgpio tx_servo through servo_cli.py move_to \u2014 there is no PCA9685 on this Pi 5. Pulse 500-2400 us, 50 Hz. Servo power must come from a 5-6 V rail with a common ground to the Pi, never the Pi's 3.3 V. 2026-09-26 23:30 FINDING (software proven correct; the PIN is loaded): every driver \u2014 lgpio tx_servo, the kernel pwm-gpio driver, a bit-bang \u2014 puts the right command on GPIO 20, but the pad takes ~1040 us to rise and ~975 us to fall (free pins ~15 us) and reads LOW under the internal pull-up for 2 s. Measured at the pad with `pinctrl poll 20`: a 1450 us pulse arrives as ~770 us, 1133 us as ~100 us, 500 us never reaches a valid level, so the servo sits at one end whatever angle is asked. Symmetric ~1 ms edges plus a DC sink = a capacitor-class load, the signature of a servo SUPPLY lead (bulk cap + controller draw) on the pin, not a signal input; a dead pad or a missing ground fit the data worse. TOP SUSPECT: the red lead is on pin 38 (red/orange swapped, or the row counted from the wrong end). MORNING: (1) look at pin 38 \u2014 it must carry the signal lead; red on 2/4, brown on GND (39). (2) If orange really is on 38, pull it and run `python3 python_wrappers/servo_cli.py probe 20` bare: healthy (riseUs ~15) = the load comes through that lead, check its servo end; still LOADED bare = move the signal lead to physical pin 40 (GPIO 21, probed healthy; the pen moved on it earlier) and set pin 21 here. (3) probe healthy, then move_to <gpio> 1450 1000 to centre. Not yet calibrated: run Set Min/Max on /setup/calibration once probe reads healthy; the slider status now shows a WARNING whenever the line is loaded.",
     "config": {
       "minPulse": 500,
       "maxPulse": 2400,
@@ -251,7 +251,7 @@
       "controllerType": "gpio"
     },
     "created": "2026-09-26T00:30:00.000Z",
-    "updated": "2026-09-27T02:58:43.447Z",
+    "updated": "2026-09-27T05:10:00.000Z",
     "enabled": true
   }
 ]
