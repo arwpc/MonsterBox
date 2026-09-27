@@ -982,9 +982,10 @@ Goblin is deployed via "Facehugger" system in Goblin Management:
 4. Start playback automatically
 
 **Current Status:**
-- ✅ Goblin3 (192.168.8.14) - Operational, tested immediate playback
-- ⏳ Goblin1 (192.168.8.40) - Pending deployment
-- ⏳ Goblin2 (192.168.8.106) - Offline
+- ⏳ Goblin 1 (192.168.8.40) - Offline since 2026-09-26
+- ✅ Goblin 2 (192.168.8.106) - Operational
+- ✅ Goblin 3 (192.168.8.14) - Operational
+- ✅ Goblin 4 (192.168.8.244) - Operational, added 2026-09-27 with `scripts/goblin-os/provision-goblin.sh`
 
 See: `goblin/`, `docs/integration/GOBLIN_VIDEO_INTEGRATION.md`
 
@@ -1013,9 +1014,10 @@ claiming jaw ch0 / magic box ch8 / head ch4 were wrong.) Groundbreaker's former
 ([KNOWN-BUGS](docs/troubleshooting/KNOWN-BUGS.md)).
 
 **Goblins (Video Display):**
-- Goblin One: 192.168.8.40:3001 ⏳ Pending deployment
-- Goblin Two: 192.168.8.106:3001 ⏳ Offline
-- Goblin Three: 192.168.8.14:3001 ✅ Operational
+- Goblin 1: 192.168.8.40:3001 ⏳ Offline
+- Goblin 2: 192.168.8.106:3001 ✅ Operational
+- Goblin 3: 192.168.8.14:3001 ✅ Operational
+- Goblin 4: 192.168.8.244:3001 ✅ Operational
 
 SSH for RPi4B: see docs/security/remote-access.md
 

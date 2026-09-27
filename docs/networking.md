@@ -37,9 +37,13 @@ mDNS requires **both `avahi-daemon` and `avahi-utils`** on every node — the da
 
 | Goblin | IP Address | Status |
 |--------|------------|--------|
-| Goblin One | 192.168.8.40:3001 | Pending deployment |
-| Goblin Two | 192.168.8.106:3001 | Offline |
-| Goblin Three | 192.168.8.14:3001 | Operational |
+| Goblin 1 | 192.168.8.40:3001 | Offline (off the network since 2026-09-26) |
+| Goblin 2 | 192.168.8.106:3001 | Operational |
+| Goblin 3 | 192.168.8.14:3001 | Operational |
+| Goblin 4 | 192.168.8.244:3001 | Operational (added 2026-09-27; Pi 3B, pinned to 720p) |
+
+Names match hostnames (goblin1 … goblin4). The registry is `data/goblins.json`; a new Goblin is
+added with `POST /goblin-management/api/register`.
 
 ## Port Assignments
 

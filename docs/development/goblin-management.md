@@ -18,6 +18,7 @@ The Goblin Management system provides a web-based interface for controlling mult
    - **Goblin1** (goblin-one): 192.168.8.40:3001
    - **Goblin2** (goblin-two): 192.168.8.106:3001
    - **Goblin3** (goblin-three): 192.168.8.14:3001
+   - **Goblin4** (goblin-192-168-8-244): 192.168.8.244:3001 — Pi 3B, added 2026-09-27
 
 3. **Video Storage**
    - Local storage on each Goblin: `/home/remote/media/video/`
@@ -32,6 +33,7 @@ MonsterBox (192.168.8.120:3000)
     +-- HTTP API --> Goblin1 (192.168.8.40:3001)
     +-- HTTP API --> Goblin2 (192.168.8.106:3001)
     +-- HTTP API --> Goblin3 (192.168.8.14:3001)
+    +-- HTTP API --> Goblin4 (192.168.8.244:3001)
 ```
 
 ## Web Interface
@@ -325,7 +327,23 @@ To copy a playlist to all Goblins:
 
 ### Deploying to Goblins
 
-Use the deployment script to deploy the Goblin system to any Raspberry Pi:
+> **Proven path for a fresh Pi (Goblin 1 on 2026-09-26, Goblin 4 on 2026-09-27):**
+> 1. Find it: `avahi-browse -atpr | grep goblin`.
+> 2. Install packages on it: `sudo apt-get install -y nodejs npm mpv`.
+> 3. From the MonsterBox node, rsync `/home/remote/goblin/` (with `node_modules`) and
+>    `/home/remote/media/video/` from a working Goblin into the new one. Also copy the gold unit and
+>    helpers from `backups/goblins-gold-2026-09-25/<goblin>/os/` and `scripts/goblin-os/` into
+>    `/home/remote/goblin-os/`.
+> 4. On the Goblin: `sudo bash /home/remote/goblin-os/provision-goblin.sh`, then reboot.
+> 5. Register it: `POST /goblin-management/api/register {goblinId, endpoint, metadata:{name}}`.
+> 6. Install passwordless sudo (`/etc/sudoers.d/010_pi-nopasswd`); the operator does this by hand.
+>
+> `hdmi_mode` in config.txt is ignored under vc4-kms-v3d. If the TV negotiates 1080p, pin 720p with a
+> `goblin.service.d` drop-in setting `GOBLIN_DRM_MODE=1280x720`, or mpv overheats a Pi 3.
+> Do not use `goblin/systemd/goblin.service` or `deploy-goblin.sh` for the unit; see
+> `backups/goblins-gold-2026-09-25/README.md`.
+
+Legacy deployment script:
 
 ```bash
 ./deploy-goblin.sh 192.168.8.40   # Deploy to Goblin1
