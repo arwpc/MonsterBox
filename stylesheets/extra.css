@@ -1,0 +1,141 @@
+/* MonsterBox Halloween Dark Theme — Custom CSS for Material for MkDocs */
+
+:root {
+  --mb-bg-dark: #1a1a1a;
+  --mb-bg-surface: #242424;
+  --mb-bg-code: #2d2d2d;
+  --mb-primary: #e65100;
+  --mb-accent: #ff5722;
+  --mb-text: #e0e0e0;
+  --mb-text-muted: #999;
+  --mb-border: #333;
+}
+
+/* Header bar */
+.md-header {
+  background-color: #0d0d0d;
+  border-bottom: 2px solid var(--mb-primary);
+}
+
+/* Navigation sidebar */
+.md-sidebar {
+  background-color: var(--mb-bg-dark);
+}
+
+/* Main content area */
+.md-main {
+  background-color: var(--mb-bg-dark);
+}
+
+.md-content {
+  color: var(--mb-text);
+}
+
+/* Footer */
+.md-footer {
+  background-color: #0d0d0d;
+  border-top: 1px solid var(--mb-border);
+}
+
+/* Code blocks */
+.highlight code,
+.md-typeset code {
+  background-color: var(--mb-bg-code);
+  border: 1px solid var(--mb-border);
+}
+
+.md-typeset pre > code {
+  border: none;
+}
+
+.highlight pre {
+  background-color: var(--mb-bg-code);
+  border: 1px solid var(--mb-border);
+  border-radius: 4px;
+}
+
+/* Links */
+.md-typeset a {
+  color: var(--mb-accent);
+}
+
+.md-typeset a:hover {
+  color: #ff8a65;
+}
+
+/* Tables */
+.md-typeset table:not([class]) {
+  border: 1px solid var(--mb-border);
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--mb-bg-surface);
+  color: var(--mb-accent);
+  border-bottom: 2px solid var(--mb-primary);
+}
+
+.md-typeset table:not([class]) td {
+  border-bottom: 1px solid var(--mb-border);
+}
+
+/* Admonitions */
+.md-typeset .admonition,
+.md-typeset details {
+  border-left: 4px solid var(--mb-primary);
+  background-color: var(--mb-bg-surface);
+}
+
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+  border-left-color: #ff9800;
+}
+
+.md-typeset .admonition.danger,
+.md-typeset details.danger {
+  border-left-color: #f44336;
+}
+
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-left-color: #4caf50;
+}
+
+/* Search bar */
+.md-search__input {
+  background-color: var(--mb-bg-surface);
+  color: var(--mb-text);
+}
+
+/* Navigation tabs and links */
+.md-nav__link--active,
+.md-nav__link:hover {
+  color: var(--mb-accent);
+}
+
+/* Back-to-top button */
+.md-top {
+  background-color: var(--mb-primary);
+  color: #fff;
+}
+
+.md-top:hover {
+  background-color: var(--mb-accent);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mb-bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mb-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mb-primary);
+}

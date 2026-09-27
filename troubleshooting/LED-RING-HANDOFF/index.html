@@ -1,0 +1,3595 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Aaron Warner">
+      
+      
+        <link rel="canonical" href="https://arwpc.github.io/MonsterBox/troubleshooting/LED-RING-HANDOFF/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>LED Ring (PumpkinHead) — Debugging Handoff - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#led-ring-pumpkinhead-debugging-handoff" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              LED Ring (PumpkinHead) — Debugging Handoff
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directory Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ / Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Character Sheets
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Character Sheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_mina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mina
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_sir_dragomir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sir Dragomir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../character_groundbreaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/PUMPKINHEAD_COMPLETE_PARTS_LIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead Parts List
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/GROUNDBREAKER_SETUP_INSTRUCTIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../characters/GROUNDBREAKER_INSTALLATION_PACKAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronic Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSH Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/NODE-DISCOVERY-VALIDATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/HEAD-TRACKING-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/LINEAR_ACTUATOR_CALIBRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linear Actuator Calibration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/STT_TUNING_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STT Tuning Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/Noisy_Environment_Preset_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Noisy Environment Preset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/CENTRALIZED-PORT-MANAGEMENT-SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/PORT-MANAGEMENT-INTERFACE-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/HTTPS_DEPLOYMENT_HANDOFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTPS Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/secure-remote-access-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Secure Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/AUDIO-MICROPHONE-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audio & Microphone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/ECHO-SUPPRESSION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Echo Suppression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/SCENE-CONCURRENCY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scene Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Log Collection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/head-tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/ORLOK_BTS7960_WIRING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok BTS7960 Wiring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hardware/legacy_hardware_config_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Hardware Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs TTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/ELEVENLABS_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs Full Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/MJPG-STREAMER-INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MJPG-Streamer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/GOBLIN_VIDEO_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Video
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/Hardware-Integration-Layer-Interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Layer Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/api-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/V9-RETROSPECTIVE-AND-ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Retrospective & Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/V9-PERSONA-REVIEWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Persona Reviews
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/GESTURE-ENGINE-SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gesture Engine Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/NODE-DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery (mDNS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orchestration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/ai-integration-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Integration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/AI-Management-Feature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Management Feature
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/goblin-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/middleware-audit-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Middleware Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Setup Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/api-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/conversation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conversation Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/DEEP-TESTING-FRAMEWORK-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Testing Framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KNOWN-BUGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known Bugs & Open Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../head-tracking-troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronics Workshop
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Animatronics Workshop
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Familiarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simple Steps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hands-On Activities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Final Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_19" >
+        
+          
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../v6-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Audit Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../v6-final-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Final Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="led-ring-pumpkinhead-debugging-handoff">LED Ring (PumpkinHead) — Debugging Handoff</h1>
+<p><strong>Date:</strong> 2026-09-12, updated 2026-09-13  <strong>Node:</strong> <code>pumpkinhead</code> (192.168.8.150), character 1
+<strong>Part:</strong> id <code>9</code>, name "Pumpkin Eyes", type <code>led_ring</code>
+<strong>Status:</strong> ✅ <strong>RESOLVED 2026-09-13 — the cabling was connected BACKWARDS: data was feeding
+the ring's DOUT, not DIN</strong> (§6 hypothesis 2 / §7 step 4). The operator reversed it and both
+rings animate. Software work COMPLETE; §9 bugs 1–2 FIXED 2026-09-13.</p>
+<hr />
+<h2 id="0-2026-09-13-resolution-and-what-the-measurements-actually-showed">0. 2026-09-13 — RESOLUTION, and what the measurements actually showed</h2>
+<p><strong>Root cause (operator-confirmed): the feed was mated to the ring chain's OUTPUT end.</strong> Data
+entered DOUT, so no frame could ever latch; the rings sat in their power-on state (these
+clones power on bright white) and V_DD 3.3 V simply browned them out. Reversing the
+connection direction fixed everything instantly — the daemon's 50 fps <code>fade</code> stream became
+visible the moment the path was right.</p>
+<p><strong>The probe evidence below, reinterpreted:</strong> a WS2812B DOUT is a push-pull <em>output</em> that
+idles low. From the header that reads as a low-impedance pull to ground — defeats the
+internal pull-up, reads 0 in every pull mode, and fights (loses to) the pin driver on
+readback. That is EXACTLY what was measured, and it is the opposite of a healthy DIN
+(megaohm high-impedance). <strong>Reusable diagnostic: if an addressable-LED data line measures as
+a driven-low load instead of high-Z, suspect you are on DOUT / the far end of the chain.</strong>
+The 2026-09-12 session's "mystery" pull-up-reads-0 on two different rings was this same
+signature all along — not ring damage, not (as §0 first guessed) a miswired extension.</p>
+<p>The section below is preserved as written before the operator's confirmation — the
+localization ("downstream of the header, at the data entry point, common to both rings")
+was correct; the specific mechanism guessed (extension internal miswiring) was not.</p>
+<hr />
+<h2 id="0b-2026-09-13-earlier-evidence-that-localized-the-fault-pre-confirmation">0b. 2026-09-13 EARLIER — evidence that localized the fault (pre-confirmation)</h2>
+<p><strong>New electrical evidence (validated probe, this time with controls).</strong> With the daemon
+stopped, GPIO18 was characterized as an input against two bare control pins (GPIO23/24):</p>
+<table>
+<thead>
+<tr>
+<th>Probe</th>
+<th>bare control pins</th>
+<th>GPIO18 (into extension + ring)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pull-up (≈50 kΩ)</td>
+<td>1</td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>pull-down</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>no pull</td>
+<td>1 (floats)</td>
+<td><strong>0, immediately, even after pull-up precharge</strong></td>
+</tr>
+<tr>
+<td>driven high / low, read back</td>
+<td>—</td>
+<td>1 / 0 (pin driver wins)</td>
+</tr>
+</tbody>
+</table>
+<p>The data line presents a <strong>load of roughly 100 Ω–50 kΩ to ground</strong> (defeats the pull-up,
+not the pin driver). A healthy WS2812B DIN is megaohm-class high-impedance. Two independent
+rings — including a factory-fresh one — cannot share that defect through a keyed connector;
+the one element common to both is the extension. This also retro-explains §5.1's mystery
+reading: the probe was always looking at the extension, not at ring health.</p>
+<p><strong>Symptom signature grounded in community documentation:</strong> "all LEDs bright frozen white,
+ignores every command, no light at all at V_DD = 3.3 V" is the documented behaviour of a
+WS2812B whose <strong>power or ground never actually arrives</strong> (glow via parasitic/ESD paths, no
+frame ever latches). A strip visibly lights with GND disconnected (return current exits the
+data pin: forum.arduino.cc/t/ws2812b-led-strip-turning-on-without-ground-connected/1227819),
+and the datasheet's "reverse connect protection" explains rings surviving if the extension
+mirrors 5 V↔GND (a known defect class in generic JST-SM extensions — the outer two
+conductors swap in a mirrored crimp while center data stays put).</p>
+<p><strong>Webcam witness test (attempted, void):</strong> GPIO18 was toggled slowly while sampling the
+node's own webcam for illumination change. Result void — the operator was at the bench,
+in frame, moving the rig (including holding the pumpkin to the lens) throughout the
+sampling window. Do not re-run it while anyone is at the bench.</p>
+<p><strong>Decisive test handed to the operator (2026-09-12 late):</strong> bypass the extension — ring
+pigtail direct to header, black→pin 6, red→pin 2, green→pin 12, connected GND → 5 V →
+data. The daemon streams a bright <code>fade</code> at 50 fps, so success is visible the instant the
+path is right. If (unexpectedly) still frozen white when direct: fit the 1N4001 in series
+with the ring's 5 V feed per §7.6.</p>
+<p><strong>Software shipped 2026-09-13</strong> (see §9 — both bugs fixed):
+- Daemon SIGTERM zombie fixed: all <code>rpi_ws281x</code> access serialized behind <code>_strip_lock</code>
+  (the C library is not thread-safe; concurrent <code>ws2811_render</code> from the animator and the
+  shutdown path was the suspected wedge), plus a <code>threading.Timer</code> → <code>os._exit(1)</code>
+  failsafe 10 s after any shutdown request, so the process can never again survive as a
+  zombie holding PWM0. Verified on an isolated GPIO10/SPI instance (SIGTERM → clean exit in
+  0.26 s) <strong>and on the real PWM path after the resolution: 0.16 s.</strong> Honesty note: the
+  original 2026-09-12 hang did NOT reproduce today — old code also exited in ~1 s on the PWM
+  path — so the zombie was situational (likely a render already wedged mid-teardown). The
+  fix removes the concurrency hazard and the failsafe guarantees exit even if the wedge
+  recurs, so the failure class is closed either way.
+- <code>colorOrder</code> and <code>dataRateHz</code> are no longer decorative: the daemon takes
+  <code>--color-order</code> (validated, mapped to <code>ws.WS2811_STRIP_*</code>) and the client now passes
+  <code>--freq</code> and <code>--color-order</code> from the part config (<code>_geometryFor</code> picks
+  <code>dataRateHz</code>/<code>colorOrder</code> with 800 kHz / GRB fallbacks).</p>
+<hr />
+<h2 id="1-the-hardware">1. The hardware</h2>
+<p>5-pack generic <strong>8-bit WS2812B 5050 RGB rings</strong>, DC5V, JST 3-pin connector.
+(The part's <code>modelId</code> still says <code>led_ring_diymall_x0040mb5ln_8bit</code> — electrically
+equivalent 8-bit WS2812B, but the metadata does not match what is physically fitted.)</p>
+<p>Configured as two rings chained to one 16-pixel strip:
+<code>gpioPin 18</code> (BCM) = <strong>header pin 12</strong>, PWM0 channel 0, dma 10, <code>pixelCount 16</code>, <code>ringSplit 8</code>.</p>
+<p><strong>Wiring as last confirmed by the operator:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Ring pigtail</th>
+<th>Extension</th>
+<th>Pi header</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>black</td>
+<td>white</td>
+<td>pin 6 (GND)</td>
+</tr>
+<tr>
+<td>green</td>
+<td>green</td>
+<td>pin 12 (GPIO18, data)</td>
+</tr>
+<tr>
+<td>red</td>
+<td>red</td>
+<td>pin 2 (+5V)</td>
+</tr>
+</tbody>
+</table>
+<p>The JST connector is keyed and mates only one way.
+<strong>The extension cable has NEVER been continuity-tested.</strong> Its colours differ from the
+ring pigtail (white vs black), so the wire-to-pin mapping inside the two housings is
+an assumption, not a verified fact. See §6.</p>
+<hr />
+<h2 id="2-symptoms">2. Symptoms</h2>
+<ul>
+<li>At V_DD = 5 V: ring lights <strong>bright white, frozen</strong>. Ignores every command —
+  blackout, solid colours, walking pixel, palette fade.</li>
+<li>A second ring chained behind it: <strong>always dark</strong>.</li>
+<li>A <strong>brand-new ring</strong> straight from the 5-pack: <strong>identical bright-white frozen behaviour.</strong></li>
+<li>At V_DD = 3.3 V: <strong>no light at all</strong>.</li>
+<li>Unchanged by brightness (8 / 32 / 255), by data rate (800 kHz and 400 kHz),
+  and identical under the MonsterBox daemon and the bare <code>rpi_ws281x</code> library.</li>
+</ul>
+<p>A WS2812B that never changes has <strong>never latched a valid frame</strong>. It is showing its
+power-on garbage state.</p>
+<hr />
+<h2 id="3-proven-working-do-not-re-investigate">3. PROVEN WORKING (do not re-investigate)</h2>
+<p>Everything on the Pi side of the header pin is verified.</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rpi_ws281x</code> installed</td>
+<td>imports as root: <code>/usr/local/lib/python3.11/dist-packages/rpi_ws281x/</code></td>
+</tr>
+<tr>
+<td>Daemon owns the strip</td>
+<td><code>led_ring_daemon.py</code> <code>exit(1)</code>s if <code>PixelStrip.begin()</code> fails; it stays running</td>
+</tr>
+<tr>
+<td>No PWM/audio contention</td>
+<td><code>snd_bcm2835</code> blacklisted, not in <code>lsmod</code></td>
+</tr>
+<tr>
+<td>GPIO18 held by PWM</td>
+<td><code>raspi-gpio get 18</code> → <code>alt=5 func=PWM0_0</code></td>
+</tr>
+<tr>
+<td>PWM clock correct</td>
+<td><code>vcgencmd measure_clock pwm</code> = <strong>2 438 964 Hz</strong> = 3 × 800 kHz (WS2812B encoding). <code>CM_PWMCTL=0x91</code> (ENAB, BUSY, SRC=osc 54 MHz), <code>CM_PWMDIV</code> DIVI=22 → 54/22 = 2.4545 MHz</td>
+</tr>
+<tr>
+<td>PWM configured for WS2812</td>
+<td><code>CTL=0x00002323</code> → PWEN1=1, MODE1=1 (serialiser), USEF1=1 (FIFO); <code>RNG1=32</code>; <code>DMAC=0x80000703</code> (ENAB=1)</td>
+</tr>
+<tr>
+<td>Data actually transmitting</td>
+<td><code>STA1</code> (transmitting) asserted in <strong>~3.4 %</strong> of register samples — matches 16 px × 24 bits ÷ 800 kHz = 480 µs per 20 ms frame = 2.4 %. <code>BERR=0</code>, no errors</td>
+</tr>
+<tr>
+<td>GPIO18 not damaged</td>
+<td>driven high → <code>level=1</code>, low → <code>level=0</code>, 4/4, identical to bare control pin GPIO23</td>
+</tr>
+<tr>
+<td>Software renders correct colours</td>
+<td>dumped <code>_render()</code> output directly: smooth red→orange→green→blue→purple, <strong>never white</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusion: the Pi emits correct WS2812B data on GPIO18. The fault is downstream of header pin 12.</strong></p>
+<hr />
+<h2 id="4-eliminated-hypotheses">4. ELIMINATED hypotheses</h2>
+<ul>
+<li>Driver not installed / daemon not running / PWM misconfigured — all disproved above.</li>
+<li>Onboard audio stealing PWM0 — module blacklisted.</li>
+<li>Wrong PWM pin — swept GPIO18/12/13/19 (header 12/32/33/35) with solid green; no response on any.</li>
+<li>Data rate / WS2811 400 kHz clones — tested 400 kHz, no change. Part is confirmed WS2812B.</li>
+<li>Power sag / current surge — tested at brightness 8, 32, 255; no change.</li>
+<li>Colour-order mismatch — would produce <em>wrong colours</em>, not a frozen display.</li>
+<li>Software colour or brightness bug — render output dumped and verified correct.</li>
+<li><strong>Damaged rings</strong> — a factory-fresh ring behaves identically. See §5.</li>
+</ul>
+<hr />
+<h2 id="5-my-wrong-turns-read-this-it-will-save-you-hours">5. MY WRONG TURNS (read this — it will save you hours)</h2>
+<ol>
+<li><strong>I called the ring "damaged" on bad evidence.</strong> I probed GPIO18 as an input with
+   the internal pull-up; it read <code>0</code> where a bare control pin read <code>1</code>, and I concluded
+   the WS2812B data input was leaking to ground. <strong>A brand-new, never-connected ring
+   reads exactly the same.</strong> The probe was never validated against a known-good ring,
+   so it proves nothing about ring health. <strong>Do not use it as a damage test, and do not
+   discard any rings on its basis.</strong> What it actually means is still unexplained — it is
+   neither a healthy high-Z input (<code>1</code>) nor a hard ground (which would defeat the
+   driver, and the driver test passed).</li>
+<li><strong>I suggested powering the ring at 3.3 V.</strong> WS2812B needs 4.5–5.3 V. It produced no
+   light, which wasted a cycle. (Community reports say 3.3–3.6 V <em>should</em> give dim light —
+   getting nothing is itself a clue, see §6.)</li>
+<li><strong>I assumed the extension cable passes straight through, and never tested it.</strong> Every
+   conclusion downstream of the header rests on that untested assumption.</li>
+<li><strong>I burned early effort on a camera "witness" test</strong> using the character's own webcam.
+   The camera faces outward into the room and cannot see the eyes. Inconclusive, discarded.</li>
+</ol>
+<hr />
+<h2 id="6-open-hypotheses-ranked">6. OPEN hypotheses, ranked</h2>
+<ol>
+<li><strong>The extension cable is miswired or has an open conductor.</strong> Never tested. Its colours
+   do not match the ring pigtail. This is the single largest untested gap and sits exactly
+   between the proven-good Pi and the non-working ring.</li>
+<li><strong>Data never physically reaches DIN</strong> — open conductor, or landed on DOUT instead of DIN.</li>
+<li><strong>Ground not truly common</strong> between the ring's supply and the Pi — a floating data
+   reference gives exactly this frozen-garbage symptom.</li>
+<li><strong>3.3 V logic level below V_IH.</strong> WS2812B needs V_IH = 0.7 × V_DD = <strong>3.5 V</strong> at 5 V; the Pi
+   drives 3.3 V. Genuinely out of spec and worth fixing regardless — but it does <strong>not</strong>
+   explain zero light at V_DD = 3.3 V, so it is probably not the whole story.</li>
+</ol>
+<hr />
+<h2 id="7-next-steps-all-require-a-multimeter-or-physical-rework">7. NEXT STEPS (all require a multimeter or physical rework)</h2>
+<p>Software diagnosis is exhausted. Everything below needs the physical circuit.</p>
+<ol>
+<li><strong>Measure V_DD at the RING end</strong>: red ↔ black on the ring's own pigtail. Expect <strong>4.5–5.3 V</strong>.
+   If absent, the extension is the fault — stop there.</li>
+<li><strong>Bypass the extension entirely.</strong> Jumper the ring pigtail straight to the Pi:
+   black→pin 6, green→pin 12, red→pin 2. Connect <strong>GND → 5 V → data</strong>, in that order.</li>
+<li><strong>Continuity-test the extension</strong> end to end, wire by wire, and confirm which ring wire
+   each extension wire actually reaches.</li>
+<li><strong>Verify DIN vs DOUT.</strong> JST gender enforces direction: the <em>input</em> connector mates with
+   the feed cable. Confirm the feed is on DIN.</li>
+<li><strong>Meter the data line.</strong> A ready-made 1 Hz square-wave script (slow enough for any DC
+   multimeter) is at
+   <code>/tmp/claude-1000/-home-remote-MonsterBox/61d597af-8e1b-488f-965f-2e8142d333df/scratchpad/toggle18.sh</code>
+   — stop the daemon first (see §10), run it, then probe at the ring's DIN pad.
+   Alternating 0 V / 3.3 V there = the data path is intact.</li>
+<li><strong>If all wiring checks out</strong>, fit a <strong>74AHCT125</strong> or <strong>74HCT245</strong> level shifter on the data
+   line (powered from 5 V). Cheap field alternative: <strong>one 1N4001 in series with the ring's
+   5 V feed</strong>, band toward the ring — drops V_DD to ~4.35 V, pulling V_IH to ~3.0 V so the
+   Pi's 3.3 V clears it. Also standard practice: <strong>330–470 Ω</strong> in series with data and
+   <strong>1000 µF</strong> across V_CC/GND at the ring.</li>
+</ol>
+<hr />
+<h2 id="8-software-changes-complete-tested-uncommitted">8. SOFTWARE CHANGES — complete, tested, UNCOMMITTED</h2>
+<h3 id="python_wrappersled_ring_daemonpy"><code>python_wrappers/led_ring_daemon.py</code></h3>
+<ul>
+<li><strong>Fixed a real brightness bug in <code>_push()</code>.</strong> It multiplied master brightness and the
+  animation envelope together in perceptual space, then applied the gamma table to each
+  channel of the already-quantised 8-bit value. Every table input below 15 maps to 0, so:</li>
+<li>default <code>idle</code> peaked at <strong>RGB(7,1,13)</strong> and sat at <strong>literal black for half its breath</strong>;</li>
+<li>hue rendered <strong>7:1:13</strong> instead of the intended <strong>3:1:4</strong> — per-channel gamma crushed
+    green out entirely and dragged the colour toward its dominant channel.</li>
+</ul>
+<p>Gamma now applies <strong>once</strong>, to the pixel's intensity envelope, in float, with one rounding
+  step; all three channels scale by a single factor (hue preserved); a lit pixel is floored
+  at 1 so it can never quantise to black. Replaced the 256-entry <code>GAMMA</code> table with
+  <code>GAMMA_EXP</code> + <code>_duty()</code>.</p>
+<p>Measured before → after (default idle, brightness 60):
+  <code>0.150: (0,0,0)→(1,0,1)</code> · <code>0.425: (2,0,4)→(3,1,5)</code> · <code>0.700: (7,1,13)→(10,3,14)</code>;
+  hue 7:1:13 → 3.3:1:4.7.</p>
+<ul>
+<li><strong>Added a <code>fade</code> state</strong> — palette cross-fade. New <code>_coerce_palette()</code>, <code>_palette_color()</code>,
+  <code>_number()</code>; <code>fade</code> branch in <code>_render()</code>; <code>'fade'</code> added to <code>STATES</code> and <code>_default_color</code>.
+  Options: <code>palette</code>, <code>paletteRight</code>, <code>fadeMs</code>, <code>holdMs</code>, <code>phaseRight</code>.</li>
+</ul>
+<h3 id="servicesledcontrollerjs"><code>services/ledController.js</code></h3>
+<ul>
+<li><code>LED_STATES</code> gains <code>'fade'</code>; new exported <code>LED_COLORABLE_STATES</code>.</li>
+<li><code>FADE_DEFAULTS</code> (fadeMs 1200, holdMs 600).</li>
+<li><code>setState()</code> now merges <code>paletteFor(state)</code> <strong>under</strong> caller options — saved colours are
+  defaults, an explicit colour still wins.</li>
+<li>New <code>paletteFor()</code>, <code>colorConfig()</code>, <code>saveColorConfig()</code>; module-level <code>normalizeRgb()</code>,
+  <code>normalizePalette()</code> (a single bad entry rejects a whole palette).</li>
+<li><code>saveColorConfig()</code> merges into the existing part config so geometry (pin, pixelCount,
+  ringSplit, dma) survives a colour edit; invalidates the part cache so changes apply
+  without a restart.</li>
+</ul>
+<h3 id="routesapiledroutesjs"><code>routes/api/ledRoutes.js</code></h3>
+<ul>
+<li><code>GET /api/led/config</code>, <code>POST /api/led/config</code>.</li>
+<li><code>/states</code> also returns <code>colorable</code>.</li>
+<li><code>statusForReason</code>: <code>no-parts-file</code> → 409, <code>write-failed</code> → 500.</li>
+</ul>
+<h3 id="viewssetupcalibrationejs"><code>views/setup/calibration.ejs</code></h3>
+<ul>
+<li>New <code>advancedLedRing</code> panel in the Advanced tab (shown when <code>part.type === 'led_ring'</code>,
+  following the existing webcam-panel pattern); <code>renderAdvancedTab()</code> extended.</li>
+<li>~250 lines of panel JS: live per-eye colour picker (drives hardware as you drag),
+  link-eyes toggle, live brightness, colour-per-state rows with per-state Test buttons,
+  palette swatch editor, fade/hold sliders, Preview Fade, Save, and an "Identify pixels" walk.</li>
+<li><strong>Reachable at <code>/setup/calibration</code> → select "Pumpkin Eyes" → Advanced tab.</strong></li>
+</ul>
+<h3 id="datacharacter-1partsjson"><code>data/character-1/parts.json</code></h3>
+<ul>
+<li>Part 9 config gained <code>colors</code>, <code>palette</code>, <code>fadeMs</code>, <code>holdMs</code>, <code>brightness</code> (written
+  through the API during testing). Geometry untouched.</li>
+</ul>
+<h3 id="verification">Verification</h3>
+<p><code>729</code> unit tests pass · <code>62</code> pact tests pass · <code>validate:schemas</code> pass ·
+<code>audit:resolver</code> pass · <code>audit:independence</code> pass · all 3 inline scripts syntax-checked.</p>
+<hr />
+<h2 id="9-bugs-found-12-fixed-2026-09-13">9. BUGS FOUND (1–2 FIXED 2026-09-13)</h2>
+<ol>
+<li>✅ <strong>FIXED — <code>colorOrder</code> and <code>dataRateHz</code> were decorative.</strong> <code>_init_strip()</code> never passed
+   <code>strip_type</code> or the frequency to <code>PixelStrip</code>. The daemon now takes <code>--color-order</code>
+   (argparse-validated against the six RGB orders, mapped to <code>ws.WS2811_STRIP_*</code>) and the
+   client passes <code>--freq</code>/<code>--color-order</code> from the part config. See §0.</li>
+<li>✅ <strong>FIXED — the daemon ignored SIGTERM</strong> (zombie holding PWM0 presented as "LEDs dead"
+   after a service restart). Strip access is now serialized (<code>_strip_lock</code>), the shutdown
+   path never renders concurrently with the animator, and a 10 s <code>os._exit(1)</code> failsafe
+   arms on any shutdown request. Verified via SPI harness; see §0 for the verification
+   boundary. (<code>sudo</code> still does not forward a <code>pkill -TERM</code> aimed at the wrapper — signal
+   the python PID, or use the socket <code>shutdown</code> command.)</li>
+<li><strong>Do not ship the pull-up "health probe"</strong> I proposed earlier — §5 shows it is invalid
+   as a <em>ring</em> test. (§0 shows what it actually measures: the extension's fault.)</li>
+</ol>
+<h3 id="9b-2026-09-13-adversarial-review-fixed-vs-deferred">9b. 2026-09-13 adversarial review — fixed vs deferred</h3>
+<p>Two independent reviewers (Python daemon, JS/controller) plus the gate ran over the whole
+LED subsystem before it was staged. <strong>Fixed this session</strong> (all verified):
+- Daemon signal handler was not async-signal-safe — it called <code>Event.set()</code>/<code>Timer</code>/buffered
+  <code>_log</code> from the handler, which can self-deadlock on a lock the interrupted main frame holds
+  (the exact SIGTERM-unkillable zombie the failsafe targets, with the failsafe never arming
+  because it sat after <code>set()</code>). Handler now only records the signal; the main loop does the
+  shutdown. Failsafe timer now arms <em>before</em> the fallible log.
+- Duplicate-daemon hazard: the client's 3 s backoff made <code>isAvailable()</code> false-negative, so a
+  live daemon could be shadowed by a second <code>sudo</code> daemon that claimed PWM0 before checking
+  socket ownership, then rendered against the real one forever (cross-process — <code>_strip_lock</code>
+  can't help). Fixed both ends: client <code>resetAvailability()</code> before the probe; daemon checks
+  the socket <strong>before</strong> <code>_init_strip</code> and yields (blackout + exit) if it loses a startup race.
+- Client crash risk: no <code>error</code> listener on the spawned child → an async spawn failure
+  (ENOENT/EAGAIN/ENOMEM, realistic under RPi memory pressure) was an uncaught exception that
+  took the web server down. Listener added.
+- Character-independence: <code>saveColorConfig(patch, X)</code> for a non-active character X repointed
+  the live controller at X and pushed X's brightness to the daemon driving the ACTIVE
+  character. Now only mutates live state when X is active; still returns X's own config.
+- <code>led-ring-bench.py</code>: <code>Ctrl+C</code> mid-run left ~1 A of white latched — wrapped in try/finally
+  blackout; also given <code>--color-order</code>/<code>--freq</code> so it can't disagree with the daemon.</p>
+<p><strong>Deferred (minor, non-blocking) — left as knowledge, not fixed:</strong>
+- <code>_partCache</code> is only invalidated by <code>saveColorConfig</code>; a geometry edit (gpioPin/pixelCount/
+  colorOrder) made through the generic parts editor is invisible to the controller until a
+  service restart. Colours edited through the LED panel are fine. A restart always picks up
+  disk truth.
+- The colour-per-state pickers always POST a value for every state, so after the first save
+  the "leave unset to keep the default" affordance can't clear a state from the panel (the
+  server still supports deletion via the API).
+- <code>set_pixels</code> sets state <code>'manual'</code>, which is not in <code>STATES</code>, so a client echoing
+  <code>getStatus().state</code> back into <code>set_state</code> is rejected. Cosmetic.
+- The daemon drops its (persistent) client socket after 30 s idle; the client transparently
+  reconnects on the next <code>request()</code>. Self-healing.</p>
+<p><strong>Running-daemon note:</strong> the live daemon (GPIO18) was spawned before the signal-safety and
+peer-check edits and still runs the earlier (also-working) version; those edits are on disk
+and activate on the next <code>systemctl restart monsterbox.service</code>. They were verified on an
+isolated GPIO10/SPI daemon: duplicate refused without touching the strip, SIGTERM clean exit
+in 0.89 s via the new flag path.</p>
+<hr />
+<h2 id="10-useful-commands">10. USEFUL COMMANDS</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Stop the daemon (SIGTERM does NOT work — see §9.2). Bracket avoids self-match.</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>sudo<span class="w"> </span>pkill<span class="w"> </span>-KILL<span class="w"> </span>-f<span class="w"> </span><span class="s2">"[l]ed_ring_daemon"</span><span class="p">;</span><span class="w"> </span>sudo<span class="w"> </span>rm<span class="w"> </span>-f<span class="w"> </span>/tmp/monsterbox-led.sock
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Drive the strip directly, daemon out of the picture</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>sudo<span class="w"> </span>python3<span class="w"> </span>scripts/led-ring-bench.py<span class="w"> </span>--count<span class="w"> </span><span class="m">8</span><span class="w"> </span>--pin<span class="w"> </span><span class="m">18</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Prove the PWM peripheral is really serialising (expect STA1 asserted ~3% of samples)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>sudo<span class="w"> </span>raspi-gpio<span class="w"> </span>get<span class="w"> </span><span class="m">18</span><span class="w">          </span><span class="c1"># expect: alt=5 func=PWM0_0</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>vcgencmd<span class="w"> </span>measure_clock<span class="w"> </span>pwm<span class="w">      </span><span class="c1"># expect: ~2438964</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># Live API (character 1)</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nv">B</span><span class="o">=</span>https://localhost:3000
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">/api/led/status?characterId=1"</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">/api/led/config?characterId=1"</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>curl<span class="w"> </span>-sk<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">/api/led/state?characterId=1"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"state":"fade"}'</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>curl<span class="w"> </span>-sk<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="nv">$B</span><span class="s2">/api/led/pixels?characterId=1"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">     </span>-d<span class="w"> </span><span class="s1">'{"pixels":[[255,0,0],[255,0,0],[255,0,0],[255,0,0],[255,0,0],[255,0,0],[255,0,0],[255,0,0]],"target":"both"}'</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="c1"># Restart everything</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>monsterbox.service
+</code></pre></div>
+<hr />
+<h2 id="11-node-state-at-handoff">11. NODE STATE AT HANDOFF</h2>
+<p><code>monsterbox.service</code> <strong>active</strong>, <code>/health</code> <strong>200</strong>, LED daemon <strong>up</strong>, state <code>idle</code>.
+GPIO18 returned to PWM ownership. Nothing left half-configured.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
