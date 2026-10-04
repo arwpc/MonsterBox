@@ -1379,6 +1379,12 @@ through every test below, no reboot under motor load. Per part, judged on indepe
   `scripts/apply-audio-nosuspend.sh` re-run for the new sink. Speaker: Scribe read the sink monitor back verbatim and
   the operator heard him. Mic: PyAudio `microphone_cli.py` frames with avg RMS 0.14 — it transcribed the room's music.
   (The room music masked his voice at both mics, so the acoustic witness was inconclusive; the operator's ear stands in.)
+- 🟡 **He kept interrupting himself (not CPU: load 0.15-0.3).** 27 guest barge-ins in one session with junk
+  transcripts ("...", "The-", "Sure."). With 'PCM',1 at 0 dB and room music, his own voice reaches the XVF3800 at
+  0.10-0.26 RMS while the learned echo floor latches near 0.05, so the 2.2x barge-in threshold (~0.11) fired on his
+  own speech. **Node-local fix:** `/etc/systemd/system/monsterbox.service.d/40-no-barge-in.conf` sets
+  `MB_BARGE_IN=0` on Renfield only — guests can no longer talk over him; he finishes his line, then listens. No
+  code or repo change, so other nodes are unaffected. Remove the drop-in to restore barge-in.
 - ✅ **"Renfield is very quiet" — the replacement XVF3800 arrived with `'PCM',1` (mono DAC) at 40/60 = −20 dB.**
   install.sh normalizes that, but it ran on 2026-09-27 against the OLD unit. Sink 100 %, `'PCM',0` 0 dB, unmuted —
   every software layer read healthy. Fixed: `amixer -c 2 sset 'PCM',1 100% unmute` + `sudo alsactl store 2`;
