@@ -14,7 +14,7 @@ description: Working across MonsterBox nodes — who they are, how to reach them
 | 3 | Orlok | orlok.local | 192.168.8.120 | live; holds fleet SSH trust and the GitHub deploy key |
 | 4 | Sir Dragomir | sirdragomir.local | 192.168.8.130 | live |
 | 5 | Groundbreaker | — | 192.168.8.200 | **in storage — offline is expected** |
-| 6 | Renfield | — | no address | data dir only |
+| 6 | Renfield | renfield | 192.168.8.249 | live (Pi 4B since 2026-09-27); has its own GitHub deploy key — commits and pushes directly (`MB_TEST_MODE=1 CI=true git push`) |
 
 `config/animatronics.json` is the registry; live discovery overlays it via mDNS
 (`GET /api/orchestration/nodes`). All inter-node HTTP is `https://<ip>:3000`.
