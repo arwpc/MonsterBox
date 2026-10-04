@@ -178,7 +178,9 @@ function buildDefaultMultiConfig() {
   return {
     enabled: false,
     servoPartId: null,
-    ledSync: defaultLedSync(),
+    // No ledSync here on purpose: an unsaved block reads back as autoDefault, so
+    // a character with an led_ring gets speech-reactive eyes by default
+    // (applyDefaultLedSync). Saving LED sync writes the block explicitly.
     activeConfigId: 'config-1',
     configs: [{
       id: 'config-1',
@@ -223,7 +225,7 @@ function applyRuntimeToggles(characterId, flat) {
  */
 async function liveJawConfig(characterId) {
   const cached = characterConfigs.get(String(characterId));
-  if (cached) return applyRuntimeToggles(characterId, { ...cached });
+  if (cached) return applyRuntimeToggles(characterId, await applyDefaultLedSync(characterId, { ...cached }));
   return await readJawConfig(characterId);
 }
 
@@ -248,6 +250,7 @@ async function readJawConfig(characterId) {
       } catch (_) { /* retain stored values */ }
     }
 
+    await applyDefaultLedSync(characterId, flat);
     applyRuntimeToggles(characterId, flat);
 
     // Pre-warm daemon so it's ready when playWithJawSync is called
@@ -259,6 +262,36 @@ async function readJawConfig(characterId) {
   } catch (error) {
     return getDefaultJawConfig();
   }
+}
+
+/**
+ * The ledSync block a flattened config carries. A character that has never saved
+ * LED eye sync gets the defaults marked `autoDefault`, so applyDefaultLedSync()
+ * can turn it on for a character that owns an led_ring. A saved block — enabled
+ * or not — is the operator's choice and is used exactly as stored.
+ */
+function flattenLedSync(jaw) {
+  if (jaw && jaw.ledSync) return { ...defaultLedSync(), ...jaw.ledSync };
+  return { ...defaultLedSync(), autoDefault: true };
+}
+
+/**
+ * Eyes react to speech by default. When a character has no saved ledSync block
+ * and owns an enabled led_ring, drive that ring from speech — it is the only way
+ * a character with no jaw servo shows it is the one talking. Characters with a
+ * saved block (on or off) and characters with no ring are left untouched, so
+ * this never changes an existing animatronic's behaviour. Runs before the
+ * runtime toggles so a locked character's dashboard switch still wins.
+ * Never mutates the cached object; replaces flat.ledSync instead.
+ */
+async function applyDefaultLedSync(characterId, flat) {
+  if (!flat || !flat.ledSync || !flat.ledSync.autoDefault || characterId == null) return flat;
+  try {
+    const parts = await loadPartsSafe(characterId);
+    const ring = parts.find(p => p && p.type === 'led_ring' && p.enabled !== false);
+    if (ring) flat.ledSync = { ...flat.ledSync, enabled: true, partId: String(ring.id) };
+  } catch (_) { /* no parts -> leave the eyes off */ }
+  return flat;
 }
 
 /**
@@ -279,7 +312,7 @@ function flattenJawConfig(jaw) {
       ...getDefaultJawConfig(),
       enabled: !!jaw.enabled,
       servoPartId: jaw.servoPartId || null,
-      ledSync: { ...defaultLedSync(), ...(jaw.ledSync || {}) },
+      ledSync: flattenLedSync(jaw),
       activeConfigId: jaw.activeConfigId
     };
   }
@@ -292,7 +325,7 @@ function flattenJawConfig(jaw) {
   return {
     enabled: !!jaw.enabled,
     servoPartId: jaw.servoPartId || null,
-    ledSync: { ...defaultLedSync(), ...(jaw.ledSync || {}) },
+    ledSync: flattenLedSync(jaw),
     activeConfigId: jaw.activeConfigId,
     ...tuningParams
   };
@@ -1987,7 +2020,7 @@ function _startPcmJawTimer(cid) {
       // calibrated minimum and idle — the next chunk restarts the timer.
       // (LED-only streams have no servo/guardrails — skip the close.)
       if (s.jawServo) {
-        const closed = s.guardrails.minAngle ?? s.config.minAngle ?? 0;
+        const closed = (s.guardrails && s.guardrails.minAngle) ?? s.config.minAngle ?? 0;
         sendJawAngleCmd(s.jawServo, closed, cid);
       }
       const ms = audioMonitoringState.get(cid);
@@ -2035,8 +2068,15 @@ function stopPcmJawStream(characterId) {
   const stream = pcmJawStreams.get(cid);
   if (!stream) return { success: false, message: 'no active pcm jaw stream' };
   if (stream.timer) clearTimeout(stream.timer);
-  const closed = stream.guardrails.minAngle ?? stream.config.minAngle ?? 0;
-  try { sendJawAngleCmd(stream.jawServo, closed, cid); } catch (_) { /* non-fatal */ }
+  // An LED-only stream (eye sync on a character with no jaw servo) has no servo
+  // and null guardrails. Reading guardrails.minAngle there threw before the
+  // delete below, the caller swallowed it, and the dead stream kept its timer
+  // handle — so every later session queued audio that never drained and the
+  // eyes stopped reacting to speech until a restart.
+  if (stream.jawServo) {
+    const closed = (stream.guardrails && stream.guardrails.minAngle) ?? stream.config.minAngle ?? 0;
+    try { sendJawAngleCmd(stream.jawServo, closed, cid); } catch (_) { /* non-fatal */ }
+  }
   pcmJawStreams.delete(cid);
   // The loudness reference belongs to the session that built it — carrying it
   // into the next conversation would normalise the first line against a voice

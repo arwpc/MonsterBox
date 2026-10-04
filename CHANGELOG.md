@@ -4,6 +4,17 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Speaking LED eyes in AI mode worked for the first agent session only (fixed 2026-10-04).** On a character
+  with LED eye sync and no jaw servo (Renfield, PumpkinHead), `stopPcmJawStream()` read `guardrails.minAngle`
+  from a null guardrails object, threw before removing the stream, and the caller swallowed it. The dead stream
+  kept its timer handle, so every later session's audio queued and never drained: the eyes stayed on the
+  listening/thinking blue while he spoke. Teardown now skips the jaw close when there is no servo. Live on
+  Renfield: two consecutive AI sessions both drive the ring to `speaking`. Jaw characters are unchanged.
+- **Speech-reactive eyes are the default for any character with an LED ring.** A character that has never
+  saved LED eye sync and owns an enabled `led_ring` now reads back `ledSync.enabled: true` on that ring
+  (`applyDefaultLedSync`). A saved block, on or off, is used exactly as stored, and a character with no ring is
+  untouched, so no existing animatronic changes behaviour. Tests: `tests/unit/led-only-pcm-stream.test.js`.
+
 - **Renfield rebuilt on a Raspberry Pi 4B after his Pi 5 fried (2026-09-27).** Fresh install at
   `192.168.8.249` (Debian 13 trixie, Python 3.13) from origin/main with `install.sh`; roster IP updated;
   part 7 back to a Miuzei MG90S on GPIO 26 (pin 37) per the rebuild wiring, and the Pi-5-only wording in
