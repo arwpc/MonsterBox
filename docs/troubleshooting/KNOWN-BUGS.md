@@ -1379,6 +1379,10 @@ through every test below, no reboot under motor load. Per part, judged on indepe
   `scripts/apply-audio-nosuspend.sh` re-run for the new sink. Speaker: Scribe read the sink monitor back verbatim and
   the operator heard him. Mic: PyAudio `microphone_cli.py` frames with avg RMS 0.14 — it transcribed the room's music.
   (The room music masked his voice at both mics, so the acoustic witness was inconclusive; the operator's ear stands in.)
+- ✅ **"Renfield is very quiet" — the replacement XVF3800 arrived with `'PCM',1` (mono DAC) at 40/60 = −20 dB.**
+  install.sh normalizes that, but it ran on 2026-09-27 against the OLD unit. Sink 100 %, `'PCM',0` 0 dB, unmuted —
+  every software layer read healthy. Fixed: `amixer -c 2 sset 'PCM',1 100% unmute` + `sudo alsactl store 2`;
+  operator: "Better!". **Any ReSpeaker swap needs this step** (or a re-run of install.sh's step 15).
 - ✅ **Webcam (part 4)** — live 640×480 JPEGs (snapshots differ), but the view is a featureless grey field: aimed at a
   wall/ceiling or the lens is covered.
 - ✅ **Eye rings (part 5)** — 0–7 blue / 8–15 green held; operator saw both rings, "left green, right blue" (viewer's left
