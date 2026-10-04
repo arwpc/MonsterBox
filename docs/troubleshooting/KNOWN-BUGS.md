@@ -1389,8 +1389,12 @@ through every test below, no reboot under motor load. Per part, judged on indepe
   12 V supply latching off on the wiper motor's 24–40 A start inrush** (moved once, then dead). Also check common
   ground Pi↔BTS7960 logic (now separate supplies), R_EN/L_EN at 5 V, and motor/B+ leads. Power-cycle the 12 V supply
   and try one forward burst.
-- 🔴 **Writing Pen (part 7, GPIO 26)** — unchanged: `probe 26` LOADED, 60/120/60/120/90 sweep, no movement. Needs a 5 V
-  buffer or a PCA9685 (see below); the new power does not change a 3.3 V signal-level problem.
+- ✅ **Writing Pen (part 7, Miuzei MG90S, GPIO 26 / pin 37) — MOVES; the fault was WIRING, not 3.3 V logic.** First
+  probe LOADED with no movement. A FITEC FS90R swapped in probed **held-high** (a power lead on pin 37) until the operator
+  re-seated it, then moved as a continuous servo. With the MG90S back on corrected wiring (red pin 2, brown pin 6,
+  orange pin 37) the pin probes **healthy** (rise 9-28 µs) and the operator saw a full 60/120/90 sweep from the bare
+  3.3 V pin. **This overturns the 2026-09-27 conclusion below that a Miuzei MG90S "cannot trigger from a 3.3 V pad"** —
+  `probe` LOADED/held-high means check the leads first. Part 7 is the MG90S, standard, 500-2400 µs.
 - ⏳ **PIR (part 6, GPIO 22)** — LOW for 20 s + 30 s windows, 0 rises; operator missed the first window, second unconfirmed.
 
 🟡 **2026-09-27 — his Pi 5 fried; fresh install on a replacement Raspberry Pi 4B (4 GB, Debian 13 trixie,

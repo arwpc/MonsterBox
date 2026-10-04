@@ -28,7 +28,7 @@
     "type": "speaker",
     "description": "powered speakers on the ReSpeaker XVF3800 line-out (his Pi 4B has a 3.5 mm jack but it is switched off - snd_bcm2835 shares PWM0 with the eye rings on GPIO18 - so this stays the only non-HDMI output). OPERATOR 2026-08-31: these are a good set of powered speakers, the SAME set as Sir Dragomir (character 4) uses - his speaker part carries the same modelId speaker_respeaker_xvf3800. Treat his tuning as the nearest reference point for Renfield.",
     "config": {
-      "audioDeviceId": "alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200044-00.analog-stereo",
+      "audioDeviceId": "alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262400914-00.analog-stereo",
       "volume": 100,
       "bass": 0,
       "treble": 0
@@ -46,11 +46,11 @@
     "deviceIndex": 0,
     "sampleRate": 16000,
     "channels": 1,
-    "description": "audio input devices \u2014 ReSpeaker XVF3800 4-Mic Array (card 2). Was pointed at a USB Camera mic this node does not have.",
+    "description": "audio input devices — ReSpeaker XVF3800 4-Mic Array (card 2). Was pointed at a USB Camera mic this node does not have.",
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true,
     "config": {
-      "deviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200044-00.analog-stereo",
+      "deviceId": "alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262400914-00.analog-stereo",
       "sampleRate": 16000,
       "gain": 50
     },
@@ -64,12 +64,26 @@
     "config": {
       "modelId": "default-uvc-1",
       "devicePath": "/dev/video0",
-      "deviceId": 0
+      "deviceId": 0,
+      "controls": {
+        "brightness": -30,
+        "contrast": 16,
+        "saturation": 24,
+        "nightMode": 0,
+        "hue": 0,
+        "white_balance_automatic": 1,
+        "gamma": 186,
+        "power_line_frequency": 1,
+        "sharpness": 2,
+        "backlight_compensation": 1,
+        "auto_exposure": 3,
+        "focus_automatic_continuous": 1
+      }
     },
     "id": "4",
     "enabled": true,
     "created": "2026-09-01T03:15:18.797Z",
-    "updated": "2026-09-01T03:15:26.575Z",
+    "updated": "2026-09-27T21:49:13.701Z",
     "modelId": "default-uvc-1"
   },
   {
@@ -241,7 +255,7 @@
     "neutralPulse": 1500,
     "modelId": "servo_miuzei_mg90s",
     "model": "servo_miuzei_mg90s",
-    "description": "Miuzei MG90S 180-degree positional micro servo that moves Renfield's writing pen. Wiring given to the operator for the 2026-09-27 rebuild on the replacement Raspberry Pi 4B: signal on BCM GPIO 26 = physical pin 37, red on 5 V (pin 4), brown on GND (pin 39) - the operator confirmed pin 37, and a passive probe of the new Pi read GPIO 26 loaded and GPIO 20 free. Driven directly by lgpio tx_servo through servo_cli.py move_to - there is no PCA9685 on this node. Pulse 500-2400 us, 50 Hz; angles 0..180 map onto that span (servo.js angleToPulseFromPart), so scenes 1 and 4's 60/120 scribble is two positions (1133 / 1767 us). HISTORY: on the fried Pi 5 the pen went GPIO 26 -> 21 -> 20; two MG90S units would not respond to the RP1's 3.3 V pad and a FITEC FS90R continuous servo stood in (81384573); the operator fitted an MG90S again for the Pi 4. Check the line with `python3 python_wrappers/servo_cli.py probe 26`; calibrate Set Min/Max on /setup/calibration.",
+    "description": "Miuzei MG90S 180-degree micro servo for Renfield's writing pen. Signal BCM GPIO 26 = physical pin 37 (orange), red pin 2 (5 V), brown pin 6 (GND). Driven straight from the Pi pin by lgpio through servo_cli.py move_to, 500-2400 us at 50 Hz. MOVES (operator-confirmed 2026-10-04, 60/120/90 sweep). The earlier no-movement (2026-09-27 and the morning of 2026-10-04, probe LOADED / held high) was WIRING, not 3.3 V logic: with the leads correct the pin probes healthy (rise ~10-30 us) and the MG90S runs from the bare 3.3 V pin. Check the line before blaming the servo: python3 python_wrappers/servo_cli.py probe 26 (healthy = wired right; held-high = a power lead on pin 37; LOADED = wrong lead/pin).",
     "config": {
       "minPulse": 500,
       "maxPulse": 2400,
