@@ -1383,12 +1383,14 @@ through every test below, no reboot under motor load. Per part, judged on indepe
   wall/ceiling or the lens is covered.
 - ✅ **Eye rings (part 5)** — 0–7 blue / 8–15 green held; operator saw both rings, "left green, right blue" (viewer's left
   is most likely — matches 9/27's left = 0–7 from his side). Mapping not changed.
-- 🔴 **Shake motor (part 1) — moved ONCE in six runs, then nothing.** Read-only GPLEV0 sampler: every run put a clean
-  ~2 kHz train (≈2980 rises / 1.5 s) on GPIO 12 for forward and on GPIO 13 for reverse, the other pin silent; at 100 %
-  GPIO 12 held solid high 1 s — still no motion. The Pi side is proven; the fault is past it. Top suspect: the **new
-  12 V supply latching off on the wiper motor's 24–40 A start inrush** (moved once, then dead). Also check common
-  ground Pi↔BTS7960 logic (now separate supplies), R_EN/L_EN at 5 V, and motor/B+ leads. Power-cycle the 12 V supply
-  and try one forward burst.
+- 🟡 **Shake motor (part 1) — FORWARD RUNS after the operator corrected the BTS7960 wiring; reverse does not.** Earlier
+  runs: clean ~2 kHz trains on GPIO 12/13 (GPLEV0 sampler), no motion. The operator's meter then read 12 V on the
+  module output with the motor disconnected, so Pi → logic → module was proven; the fault was the module's power/motor
+  wiring. Motor lead map (multimeter): **black = common (M−), yellow = main winding 2.1 Ω (M+), white = 8 Ω second
+  winding (unused), blue/gray = park switch (unused)**. 10 000 µF across B+/B− for the start surge. Logic: RPWM 12
+  (pin 32), LPWM 13 (pin 33), R_EN/L_EN/VCC on 5 V pin 2, GND pin 34. After rewiring: forward 70 %/1.5 s ran twice,
+  `throttled=0x0`; **reverse silent** with LPWM proven at the pad — module reverse half (L_EN/LPWM at the module, or a
+  dead half-bridge). All 3 motor steps in his 4 scenes are forward, so shows are unaffected.
 - ✅ **Writing Pen (part 7, Miuzei MG90S, GPIO 26 / pin 37) — MOVES; the fault was WIRING, not 3.3 V logic.** First
   probe LOADED with no movement. A FITEC FS90R swapped in probed **held-high** (a power lead on pin 37) until the operator
   re-seated it, then moved as a continuous servo. With the MG90S back on corrected wiring (red pin 2, brown pin 6,
