@@ -1372,6 +1372,27 @@ verified. Still offline for the entire v9.2.0 session." Also the historical v9.2
 line above scoring Groundbreaker `OFFLINE — untestable, not passing` is now obsolete.
 
 ### Renfield — char 6 · `192.168.8.249` · Raspberry Pi 4B (since 2026-09-27)
+🟡 **2026-10-04 — operator restored power: separate clean supplies for the 12 V motor and the Pi.** `throttled=0x0`
+through every test below, no reboot under motor load. Per part, judged on independent evidence:
+- ✅ **ReSpeaker XVF3800 (parts 2, 3) — now enumerates** behind a powered VIA hub (`2109:3431`), card 2. It is a
+  **different unit** (serial `…262400914`, was `…262200044`): parts 2/3 re-pointed via `PUT /api/parts/:id`, and
+  `scripts/apply-audio-nosuspend.sh` re-run for the new sink. Speaker: Scribe read the sink monitor back verbatim and
+  the operator heard him. Mic: PyAudio `microphone_cli.py` frames with avg RMS 0.14 — it transcribed the room's music.
+  (The room music masked his voice at both mics, so the acoustic witness was inconclusive; the operator's ear stands in.)
+- ✅ **Webcam (part 4)** — live 640×480 JPEGs (snapshots differ), but the view is a featureless grey field: aimed at a
+  wall/ceiling or the lens is covered.
+- ✅ **Eye rings (part 5)** — 0–7 blue / 8–15 green held; operator saw both rings, "left green, right blue" (viewer's left
+  is most likely — matches 9/27's left = 0–7 from his side). Mapping not changed.
+- 🔴 **Shake motor (part 1) — moved ONCE in six runs, then nothing.** Read-only GPLEV0 sampler: every run put a clean
+  ~2 kHz train (≈2980 rises / 1.5 s) on GPIO 12 for forward and on GPIO 13 for reverse, the other pin silent; at 100 %
+  GPIO 12 held solid high 1 s — still no motion. The Pi side is proven; the fault is past it. Top suspect: the **new
+  12 V supply latching off on the wiper motor's 24–40 A start inrush** (moved once, then dead). Also check common
+  ground Pi↔BTS7960 logic (now separate supplies), R_EN/L_EN at 5 V, and motor/B+ leads. Power-cycle the 12 V supply
+  and try one forward burst.
+- 🔴 **Writing Pen (part 7, GPIO 26)** — unchanged: `probe 26` LOADED, 60/120/60/120/90 sweep, no movement. Needs a 5 V
+  buffer or a PCA9685 (see below); the new power does not change a 3.3 V signal-level problem.
+- ⏳ **PIR (part 6, GPIO 22)** — LOW for 20 s + 30 s windows, 0 rises; operator missed the first window, second unconfirmed.
+
 🟡 **2026-09-27 — his Pi 5 fried; fresh install on a replacement Raspberry Pi 4B (4 GB, Debian 13 trixie,
 Python 3.13) at `192.168.8.249`.** Installed from origin/main with `install.sh` (made trixie-tolerant this
 session, see CHANGELOG), `scripts/install-led-ring-service.sh`, reboot, then a hard reset by the operator.
