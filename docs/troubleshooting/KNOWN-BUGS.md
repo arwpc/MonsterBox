@@ -1395,7 +1395,7 @@ through every test below, no reboot under motor load. Per part, judged on indepe
   orange pin 37) the pin probes **healthy** (rise 9-28 µs) and the operator saw a full 60/120/90 sweep from the bare
   3.3 V pin. **This overturns the 2026-09-27 conclusion below that a Miuzei MG90S "cannot trigger from a 3.3 V pad"** —
   `probe` LOADED/held-high means check the leads first. Part 7 is the MG90S, standard, 500-2400 µs.
-- ⏳ **PIR (part 6, GPIO 22)** — LOW for 20 s + 30 s windows, 0 rises; operator missed the first window, second unconfirmed.
+- ✅ **PIR (part 6) — MOVED TO GPIO 17 (physical pin 11) by the operator; works.** GPIO 22 never rose in two windows. On 17 (black GND, yellow OUT = sensor middle pin, red 5 V) the GPLEV0 sampler saw ~9 rises in a 30 s wave window, each ~1 s HIGH, quiet once the waving stopped. The lurk watcher reads the pin from the part at start, so arming Motion mode picks it up.
 
 🟡 **2026-09-27 — his Pi 5 fried; fresh install on a replacement Raspberry Pi 4B (4 GB, Debian 13 trixie,
 Python 3.13) at `192.168.8.249`.** Installed from origin/main with `install.sh` (made trixie-tolerant this

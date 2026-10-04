@@ -230,8 +230,8 @@
     "characterId": 6,
     "name": "PIR Motion Sensor",
     "type": "motion_sensor",
-    "pin": 22,
-    "description": "PIR motion sensor on BCM GPIO 22 (operator-stated wiring, 2026-09-26; first recorded as GPIO 16 the same evening, corrected by the operator). Output goes HIGH on motion; read with an internal pull-down (the resident watcher reads /dev/gpiomem on his Pi 4B; the parts-page Test reads through lgpio). Arms the Motion toggle: detection -> AI + eye rings + shake + pen.",
+    "pin": 17,
+    "description": "PIR motion sensor on BCM GPIO 17 = physical pin 11 (operator moved it there 2026-10-04; was GPIO 22 / pin 15). Wiring: black GND, yellow OUT (sensor middle pin), red 5 V. Output goes HIGH on motion; read with an internal pull-down (the resident watcher reads /dev/gpiomem on his Pi 4B; the parts-page Test reads through lgpio). Arms the Motion toggle: detection -> AI + eye rings + shake + pen.",
     "config": {
       "sensitivity": 50,
       "retriggerMs": 5000
