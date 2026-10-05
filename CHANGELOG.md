@@ -4,6 +4,21 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Lurk scenes (2026-10-05): a character performs one scene from a rotation every few minutes while it waits
+  for guests.** Opt-in per character via `POST /conversation/api/lurk-scenes {enabled, sceneIds, intervalMs}`
+  (runtime state `data/character-{id}/lurk-scenes-state.json`, so it works on locked characters;
+  `POST .../lurk-scenes/test` plays the next one now). It plays ONE scene through the scene queue, then leaves the
+  yard quiet for `intervalMs` (240 s +0-25%), so callouts and background music still get their turn. It only runs
+  while lurk is on or the PIR watcher is armed and asleep, and it stands aside for a guest who just woke the PIR, a
+  conversation, a callout, another scene, recent playback, mute and quiet hours (23:00-08:00). Enabled on Orlok,
+  Groundbreaker, Renfield (5-6 scenes each) and Sir Dragomir (his 3 riddles). `queue/start-config` now loads the
+  queue's own character's scenes instead of the node's selected character's.
+- **Head tracking sweeps after boot.** The idle scan sweep never started until the first detection, because the
+  no-target state was rebuilt every frame and the 3 s wait restarted forever. The always-on/lurk start now passes
+  the character's full saved tracker tuning instead of four keys.
+- **Groundbreaker is kid-friendly (ElevenLabs agent, 2026-10-05).** His prompt taunted passers-by; it is now a
+  gentle-giant persona who knows the whole castle crew. Callouts are on for him with a friendly prompt.
+
 - **Callout mode (2026-10-04): AI talks a line every ~5 minutes instead of holding open conversations.** Opt-in
   per character via `POST /conversation/api/callouts {enabled:true}` (runtime state
   `data/character-{id}/callout-state.json`, so it works on locked characters). A PIR wake still turns on the
