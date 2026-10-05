@@ -167,6 +167,10 @@ ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'data/character-*/servo_calibrations.json' \
     --exclude 'data/character-*/super-powers.json' \
     --exclude 'data/character-*/lurk-mode-state.json' \
+    --exclude 'data/character-*/motion-armed-state.json' \
+    --exclude 'data/character-*/*-state.json' \
+    --exclude 'data/character-*/microphones.json' \
+    --exclude 'data/character-*/audio-config.json' \
     --exclude 'data/character-*/ai_agent_state.json' \
     --exclude 'data/character-*/movement-config.json' \
     --exclude 'data/character-*/scenes.json' \
@@ -182,6 +186,11 @@ ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'data/performance-history.json' \
     --exclude 'data/scene-analytics.json' \
     --exclude 'config/app-config.json' \
+    --exclude '/data/ai-config/' \
+    --exclude '/certs/' \
+    --exclude '/.claude/settings.local.json' \
+    --exclude '/.scratch/' \
+    --exclude '__pycache__/' \
     --exclude 'scripts/fleet-audio/results' \
     --exclude 'scripts/halloween-judges/results' \
     --exclude '.git' \

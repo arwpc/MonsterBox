@@ -27,6 +27,7 @@ import ledInteractionService from '../services/ledInteractionService.js';
 import { persistRuntimeToggle, withRuntimeToggle } from '../services/characterConfigLock.js';
 import { recordSpeech, speechSince } from '../services/speechLogService.js';
 import { resolveCharacterSync } from '../services/characterContext.js';
+import { isHeadTrackingAlwaysOn, noteOperatorHeadTrackingToggle, shouldKeepHeadTrackingOnLurkStop, shouldStartHeadTrackingAtBoot } from '../services/headTrackingAlwaysOn.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -450,6 +451,9 @@ router.post('/api/head-tracking', express.json(), async (req, res) => {
     }
 
     const characterId = getCurrentCharacterId(req);
+    // The operator's explicit toggle wins over headTracking.alwaysOn for the
+    // rest of this session (OFF stays off through lurk sleep/wake keep-alive).
+    noteOperatorHeadTrackingToggle(characterId, enabled);
     const parts = await loadCharacterParts(characterId);
     const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
     const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
@@ -1524,6 +1528,94 @@ router.get('/api/lurk-mode/capabilities', async (req, res) => {
   }
 });
 
+// Helper: start the OpenCV tracker and hand the pan servo to head tracking for a
+// character, from its saved config. Shared by lurk enable / PIR wake and the
+// boot-time `headTracking.alwaysOn` path so the two can never drift apart.
+//
+// `reuseRunningTracker`: when the tracker is already up (an always-on character
+// woken by the PIR), don't tear the camera down and reopen it — just (re)assert
+// the head-tracking claim. Off by default, so lurk behaves exactly as before.
+async function startHeadTrackingForCharacter(characterId, opts = {}) {
+  if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+    return { enabled: true, testMode: true };
+  }
+  try {
+    const parts = await loadCharacterParts(characterId);
+    const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
+    const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
+    if (!cam) return { enabled: false, error: 'No webcam found' };
+
+    const savedConfig = opts.savedConfig || await headAnimationService.readHeadTrackingConfig(characterId);
+    const panServoId = findPanServo(parts, savedConfig);
+    if (!panServoId) return { enabled: false, error: 'No pan servo found' };
+
+    const trackingParams = {
+      motionThreshold: savedConfig.motionThreshold || 25,
+      minContourArea: savedConfig.minContourArea || 3000,
+      maxContourArea: savedConfig.maxContourArea || 100000,
+      detectionMode: savedConfig.detectionMode || 'person'
+    };
+    // A camera that fails to open must be REPORTED, not swallowed —
+    // otherwise lurk claims the pan servo for a tracker that isn't
+    // running and "OpenCV just stopped" has no named cause anywhere.
+    let trackerStarted = true;
+    let trackerError = null;
+    let trackerReused = false;
+    if (opts.reuseRunningTracker) {
+      try {
+        trackerReused = !!motionTrackingController.getTrackingStatusForWebcam(cam.id).active;
+      } catch (statusErr) {
+        console.warn(`HeadTracking: tracker status check failed for webcam ${cam.id}: ${statusErr.message}`);
+      }
+    }
+    if (!trackerReused) {
+      try {
+        await motionTrackingController.startTrackingForWebcam(cam.id, trackingParams);
+      } catch (startErr) {
+        trackerStarted = false;
+        trackerError = startErr.message;
+        console.error(`Lurk: motion tracker failed to start for webcam ${cam.id}: ${startErr.message}`);
+      }
+    }
+    motionTrackingController.enableHeadTrackingForWebcam(cam.id, {
+      panServoId,
+      characterId: characterId,
+      centerDeg: typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 0,
+      rangeDeg: typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60,
+      invertPan: !!savedConfig.invertPan,
+      smoothing: typeof savedConfig.smoothing === 'number' ? savedConfig.smoothing : 0.25,
+      deadzone: typeof savedConfig.deadzone === 'number' ? savedConfig.deadzone : 5
+    });
+    if (!trackerStarted) {
+      return { enabled: true, trackerRunning: false, error: 'tracker failed to start: ' + trackerError };
+    }
+    return trackerReused ? { enabled: true, trackerReused: true } : { enabled: true };
+  } catch (e) {
+    return { enabled: false, error: e.message };
+  }
+}
+
+/**
+ * Boot path for `headTracking.alwaysOn: true`. Called from server.js after a
+ * delay so the camera and tracker are ready; never throws. A no-op for every
+ * character that has not opted in (the default), and in test mode.
+ */
+export async function startAlwaysOnHeadTracking(characterId) {
+  try {
+    if (characterId == null) return { started: false, reason: 'no character' };
+    const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
+    if (!shouldStartHeadTrackingAtBoot(savedConfig, characterId)) {
+      return { started: false, reason: 'not opted in' };
+    }
+    const result = await startHeadTrackingForCharacter(characterId, { savedConfig, reuseRunningTracker: true });
+    console.log(`[HeadTracking] always-on start for character ${characterId}: ${JSON.stringify(result)}`);
+    return { started: !!result.enabled, result };
+  } catch (e) {
+    console.error(`[HeadTracking] always-on start failed for character ${characterId}:`, e.message);
+    return { started: false, error: e.message };
+  }
+}
+
 // Helper: enable all lurk superpowers (jaw, head tracking, random poses)
 async function enableLurkSuperpowers(characterId) {
   const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null, led: null };
@@ -1555,58 +1647,15 @@ async function enableLurkSuperpowers(characterId) {
     results.jaw = { enabled: false, error: e.message };
   }
 
-  // 2. Enable head tracking (uses saved config, programmatic API)
-  if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
-    try {
-      const parts = await loadCharacterParts(characterId);
-      const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');
-      const cam = cams.find(p => Number(p.characterId) === Number(characterId)) || cams[0];
-      if (cam) {
-        const savedConfig = await headAnimationService.readHeadTrackingConfig(characterId);
-        const panServoId = findPanServo(parts, savedConfig);
-        if (panServoId) {
-          const trackingParams = {
-            motionThreshold: savedConfig.motionThreshold || 25,
-            minContourArea: savedConfig.minContourArea || 3000,
-            maxContourArea: savedConfig.maxContourArea || 100000,
-            detectionMode: savedConfig.detectionMode || 'person'
-          };
-          // A camera that fails to open must be REPORTED, not swallowed —
-          // otherwise lurk claims the pan servo for a tracker that isn't
-          // running and "OpenCV just stopped" has no named cause anywhere.
-          let trackerStarted = true;
-          let trackerError = null;
-          try {
-            await motionTrackingController.startTrackingForWebcam(cam.id, trackingParams);
-          } catch (startErr) {
-            trackerStarted = false;
-            trackerError = startErr.message;
-            console.error(`Lurk: motion tracker failed to start for webcam ${cam.id}: ${startErr.message}`);
-          }
-          motionTrackingController.enableHeadTrackingForWebcam(cam.id, {
-            panServoId,
-            characterId: characterId,
-            centerDeg: typeof savedConfig.centerDeg === 'number' ? savedConfig.centerDeg : 0,
-            rangeDeg: typeof savedConfig.rangeDeg === 'number' ? savedConfig.rangeDeg : 60,
-            invertPan: !!savedConfig.invertPan,
-            smoothing: typeof savedConfig.smoothing === 'number' ? savedConfig.smoothing : 0.25,
-            deadzone: typeof savedConfig.deadzone === 'number' ? savedConfig.deadzone : 5
-          });
-          results.headTracking = trackerStarted
-            ? { enabled: true }
-            : { enabled: true, trackerRunning: false, error: 'tracker failed to start: ' + trackerError };
-        } else {
-          results.headTracking = { enabled: false, error: 'No pan servo found' };
-        }
-      } else {
-        results.headTracking = { enabled: false, error: 'No webcam found' };
-      }
-    } catch (e) {
-      results.headTracking = { enabled: false, error: e.message };
-    }
-  } else {
-    results.headTracking = { enabled: true, testMode: true };
+  // 2. Enable head tracking (uses saved config, programmatic API). An always-on
+  // character's tracker is usually already running — keep its camera open.
+  let alwaysOnHead = false;
+  try {
+    alwaysOnHead = isHeadTrackingAlwaysOn(await headAnimationService.readHeadTrackingConfig(characterId));
+  } catch (e) {
+    console.warn(`Lurk: could not read head tracking config for character ${characterId}: ${e.message}`);
   }
+  results.headTracking = await startHeadTrackingForCharacter(characterId, { reuseRunningTracker: alwaysOnHead });
 
   // 3. Enable random idle poses
   try {
@@ -1673,7 +1722,8 @@ async function enableLurkSuperpowers(characterId) {
  */
 export async function disarmLurkCompletely(characterId) {
   lurkMotionWatcher.stop();
-  const results = await disableLurkSuperpowers(characterId);
+  // force: a panic stop quiets head tracking too, even on an always-on character.
+  const results = await disableLurkSuperpowers(characterId, { force: true });
   results.motionSensor = { enabled: false };
 
   const dataDir = getDataDir(characterId);
@@ -1688,7 +1738,11 @@ export async function disarmLurkCompletely(characterId) {
 // Exported so the panic route can disarm this node DIRECTLY. Panic previously
 // relied on the fleet fan-out reaching this node over its own loopback HTTPS,
 // which is both slower and able to fail exactly when it matters most.
-export async function disableLurkSuperpowers(characterId) {
+//
+// opts.force — stop head tracking even when the character opted in to
+// `headTracking.alwaysOn` (panic). Without it, an always-on character keeps
+// tracking through lurk sleep/disable unless the operator switched it off.
+export async function disableLurkSuperpowers(characterId, opts = {}) {
   const results = { jaw: null, headTracking: null, randomPose: null, idle: null, motionSensor: null, led: null };
 
   try {
@@ -1715,7 +1769,17 @@ export async function disableLurkSuperpowers(characterId) {
   // nothing is speaking, so there is nothing to quiet on sleep.
   results.led = { enabled: 'unchanged (operator-controlled, independent of lurk)' };
 
-  if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
+  let keepHead = false;
+  try {
+    keepHead = shouldKeepHeadTrackingOnLurkStop(
+      await headAnimationService.readHeadTrackingConfig(characterId), characterId, opts);
+  } catch (e) {
+    console.warn(`Lurk: could not read head tracking config for character ${characterId}: ${e.message}`);
+  }
+
+  if (keepHead) {
+    results.headTracking = { enabled: true, alwaysOn: true, reason: 'headTracking.alwaysOn — left running' };
+  } else if (process.env.MB_TEST_MODE !== '1' && process.env.MB_TEST_MODE !== 'true') {
     try {
       const parts = await loadCharacterParts(characterId);
       const cams = parts.filter(p => String(p.type).toLowerCase() === 'webcam');

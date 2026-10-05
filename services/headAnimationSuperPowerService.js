@@ -112,7 +112,13 @@ async function writeHeadTrackingConfig(characterId, config) {
   // vice-versa (finding #47). The jaw service locks on the same configFile key.
   await updateJsonUnderLock(configFile, (fileConfig) => {
     // Merge with defaults to ensure all keys present, then overlay provided config
-    fileConfig.headTracking = { ...getDefaultHeadTrackingConfig(), ...config };
+    // `alwaysOn` is an opt-in the setup page form does not carry; keep the
+    // stored value unless the caller sets it, so a save there can't silently
+    // drop a character's always-on head tracking.
+    const prior = fileConfig.headTracking || {};
+    const keep = (prior.alwaysOn !== undefined && (!config || config.alwaysOn === undefined))
+      ? { alwaysOn: prior.alwaysOn } : {};
+    fileConfig.headTracking = { ...getDefaultHeadTrackingConfig(), ...keep, ...config };
     return fileConfig;
   });
 }
