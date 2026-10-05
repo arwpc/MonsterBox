@@ -47,7 +47,7 @@ import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
 import systemApiRoutes from './routes/api/systemRoutes.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
-import conversationRoutes, { restoreMotionModeOnStartup } from './routes/conversation.js';
+import conversationRoutes, { restoreMotionModeOnStartup, startAlwaysOnHeadTracking } from './routes/conversation.js';
 import goblinManagementRoutes from './routes/goblinManagement.js';
 import orchestrationWebRoutes from './routes/orchestration.js';
 import posesRoutes from './routes/poses/index.js';
@@ -1103,6 +1103,34 @@ async function onServerReady(protocol) {
         console.error(`❌ Failed to restore motion mode:`, error.message);
     }
 
+    // Head tracking ON by default for a character that opted in
+    // (super-powers.json → headTracking.alwaysOn: true). Delayed so the webcam
+    // stream and tracker are ready after boot; a no-op for everyone else.
+    {
+        const alwaysOnCharacterId = config && config.selectedCharacter;
+        const parsedDelay = Number(process.env.MB_HEAD_ALWAYS_ON_DELAY_MS);
+        const alwaysOnDelayMs = Number.isFinite(parsedDelay) && parsedDelay >= 0 ? parsedDelay : 15000;
+        const alwaysOnTimer = setTimeout(() => {
+            startAlwaysOnHeadTracking(alwaysOnCharacterId).catch((error) => {
+                console.error(`❌ Failed to start always-on head tracking:`, error.message);
+            });
+        }, alwaysOnDelayMs);
+        if (typeof alwaysOnTimer.unref === 'function') alwaysOnTimer.unref();
+    }
+
+    // Background music is opt-in per character (super-powers.json →
+    // backgroundMusic.enabled). The supervisor pauses itself for conversations,
+    // scene queues, other playback and quiet hours, so it is safe to start here.
+    try {
+        if (config && config.selectedCharacter != null) {
+            const { default: backgroundMusicService } = await import('./services/backgroundMusicService.js');
+            const bgm = await backgroundMusicService.applyConfig(config.selectedCharacter);
+            if (bgm.enabled) console.log(`🎵 Background music supervisor started (${bgm.tracks.length} track(s))`);
+        }
+    } catch (error) {
+        console.error(`❌ Failed to start background music:`, error.message);
+    }
+
     // Bring up the addressable LED rings for the selected character.
     //
     // Deliberately best-effort and never awaited into the critical path: a node
@@ -1237,6 +1265,15 @@ async function gracefulShutdown(signal) {
         console.warn('Force exiting after timeout...');
         process.exit(1);
     }, 10000);
+
+    // Stop background music (kills only its own ffmpeg + pw-play) alongside
+    // the audio loops audioLoopService stops on this same signal.
+    try {
+        const { default: backgroundMusicService } = await import('./services/backgroundMusicService.js');
+        backgroundMusicService.stopAll();
+    } catch (e) {
+        console.warn('Background music cleanup:', (e && e.message) || e);
+    }
 
     // Stop idle loop if running
     try {

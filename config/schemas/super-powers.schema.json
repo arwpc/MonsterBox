@@ -58,7 +58,13 @@
       }
     },
     "headTracking": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "alwaysOn": {
+          "type": "boolean",
+          "description": "Opt-in: start head tracking at server startup and keep it running through lurk sleep/disable (the operator toggle OFF still wins for the session; panic still stops it). Absent/false = head tracking only while lurk/PIR wake has it on."
+        }
+      }
     },
     "followOrders": {
       "type": "object",
@@ -290,6 +296,62 @@
               "maximum": 1
             }
           }
+        }
+      }
+    },
+    "backgroundMusic": {
+      "type": "object",
+      "description": "Opt-in background music for this character. A supervisor (services/backgroundMusicService.js) plays the tracks in rotation and PAUSES them during AI conversations, running scene queues, other speaker playback and quiet hours, resuming resumeDelayMs after.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "tracks": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "description": "Audio-library ids (or filenames), played once each per rotation."
+        },
+        "volume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "shuffle": {
+          "type": "boolean"
+        },
+        "resumeDelayMs": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 600000
+        },
+        "quietHours": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "start",
+                "end"
+              ],
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                },
+                "end": {
+                  "type": "string",
+                  "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$"
+                }
+              }
+            }
+          ]
         }
       }
     }

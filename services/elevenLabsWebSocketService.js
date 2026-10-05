@@ -1524,6 +1524,23 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 
     /**
+     * True while ANY conversation session (browser or headless) for a character
+     * is live, or its reply audio is still draining out of the speaker. The
+     * background-music supervisor pauses on this: the character's mic hears its
+     * own speaker, so music during a conversation is fed to the agent as speech.
+     * In-memory only — safe to poll every tick.
+     */
+    hasActiveSession(characterId) {
+        if (characterId == null) return false;
+        const now = Date.now();
+        for (const [, c] of this.activeConnections) {
+            if (Number(c.characterId) !== Number(characterId)) continue;
+            if (c.isActive || c.audioPlaying || (c.playbackEndsAtMs || 0) > now) return true;
+        }
+        return false;
+    }
+
+    /**
      * Start a Scribe v2 Realtime STT session for a connection.
      * Streams partial/committed transcripts to the browser client.
      */

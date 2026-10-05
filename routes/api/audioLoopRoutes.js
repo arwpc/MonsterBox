@@ -8,6 +8,13 @@ import audioLoopService from '../../services/audioLoopService.js';
 import audioLibraryService from '../../services/audioLibraryService.js';
 import path from 'path';
 import fs from 'fs/promises';
+import { resolveCharacter } from '../../services/characterContext.js';
+import backgroundMusicService, {
+    readBackgroundMusicConfig,
+    writeBackgroundMusicConfig,
+    validateConfig as validateBackgroundMusicConfig
+} from '../../services/backgroundMusicService.js';
+import { isConfigLockedError } from '../../services/characterConfigLock.js';
 
 const router = express.Router();
 
@@ -180,6 +187,50 @@ router.get('/status', (req, res) => {
             success: false,
             error: error.message
         });
+    }
+});
+
+/**
+ * Background music config + live supervisor status for the resolved character.
+ * GET /api/audio-loop/background[?characterId=N]
+ */
+router.get('/background', async (req, res) => {
+    try {
+        const ctx = await resolveCharacter(req);
+        if (!ctx) return res.status(400).json({ success: false, error: 'No character selected' });
+        const config = await readBackgroundMusicConfig(ctx.id);
+        res.json({ success: true, characterId: ctx.id, config, status: backgroundMusicService.getStatus(ctx.id) });
+    } catch (error) {
+        console.error('Error reading background music config:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * Save the background music block (merged over the stored one) and start/stop
+ * the supervisor immediately to match.
+ * POST /api/audio-loop/background[?characterId=N]
+ * Body: { enabled?, tracks?, volume?, shuffle?, resumeDelayMs?, quietHours? }
+ */
+router.post('/background', express.json(), async (req, res) => {
+    try {
+        const ctx = await resolveCharacter(req);
+        if (!ctx) return res.status(400).json({ success: false, error: 'No character selected' });
+        const body = req.body || {};
+        const errors = validateBackgroundMusicConfig(body);
+        if (errors.length) return res.status(400).json({ success: false, error: errors.join('; '), errors });
+
+        const config = await writeBackgroundMusicConfig(ctx.id, body);
+        if (config.enabled) backgroundMusicService.start(ctx.id);
+        else backgroundMusicService.stop(ctx.id);
+
+        res.json({ success: true, characterId: ctx.id, config, status: backgroundMusicService.getStatus(ctx.id) });
+    } catch (error) {
+        if (isConfigLockedError(error)) {
+            return res.status(423).json({ success: false, code: error.code, error: error.message });
+        }
+        console.error('Error saving background music config:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
