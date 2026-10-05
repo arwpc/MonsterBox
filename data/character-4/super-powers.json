@@ -63,7 +63,8 @@
     "targetLockStrength": 7,
     "confirmFrames": 2,
     "detectInterval": 5,
-    "detectionMode": "person"
+    "detectionMode": "person",
+    "alwaysOn": true
   },
   "followOrders": {
     "enabled": true,

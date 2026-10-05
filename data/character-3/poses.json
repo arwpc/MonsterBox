@@ -103,10 +103,13 @@
       "transitionProfile": "ease_in_out",
       "parts": [
         {
-          "partId": 4,
-          "type": "servo",
+          "partId": 1,
+          "type": "linear_actuator",
           "target": {
-            "angleDeg": 80
+            "direction": "extend",
+            "speed": 45,
+            "durationMs": 500,
+            "duration": 500
           }
         },
         {
@@ -118,7 +121,8 @@
         }
       ],
       "created": "2026-03-27T00:00:00.000Z",
-      "notes": "Elbow clamped 70 -> 80 (narrow trusted band). Untagged from idle: the elbow sits on the previously-blown arm fuse and must not be driven on every random idle pick."
+      "notes": "2026-10-04: re-pointed from the broken Elbow (part 4, physical-faults) to the working right-arm actuator (part 1). Pair with Arm Lower.",
+      "modified": "2026-10-05T00:52:58.289Z"
     },
     {
       "id": 5,
@@ -557,15 +561,19 @@
           }
         },
         {
-          "partId": 4,
-          "type": "servo",
+          "partId": 1,
+          "type": "linear_actuator",
           "target": {
-            "angleDeg": 110
+            "direction": "extend",
+            "speed": 45,
+            "durationMs": 1500,
+            "duration": 1500
           }
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Top of the trusted elbow band — the highest arm position authored this round."
+      "notes": "2026-10-04: re-pointed from the broken Elbow to the right-arm actuator (part 1), 1.5 s extend at 45%. Arm Lower is its exact inverse.",
+      "modified": "2026-10-05T00:52:58.342Z"
     },
     {
       "id": 22,
@@ -587,15 +595,19 @@
           }
         },
         {
-          "partId": 4,
-          "type": "servo",
+          "partId": 1,
+          "type": "linear_actuator",
           "target": {
-            "angleDeg": 80
+            "direction": "retract",
+            "speed": 45,
+            "durationMs": 1500,
+            "duration": 1500
           }
         }
       ],
       "created": "2026-08-15T23:42:37.323Z",
-      "notes": "Bottom of the trusted elbow band; pairs with pose 21 to make a full arm cycle."
+      "notes": "2026-10-04: right-arm actuator (part 1) retract, exact inverse of Arm Raise Full so the open-loop pair is position-neutral.",
+      "modified": "2026-10-05T00:52:58.376Z"
     },
     {
       "id": 23,
