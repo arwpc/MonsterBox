@@ -911,6 +911,10 @@ async function maybeDriveHead(webcamId, status) {
   if (!status || !status.target_detected) {
     // Record when we last had a target
     if (!state.lastTargetAt) state.lastTargetAt = now;
+    // Persist before the early return: a fresh state that was never stored was
+    // rebuilt every frame with a new lastTargetAt, so after boot (no detection
+    // yet) the 3 s wait restarted forever and the head never swept at all.
+    headTrackingStates.set(webcamId, state);
 
     // Wait 3 seconds of no target before scanning
     if (now - state.lastTargetAt < 3000) return;

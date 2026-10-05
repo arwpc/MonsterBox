@@ -1623,10 +1623,22 @@ async function startHeadTrackingForCharacter(characterId, opts = {}) {
     const panServoId = findPanServo(parts, savedConfig);
     if (!panServoId) return { enabled: false, error: 'No pan servo found' };
 
+    // Same full set POST /api/head-tracking builds. This path used to pass only
+    // four keys, so an always-on/lurk start silently ran the tracker on default
+    // varThreshold/blur/dilate/learning-rate/confirm/lock tuning instead of the
+    // character's saved values.
     const trackingParams = {
       motionThreshold: savedConfig.motionThreshold || 25,
       minContourArea: savedConfig.minContourArea || 3000,
       maxContourArea: savedConfig.maxContourArea || 100000,
+      backgroundLearningRate: savedConfig.backgroundLearningRate || 0.005,
+      noiseReductionKernelSize: savedConfig.noiseReductionKernelSize || 5,
+      blurSize: savedConfig.blurSize || 5,
+      dilateSize: savedConfig.dilateSize || 9,
+      varThreshold: savedConfig.varThreshold || 25,
+      targetLockStrength: savedConfig.targetLockStrength || 5,
+      confirmFrames: savedConfig.confirmFrames || 3,
+      detectInterval: savedConfig.detectInterval || 5,
       detectionMode: savedConfig.detectionMode || 'person'
     };
     // A camera that fails to open must be REPORTED, not swallowed —
