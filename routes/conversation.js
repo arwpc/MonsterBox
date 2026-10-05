@@ -27,6 +27,7 @@ import ledInteractionService from '../services/ledInteractionService.js';
 import { persistRuntimeToggle, withRuntimeToggle } from '../services/characterConfigLock.js';
 import { recordSpeech, speechSince } from '../services/speechLogService.js';
 import { resolveCharacterSync } from '../services/characterContext.js';
+import calloutService, { planWake } from '../services/calloutService.js';
 import { isHeadTrackingAlwaysOn, noteOperatorHeadTrackingToggle, shouldKeepHeadTrackingOnLurkStop, shouldStartHeadTrackingAtBoot } from '../services/headTrackingAlwaysOn.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1318,14 +1319,37 @@ async function setAiMotionForMotion(characterId, enabled) {
 // and buys the supply time to recover between inrushes.
 const WAKE_SETTLE_MS = 250;
 const settle = (ms = WAKE_SETTLE_MS) => new Promise(resolve => setTimeout(resolve, ms));
+const CALLOUT_WAKE_SETTLE_MS = 1500;
 
 /** PIR fired while armed: bring the whole character to life, one step at a time. */
 async function wakeOnMotion(characterId) {
-  console.log(`[MotionMode] motion detected for character ${characterId} — AI, jaw and body motion ON (staggered)`);
+  // Callout mode (opt-in, callout-state.json): the PIR wakes the body but NOT the
+  // per-minute agent session — the character greets with one short line instead,
+  // at most once per callout interval. Disabled/absent => exactly today's wake.
+  let plan = { startAgent: true, calloutMode: false };
+  try {
+    plan = planWake(await calloutService.readState(characterId));
+  } catch (e) {
+    console.warn(`[MotionMode] could not read callout state for character ${characterId}: ${e.message}`);
+  }
+  console.log(`[MotionMode] motion detected for character ${characterId} — ${plan.startAgent ? 'AI, ' : 'callout (no agent session), '}jaw and body motion ON (staggered)`);
 
-  // 1. The agent first, on its own — the heaviest single step.
-  const ai = await setAgentForMotion(characterId, true);
-  await settle();
+  // 1. The agent first, on its own — the heaviest single step. In callout mode
+  // the greeting line takes the agent's place in the stagger: its one-shot socket
+  // and audio start first, the body follows after the settle.
+  let ai;
+  if (plan.startAgent) {
+    ai = await setAgentForMotion(characterId, true);
+  } else {
+    ai = { enabled: false, skipped: 'callout-mode' };
+    calloutService.onMotionWake(characterId).catch((e) => {
+      console.error(`[MotionMode] wake callout failed for character ${characterId}:`, e.message);
+    });
+  }
+  // The agent path above awaited its socket being ready; the callout is not
+  // awaited (it speaks for seconds), so give its socket + audio pipeline a longer
+  // head start before the lurk stack's inrush.
+  await settle(plan.startAgent ? WAKE_SETTLE_MS : CALLOUT_WAKE_SETTLE_MS);
 
   // 2. Then the lurk stack (LED, random poses, idle loop).
   const results = await enableLurkSuperpowers(characterId);
@@ -1451,6 +1475,56 @@ router.post('/api/motion-sensor/simulate', express.json(), async (req, res) => {
     await new Promise(resolve => setTimeout(resolve, 1500));
     res.json({ success: true, fired: true, status: lurkMotionWatcher.getStatus() });
   } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// ─── Callout mode ─────────────────────────────────────────────────────
+// One short in-character line every few minutes instead of an open agent session
+// (services/calloutService.js). Runtime state, so it works on a LOCKED character.
+
+// GET /conversation/api/callouts — stored state + live scheduler status
+router.get('/api/callouts', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (characterId == null) return res.status(400).json({ success: false, error: 'No character selected' });
+    const state = await calloutService.readState(characterId);
+    res.json({ success: true, characterId, state, status: calloutService.getStatus(characterId) });
+  } catch (e) {
+    console.error('[Callout] GET failed:', e && e.message);
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/callouts { enabled?, intervalMs?, jitterPct?, quietHours?, aiOnWake?, prompt?, maxWords? }
+// Merges over the stored state, persists it and applies it immediately.
+router.post('/api/callouts', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (characterId == null) return res.status(400).json({ success: false, error: 'No character selected' });
+    const state = await calloutService.writeState(characterId, req.body || {});
+    res.json({ success: true, characterId, state, status: calloutService.getStatus(characterId) });
+  } catch (e) {
+    if (e && e.validation) return res.status(400).json({ success: false, error: e.message, errors: e.validation });
+    console.error('[Callout] POST failed:', e && e.message);
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/callouts/test { force? } — one callout now, ignoring the
+// interval (and the enabled flag) but honoring quiet hours unless force===true.
+router.post('/api/callouts/test', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (characterId == null) return res.status(400).json({ success: false, error: 'No character selected' });
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+      return res.json({ success: true, testMode: true, spoke: false });
+    }
+    const force = !!(req.body && req.body.force === true);
+    const result = await calloutService.testCallout(characterId, { force });
+    res.json({ success: result.spoke, characterId, ...result });
+  } catch (e) {
+    console.error('[Callout] test failed:', e && e.message);
     res.status(500).json({ success: false, error: e && e.message });
   }
 });
@@ -1914,7 +1988,15 @@ router.post('/api/lurk-mode', express.json(), async (req, res) => {
       enabled, sleeping: false, timestamp: Date.now(), results
     }, null, 2), 'utf8');
 
-    res.json({ success: true, enabled, results });
+    // Callout mode (opt-in) replaces the open agent session: tell the dashboard
+    // not to switch the persistent headless agent on with Lurk. Absent/disabled
+    // callout state => calloutMode false => the dashboard behaves as before.
+    let calloutMode = false;
+    if (enabled) {
+      try { calloutMode = !planWake(await calloutService.readState(characterId)).startAgent; } catch (_) { /* default: as before */ }
+    }
+
+    res.json({ success: true, enabled, results, calloutMode });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });
   }

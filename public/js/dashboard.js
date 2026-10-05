@@ -295,8 +295,12 @@
           // Start/stop the persistent AI agent (server-side; survives navigation)
           const aiToggle = $('chatAiOnToggle');
           if (enabled) {
-            if (aiToggle) aiToggle.checked = true;
-            setServerAi(true);
+            // Callout mode: the character speaks one short line every few
+            // minutes instead of holding a billed agent session open all night.
+            if (!j.calloutMode) {
+              if (aiToggle) aiToggle.checked = true;
+              setServerAi(true);
+            }
             startHeadTrackPolling();
           } else {
             if (aiToggle) aiToggle.checked = false;

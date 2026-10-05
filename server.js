@@ -1131,6 +1131,18 @@ async function onServerReady(protocol) {
         console.error(`❌ Failed to start background music:`, error.message);
     }
 
+    // Callout mode is opt-in per character (data/character-{id}/callout-state.json,
+    // runtime state so it survives a config lock): one short AI line every few
+    // minutes instead of an open per-minute agent session. No file => no-op.
+    try {
+        if (config && config.selectedCharacter != null) {
+            const { default: calloutService } = await import('./services/calloutService.js');
+            await calloutService.apply(config.selectedCharacter);
+        }
+    } catch (error) {
+        console.error(`❌ Failed to start callout mode:`, error.message);
+    }
+
     // Bring up the addressable LED rings for the selected character.
     //
     // Deliberately best-effort and never awaited into the critical path: a node
@@ -1273,6 +1285,13 @@ async function gracefulShutdown(signal) {
         backgroundMusicService.stopAll();
     } catch (e) {
         console.warn('Background music cleanup:', (e && e.message) || e);
+    }
+
+    try {
+        const { default: calloutService } = await import('./services/calloutService.js');
+        calloutService.stopAll();
+    } catch (e) {
+        console.warn('Callout cleanup:', (e && e.message) || e);
     }
 
     // Stop idle loop if running
