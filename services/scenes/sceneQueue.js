@@ -245,7 +245,10 @@ export async function startWithConfig(characterId, config) {
   q.skipRequested = false;
   q.mode = (config && config.mode === 'loop_queue') ? 'loop_queue' : 'sequential';
   // Load scenes and build items
-  const scenes = await scenesService.loadScenes();
+  // Load THIS character's scenes. Without the id this fell back to the node's
+  // mutable selectedCharacter, so a queue started for one character could resolve
+  // its scene ids against another's library.
+  const scenes = await scenesService.loadScenes(characterId);
   const items = (config && Array.isArray(config.scenes)) ? config.scenes : [];
   for (const it of items) {
     const sid = parseInt(it.scene_id || it.id, 10);

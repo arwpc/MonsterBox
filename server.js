@@ -1143,6 +1143,18 @@ async function onServerReady(protocol) {
         console.error(`❌ Failed to start callout mode:`, error.message);
     }
 
+    // Lurk scenes are opt-in per character (data/character-{id}/lurk-scenes-state.json,
+    // runtime state so it survives a config lock): one scene from a rotation every
+    // few minutes while the character waits for guests. No file => no-op.
+    try {
+        if (config && config.selectedCharacter != null) {
+            const { default: lurkSceneService } = await import('./services/lurkSceneService.js');
+            await lurkSceneService.apply(config.selectedCharacter);
+        }
+    } catch (error) {
+        console.error(`❌ Failed to start lurk scenes:`, error.message);
+    }
+
     // Bring up the addressable LED rings for the selected character.
     //
     // Deliberately best-effort and never awaited into the critical path: a node
@@ -1292,6 +1304,13 @@ async function gracefulShutdown(signal) {
         calloutService.stopAll();
     } catch (e) {
         console.warn('Callout cleanup:', (e && e.message) || e);
+    }
+
+    try {
+        const { default: lurkSceneService } = await import('./services/lurkSceneService.js');
+        lurkSceneService.stopAll();
+    } catch (e) {
+        console.warn('Lurk scenes cleanup:', (e && e.message) || e);
     }
 
     // Stop idle loop if running

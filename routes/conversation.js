@@ -28,6 +28,7 @@ import { persistRuntimeToggle, withRuntimeToggle } from '../services/characterCo
 import { recordSpeech, speechSince } from '../services/speechLogService.js';
 import { resolveCharacterSync } from '../services/characterContext.js';
 import calloutService, { planWake } from '../services/calloutService.js';
+import lurkSceneService from '../services/lurkSceneService.js';
 import { isHeadTrackingAlwaysOn, noteOperatorHeadTrackingToggle, shouldKeepHeadTrackingOnLurkStop, shouldStartHeadTrackingAtBoot } from '../services/headTrackingAlwaysOn.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1525,6 +1526,54 @@ router.post('/api/callouts/test', express.json(), async (req, res) => {
     res.json({ success: result.spoke, characterId, ...result });
   } catch (e) {
     console.error('[Callout] test failed:', e && e.message);
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// GET/POST /conversation/api/lurk-scenes — the scene rotation a character plays
+// while it waits for guests (services/lurkSceneService.js). Runtime state, so it
+// works on a LOCKED character. POST {enabled?, sceneIds?, intervalMs?, jitterPct?, quietHours?}
+router.get('/api/lurk-scenes', async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (characterId == null) return res.status(400).json({ success: false, error: 'No character selected' });
+    const state = await lurkSceneService.readState(characterId);
+    res.json({ success: true, characterId, state, status: lurkSceneService.getStatus(characterId) });
+  } catch (e) {
+    console.error('[LurkScenes] GET failed:', e && e.message);
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+router.post('/api/lurk-scenes', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (characterId == null) return res.status(400).json({ success: false, error: 'No character selected' });
+    const state = await lurkSceneService.writeState(characterId, req.body || {});
+    res.json({ success: true, characterId, state, status: lurkSceneService.getStatus(characterId) });
+  } catch (e) {
+    if (e && e.validation) return res.status(400).json({ success: false, error: e.message, errors: e.validation });
+    console.error('[LurkScenes] POST failed:', e && e.message);
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
+// POST /conversation/api/lurk-scenes/test { force? } — play the next scene in the
+// rotation NOW (real hardware, real audio), ignoring the interval and lurk state
+// but honoring quiet hours unless force===true.
+router.post('/api/lurk-scenes/test', express.json(), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    if (characterId == null) return res.status(400).json({ success: false, error: 'No character selected' });
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') {
+      return res.json({ success: true, testMode: true, played: false });
+    }
+    await lurkSceneService.apply(characterId);
+    const force = !!(req.body && req.body.force === true);
+    const result = await lurkSceneService.playNext(characterId, { test: true, force, source: 'test' });
+    res.json({ success: result.played, characterId, ...result });
+  } catch (e) {
+    console.error('[LurkScenes] test failed:', e && e.message);
     res.status(500).json({ success: false, error: e && e.message });
   }
 });
