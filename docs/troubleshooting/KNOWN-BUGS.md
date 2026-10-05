@@ -1379,6 +1379,16 @@ through every test below, no reboot under motor load. Per part, judged on indepe
   `scripts/apply-audio-nosuspend.sh` re-run for the new sink. Speaker: Scribe read the sink monitor back verbatim and
   the operator heard him. Mic: PyAudio `microphone_cli.py` frames with avg RMS 0.14 — it transcribed the room's music.
   (The room music masked his voice at both mics, so the acoustic witness was inconclusive; the operator's ear stands in.)
+- 🟡 **Orlok had the same self-interruption (2026-10-04): 665 guest barge-ins in one day, 96% of "user" turns
+  were "..."; this is what "cut off mid sentence and slow to respond" meant.** His speaker and mic are the same XVF3800
+  (sink 1.30, source 1.55). His own voice reached the mic at 0.3-0.67 RMS against a ~0.05 threshold. The
+  pw-play EPIPE lines are the barge-in kill, not a separate fault. Fixed node-local with the same
+  `40-no-barge-in.conf` drop-in on Orlok. Not done: lowering the source from 1.55 to 1.0, and sinkVolume above
+  1.00 (clipping defeats the AEC), which needs an ear-check with the operator.
+- 🔴 **Sir Dragomir's PIR has never fired.** No `[MotionMode] motion detected` line since at least 2026-09-22;
+  GPIO 26 reads constant 0. Physical (wiring/power), not software. Workaround in place: lurk mode with
+  `inactivityTimeoutMs:0` plus `headTracking.alwaysOn`, so he tracks and moves without the sensor. Check PIR VCC,
+  GND and OUT at pin 37, and GPIO 7/8, which SPI holds (`dtparam=spi=on`).
 - 🟡 **He kept interrupting himself (not CPU: load 0.15-0.3).** 27 guest barge-ins in one session with junk
   transcripts ("...", "The-", "Sure."). With 'PCM',1 at 0 dB and room music, his own voice reaches the XVF3800 at
   0.10-0.26 RMS while the learned echo floor latches near 0.05, so the 2.2x barge-in threshold (~0.11) fired on his

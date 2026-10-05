@@ -4,6 +4,28 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [Unreleased]
 
+- **Callout mode (2026-10-04): AI talks a line every ~5 minutes instead of holding open conversations.** Opt-in
+  per character via `POST /conversation/api/callouts {enabled:true}` (runtime state
+  `data/character-{id}/callout-state.json`, so it works on locked characters). A PIR wake still turns on the
+  jaw, head tracking, random poses and AI Motion, but it does not open an ElevenLabs agent session. The character
+  speaks one short in-character line through the one-shot ask-ai path, at most once per `intervalMs` (300 s +0-15%),
+  never during quiet hours (default 23:00-08:00), a live conversation, a scene queue or other playback. Enabled on
+  Orlok, Sir Dragomir, Renfield and PumpkinHead. Each line bills up to ~30 s of agent time, because the one-shot
+  socket closes on its hard timeout.
+- **Background music (2026-10-04).** Opt-in `backgroundMusic` block in super-powers.json
+  (`GET/POST /api/audio-loop/background`). It rotates tracks, pauses for conversations, scene queues, other
+  playback, mute and quiet hours, resumes from the same offset, and restarts at boot. Pausing kills only its own
+  ffmpeg/pw-play and never the AI's speech. A loop whose pw-play dies now restarts instead of hanging silently.
+  On for Orlok at volume 40, 23:00-08:00 quiet.
+- **Follow Orders understands "raise your arms", "arms up", "lower your arms" and "raise your hands".** Plurals
+  fold to singular, and a left/right tie goes to the one arm that is not in physical-faults.
+- **`headTracking.alwaysOn`** starts head tracking at boot and keeps it on through motion sleep (panic still
+  stops it). Set on Sir Dragomir.
+- **Deploy no longer clobbers node-local state.** `*-state.json`, microphones/audio-config, `data/ai-config/`,
+  `certs/` and `.claude/settings.local.json` are excluded. Before this, a deploy disarmed Renfield's PIR.
+- **Orlok's "Arm Raise Slight/Full" and "Arm Lower" poses** now drive the working right-arm actuator (part 1)
+  instead of the broken elbow (part 4), which was skipped silently while the pose reported success.
+
 - **Speaking LED eyes in AI mode worked for the first agent session only (fixed 2026-10-04).** On a character
   with LED eye sync and no jaw servo (Renfield, PumpkinHead), `stopPcmJawStream()` read `guardrails.minAngle`
   from a null guardrails object, threw before removing the stream, and the caller swallowed it. The dead stream
