@@ -74,7 +74,7 @@ const SPLIT_PARTICLE_VERBS = {
   lower: { down: 'close' }
 };
 
-import { interpretBodyIntent, partsForIntent } from './bodyRoles.js';
+import { interpretBodyIntent, partsForIntent, singularBodyToken } from './bodyRoles.js';
 
 const AMBIGUITY_MARGIN = 0.25;
 
@@ -187,8 +187,10 @@ function findVerb(text) {
  */
 function overlapScore(objectTokens, candidateTokens) {
   if (!objectTokens.length) return 0;
-  const set = new Set(candidateTokens);
-  const matched = objectTokens.filter(tok => set.has(tok)).length;
+  // Plural anatomy folds onto the singular on BOTH sides, so "arms" scores
+  // against a part called "Right Arm" and a pose called "Arms Up" alike.
+  const set = new Set(candidateTokens.map(singularBodyToken));
+  const matched = objectTokens.filter(tok => set.has(singularBodyToken(tok))).length;
   return matched / objectTokens.length;
 }
 
@@ -347,7 +349,7 @@ export function matchOrder(transcript, ctx) {
           ...tokenize(normalizeTranscript(pose.name)),
           ...(pose.tags || []).flatMap(t => tokenize(normalizeTranscript(t)))
         ])];
-        const anchored = candTokens.some(tok => anchors.has(tok));
+        const anchored = candTokens.some(tok => anchors.has(singularBodyToken(tok)));
         return {
           key: `pose:${pose.id}`, pose,
           score: anchored ? overlapScore(candTokens, intent.expand) : 0
@@ -362,7 +364,7 @@ export function matchOrder(transcript, ctx) {
       }
     }
 
-    const { candidates } = partsForIntent(intent, ctx.parts || [], ctx.brokenPartIds || []);
+    const { candidates, alsoMatched } = partsForIntent(intent, ctx.parts || [], ctx.brokenPartIds || []);
     if (!candidates.length) {
       return { matched: false, reason: 'no_such_role', detail: `nothing on this character fills the "${intent.role}" role for "${intent.phrase}"` };
     }
@@ -378,6 +380,12 @@ export function matchOrder(transcript, ctx) {
       result.via = 'body-intent';
       result.intent = intent.phrase;
       result.role = intent.role;
+      if (alsoMatched && alsoMatched.length) {
+        // A plural order drove one of several equal parts; say which were left
+        // alone so history and the operator are not misled.
+        result.plural = true;
+        result.alsoMatched = alsoMatched.map(c => ({ partId: c.part.partId, name: c.part.name, side: c.side }));
+      }
     }
     return result;
   };
@@ -420,11 +428,27 @@ export function matchOrder(transcript, ctx) {
   }
   const distinctRivals = (rivals || []).filter(r => r.part.partId !== best.part.partId);
   if (distinctRivals.length) {
-    return {
+    const tied = [best, ...distinctRivals];
+    const ambiguous = {
       matched: false,
       reason: 'ambiguous',
-      candidates: [best, ...distinctRivals].map(c => ({ partId: c.part.partId, name: c.part.name, score: c.score }))
+      candidates: tied.map(c => ({ partId: c.part.partId, name: c.part.name, score: c.score }))
     };
+    // "raise your arm" ties a right arm and a left arm on the literal name. The
+    // body interpreter knows sides, limbs vs joints and broken hardware, so it
+    // gets a turn before the guest is asked to choose.
+    const viaBody = bodyFallback('ambiguous');
+    if (viaBody.matched) return viaBody;
+    // Not a body intent: still never ask the guest to choose between a part
+    // that works and one the operator declared broken — the executor would
+    // refuse the broken one anyway.
+    const broken = new Set((ctx.brokenPartIds || []).map(String));
+    const healthy = tied.filter(c => !broken.has(String(c.part.partId)));
+    if (healthy.length === 1 && healthy.length < tied.length) {
+      const only = finishPartMatch(healthy[0].part, verbHit.verb, healthy[0].score, addressed, null);
+      if (only.matched) return only;
+    }
+    return ambiguous;
   }
   const literal = finishPartMatch(best.part, verbHit.verb, best.score, addressed, null);
   // "raise your hand" scores highest against a LAMP that happens to be named

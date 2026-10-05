@@ -67,6 +67,39 @@ const GENERIC_ROLE_PREFERENCE = ['head', 'jaw', 'arm', 'eye', 'wing', 'tail', 't
 
 const SIDE_KEYWORDS = [['right', 'right'], ['left', 'left']];
 
+// Every anatomy word the role table knows, in the singular. Plurals are folded
+// onto these so "raise your arms" reads exactly like "raise your arm" — a guest
+// talking to a two-armed monster says the plural more often than not. Derived
+// from ROLE_KEYWORDS so a new anatomy word gets its plural for free; deliberately
+// NOT a general English stemmer ("lights out" must stay "lights out").
+const BODY_NOUNS = new Set(ROLE_KEYWORDS.flatMap(([, primaryKw, secondaryKw]) => [...primaryKw, ...secondaryKw]));
+const IRREGULAR_PLURALS = { feet: 'foot', teeth: 'tooth' };
+
+/** One token, singular if it is a plural anatomy word; otherwise unchanged. */
+export function singularBodyToken(tok) {
+  if (IRREGULAR_PLURALS[tok]) return IRREGULAR_PLURALS[tok];
+  if (tok.length > 3 && tok.endsWith('s') && BODY_NOUNS.has(tok.slice(0, -1))) return tok.slice(0, -1);
+  return tok;
+}
+
+/**
+ * Fold plural anatomy words (and "both [of] [your] X") onto the singular
+ * phrasing the intent table is written in.
+ * @returns {{text:string, plural:boolean}}
+ */
+export function singularizeBodyText(text) {
+  let plural = false;
+  let t = ` ${String(text || '')} `;
+  // "both of your arms" / "both your arms" / "both arms" → "your arm".
+  t = t.replace(/ both (?:of )?(?:your |the |my )?/g, () => { plural = true; return ' your '; });
+  const toks = t.trim().split(/\s+/).filter(Boolean).map(tok => {
+    const single = singularBodyToken(tok);
+    if (single !== tok) plural = true;
+    return single;
+  });
+  return { text: toks.join(' '), plural };
+}
+
 function words(s) {
   return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
 }
@@ -140,8 +173,10 @@ export const BODY_INTENTS = [
   { phrases: ['nod', 'shake your head', 'move your head', 'tilt your head'], role: 'head', verb: 'open', expand: ['head', 'neck', 'nod'] },
 
   { phrases: ['wave at me', 'wave at us', 'wave hello', 'wave hi', 'wave', 'say hi', 'say hello', 'greet us', 'greet me'], role: 'arm', verb: 'open', expand: ['wave', 'arm', 'hand', 'raise', 'greet'] },
-  { phrases: ['raise your arm', 'raise your hand', 'lift your arm', 'lift your hand', 'put your arm up', 'put your hand up', 'reach for me', 'reach out'], role: 'arm', verb: 'open', expand: ['arm', 'hand', 'raise', 'lift'] },
-  { phrases: ['lower your arm', 'lower your hand', 'put your arm down', 'put your hand down', 'drop your arm'], role: 'arm', verb: 'close', expand: ['arm', 'hand', 'lower', 'down'] },
+  // Plurals ("raise your arms") are folded onto these by singularizeBodyText()
+  // before matching, so only the singular form is listed.
+  { phrases: ['raise your arm', 'raise your hand', 'lift your arm', 'lift your hand', 'put your arm up', 'put your hand up', 'raise your arm up', 'lift your arm up', 'raise the arm', 'lift the arm', 'arm up', 'hand up', 'reach for me', 'reach out'], role: 'arm', verb: 'open', expand: ['arm', 'hand', 'raise', 'lift'] },
+  { phrases: ['lower your arm', 'lower your hand', 'put your arm down', 'put your hand down', 'drop your arm', 'drop your hand', 'lower the arm', 'arm down', 'hand down'], role: 'arm', verb: 'close', expand: ['arm', 'hand', 'lower', 'down'] },
 
   { phrases: ['take a bow', 'bow to me', 'bow to us', 'bow', 'bend over', 'lean forward', 'lean in', 'lean toward me'], role: 'torso', verb: 'open', expand: ['bow', 'waist', 'lean', 'forward'] },
   { phrases: ['stand up', 'straighten up', 'sit up', 'lean back', 'stand back up'], role: 'torso', verb: 'close', expand: ['stand', 'waist', 'upright', 'back'] },
@@ -164,7 +199,7 @@ export const BODY_INTENTS = [
 // Longest phrase first so a specific intent is never shadowed by a generic one
 // that happens to be a substring of it ("move your head" vs "move").
 const SORTED_INTENTS = BODY_INTENTS
-  .flatMap(intent => intent.phrases.map(phrase => ({ ...intent, phrase })))
+  .flatMap(intent => intent.phrases.map(phrase => ({ ...intent, phrase, matchPhrase: singularizeBodyText(phrase).text })))
   .sort((a, b) => b.phrase.length - a.phrase.length);
 
 /** Sides a guest can name explicitly, independent of how the part is named. */
@@ -179,16 +214,20 @@ function spokenSide(text) {
  * @returns {{role:string, verb:string, side:string|null, phrase:string, expand:string[], anyMovable:boolean}|null}
  */
 export function interpretBodyIntent(text) {
-  const padded = ` ${String(text || '')} `;
+  const { text: singular, plural } = singularizeBodyText(text);
+  const padded = ` ${singular} `;
   for (const intent of SORTED_INTENTS) {
-    if (padded.includes(` ${intent.phrase} `)) {
+    // Compare against the folded phrase too: the input is singularized, so a
+    // table phrase written in the plural ("flap your wings") must be as well.
+    if (padded.includes(` ${intent.matchPhrase} `)) {
       return {
         role: intent.role,
         verb: intent.verb,
         side: spokenSide(padded),
         phrase: intent.phrase,
         expand: intent.expand || [],
-        anyMovable: intent.anyMovable === true
+        anyMovable: intent.anyMovable === true,
+        plural
       };
     }
   }
@@ -243,7 +282,22 @@ export function partsForIntent(intent, parts, brokenPartIds = []) {
     if (right.length === 1) pool = right;
   }
 
+  // A plural order ("raise your arms") asks for every limb, but the executor
+  // drives exactly one part per order — and firing two limbs at once is how a
+  // shared rail blows. So a plural with several equal candidates is not a
+  // question back to the guest: take one, deterministically — right side,
+  // then left, then unsided, lowest part id within each.
+  if (pool.length > 1 && intent.plural) {
+    const sideRank = s => (s === 'right' ? 0 : s === 'left' ? 1 : 2);
+    const idOf = r => String(r.part.partId ?? r.part.id);
+    const sorted = [...pool].sort((a, b) =>
+      (sideRank(a.side) - sideRank(b.side)) ||
+      (Number(idOf(a)) - Number(idOf(b))) ||
+      idOf(a).localeCompare(idOf(b)));
+    return { candidates: [sorted[0]], role: intent.role, alsoMatched: sorted.slice(1) };
+  }
+
   return { candidates: pool, role: intent.role };
 }
 
-export default { MOTION_TYPES, inferPartRoles, interpretBodyIntent, partsForIntent, BODY_INTENTS };
+export default { MOTION_TYPES, inferPartRoles, interpretBodyIntent, partsForIntent, singularizeBodyText, singularBodyToken, BODY_INTENTS };
