@@ -18,15 +18,23 @@ Ten scenes, named `<Character>: <Title>`, ids 1–10, each with a one-line `desc
   a light or two; safe to rotate while lurking. Mina's lurk pieces are the exception: they carry one of her three
   Romanian lullabies as a pre-rendered `audio` step (generate them with eleven_v3 and the `[sings]` tag from the
   bible lyrics, upload to the audio library with `POST /audio-library/api/upload`, tag `mina-lullaby`).
-- 2 **wake greetings** — 5–12 s: a movement burst plus one short line that invites the guest to speak (the wake
-  path can play one before the AI conversation starts).
-- 4 **story pieces** — 45–120 s: music bed or ambience from the audio library (concurrent), movement that follows
+- 1 **wake greeting** — 5–12 s: a movement burst plus one short line that invites the guest to speak (the wake
+  path can play it before the AI conversation starts).
+- 3 **story pieces** — 45–120 s: music bed or ambience from the audio library (concurrent), movement that follows
   the music and the lines, two to five `sayThis` lines in the bible's voice, lights, and where the story calls for
   it a Goblin cast (`goblin-video` with `goblinName: "Goblin 1|2|3"` and a clip from that Goblin's reel manifest,
-  `waitMs` for the clip length). Each story piece advances this character's thread from the bible.
-- 2 **cross-castle send-offs** — 20–40 s: lines that hand the guest to another character (Dragomir → Orlok/Mina,
+  `waitMs` for the clip length). Each story piece advances this character's thread from the bible. The operator
+  wants the animatronics to trigger each other: where the story calls for it, use `fleet-say {node:'<Character>',
+  text}` for a one-line answer from another character in their own voice, or `fleet-scene` to call one of their
+  short pieces (the step skips a node that is busy with a guest, so write the piece to stand on its own too).
+- 1 **cross-castle send-off** — 20–40 s: lines that hand the guest to another character (Dragomir → Orlok/Mina,
   Renfield → Pumpkinhead, Groundbreaker → anyone, Pumpkinhead about Renfield's pumpkin sales, Mina about the
   knight, Orlok summoning), with movement toward that character's direction where the rig can.
+- 3 **event parts** (scenes 8, 9, 10) — this character's part in each of the three fleet events scripted in
+  `docs/characters/FLEET-EVENTS.md` by the fleet-event author: the ceremony, the Count's orders, and the shared
+  song (your lines, verse and chorus, are given there; implement them exactly, with the movement the script
+  describes, so the Orlok conductor can call `fleet-scene` on them with the timing it expects). Each part begins
+  with a 100 ms `wait` so the conductor's call lands cleanly and ends in your Home pose.
 
 Poses (`poses.json`): a `Home` pose; at least six `idle`-tagged poses with `weight > 0`, `holdVariance` and
 `transitionDurationMs` set, small safe moves spread across the parts the character can move; expressive poses

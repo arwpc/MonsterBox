@@ -36,6 +36,12 @@ video, rebuild the tests. Use workflows/agents/subagents, work autonomously, com
 4. Goblins: all working and running video. Goblin 1 most noticeable/clear; Goblin 2 big picture window, detail
    hard to see; Goblin 3 small vertical window on the roof. New playlists per Goblin, looped by default.
 5. Rebuild tests around the new scenes; incorporate hardware testing; update the AI config UI as needed.
+6. (Added 21:25) Have fun with the scenes and poses — animatronics can trigger each other (send messages,
+   commands); have them interact. Create three new EVENTS using scenes, the big orchestrated kind with music,
+   video and movement where they all participate: a cool ceremony; one where Orlok issues orders and the
+   animatronics interact; and one where they all try to sing the same song together. Get crazy. Run one of them
+   every half hour; animatronics and Goblins must return to their original state afterwards. Don't forget the
+   music.
 
 ## Standing rules for this mission
 
@@ -134,6 +140,18 @@ staged playlist when an offline Goblin returns, `resolveGoblin(nameOrId)` for sc
 registry, junk playlists archived. No reboots, no restarts of goblin.service, `pgrep -c mpv` discipline deferred
 to daylight.
 
+D7 **Cross-node steps and fleet events** — the scene executor gains `fleet-scene` (run scene N on node X, by
+animatronic id or character name, optional wait), `fleet-say` (a line in that node's own voice via the
+orchestration say endpoint; `all` fans out), `fleet-audio`/`fleet-stop-audio` (the same library track on one or
+every node — music beds), and `fleet-mode` (`hold`/`release` over every node's lurk service so idle loops, head
+tracking and background music step aside for the show and come back afterwards). Scenes can therefore trigger
+each other. The three events are conductor scenes hosted on Orlok (ids 101–103: "The Lighting of the Castle"
+ceremony, "The Count's Orders", "One Song for Warner Castle"), composed of per-character event parts (each
+character's scenes 8–10) plus Goblin casts (play-once, so the reels resume) and a shared music bed on every node.
+`scripts/fleet-events/run-next.mjs` rotates them, refuses during quiet hours or while any node is in a guest
+conversation, and runs from the managed crontab every 30 minutes in show hours (`*/30 17-22 * * *`, visible on
+/schedule, operator-adjustable). Every event ends with `fleet-mode release`; the runner also releases on failure.
+
 D6 **Tests/UI** — unit + system tests follow the new services; browser specs updated for the new scenes;
 hardware tests per character part list; AI settings page shows live conversation latency, duplex mode, and
 agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
@@ -147,9 +165,30 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
 | 1c | persona-writer (fable) | ElevenLabs agents (REST), `config/elevenlabs/agents/*.json` snapshots, `docs/characters/` story bible | D2 applied to all six, simulate-conversation transcripts show ≤ 25-word in-character replies with cross-references, measured TTFB per character |
 | 1d | goblin-engineer (opus) | `services/goblinManagerService.js`, `services/goblinPlaylistService.js`, `routes/videoLibrary.js`, `routes/goblinManagement.js`, `data/goblins.json`, `data/goblin-playlists.json`, `scripts/goblins/*`, their tests | D5: reels built, Goblins 2 and 3 looping and proven by two reads 10 s apart, keep-alive running, resolver in place |
 | 2 | lead | integration, gate, deploy to live nodes, restart, measured conversation proof on ≥ 2 nodes | conversation symptoms re-measured on live agents |
-| 3 | scene-author ×6 (opus, ≤ 3 concurrent) | `data/character-N/poses.json`, `scenes.json`, audio files for that character | validated, dry-run on the node, pushed, locks refreshed |
+| 1e | scene-infra engineer (opus) | `brief-scene-infra.md` file set + the fleet step types (D7) | askAI single-play, audio > 30 s, TTS cache, validator, replace endpoints, casts by name, fleet steps, tests green |
+| 3a | fleet-event author (fable) | `brief-fleet-events.md`: event scripts, Orlok conductor scenes 101–103, `scripts/fleet-events/*`, crontab entry, song lyrics + music choice | the three scripts written before the scene authors start their event parts; conductors dry-run clean |
+| 3b | scene-author ×6 (opus, ≤ 3 concurrent) | `data/character-N/poses.json`, `scenes.json`, audio files for that character | validated, dry-run on the node, pushed, locks refreshed |
+| 3c | fleet-event author (same) | end-to-end rehearsal of each event at 20 % (or dry at night), state-restore proof on every node and Goblin, schedule armed | three events proven, rotation running |
 | 4 | test-engineer (sonnet/opus) + ui-engineer | `tests/**`, `views/ai-settings/**`, `public/js/ai-settings*.js` | suites green against the new scenes; hardware tests per character |
 | 5 | docs-scribe (sonnet) + lead | README, CHANGELOG, KNOWN-BUGS, docs, memory, version, locks, final deploy + fleet verify | tagged v10.7.0 |
+
+## Phase 2 checklist (lead, after 1a–1d land)
+
+1. Integrate: read each `report-*.md`, resolve cross-worker hooks (activity callback → lurk service; resolver →
+   executor), run `npm run gate`, `npm run test:unit`, targeted system suites (never `orchestration.test.js`
+   against :3100), commit per worker with their file lists.
+2. Restart Orlok, read `/var/log/monsterbox.err` from the boot boundary, confirm: boots into `lurking` (idle loop
+   + head tracking + music supervisor; nothing speaks), `ai-on` → `awake` with per-capability log, inactivity →
+   `lurking`, conversation latency lines present.
+3. Fleet: `rsync -rnc` preview per node (deploy pushes `data/characters.json`, `config/*`, audio library — check
+   nothing node-local would be clobbered), `scripts/deploy-to-animatronic.sh` per live node (1, 4, 5, 6), restart,
+   `curl -sk /health` each, grep each node for the new symbols (`lurkStateService`, `resolveGoblin`,
+   duplex-mode log line), then set per-node runtime state: callouts OFF, lurk scenes OFF, mute cleared,
+   `lurk-state.json` present. Mina skipped (off); note it.
+4. Measure, silently where quiet hours apply: on Orlok (sink muted at device level) open a headless session,
+   inject three text turns, record first-audio latency from the new instrumentation and the agent's own
+   `conversation_turn_metrics`; on one XVF3800 peer at 20 % volume in daylight, a real spoken exchange with an
+   interruption. Record numbers in the status log; mark acoustic items UNPROVEN until then.
 
 ## Status log (append, newest last)
 

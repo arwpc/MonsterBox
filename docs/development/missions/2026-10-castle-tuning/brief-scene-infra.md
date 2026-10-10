@@ -40,6 +40,22 @@ Deliver, each proven by a tool result:
    over the registry; keep the proof-of-playing and return-to-queue behaviour; accept `waitMs` on the step to
    hold the scene for the clip (default 0).
 7. **Queue start-config accepts both `scene_id` and `sceneId`** (the dashboard sends the latter).
+9. **Cross-node step types (mission decision D7)** so scenes can trigger each other and the fleet events can be
+   conductor scenes: `fleet-scene {node (animatronic id or character name), scene (id or name), wait (default
+   true), timeoutMs}` runs that scene on that node (`POST https://<ip>:3000/scenes/api/<id>/play?characterId=N`,
+   or the local executor when the node is this one; resolve nodes through the orchestration node registry so a
+   discovered IP wins over the static one; skip an offline node fast with a warning, like
+   `scripts/yard-theater/perform.mjs` does with its preflight); `fleet-say {node|'all', text, wait}` through the
+   orchestration say path in that node's own voice; `fleet-audio {node|'all', audioId, volume, loop}` and
+   `fleet-stop-audio {node|'all'}` through the orchestration play-audio/stop-audio paths (library ids are the same
+   on every node because the audio library deploys); `fleet-mode {mode:'hold'|'release', node|'all'}` calling
+   `POST /conversation/api/lurk/event-hold` / `event-release` on each node (the lurk-engineer is adding them;
+   until they exist, log and continue). All four are non-fatal, honour `concurrent`, and refuse (warn + skip) a
+   node that reports an active guest conversation unless `force:true`. Add them to the schema enum, to
+   `tests/pact` `KNOWN_STEP_TYPES`, to the validator (node must exist in `config/animatronics.json`, scene must
+   exist in that character's file when it is in this repo), and to the Studio's step palette if that is a small
+   change in `views/scenes/studio.ejs` (otherwise note it for the UI pass). Call the orchestration service's
+   exported functions rather than re-implementing HTTP; do not edit that service.
 8. **Tests**: unit tests for the validator (fixtures per hazard rule), the cache, the askAI single-play, the audio
    timeout derivation, the replace endpoints (lock refusal → 423); keep `tests/unit/scene-step-resilience.test.js`
    and `tests/unit/fleet-honesty.test.js` green (they pin source shapes — update them deliberately if you change
