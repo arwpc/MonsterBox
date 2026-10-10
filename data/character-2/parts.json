@@ -4,19 +4,19 @@
     "name": "Jaw",
     "type": "servo",
     "pin": null,
-    "description": "Jaw servo for mouth movement",
+    "description": "Jaw servo for mouth movement PCA9685 channel 15 (operator-traced 2026-10-10).",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 11,
+      "channel": 15,
       "inputGainPercent": 137
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-09-27T21:44:44.128Z"
+    "updated": "2026-10-10T20:37:47.640Z"
   },
   {
     "id": "2",
@@ -41,35 +41,35 @@
     "name": "Eye",
     "type": "servo",
     "pin": null,
-    "description": "Eye movement servo",
+    "description": "Eye movement servo PCA9685 channel 11 (operator-traced 2026-10-10).",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 3
+      "channel": 11
     },
     "created": "2025-10-12T06:00:02.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-09-25T20:17:29.981Z"
+    "updated": "2026-10-10T20:38:02.509Z"
   },
   {
     "id": "10",
     "name": "Servo Channel Laser",
     "type": "light",
     "pin": null,
-    "description": "Eye LED/laser switched by PCA9685 channel 15 (operator-confirmed harness 2026-09-25: LED wired to the channel's signal and ground, no PWM dimming - driven full on / full off). Was ch0 before the 2026-08-22 rewire plan was physically landed.",
+    "description": "Eye laser on PCA9685 channel 3 (on/off power only). Operator-traced wiring 2026-10-10.",
     "config": {
       "controllerType": "pca9685",
       "address": 64,
-      "channel": 15,
+      "channel": 3,
       "brightness": 100
     },
     "created": "2026-03-28T23:00:00.000Z",
     "enabled": true,
     "modelId": "relay_aceirmc_3v_1ch",
-    "updated": "2026-09-25T20:19:08.581Z"
+    "updated": "2026-10-10T21:08:27.231Z"
   },
   {
     "id": "4",
@@ -82,17 +82,18 @@
       "controlBoard": "MDD10A",
       "maxExtension": 15000,
       "maxRetraction": 15000,
-      "modelId": "1759010196402"
+      "modelId": "1759010196402",
+      "notes": "Cytron MDD10A: DIR=GPIO17, PWM=GPIO18. Operator-traced wiring 2026-10-10."
     },
     "created": "2025-10-12T06:00:03.000Z",
     "enabled": true,
     "controlBoard": "MDD10A",
-    "directionPin": 5,
-    "pwmPin": 13,
+    "directionPin": 17,
+    "pwmPin": 18,
     "maxExtension": 15000,
     "maxRetraction": 15000,
     "modelId": "1759010196402",
-    "updated": "2026-09-25T23:23:34.254Z"
+    "updated": "2026-10-10T21:08:27.231Z"
   },
   {
     "id": "5",
