@@ -173,21 +173,33 @@ router.post('/api/jaw-animation/:characterId', async (req, res) => {
         });
       }
 
-      if (!selectedServo.calibrated) {
-        return res.status(400).json({
-          success: false,
-          error: 'Selected servo must be calibrated before use'
-        });
+      // An uncalibrated servo is DRIVEN through the fallback window, never refused (operator ruling,
+      // uncalibrated-servos-drive-not-refuse). Refusing the SAVE here left Mina's jaw page unable to save at
+      // all on 2026-10-10 ("Selected servo must be calibrated before use") while the jaw itself worked
+      // through the runtime overlay. Keep the jaw window the caller or the existing config carries, and say
+      // in the answer that calibration will refine it.
+      let calibrationNote = null;
+      if (selectedServo.calibrated) {
+        jawConfig.minAngle = selectedServo.minAngle;
+        jawConfig.maxAngle = selectedServo.maxAngle;
+      } else {
+        const hasWindow = Number.isFinite(Number(jawConfig.minAngle)) && Number.isFinite(Number(jawConfig.maxAngle));
+        if (!hasWindow) {
+          const existing = await jawAnimationService.readJawConfig(characterId).catch(() => null);
+          if (existing && Number.isFinite(Number(existing.minAngle)) && Number.isFinite(Number(existing.maxAngle))) {
+            jawConfig.minAngle = existing.minAngle;
+            jawConfig.maxAngle = existing.maxAngle;
+          }
+        }
+        calibrationNote = `Servo ${selectedServo.id} is not calibrated: the jaw keeps its configured window`
+          + ` (${jawConfig.minAngle ?? '?'}–${jawConfig.maxAngle ?? '?'}°). Calibrate it on /setup/calibration to refine.`;
+        console.warn(`[jaw-animation] character ${characterId}: ${calibrationNote}`);
       }
-
-      // Use servo calibration data
-      jawConfig.minAngle = selectedServo.minAngle;
-      jawConfig.maxAngle = selectedServo.maxAngle;
     }
 
     await jawAnimationService.writeJawConfig(characterId, jawConfig);
 
-    res.json({ success: true, message: 'Jaw animation configuration saved' });
+    res.json({ success: true, message: 'Jaw animation configuration saved', warning: calibrationNote || undefined });
   } catch (error) {
     console.error('Error saving jaw animation config:', error);
     res.status(statusFor(error)).json({ success: false, error: error.message });
