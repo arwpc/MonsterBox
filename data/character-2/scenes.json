@@ -1,73 +1,343 @@
 [
   {
     "id": 1,
-    "name": "Coffin Awakening",
+    "name": "Mina: The Long Road",
+    "description": "Lurk (~45 s, no speech): the rose wakes in slow breaths and Mina sings the waiting song (Pe drumul lung) to the empty road, unaware anyone is listening; the rose goes out with the last note.",
     "steps": [
       {
-        "type": "linear-actuator",
-        "partId": "4",
-        "direction": "extend",
-        "speed": 100,
-        "duration": 8500
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2500
       },
       {
-        "type": "sayThis",
-        "text": "I have risen from eternal slumber. The darkness calls, and I answer!"
+        "type": "wait",
+        "duration": 1800
       },
       {
-        "type": "servo",
-        "partId": "1",
-        "angle": 84,
-        "duration": 1000
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 1500
       },
       {
-        "type": "servo",
-        "partId": "2",
-        "angle": 90,
-        "duration": 1000
+        "type": "wait",
+        "duration": 1200
       },
       {
-        "type": "linear-actuator",
-        "partId": "4",
-        "direction": "retract",
-        "speed": 100,
-        "duration": 8500
+        "type": "audio",
+        "audioId": "mina-lullaby-drumul",
+        "volume": 75,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 4000
+      },
+      {
+        "type": "wait",
+        "duration": 1800
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2500
+      },
+      {
+        "type": "wait",
+        "duration": 2200
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 5000
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 1800
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 3500
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "wait",
+        "duration": 1629
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 3000
+      },
+      {
+        "type": "pose",
+        "poseId": 1
       }
     ],
-    "created": "2025-10-30T04:03:34.845Z"
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
   },
   {
     "id": 2,
-    "name": "Interactive Conversation",
+    "name": "Mina: Come, Morning",
+    "description": "Lurk (~42 s, no speech): a flicker, a long glow, then the morning song (Vino, zori), her nightly choice of the morning, under slow blinks of the rose; one last long glow and dark.",
     "steps": [
       {
-        "type": "askAI",
-        "question": "What ancient curse binds you to this coffin, and what must be done to set you free?"
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 300
       },
       {
-        "type": "servo",
-        "partId": "3",
-        "angle": 90,
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 3500
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "audio",
+        "audioId": "mina-lullaby-zori",
+        "volume": 75,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 3000
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 1500
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 4500
+      },
+      {
+        "type": "wait",
+        "duration": 2200
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2200
+      },
+      {
+        "type": "wait",
+        "duration": 1800
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 3000
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 1500
+      },
+      {
+        "type": "wait",
+        "duration": 1009
+      },
+      {
+        "type": "wait",
         "duration": 1000
       },
       {
-        "type": "servo",
-        "partId": "3",
-        "angle": 90,
-        "duration": 1000
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 4000
       },
       {
-        "type": "sayThis",
-        "text": "Thank you for asking. My story is long and filled with sorrow."
+        "type": "pose",
+        "poseId": 1
       }
     ],
-    "created": "2025-10-30T04:05:06.388Z",
-    "updated": "2025-10-31T16:24:22.434Z"
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
   },
   {
     "id": 3,
-    "name": "Full Performance Spectacular",
+    "name": "Mina: Someone Above",
+    "description": "Wake greeting (~9 s): the coffin creaks, the rose kindles, and Mina whispers up to the guest, inviting them to tell her about the sky. The rose stays lit for the conversation.",
     "steps": [
+      {
+        "type": "audio",
+        "audioId": "old-wardrobe-door-squeaking-sound",
+        "volume": 55,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 2
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Someone is there... above me. Come closer, and tell me: is the sky clear tonight?"
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "name": "Mina: The Dream-Gift",
+    "description": "Story (~75 s): over the music box Mina tells the guest she dreamed of them, sees the floating lady from her dream in the big window, gives a kind omen, and asks the Count why the corn stopped moving; he answers from the hall.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Mina",
+        "force": true,
+        "maxMs": 150000,
+        "reason": "mina-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "haunting-music-box-melody",
+        "volume": 20,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2500
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "pose",
+        "poseId": 2
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] You came down so quietly. I dreamed of you last night... I am almost sure it was you."
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
       {
         "type": "light",
         "partId": "5",
@@ -76,63 +346,1005 @@
         "duration": 0
       },
       {
-        "type": "linear-actuator",
-        "partId": "4",
-        "direction": "extend",
-        "speed": 100,
-        "duration": 8500
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Floatinglady.mp4",
+        "loop": false,
+        "waitMs": 0,
+        "concurrent": true
       },
       {
         "type": "sayThis",
-        "text": "Behold! The full power of Mina awakens! Witness the spectacle of darkness!"
+        "text": "[whispers] In my dream a lady floated over the corn, and the corn stopped moving. Look, in the window. There she is."
       },
       {
-        "type": "servo",
-        "partId": "2",
-        "angle": 80,
-        "duration": 1000
+        "type": "wait",
+        "duration": 2500
       },
       {
-        "type": "servo",
-        "partId": "2",
-        "angle": 110,
-        "duration": 1000
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
       },
       {
-        "type": "askAI",
-        "question": "Tell me about your most terrifying Halloween memory."
+        "type": "wait",
+        "duration": 500
       },
       {
         "type": "light",
         "partId": "5",
         "state": "on",
         "brightness": 100,
-        "duration": 0,
+        "duration": 1200
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[breathes] That is an omen, but a kind one. Someone who loves you is thinking of you, right now."
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "pose",
+        "poseId": 3
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "fleet-say",
+        "node": "Orlok",
+        "text": "[Romanian accent] [breathes] The corn listens to your Lord, doamna mea. Nothing in my fields moves... without my leave.",
+        "wait": true
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "sayThis",
+        "text": "[sighs] He always says that. When you climb back up, look for me: is the corn still?"
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 1500
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 3000
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Mina"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Mina",
+        "reason": "mina-scene"
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "name": "Mina: The Waiting",
+    "description": "Story (~70 s): Mina tells of waiting every night for someone who promised to come home, and of choosing the morning; the moon rises in the little window; her knight answers from the hill that the night is quiet; she warns the guest about Renfield's paper.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Mina",
+        "force": true,
+        "maxMs": 140000,
+        "reason": "mina-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "whispers-of-the-haunted-sounds",
+        "volume": 18,
+        "jawSync": false,
         "concurrent": true
       },
       {
-        "type": "askAI",
-        "question": "Who is Orlok and what has he done to you? "
-      }
-    ],
-    "created": "2025-10-30T04:13:21.743Z",
-    "updated": "2025-10-31T16:25:45.552Z"
-  },
-  {
-    "id": 100,
-    "name": "Halloween Audio Loop - Coffin",
-    "loop": true,
-    "steps": [
-      {
-        "type": "audio",
-        "audioFile": "ea647464-07a7-43ed-8693-e324d63e0e81.mp3",
-        "volume": 80
+        "type": "wait",
+        "duration": 2000
       },
       {
-        "type": "delay",
-        "duration": 277000
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 4000
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 2
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Every night I wait for someone who promised to come home. Every night the long road stays empty."
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[exhales] I could sleep forever down here. Every night I choose the morning instead. Every single night."
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 3",
+        "videoId": "Moon.mp4",
+        "loop": false,
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Is that the moon, in the little window? Tell me what color it is tonight. I have forgotten."
+      },
+      {
+        "type": "audio",
+        "audioId": "whispers-in-the-dark",
+        "volume": 16,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 4000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "fleet-say",
+        "node": "Sir Dragomir",
+        "text": "[Romanian accent] My lady — the road is empty, the night is quiet. Sir Dragomir stands. Așa.",
+        "wait": true
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "sayThis",
+        "text": "[breathes] He always answers. And you: Renfield at the road will offer you paper. Sign nothing."
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2000
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 4000
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Mina",
+        "reason": "mina-scene"
       }
     ],
-    "created": "2025-10-31T21:45:00.000Z"
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "name": "Mina: The Knight on the Hill",
+    "description": "Story (~100 s): Mina speaks of the knight on the hill who barred the door for her unasked, and of the Count who calls him his; the Count answers from the hall; she sings the knight her lullaby (Nani, nani) while sirens sway in the big window, and sends the guest up the hill.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Mina",
+        "force": true,
+        "maxMs": 170000,
+        "reason": "mina-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "whispers-in-the-dark",
+        "volume": 18,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 1500
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "pose",
+        "poseId": 2
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] There is a knight on the hill who never sleeps. He barred the door for me. Nobody asked him to."
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "pose",
+        "poseId": 3
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[sighs] The Count says the knight is his. The knight says he is mine. Neither of them asks me."
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "fleet-say",
+        "node": "Orlok",
+        "text": "[Romanian accent] [breathes] The knight is mine by covenant, doamna mea. His heart... that, your Lord never owned.",
+        "wait": true
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] When the knight grows tired, I sing to him. Listen... softly now."
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Pha Siren Sirenssway Win H.mp4",
+        "loop": false,
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "audio",
+        "audioId": "mina-lullaby-nani",
+        "volume": 75,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 3000
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2000
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 4000
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 3000
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2000
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 4000
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "wait",
+        "duration": 2164
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Go up the hill and tell Sir Dragomir the night was quiet. He will pretend not to smile."
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2500
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 3500
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Mina",
+        "reason": "mina-scene"
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 7,
+    "name": "Mina: Up to the Knight",
+    "description": "Send-off (~32 s): Mina sends the guest up the hill to Sir Dragomir with word that the night was quiet, and nothing for the Count; the knight hails them from the hill; the rose fades out.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Mina",
+        "force": true,
+        "maxMs": 90000,
+        "reason": "mina-scene"
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] You should go now, before the cold finds you. Climb the hill. My knight is waiting for you."
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[breathes] Tell Sir Dragomir the night was quiet. And if you see the Count... tell him nothing of me."
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "fleet-say",
+        "node": "Sir Dragomir",
+        "text": "[Romanian accent] Lantern-bearer! Up here — the hill is this way. Walk wide of the patch.",
+        "wait": true
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Come back tomorrow, and tell me about the sky."
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2500
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Mina",
+        "reason": "mina-scene"
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 8,
+    "name": "Mina: The Voice Below",
+    "description": "Fleet event 1 (The Lighting of the Castle, ~30 s): the Burning Rose fades up, her voice rises from below, she sings two lines of the lullaby and speaks to her knight, blinking once between lines; rose off, Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] I hear you all. Even down here, I hear everything."
+      },
+      {
+        "type": "wait",
+        "duration": 3083
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[sings] Nani, nani, puiul meu... doarme-n leagăn, ușurel..."
+      },
+      {
+        "type": "wait",
+        "duration": 3083
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Keep the dark company, my knight. I am listening."
+      },
+      {
+        "type": "wait",
+        "duration": 3083
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 9,
+    "name": "Mina: Sing the House to Order",
+    "description": "Fleet event 2 (The Count's Orders, ~34 s): the rose lit, Mina answers the Count softly and sings the lullaby under three slow blinks, one long blink, then quiets the whole house; rose off, Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] As you wish, my lord. [sings] Nani, nani, puiul meu... doarme-n leagăn, ușurel... vântul cântă pe la geam...",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 3300
+      },
+      {
+        "type": "wait",
+        "duration": 2388
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 2388
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 2388
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] There. Now they are quiet. Even the giant. Even you."
+      },
+      {
+        "type": "wait",
+        "duration": 8065
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 10,
+    "name": "Mina: The Bridge",
+    "description": "Fleet event 3 (One Song for Warner Castle, ~30 s): the rose lights with her first note and blinks on each 'nani' as she teaches the house her lullaby; she waits 9 s while the others try it, laughs 'close enough', calls for the loud chorus; rose off, Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Now you. Softly, all of you. [sings] Nani, nani, puiul meu... doarme-n leagăn, ușurel...",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 4600
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 350
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 250
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 1400
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 250
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 8052
+      },
+      {
+        "type": "wait",
+        "duration": 9000
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Close enough. [giggles] Again, all of us. Loud this time."
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "light",
+        "partId": "5",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
   }
 ]

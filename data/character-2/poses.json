@@ -3,182 +3,273 @@
   "poses": [
     {
       "id": 1,
-      "name": "Rest",
-      "category": "idle",
+      "name": "Home",
+      "category": "fragment",
       "tags": [
-        "idle",
-        "home"
+        "home",
+        "reset"
       ],
-      "weight": 20,
-      "holdVariance": 1200,
-      "transitionProfile": "ease_in_out",
+      "description": "The Burning Rose dark. Every scene and event part ends here.",
       "parts": [
         {
-          "partId": 1,
-          "type": "servo",
+          "partId": 5,
+          "type": "light",
           "target": {
-            "angleDeg": 32
-          }
-        },
-        {
-          "partId": 2,
-          "type": "servo",
-          "target": {
-            "angleDeg": 114
+            "action": "turnOff",
+            "state": "off",
+            "brightness": 100,
+            "duration": 0
           }
         }
       ],
-      "created": "2026-08-31T02:45:00.000Z",
-      "notes": "Canonical safe home for Mina. Jaw shut, neck centred. Both angles well inside the measured windows (jaw 28-84, neck 48-180), so this is safe to snap to from any state."
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z"
     },
     {
       "id": 2,
-      "name": "Listening At The Wall",
-      "category": "idle",
+      "name": "Rose Kindled",
+      "category": "scene",
       "tags": [
-        "idle",
-        "listen"
+        "light",
+        "wake"
       ],
-      "weight": 15,
-      "holdVariance": 1200,
-      "transitionProfile": "ease_in_out",
+      "description": "The rose lit and left burning (latched on) while she speaks.",
       "parts": [
         {
-          "partId": 1,
-          "type": "servo",
+          "partId": 5,
+          "type": "light",
           "target": {
-            "angleDeg": 32
-          }
-        },
-        {
-          "partId": 2,
-          "type": "servo",
-          "target": {
-            "angleDeg": 60
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 0
           }
         }
       ],
-      "created": "2026-08-31T02:45:00.000Z",
-      "notes": "Turned toward the wall she listens through. Jaw shut - she is taking sound in, not giving it."
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z"
     },
     {
       "id": 3,
-      "name": "Speaking Softly",
-      "category": "speech",
+      "name": "Rose Ember",
+      "category": "scene",
       "tags": [
-        "speech",
-        "talk"
+        "light"
       ],
-      "weight": 12,
-      "holdVariance": 1200,
-      "transitionProfile": "ease_in_out",
+      "description": "One soft pulse of the rose, 0.8 s, then dark.",
       "parts": [
         {
-          "partId": 1,
-          "type": "servo",
+          "partId": 5,
+          "type": "light",
           "target": {
-            "angleDeg": 56
-          }
-        },
-        {
-          "partId": 2,
-          "type": "servo",
-          "target": {
-            "angleDeg": 114
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 800
           }
         }
       ],
-      "created": "2026-08-31T02:45:00.000Z",
-      "notes": "Jaw part-open for ordinary speech. Mid-window so the jaw never reaches either stop while talking."
-    },
-    {
-      "id": 4,
-      "name": "Whisper",
-      "category": "speech",
-      "tags": [
-        "speech",
-        "whisper"
-      ],
-      "weight": 10,
-      "holdVariance": 1200,
       "transitionProfile": "ease_in_out",
-      "parts": [
-        {
-          "partId": 1,
-          "type": "servo",
-          "target": {
-            "angleDeg": 38
-          }
-        },
-        {
-          "partId": 2,
-          "type": "servo",
-          "target": {
-            "angleDeg": 60
-          }
-        }
-      ],
-      "created": "2026-08-31T02:45:00.000Z",
-      "notes": "Barely voiced, close to the wall - matches her whisper register. Jaw only just off its shut position."
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z"
     },
     {
-      "id": 5,
-      "name": "The Long Breath",
+      "id": 10,
+      "name": "Idle: Ember Breath",
       "category": "idle",
       "tags": [
         "idle",
-        "breath"
+        "light"
       ],
-      "weight": 8,
-      "holdVariance": 1200,
-      "transitionProfile": "ease_in_out",
+      "description": "The rose glows for a slow breath (1.5 s), then dark.",
       "parts": [
         {
-          "partId": 1,
-          "type": "servo",
+          "partId": 5,
+          "type": "light",
           "target": {
-            "angleDeg": 56
-          }
-        },
-        {
-          "partId": 2,
-          "type": "servo",
-          "target": {
-            "angleDeg": 168
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 1500
           }
         }
       ],
-      "created": "2026-08-31T02:45:00.000Z",
-      "notes": "Head turned away, jaw slack. The rationed air of the coffin."
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z",
+      "weight": 10,
+      "holdVariance": 2000,
+      "transitionDurationMs": 1500
     },
     {
-      "id": 6,
-      "name": "Startled",
-      "category": "reaction",
+      "id": 11,
+      "name": "Idle: Flicker",
+      "category": "idle",
       "tags": [
-        "reaction"
+        "idle",
+        "light"
       ],
-      "weight": 6,
-      "holdVariance": 1200,
-      "transitionProfile": "ease_in_out",
+      "description": "A quick flicker of the rose (0.3 s), as if something passed the coffin.",
       "parts": [
         {
-          "partId": 1,
-          "type": "servo",
+          "partId": 5,
+          "type": "light",
           "target": {
-            "angleDeg": 78
-          }
-        },
-        {
-          "partId": 2,
-          "type": "servo",
-          "target": {
-            "angleDeg": 168
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 300
           }
         }
       ],
-      "created": "2026-08-31T02:45:00.000Z",
-      "notes": "A visitor arrives unannounced. Jaw wide but still 6 degrees short of the measured maximum."
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z",
+      "weight": 6,
+      "holdVariance": 1500,
+      "transitionDurationMs": 800
+    },
+    {
+      "id": 12,
+      "name": "Idle: Heartbeat",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "light"
+      ],
+      "description": "One short pulse (0.6 s), like a slow heart below the floor.",
+      "parts": [
+        {
+          "partId": 5,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 600
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z",
+      "weight": 9,
+      "holdVariance": 1500,
+      "transitionDurationMs": 1000
+    },
+    {
+      "id": 13,
+      "name": "Idle: Slow Glow",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "light"
+      ],
+      "description": "A long, low glow (3.5 s) while she remembers something.",
+      "parts": [
+        {
+          "partId": 5,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 3500
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z",
+      "weight": 8,
+      "holdVariance": 2500,
+      "transitionDurationMs": 2000
+    },
+    {
+      "id": 14,
+      "name": "Idle: Long Remembering",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "light"
+      ],
+      "description": "The rose burns for six seconds, then goes out.",
+      "parts": [
+        {
+          "partId": 5,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 6000
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z",
+      "weight": 4,
+      "holdVariance": 3000,
+      "transitionDurationMs": 2500
+    },
+    {
+      "id": 15,
+      "name": "Idle: Candle",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "light"
+      ],
+      "description": "A candle-length glow (2.2 s).",
+      "parts": [
+        {
+          "partId": 5,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 2200
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z",
+      "weight": 7,
+      "holdVariance": 2000,
+      "transitionDurationMs": 1500
+    },
+    {
+      "id": 16,
+      "name": "Idle: Dark Rest",
+      "category": "idle",
+      "tags": [
+        "idle",
+        "light"
+      ],
+      "description": "The rose dark; she rests.",
+      "parts": [
+        {
+          "partId": 5,
+          "type": "light",
+          "target": {
+            "action": "turnOff",
+            "state": "off",
+            "brightness": 100,
+            "duration": 0
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T17:00:00.000Z",
+      "modified": "2026-10-10T17:00:00.000Z",
+      "weight": 8,
+      "holdVariance": 4000,
+      "transitionDurationMs": 2000
     }
   ],
   "templates": {}
