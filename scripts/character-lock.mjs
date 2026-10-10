@@ -66,6 +66,7 @@ async function fingerprint(characterId) {
             const full = path.join(dir, entry.name);
             if (entry.isDirectory()) {
                 if (entry.name === '.thumbs') continue; // derived cache, not config
+                if (entry.name === 'backups') continue; // node-local backups of the files above, not config
                 await walk(full);
                 continue;
             }

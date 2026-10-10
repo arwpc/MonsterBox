@@ -9,8 +9,6 @@
       "fingerprints": {
         "ai-config/stt-config.json": "bb8838556f1cb2860e4a165b8d81ac4c50ca536af7f5f928ee9d952b5135630b",
         "ai-config/tts-config.json": "a538fe654aff407af54973cc602bac2bdd6909c00f9e07530912ec13d6060619",
-        "backups/poses.pre-castle-tuning-20261010.json": "66880cc3c50db59293c18270d4b36708bc9c4f8e639fc9f889ece8542a137478",
-        "backups/scenes.pre-castle-tuning-20261010.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
         "images/pumpkinhead.jpg": "c9cf20b72654d025bac081ed931aa2437311e92e00f6e49675cea01a36ff466b",
         "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "models/led_models.json": "9b0c760af34e711e4f0bf233926f3eab68ad653688ea24cc2860fc08ba00dff1",
@@ -27,7 +25,7 @@
         "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "super-powers.json": "48f060d3b61f0ecbd5cadfdb5affdeb2a7be18351981395b6498009f92a9ea8a"
       },
-      "refreshedAt": "2026-10-10T17:58:15.137Z"
+      "refreshedAt": "2026-10-10T17:59:11.394Z"
     },
     {
       "characterId": 4,
@@ -38,8 +36,6 @@
       "fingerprints": {
         "ai-config/stt-config.json": "211d44f33a09cc072fedcd10b20fc1da41d46b8222a4711625e65e60c10178a8",
         "ai-config/tts-config.json": "a682de5368cb34406e28cb3e03450c26b7f05108fe61fa2b06c124c326e455c8",
-        "backups/poses.pre-castle-tuning-20261010.json": "7f5bb21f5f2d8deba0a6298af17c50560bbc32897e7a12fb2ccebc3d80000fd1",
-        "backups/scenes.pre-castle-tuning-20261010.json": "eba62e9df79d0cfe6d43d9fd3a155b8284b67f7925e73d6b75448a53493e5cd8",
         "characters.json": "ff5af55fbd546d8e8f8c505c71a89412730b10abf7dae8649e85adaad11271ef",
         "images/John_Hunyadi__Chronica_Hungarorum_.jpg": "d2925747cb996771581fb81c732d38a2669f97270f55f67145420637db176ec5",
         "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
@@ -52,7 +48,7 @@
         "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "super-powers.json": "6e5024b70f97d9f256f667bd5d5d1753804c698e6f5b179e1b952af25b7321ec"
       },
-      "refreshedAt": "2026-10-10T17:58:15.398Z"
+      "refreshedAt": "2026-10-10T17:59:11.630Z"
     }
   ]
 }
