@@ -191,6 +191,26 @@
             <span class="part-icon"><i class="bi bi-bullseye"></i></span> Head Tracking
           </div>
         </div>
+
+        <hr class="my-2">
+        <div class="mb-eyebrow mb-1" title="Steps that drive other animatronics in the fleet (services/scenes/fleetSteps.js)">Fleet</div>
+        <div id="fleetPalette">
+          <div class="palette-action" draggable="true" data-step-type="fleet-scene" title="Run a scene on another animatronic">
+            <span class="part-icon"><i class="bi bi-diagram-3"></i></span> Fleet Scene
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="fleet-say" title="Have another animatronic (or all) speak a line in its own voice">
+            <span class="part-icon"><i class="bi bi-megaphone"></i></span> Fleet Say
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="fleet-audio" title="Start a library track on other animatronics">
+            <span class="part-icon"><i class="bi bi-broadcast"></i></span> Fleet Audio
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="fleet-stop-audio" title="Stop audio on other animatronics">
+            <span class="part-icon"><i class="bi bi-volume-mute"></i></span> Fleet Stop Audio
+          </div>
+          <div class="palette-action" draggable="true" data-step-type="fleet-mode" title="Hold or release other animatronics' lurk loops for a fleet event">
+            <span class="part-icon"><i class="bi bi-pause-circle"></i></span> Fleet Mode
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -294,6 +314,7 @@
   var sounds = [];
   var goblins = [];
   var goblinVideos = {}; // goblinId -> { videos: [filenames], error } straight from the device
+  var fleetNodes = []; // live orchestration registry (names the fleet steps resolve)
   var poseTemplates = {};
 
   var currentSceneId = null;
@@ -408,6 +429,7 @@
       apiGet('/api/calibration/profiles').then(function(j) { calibrationProfiles = j || {}; }).catch(function() { calibrationProfiles = {}; }),
       apiGet('/api/sounds').then(function(j) { sounds = (j.success && j.sounds) ? j.sounds : []; }).catch(function() { sounds = []; }),
       apiGet('/api/goblins').then(function(j) { goblins = (j.success && j.goblins) ? j.goblins : []; }).catch(function() { goblins = []; }),
+      apiGet('/api/orchestration/nodes').then(function(j) { fleetNodes = (j && j.success && Array.isArray(j.nodes)) ? j.nodes : []; }).catch(function() { fleetNodes = []; }),
       apiGet('/setup/poses/api/templates').then(function(j) { poseTemplates = (j.success && j.templates) ? j.templates : {}; }).catch(function() { poseTemplates = {}; })
     ]).then(function() {
       renderSceneLibrary();
@@ -754,6 +776,11 @@
     'goblin-video':     { icon: 'bi-display',           label: 'Goblin Video' },
     'jaw-animation':    { icon: 'bi-lightning',         label: 'Jaw Animation' },
     'head-tracking':    { icon: 'bi-bullseye',          label: 'Head Tracking' },
+    'fleet-scene':      { icon: 'bi-diagram-3',         label: 'Fleet Scene' },
+    'fleet-say':        { icon: 'bi-megaphone',         label: 'Fleet Say' },
+    'fleet-audio':      { icon: 'bi-broadcast',         label: 'Fleet Audio' },
+    'fleet-stop-audio': { icon: 'bi-volume-mute',       label: 'Fleet Stop Audio' },
+    'fleet-mode':       { icon: 'bi-pause-circle',      label: 'Fleet Mode' },
     'part':             { icon: 'bi-wrench',            label: 'Part (Legacy)' },
     'hardware':         { icon: 'bi-cpu',               label: 'Hardware' }
   };
@@ -787,7 +814,17 @@
       case 'sensor':
         return getPartName(step.partId) + ' (wait for motion)';
       case 'goblin-video':
-        return (step.goblinId || '?') + ': ' + (step.videoId || '?');
+        return (goblinLabel(step) || '?') + ': ' + (step.videoId || '?') + (parseInt(step.waitMs, 10) > 0 ? ' (hold ' + (parseInt(step.waitMs, 10) / 1000).toFixed(1) + 's)' : '');
+      case 'fleet-scene':
+        return (step.node || '?') + ': scene ' + (step.scene != null && step.scene !== '' ? step.scene : (step.sceneId != null ? step.sceneId : (step.sceneName || '?'))) + (step.wait === false ? ' (no wait)' : '');
+      case 'fleet-say':
+        return (step.node || '?') + ': ' + ((step.text || step.say || '').substring(0, 34) || 'No text');
+      case 'fleet-audio':
+        return (step.node || '?') + ': ' + (step.audioId || 'No audio') + (step.loop ? ' (loop)' : '');
+      case 'fleet-stop-audio':
+        return (step.node || '?') + ': stop audio';
+      case 'fleet-mode':
+        return (step.node || '?') + ': ' + (step.mode || '?') + (step.reason ? ' (' + step.reason + ')' : '');
       case 'jaw-animation':
         return (step.action || 'enable');
       case 'head-tracking':
@@ -938,6 +975,11 @@
       case 'goblin-video': html = renderGoblinForm(step, idx); break;
       case 'jaw-animation': html = renderJawAnimForm(step, idx); break;
       case 'head-tracking': html = renderHeadTrackForm(step, idx); break;
+      case 'fleet-scene': html = renderFleetSceneForm(step, idx); break;
+      case 'fleet-say': html = renderFleetSayForm(step, idx); break;
+      case 'fleet-audio': html = renderFleetAudioForm(step, idx); break;
+      case 'fleet-stop-audio': html = renderFleetStopAudioForm(step, idx); break;
+      case 'fleet-mode': html = renderFleetModeForm(step, idx); break;
       default: html = '<div class="text-muted">Unknown step type: ' + escHtml(t) + '</div>'; break;
     }
 
@@ -1147,23 +1189,54 @@
     return entry.promise;
   }
 
+  // Scenes cast a Goblin by NAME ("Goblin 2") so a re-registered unit keeps its
+  // casts (sceneExecutor resolveGoblinRef: goblinId wins when present, else
+  // goblinName). The select therefore writes goblinName and drops a legacy
+  // goblinId; a step that still carries only a goblinId shows it until changed.
+  function findGoblinForStep(step) {
+    if (step.goblinId != null && String(step.goblinId) !== '') {
+      var byId = goblins.find(function(g) { return String(g.id) === String(step.goblinId); });
+      if (byId) return byId;
+    }
+    if (step.goblinName) {
+      var key = String(step.goblinName).trim().toLowerCase();
+      var byName = goblins.filter(function(g) { return String(g.name || '').trim().toLowerCase() === key; });
+      if (byName.length === 1) return byName[0];
+    }
+    return null;
+  }
+
+  function goblinLabel(step) {
+    var g = findGoblinForStep(step);
+    if (g) return g.name || g.id;
+    return step.goblinName || step.goblinId || '';
+  }
+
   function renderGoblinForm(step, idx) {
     var html = '<div class="row g-2">';
+    var current = findGoblinForStep(step);
+    var currentKey = current ? current.id : null;
     html += '<div class="col-6"><label class="mb-field-label">Goblin</label>';
-    html += '<select title="Select the target Goblin device" class="mb-select sf-input goblin-sel" data-idx="' + idx + '" data-field="goblinId"><option value="">Select...</option>';
+    html += '<select title="Select the target Goblin; the step casts it by name so a re-registered Goblin keeps the cast" class="mb-select sf-input goblin-sel" data-idx="' + idx + '" data-field="goblinName" data-skip="1"><option value="">Select...</option>';
     goblins.forEach(function(g) {
-      html += '<option value="' + g.id + '"' + (step.goblinId == g.id ? ' selected' : '') + '>' + escHtml(g.name || g.id) + '</option>';
+      var label = (g.name || g.id) + (g.status && g.status !== 'online' ? ' (' + g.status + ')' : '');
+      html += '<option value="' + escHtml(g.name || g.id) + '"' + (currentKey === g.id ? ' selected' : '') + '>' + escHtml(label) + '</option>';
     });
+    if (!current && (step.goblinName || step.goblinId)) {
+      var orphan = step.goblinName || step.goblinId;
+      html += '<option value="' + escHtml(orphan) + '" selected>' + escHtml(orphan) + ' (not registered)</option>';
+    }
     html += '</select></div>';
     html += '<div class="col-6"><label class="mb-field-label">Video</label>';
-    var cache = step.goblinId ? goblinVideos[step.goblinId] : null;
-    if (!step.goblinId) {
+    var cache = currentKey ? goblinVideos[currentKey] : null;
+    if (!currentKey) {
       // data-skip: collectStepData must not copy a placeholder's empty value over a
       // videoId the step already carries — that is how saved steps lost their video.
-      html += '<select title="Select a video to play" class="mb-select sf-input video-sel" data-idx="' + idx + '" data-field="videoId" data-skip="1" disabled><option value="">Select goblin first</option></select>';
+      html += '<select title="Select a video to play" class="mb-select sf-input video-sel" data-idx="' + idx + '" data-field="videoId" data-skip="1" disabled><option value="">' + ((step.goblinName || step.goblinId) ? 'Goblin not registered on this node' : 'Select goblin first') + '</option></select>';
+      if (step.videoId) html += '<div class="mb-text-sm text-muted mt-1">Video: ' + escHtml(step.videoId) + '</div>';
     } else if (!cache || cache.loading) {
       html += '<select title="Select a video to play" class="mb-select sf-input video-sel" data-idx="' + idx + '" data-field="videoId" data-skip="1" disabled><option value="">Loading videos from the Goblin…</option></select>';
-      if (!cache) loadGoblinVideos(step.goblinId).then(function() { renderTimeline(); });
+      if (!cache) loadGoblinVideos(currentKey).then(function() { renderTimeline(); });
     } else {
       html += '<select title="Select a video to play" class="mb-select sf-input video-sel" data-idx="' + idx + '" data-field="videoId"><option value="">Select...</option>';
       var listed = false;
@@ -1180,8 +1253,115 @@
       else if (!cache.videos.length) html += '<div class="mb-text-sm text-muted mt-1">No videos on this Goblin — deploy one from the Video Library.</div>';
     }
     html += '</div>';
+    html += '<div class="col-6"><label class="mb-field-label">Hold scene (ms)</label>';
+    html += '<input type="number" title="waitMs: keep the scene on this step while the clip plays (0 = move on once the clip starts; capped at 10 minutes)" class="mb-input sf-input" data-idx="' + idx + '" data-field="waitMs" value="' + (parseInt(step.waitMs, 10) || 0) + '" min="0" max="600000" step="100"></div>';
     html += '<div class="col-12"><label class="mb-check mt-2" for="gloop' + idx + '"><input title="Checked: this video becomes the Goblin\'s looping show until something stops it. Unchecked: play it once, then the Goblin returns to its own loop." type="checkbox" class="sf-input" data-idx="' + idx + '" data-field="loop" id="gloop' + idx + '"' + (step.loop ? ' checked' : '') + '>';
     html += '<span class="mb-text-sm">Loop (becomes the Goblin\'s show until stopped; unchecked plays once)</span></label></div>';
+    html += '</div>';
+    return html;
+  }
+
+  // ============ FLEET STEP FORMS ============
+  // Field names follow services/scenes/fleetSteps.js exactly:
+  //   fleet-scene      {node, scene, wait=true, timeoutMs, force}
+  //   fleet-say        {node|'all', text, wait=true, force}
+  //   fleet-audio      {node|'all', audioId, volume, loop, force}
+  //   fleet-stop-audio {node|'all'}
+  //   fleet-mode       {mode:'hold'|'release', node|'all', maxMs, reason, force}
+  // A node is named the way the registry resolves it (name, character id,
+  // hostname or a unique fragment); the datalist offers the live registry.
+  function fleetNodeField(step, idx, allowAll) {
+    var listId = 'fleetNodes' + idx;
+    var html = '<div class="col-6"><label class="mb-field-label">Node</label>';
+    html += '<input type="text" title="Target animatronic by name (or character id, hostname, unique fragment)' + (allowAll ? '; all = every node' : '') + '" class="mb-input sf-input" data-idx="' + idx + '" data-field="node" list="' + listId + '" value="' + escHtml(step.node != null ? String(step.node) : '') + '" placeholder="' + (allowAll ? 'Node name or all' : 'Node name') + '">';
+    html += '<datalist id="' + listId + '">';
+    if (allowAll) html += '<option value="all">every node</option>';
+    fleetNodes.forEach(function(n) {
+      if (n && n.name) html += '<option value="' + escHtml(n.name) + '">' + escHtml(n.name) + (n.status ? ' (' + escHtml(n.status) + ')' : '') + '</option>';
+    });
+    html += '</datalist></div>';
+    return html;
+  }
+
+  function fleetCheck(step, idx, field, label, title, defaultOn) {
+    var on = defaultOn ? step[field] !== false : step[field] === true;
+    var id = 'fl' + field + idx;
+    return '<div class="col-12"><label class="mb-check" for="' + id + '"><input title="' + title + '" type="checkbox" class="sf-input" data-idx="' + idx + '" data-field="' + field + '" id="' + id + '"' + (on ? ' checked' : '') + '><span class="mb-text-sm">' + label + '</span></label></div>';
+  }
+
+  function fleetForce(step, idx) {
+    return fleetCheck(step, idx, 'force', 'Force (run even if a guest is talking to that node)', 'force: by default a node in a live guest conversation is skipped', false);
+  }
+
+  function renderFleetSceneForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += fleetNodeField(step, idx, false);
+    var sceneVal = step.scene != null ? step.scene : (step.sceneId != null ? step.sceneId : (step.sceneName || ''));
+    html += '<div class="col-6"><label class="mb-field-label">Scene (id or name)</label>';
+    html += '<input type="text" title="Scene id, or its exact name in that node\'s own library" class="mb-input sf-input" data-idx="' + idx + '" data-field="scene" value="' + escHtml(String(sceneVal)) + '" placeholder="e.g. 3 or Night Watch"></div>';
+    html += '<div class="col-6"><label class="mb-field-label">Timeout (ms)</label>';
+    html += '<input type="number" title="timeoutMs: how long to wait for the remote scene (default 10 minutes, at most 15)" class="mb-input sf-input" data-idx="' + idx + '" data-field="timeoutMs" data-optional="1" value="' + (step.timeoutMs != null && step.timeoutMs !== '' ? escHtml(String(step.timeoutMs)) : '') + '" min="1000" max="900000" step="1000" placeholder="600000"></div>';
+    html += fleetCheck(step, idx, 'wait', 'Wait for the scene to finish', 'wait: unchecked starts the scene and moves on at once', true);
+    html += fleetForce(step, idx);
+    html += '</div>';
+    return html;
+  }
+
+  function renderFleetSayForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += fleetNodeField(step, idx, true);
+    html += '<div class="col-12"><label class="mb-field-label">Text</label>';
+    html += '<textarea title="Line the target speaks in its own voice (its TTS cache and jaw)" class="mb-textarea mb-dialogue sf-input" data-idx="' + idx + '" data-field="text" rows="2" placeholder="Text to speak...">' + escHtml(step.text || step.say || '') + '</textarea></div>';
+    html += fleetCheck(step, idx, 'wait', 'Wait until the line has been spoken', 'wait: unchecked moves on as soon as the line is sent', true);
+    html += fleetForce(step, idx);
+    html += '</div>';
+    return html;
+  }
+
+  function renderFleetAudioForm(step, idx) {
+    var listId = 'fleetAudio' + idx;
+    var html = '<div class="row g-2">';
+    html += fleetNodeField(step, idx, true);
+    html += '<div class="col-6"><label class="mb-field-label">Audio (library id)</label>';
+    html += '<input type="text" title="audioId: the shared audio library id the target nodes play" class="mb-input sf-input" data-idx="' + idx + '" data-field="audioId" list="' + listId + '" value="' + escHtml(step.audioId != null ? String(step.audioId) : '') + '" placeholder="Library id">';
+    html += '<datalist id="' + listId + '">';
+    sounds.forEach(function(snd) {
+      if (snd && snd.id) html += '<option value="' + escHtml(snd.id) + '">' + escHtml(snd.name || snd.id) + '</option>';
+    });
+    html += '</datalist></div>';
+    html += '<div class="col-6"><label class="mb-field-label">Volume %</label>';
+    html += '<input type="number" title="volume: playback volume on each target, as a percentage" class="mb-input sf-input" data-idx="' + idx + '" data-field="volume" value="' + (Number.isFinite(Number(step.volume)) && step.volume !== '' ? Number(step.volume) : 100) + '" min="0" max="100"></div>';
+    html += fleetCheck(step, idx, 'loop', 'Loop until a Fleet Stop Audio', 'loop: keep the track playing until stopped', false);
+    html += fleetForce(step, idx);
+    html += '</div>';
+    return html;
+  }
+
+  function renderFleetStopAudioForm(step, idx) {
+    var html = '<div class="row g-2">';
+    html += fleetNodeField(step, idx, true);
+    html += '<div class="col-6 d-flex align-items-end"><span class="mb-text-sm mb-text-muted">Never refused, even during a guest conversation.</span></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderFleetModeForm(step, idx) {
+    var mode = step.mode === 'release' ? 'release' : 'hold';
+    var html = '<div class="row g-2">';
+    html += fleetNodeField(step, idx, true);
+    html += '<div class="col-6"><label class="mb-field-label">Mode</label>';
+    html += '<select title="hold: pause the targets\' idle loop, head tracking and music for the event; release: give them back" class="mb-select sf-input" data-idx="' + idx + '" data-field="mode">';
+    html += '<option value="hold"' + (mode === 'hold' ? ' selected' : '') + '>Hold</option>';
+    html += '<option value="release"' + (mode === 'release' ? ' selected' : '') + '>Release</option>';
+    html += '</select></div>';
+    if (mode === 'hold') {
+      html += '<div class="col-6"><label class="mb-field-label">Max hold (ms)</label>';
+      html += '<input type="number" title="maxMs: the hold releases itself after this long (default 10 minutes, 10 s to 2 h)" class="mb-input sf-input" data-idx="' + idx + '" data-field="maxMs" data-optional="1" value="' + (step.maxMs != null && step.maxMs !== '' ? escHtml(String(step.maxMs)) : '') + '" min="10000" max="7200000" step="1000" placeholder="600000"></div>';
+    }
+    html += '<div class="col-6"><label class="mb-field-label">Reason</label>';
+    html += '<input type="text" title="reason: shown in the targets\' lurk state and logs" class="mb-input sf-input" data-idx="' + idx + '" data-field="reason" value="' + escHtml(step.reason || '') + '" placeholder="fleet-event"></div>';
+    if (mode === 'hold') html += fleetForce(step, idx);
+    else html += '<div class="col-12"><span class="mb-text-sm mb-text-muted">A release is never refused.</span></div>';
     html += '</div>';
     return html;
   }
@@ -1218,13 +1398,25 @@
         else if (this.type === 'number') val = parseFloat(val);
         else if (field === 'usePreset') val = (val === 'true');
         if (currentSteps[idx]) {
-          currentSteps[idx][field] = val;
-          // Re-render if mode changed
-          if (field === 'usePreset' || field === 'partId') renderTimeline();
-          if (field === 'goblinId') {
+          if (field === 'goblinName') {
+            // Cast by name: the name replaces any legacy goblinId.
+            if (val) currentSteps[idx].goblinName = val; else delete currentSteps[idx].goblinName;
+            delete currentSteps[idx].goblinId;
             renderTimeline();
-            loadGoblinVideos(val).then(function() { renderTimeline(); });
+            var picked = findGoblinForStep(currentSteps[idx]);
+            if (picked) loadGoblinVideos(picked.id).then(function() { renderTimeline(); });
+            return;
           }
+          if (this.getAttribute('data-optional') === '1' && (this.value === '' || (typeof val === 'number' && isNaN(val)))) {
+            delete currentSteps[idx][field];
+          } else {
+            currentSteps[idx][field] = val;
+          }
+          // fleet-scene's editor writes `scene`; drop aliases so one value rules.
+          if (field === 'scene') { delete currentSteps[idx].sceneId; delete currentSteps[idx].sceneName; }
+          if (field === 'text' && currentSteps[idx].type === 'fleet-say') delete currentSteps[idx].say;
+          // Re-render if mode changed
+          if (field === 'usePreset' || field === 'partId' || (field === 'mode' && currentSteps[idx].type === 'fleet-mode')) renderTimeline();
         }
       });
     });
@@ -1240,6 +1432,12 @@
       if (input.type === 'checkbox') val = input.checked;
       else if (input.type === 'number') val = parseFloat(val);
       else if (field === 'usePreset') val = (val === 'true');
+      // An empty optional number means "use the service default": leave it out
+      // rather than saving null.
+      if (input.getAttribute('data-optional') === '1' && (input.value === '' || (typeof val === 'number' && isNaN(val)))) {
+        delete currentSteps[idx][field];
+        return;
+      }
       currentSteps[idx][field] = val;
     });
   }
@@ -1260,9 +1458,14 @@
       case 'audio': step.volume = 80; break;
       case 'sayThis': step.text = ''; break;
       case 'askAI': step.question = ''; break;
-      case 'goblin-video': step.loop = false; break;
+      case 'goblin-video': step.loop = false; step.waitMs = 0; break;
       case 'jaw-animation': step.action = 'enable'; break;
       case 'head-tracking': step.action = 'start'; break;
+      case 'fleet-scene': step.node = ''; step.scene = ''; step.wait = true; break;
+      case 'fleet-say': step.node = 'all'; step.text = ''; step.wait = true; break;
+      case 'fleet-audio': step.node = 'all'; step.audioId = ''; step.volume = 100; step.loop = false; break;
+      case 'fleet-stop-audio': step.node = 'all'; break;
+      case 'fleet-mode': step.node = 'all'; step.mode = 'hold'; step.reason = 'fleet-event'; break;
     }
 
     collectStepData();
@@ -1282,7 +1485,12 @@
       { type: 'wait', icon: 'bi-hourglass-split', label: 'Wait' },
       { type: 'sensor', icon: 'bi-radar', label: 'Sensor' },
       { type: 'jaw-animation', icon: 'bi-lightning', label: 'Jaw Animation' },
-      { type: 'head-tracking', icon: 'bi-bullseye', label: 'Head Tracking' }
+      { type: 'head-tracking', icon: 'bi-bullseye', label: 'Head Tracking' },
+      { type: 'fleet-scene', icon: 'bi-diagram-3', label: 'Fleet Scene' },
+      { type: 'fleet-say', icon: 'bi-megaphone', label: 'Fleet Say' },
+      { type: 'fleet-audio', icon: 'bi-broadcast', label: 'Fleet Audio' },
+      { type: 'fleet-stop-audio', icon: 'bi-volume-mute', label: 'Fleet Stop Audio' },
+      { type: 'fleet-mode', icon: 'bi-pause-circle', label: 'Fleet Mode' }
     ];
     var aHtml = '';
     actions.forEach(function(a) {

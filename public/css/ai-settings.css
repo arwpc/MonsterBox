@@ -194,3 +194,22 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* --- Conversation / agent turn / lurk panels ------------------------------ */
+.ai-latency-table td,
+.ai-latency-table th {
+  white-space: nowrap;
+  font-size: var(--mb-text-sm);
+}
+
+.ai-latency-table tfoot th,
+.ai-latency-table tfoot td {
+  font-weight: var(--mb-weight-bold);
+  border-top: 1px solid var(--mb-border-subtle);
+}
+
+.ai-kv-table th {
+  width: 40%;
+  font-weight: var(--mb-weight-bold);
+  font-size: var(--mb-text-sm);
+}

@@ -1047,7 +1047,7 @@ export class LurkStateMachine {
             // The host of a fleet event (and any node it holds) may be AWAKE only because its PIR fired or
             // its agent answered room noise. A real guest is one who spoke in the last minute; without one
             // the node sleeps for the show, otherwise its agent transcribes the show's own lines as a guest
-            // and talks over it (event 103, 2026-10-10: Orlok skipped his own part that way).
+            // and talks over it (event 103, 2026-10-10: the host skipped its own part that way).
             if (entry.state === AWAKE) {
                 const guestIdle = entry.lastGuestAt ? now - entry.lastGuestAt : Infinity;
                 if (guestIdle > EVENT_HOLD_GUEST_IDLE_MS) {

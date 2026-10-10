@@ -140,6 +140,11 @@
 .step-color-servo .step-type-icon { background: color-mix(in srgb, var(--mb-step-servo) 20%, transparent); color: var(--mb-step-servo); }
 .step-color-audio { border-left-color: var(--mb-step-audio); }
 .step-color-audio .step-type-icon { background: color-mix(in srgb, var(--mb-step-audio) 20%, transparent); color: var(--mb-step-audio); }
+/* Fleet steps (cross-node): one colour for the five fleet-* types; the token falls back to the speech colour
+   until monsterbox4.css defines --mb-step-fleet. */
+.step-color-fleet-scene, .step-color-fleet-say, .step-color-fleet-audio, .step-color-fleet-stop-audio, .step-color-fleet-mode { border-left-color: var(--mb-step-fleet, var(--mb-step-speech)); }
+.step-color-fleet-scene .step-type-icon, .step-color-fleet-say .step-type-icon, .step-color-fleet-audio .step-type-icon, .step-color-fleet-stop-audio .step-type-icon, .step-color-fleet-mode .step-type-icon { background: color-mix(in srgb, var(--mb-step-fleet, var(--mb-step-speech)) 20%, transparent); color: var(--mb-step-fleet, var(--mb-step-speech)); }
+.palette-action[data-step-type^="fleet-"] { border-left: 3px solid var(--mb-step-fleet, var(--mb-step-speech)); }
 .step-color-sayThis { border-left-color: var(--mb-step-speech); }
 .step-color-sayThis .step-type-icon { background: color-mix(in srgb, var(--mb-step-speech) 20%, transparent); color: var(--mb-step-speech); }
 .step-color-askAI { border-left-color: var(--mb-step-askAI); }

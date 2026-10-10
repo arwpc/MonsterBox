@@ -218,6 +218,174 @@
             </div>
         </div>
     </div>
+
+    <%
+        const at = (typeof agentTurn !== 'undefined' && agentTurn) ? agentTurn : { available: false, reason: 'No agent summary' };
+        const fmt = (v, unit) => (v === null || v === undefined || v === '') ? 'n/a' : (unit ? v + ' ' + unit : v);
+        const yesNo = (v) => v === true ? 'yes' : (v === false ? 'no' : 'n/a');
+        const fmtTime = (iso) => iso ? iso.replace('T', ' ').replace(/\.\d+Z$/, ' UTC') : 'n/a';
+    %>
+
+    <!-- Conversation (live, read-only). Everything here comes from
+         GET /conversation/api/ai-status, refreshed every 5 s by
+         /js/ai-settings-conversation.js. -->
+    <div class="row g-4 mt-2">
+        <div class="col-12">
+            <div class="mb-panel" data-panel-id="conversation-live" id="conversationLivePanel"
+                 data-character-id="<%= characterId || '' %>">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
+                        <i class="bi bi-soundwave"></i> Conversation · live
+                    </h2>
+                    <small class="mb-text-muted mb-mono" id="convUpdatedAt" title="Refreshed every 5 seconds while this page is open">waiting for first read…</small>
+                </div>
+                <div class="mb-panel-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <div class="ai-stat">
+                                <div class="ai-stat-value mb-mono" id="convDuplexMode">n/a</div>
+                                <small class="ai-stat-label">Duplex mode</small>
+                                <div class="mb-text-sm mb-text-secondary" id="convDuplexReason"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="ai-stat">
+                                <div class="ai-stat-value mb-mono" id="convLurkState">n/a</div>
+                                <small class="ai-stat-label">Lurk state</small>
+                                <div class="mb-text-sm mb-text-secondary" id="convSleepIn"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="ai-stat">
+                                <div class="ai-stat-value mb-mono" id="convAgentLive">n/a</div>
+                                <small class="ai-stat-label">Agent session</small>
+                                <div class="mb-text-sm mb-text-secondary" id="convTurnCount"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="ai-subhead"><i class="bi bi-stopwatch"></i> Per-turn latency (last 20 turns)</h3>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-mono ai-latency-table" id="convLatencyTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Time</th>
+                                    <th scope="col">Source</th>
+                                    <th scope="col" title="Guest stops speaking → the agent's transcript arrives">Speech end → transcript</th>
+                                    <th scope="col" title="Transcript → first audio chunk of the reply">Transcript → first audio</th>
+                                    <th scope="col" title="First audio chunk → it starts playing on the speaker">First audio → playback</th>
+                                    <th scope="col" title="Guest stops speaking → the reply is audible">Total</th>
+                                    <th scope="col" title="How long the reply played">Reply</th>
+                                    <th scope="col">Interrupted</th>
+                                </tr>
+                            </thead>
+                            <tbody id="convLatencyRows">
+                                <tr><td colspan="8" class="mb-text-muted text-center">No turns yet.</td></tr>
+                            </tbody>
+                            <tfoot id="convLatencySummary"></tfoot>
+                        </table>
+                    </div>
+                    <p class="mb-text-sm mb-text-secondary mb-0" id="convLatencyExplain">
+                        This node's own share of a reply (transcript → first audio → playback) is normally a few tens of
+                        milliseconds. Almost all of the remaining wait is the first column: the agent deciding the guest
+                        has finished speaking (its end-of-turn wait, set by the turn model, eagerness and timeout below),
+                        not the language model and not this node. Shorten it on the agent, not here.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <!-- Agent turn settings (read-only mirror of the committed snapshot) -->
+        <div class="col-lg-6">
+            <div class="mb-panel h-100" data-panel-id="agent-turn" id="agentTurnPanel"
+                 data-agent-available="<%= at.available ? 'true' : 'false' %>">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
+                        <i class="bi bi-sliders"></i> Agent turn settings
+                        <span class="mb-text-secondary mb-text-sm">· read-only</span>
+                    </h2>
+                    <% if (at.deepLink) { %>
+                    <a class="mb-btn mb-btn-secondary mb-btn-sm" id="agentDeepLink" href="<%= at.deepLink %>" target="_blank" rel="noopener noreferrer" title="Edit this agent on ElevenLabs">
+                        <i class="bi bi-box-arrow-up-right"></i> Edit on ElevenLabs
+                    </a>
+                    <% } %>
+                </div>
+                <div class="mb-panel-body">
+                    <% if (!at.available) { %>
+                        <p class="mb-text-secondary mb-0" id="agentTurnUnavailable"><%= at.reason || 'No agent snapshot' %><% if (at.agentId) { %> (<span class="mb-mono"><%= at.agentId %></span>)<% } %>.</p>
+                    <% } else { %>
+                        <table class="table table-sm mb-0 ai-kv-table" id="agentTurnTable">
+                            <tbody>
+                                <tr><th scope="row">Agent</th><td class="mb-mono"><%= at.agentName || '' %> <span class="mb-text-secondary"><%= at.agentId %></span></td></tr>
+                                <tr><th scope="row">Turn model</th><td class="mb-mono" data-key="turn_model"><%= fmt(at.turnModel) %></td></tr>
+                                <tr><th scope="row">Turn eagerness</th><td class="mb-mono" data-key="turn_eagerness"><%= fmt(at.turnEagerness) %></td></tr>
+                                <tr><th scope="row">Turn timeout</th><td class="mb-mono" data-key="turn_timeout"><%= fmt(at.turnTimeout, 's') %></td></tr>
+                                <tr><th scope="row">Speculative turn</th><td class="mb-mono" data-key="speculative_turn"><%= yesNo(at.speculativeTurn) %></td></tr>
+                                <tr><th scope="row">Soft timeout</th><td class="mb-mono" data-key="soft_timeout"><%= fmt(at.softTimeoutSeconds, 's') %><% if (at.softTimeoutMax != null) { %>, at most <%= at.softTimeoutMax %> per reply<% } %><% if (at.softTimeoutMessage) { %><br><span class="mb-text-secondary">“<%= at.softTimeoutMessage %>”</span><% } %></td></tr>
+                                <tr><th scope="row">LLM</th><td class="mb-mono" data-key="llm"><%= fmt(at.llm) %><% if (at.temperature != null) { %> <span class="mb-text-secondary">(temperature <%= at.temperature %>)</span><% } %></td></tr>
+                                <tr><th scope="row">max_tokens</th><td class="mb-mono" data-key="max_tokens"><%= fmt(at.maxTokens) %></td></tr>
+                                <tr><th scope="row">Interruption event</th><td class="mb-mono" data-key="interruption"><%= at.interruptionEvent ? 'present' : 'MISSING (guests cannot interrupt)' %></td></tr>
+                                <tr><th scope="row">client_events</th><td class="mb-mono mb-text-sm" data-key="client_events"><%= at.clientEvents.length ? at.clientEvents.join(', ') : 'n/a' %></td></tr>
+                                <tr><th scope="row">RAG</th><td class="mb-mono" data-key="rag"><%= at.ragEnabled ? 'on' : 'off' %></td></tr>
+                                <tr><th scope="row">Max duration</th><td class="mb-mono" data-key="max_duration"><%= fmt(at.maxDurationSeconds, 's') %></td></tr>
+                            </tbody>
+                        </table>
+                        <p class="mb-text-sm mb-text-secondary mt-2 mb-0" id="agentSnapshotTime">
+                            From <span class="mb-mono"><%= at.snapshotFile %></span>, snapshot written <span class="mb-mono" data-key="snapshot_written"><%= fmtTime(at.snapshotWrittenAt) %></span>;
+                            agent last changed on ElevenLabs <span class="mb-mono" data-key="agent_updated"><%= fmtTime(at.agentUpdatedAt) %></span>.
+                            A change made on ElevenLabs shows here only after the snapshot is refreshed.
+                        </p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lurk preferences + Wake / Sleep -->
+        <div class="col-lg-6">
+            <div class="mb-panel h-100" data-panel-id="lurk-prefs" id="lurkPrefsPanel"
+                 data-character-id="<%= characterId || '' %>">
+                <div class="mb-panel-header">
+                    <h2 class="mb-panel-title">
+                        <i class="bi bi-moon-stars"></i> Lurk &amp; AI mode
+                    </h2>
+                    <div class="mb-row-sm align-items-center">
+                        <button class="mb-btn mb-btn-primary mb-btn-sm" id="lurkWakeBtn" type="button" disabled title="Wake into AI mode now (the agent starts and the character comes alive)">
+                            <i class="bi bi-sunrise"></i> Wake
+                        </button>
+                        <button class="mb-btn mb-btn-secondary mb-btn-sm" id="lurkSleepBtn" type="button" disabled title="Leave AI mode now and return to lurking">
+                            <i class="bi bi-moon"></i> Sleep
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-panel-body">
+                    <p class="mb-text-sm mb-text-secondary" id="lurkPrefsStatus">Loading lurk state…</p>
+                    <form id="lurkPrefsForm" autocomplete="off">
+                        <div class="ai-field">
+                            <label class="mb-field-label" for="lurkInactivitySec">Sleep after inactivity (seconds, 0 = never)</label>
+                            <input type="number" class="mb-input" id="lurkInactivitySec" min="0" max="7200" step="1" disabled
+                                   title="Seconds without guest or character speech before AI mode returns to lurking (30 to 7200, or 0 for never)">
+                        </div>
+                        <label class="mb-check mb-2" for="lurkPirWake">
+                            <input type="checkbox" id="lurkPirWake" disabled title="Let the motion sensor wake the character into AI mode">
+                            <span class="mb-text-sm">Motion sensor (PIR) wakes the character</span>
+                        </label>
+                        <div class="ai-field">
+                            <span class="mb-field-label">Opt out of these capabilities</span>
+                            <div id="lurkOptOutList" class="mb-stack-sm">
+                                <span class="mb-text-sm mb-text-muted">n/a</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="mb-btn mb-btn-primary mb-btn-sm" id="lurkPrefsSave" disabled title="Save lurk preferences for this character on this node">
+                            <i class="bi bi-save"></i> Save preferences
+                        </button>
+                        <small class="mb-text-sm mb-mono ms-2" id="lurkPrefsResult"></small>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script src="/js/panel-sortable.js"></script>
 <script>document.addEventListener('DOMContentLoaded', function () {
