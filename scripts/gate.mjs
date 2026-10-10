@@ -46,7 +46,8 @@ const STEPS = [
   { name: 'audit:resolver',       cmd: 'npm', args: ['run', '--silent', 'audit:resolver'],   timeoutMs: 10_000 },
   { name: 'audit:independence',   cmd: 'npm', args: ['run', '--silent', 'audit:independence'], timeoutMs: 10_000 },
   { name: 'audit:design-system',  cmd: 'npm', args: ['run', '--silent', 'audit:design-system'], timeoutMs: 20_000 },
-  { name: 'test:smoke',           cmd: 'npm', args: ['run', '--silent', 'test:smoke'],       timeoutMs: 60_000 },
+  // 1078 unit tests take ≈65 s on an RPi4B under load (2026-10-10); 60 s made the gate fail on time alone.
+  { name: 'test:smoke',           cmd: 'npm', args: ['run', '--silent', 'test:smoke'],       timeoutMs: 180_000 },
   { name: 'test:pact',            cmd: 'npm', args: ['run', '--silent', 'test:pact'],        timeoutMs: 30_000 },
 ].map(step => ({ ...step, timeoutMs: Math.round(step.timeoutMs * TIMEOUT_SCALE) }));
 

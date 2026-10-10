@@ -178,6 +178,9 @@ ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     --exclude 'data/character-*/scene-queues.json' \
     --exclude 'data/character-*/scene-queue-templates.json' \
     --exclude 'data/character-*/backups/' \
+    --exclude 'data/goblin-keepalive-state.json' \
+    --exclude 'data/fleet-events-state.json' \
+    --exclude 'data/fleet-events.lock' \
     --exclude 'data/calibration_profiles.json' \
     --exclude 'data/actuator-positions.json' \
     --exclude 'data/speaker-state.json' \
