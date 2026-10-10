@@ -27,7 +27,7 @@ Pumpkinhead speaks of himself in the third person with "snap", "stalks", "cracks
 | Character | Movement available to a scene | Notes |
 |---|---|---|
 | Orlok (3) | head swivel (servo 15), jaw (servo 10, follows speech), right arm actuator (part 1), Hand of Azura lamp (light 8: `duration` > 0 = on that long then off, `0` = latch on, `state:'off'` to clear) | parts 2–5 are broken and must not appear |
-| Mina (2) | **voice and the Burning Rose lamp (light 5) only.** Operator 2026-10-09 22:40: "no hardware works other than light - linear actuator does not"; her servo rail is dead, so jaw (1), neck (2), eye (3) and the coffin door (4) are listed in `config/physical-faults.json` and must not appear in her parts. The laser (light 10, PCA channel 15) is unverified: it may be used as a flourish but nothing may depend on it | her jaw animation must be OFF on her node (a dead jaw servo only adds the pre-analysis delay to every line); she was powered back on at 22:40 |
+| Mina (2) | jaw (servo 1, PCA ch 15, follows speech), neck (servo 2, ch 7), eye (servo 3, ch 11), coffin door actuator (part 4, Cytron MDD10A DIR GPIO17 / PWM GPIO18), Burning Rose lamp (light 5, GPIO16), eye laser (light 10, PCA ch 3, on/off) | wiring traced and every part proven on her node 2026-10-10 (the 10-09 "lamp only" finding is history: her faults were lifted) |
 | Sir Dragomir (4) | head (servo 1, **only 372–406°**, no presets), jaw (servo 2, follows speech), magic box (servo 3) | |
 | PumpkinHead (1) | body-shake wiper motor (part 1, **speed ≤ 40**), eye rings react to speech by themselves | no jaw; config-locked, pushed by the lead |
 | Groundbreaker (5) | voice only (his motor is physically dead), eye-catching casts on the Goblins instead | |
@@ -109,11 +109,11 @@ loose tonight! Groundbreaker's coming UP! Hey Pumpkinhead! Hey knight! Hey Count
 (2) `Anybody named Calvin out there? Or Ben? Bennett? Holden? Harrison? Groundbreaker's got you. Big friend.
 Mostly safe.` Home.
 
-**Mina 8 — "The Voice Below"** (≈ 30 s). Voice and the Burning Rose lamp only (her servos and coffin door
-are dead): the rose lamp fades up (on, latched) before the first word and blinks once between lines (off 0.4 s,
-on). Lines: (1) `[whispers] I hear you all. Even down here, I hear everything.` (2) `[sings] Nani, nani, puiul
-meu... doarme-n leagăn, ușurel...` (3) `[whispers] Keep the dark company, my knight. I am listening.` Rose off.
-Home.
+**Mina 8 — "The Voice Below"** (≈ 30 s). Coffin door opens slowly (actuator extend, 3 s, speed 40) while the
+Burning Rose lamp comes on; neck turns up (servo 2), eye drifts (servo 3); jaw follows speech. Lines: (1)
+`[whispers] I hear you all. Even down here, I hear everything.` (2) `[sings] Nani, nani, puiul meu... doarme-n
+leagăn, ușurel...` (3) `[whispers] Keep the dark company, my knight. I am listening.` Laser blinks twice; coffin
+closes (retract 3 s); rose off. Home.
 
 **Orlok 8 — "Naming the Night"** (≈ 28 s). Hand of Azura latched on; head to centre; right arm extends (3 s,
 speed 50) on the first line. Lines: (1) `Bun venit, copii. Bun venit, prieteni. Everything you hear tonight
@@ -190,10 +190,10 @@ remember, Count. The stalks always remember.` Home.
 [shouting] EVERYBODY OFF THE ROAD! Groundbreaker's guarding it!` (2) `[pause] ...Was that quiet? Groundbreaker
 did quiet. Hey Calvin, hey Harrison, you're safe now. Groundbreaker fixed it.` Home.
 
-**Mina 9 — "Sing the House to Order"** (≈ 34 s). Voice and lamp only: rose lamp on (latched) at the start,
-three slow blinks (off 0.5 s, on) under the song, one long blink before the last line. Lines: (1) `[whispers]
-As you wish, my lord. [sings] Nani, nani, puiul meu... doarme-n leagăn, ușurel... vântul cântă pe la geam...`
-(2) `[whispers] There. Now they are quiet. Even the giant. Even you.` Rose off. Home.
+**Mina 9 — "Sing the House to Order"** (≈ 34 s). Coffin door opens a hand's width (extend 1.5 s, speed 30);
+rose lamp on; neck up; eye to the castle; jaw follows the song. Lines: (1) `[whispers] As you wish, my lord.
+[sings] Nani, nani, puiul meu... doarme-n leagăn, ușurel... vântul cântă pe la geam...` (2) `[whispers] There.
+Now they are quiet. Even the giant. Even you.` Laser on 2 s; coffin closes (retract 1.5 s); rose off. Home.
 
 ---
 
@@ -235,7 +235,7 @@ singers do not need to match it, it only has to keep moving under them.
 | 1:24 | → PumpkinHead 10 | verse (≈ 18 s) |
 | 1:42 | → Groundbreaker 10 | verse (≈ 18 s) |
 | 2:00 | Goblin 2 | cast `Pha Siren Seaofsirens Win H.mp4` (58 s) |
-| 2:01 | → Mina 10 | bridge (≈ 30 s): the rose lamp lights on her first note; **BRIDGE-Mina**; then the conductor sends **BRIDGE-all**; then **BRIDGE-Mina-2** (if Mina is off, the conductor still sends BRIDGE-all after Orlok's **S2**) |
+| 2:01 | → Mina 10 | bridge (≈ 30 s): coffin opens on her first note; **BRIDGE-Mina**; then the conductor sends **BRIDGE-all**; then **BRIDGE-Mina-2** (if Mina is off, the conductor still sends BRIDGE-all after Orlok's **S2**) |
 | 2:35 | Goblin 1 | cast `Pha Poltergeist Elecrticslide Win H.mp4` (54 s); Goblin 3 cast `Skullfire.mp4` (6 s) |
 | 2:36 | all | **CH-A** (concurrent), wait 9 s, **CH-B** (concurrent), wait 10 s — the loud chorus |
 | 2:56 | Orlok (host) | **S3**; lamp off; head home |
@@ -263,9 +263,10 @@ on "six". **V-Pumpkinhead**. Home.
 
 **Groundbreaker 10 — "The Giant's Verse"** (≈ 18 s). Voice only, big and off-key. **V-Groundbreaker**. Home.
 
-**Mina 10 — "The Bridge"** (≈ 30 s). Voice and lamp only: rose lamp on (latched) with her first note, a blink
-on each "nani". **BRIDGE-Mina**; `wait` 9 s (the conductor sends the others' attempt here); **BRIDGE-Mina-2**;
-rose off. Home.
+**Mina 10 — "The Bridge"** (≈ 30 s). Coffin door opens (extend 3 s, speed 40) with the rose lamp on; neck sways
+slowly (servo 2, two 3 s moves); eye to the yard; jaw follows the song. **BRIDGE-Mina**; `wait` 9 s (the
+conductor sends the others' attempt here); **BRIDGE-Mina-2**; laser on 2 s; coffin closes (retract 3 s); rose
+off. Home.
 
 ---
 
