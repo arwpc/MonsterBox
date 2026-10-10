@@ -110,6 +110,9 @@ const IGNORED_MOTION_LOG_MS = 10 * 60 * 1000;
 // own the servos and the speaker. A conductor that crashes mid-event must not
 // leave a node frozen, so a hold releases itself after this long.
 export const EVENT_HOLD_MAX_MS = envMs('MB_EVENT_HOLD_MAX_MS', 10 * 60 * 1000);
+// An awake node with no guest speech in this long is not in a conversation; a fleet event may put it
+// to sleep for the show instead of letting its agent answer the show's own lines.
+const EVENT_HOLD_GUEST_IDLE_MS = 60 * 1000;
 const EVENT_HOLD_MIN_MS = 10 * 1000;
 const EVENT_HOLD_CAP_MS = 2 * 60 * 60 * 1000;
 
@@ -1041,6 +1044,17 @@ export class LurkStateMachine {
                 return { held: true, alreadyHeld: true, hold: this._publicHold(entry) };
             }
             const id = entry.characterId;
+            // The host of a fleet event (and any node it holds) may be AWAKE only because its PIR fired or
+            // its agent answered room noise. A real guest is one who spoke in the last minute; without one
+            // the node sleeps for the show, otherwise its agent transcribes the show's own lines as a guest
+            // and talks over it (event 103, 2026-10-10: Orlok skipped his own part that way).
+            if (entry.state === AWAKE) {
+                const guestIdle = entry.lastGuestAt ? now - entry.lastGuestAt : Infinity;
+                if (guestIdle > EVENT_HOLD_GUEST_IDLE_MS) {
+                    this.deps.log(`[Lurk] character ${id}: event hold found the node awake with no guest for ${Math.round(guestIdle / 1000)} s — sleeping for the show`);
+                    await this._enterLurking(entry, { reason: 'event-hold' });
+                }
+            }
             const remembered = { state: entry.state, idle: false, headTracking: false, music: null };
             try { remembered.idle = await this.deps.idle.isRunning(id); } catch (_) { /* treat as off */ }
             try { remembered.headTracking = await this.deps.head.isActive(id); } catch (_) { /* treat as off */ }
@@ -1254,6 +1268,7 @@ export class LurkStateMachine {
             lastActivityAt: entry.lastActivityAt ? new Date(entry.lastActivityAt).toISOString() : null,
             lastActivityKind: entry.lastActivityKind,
             lastGuestActivityAt: entry.lastGuestAt ? new Date(entry.lastGuestAt).toISOString() : null,
+            guestIdleMs: entry.state === AWAKE && entry.lastGuestAt ? Math.max(0, now - entry.lastGuestAt) : null,
             sleepInMs: entry.state === AWAKE
                 ? sleepInMs({ now, lastActivityAt: entry.lastActivityAt, inactivityTimeoutMs: entry.prefs.inactivityTimeoutMs })
                 : null,

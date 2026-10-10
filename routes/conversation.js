@@ -1082,6 +1082,9 @@ router.get('/api/ai-status', async (req, res) => {
       agentLive: live,
       state: st.state,
       sleepInMs: st.sleepInMs == null ? null : st.sleepInMs,
+      // A guest spoke within the last minute: the only thing a fleet show must not talk over.
+      guestIdleMs: st.guestIdleMs == null ? null : st.guestIdleMs,
+      conversing: st.state === 'awake' && st.guestIdleMs != null && st.guestIdleMs < 60000,
       characterId: characterId || null,
       timestamp: st.since || null,
       conversationMode: typeof elevenLabsWebSocketService.getConversationMode === 'function'

@@ -84,7 +84,11 @@ export function createFleetSteps(deps = {}) {
         path: `/conversation/api/ai-status?characterId=${encodeURIComponent(cid)}`,
         timeout: PROBE_TIMEOUT_MS
       });
-      if (guestCheck && !force && st && st.enabled === true) {
+      // Busy = a guest spoke to this node in the last minute (ai-status.conversing); an older build without
+      // that field falls back to "agent session up". The node running this scene is never skipped: the show
+      // is already playing here, and its PIR-woken agent is exactly what the hold puts to sleep.
+      const busy = st && (st.conversing === true || (st.conversing === undefined && st.enabled === true));
+      if (guestCheck && !force && !self && busy) {
         return { ok: false, skipped: true, reason: 'guest-conversation', warning: `${describe(node)} is in a live conversation — skipped (force:true overrides)` };
       }
       return { ok: true };

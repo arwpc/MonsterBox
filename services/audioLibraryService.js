@@ -320,7 +320,9 @@ class AudioLibraryService {
         }
         library.lastModified = new Date().toISOString();
         // Write to a temporary file first, then rename to avoid corruption on partial writes
-        const tempPath = this.libraryPath + '.tmp';
+        // Unique per writer: two concurrent plays recording themselves raced on one '.tmp' and the loser's
+        // rename failed with ENOENT (Mina and Sir Dragomir, event rehearsal 2026-10-10).
+        const tempPath = `${this.libraryPath}.${process.pid}.${Date.now()}.${Math.floor(Math.random() * 1e6)}.tmp`;
         await fs.writeFile(tempPath, JSON.stringify(library, null, 2));
         await fs.rename(tempPath, this.libraryPath);
         // Drop the parse cache so a same-millisecond rewrite can never serve
