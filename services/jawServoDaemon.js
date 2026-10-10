@@ -111,6 +111,15 @@ async function ensureRunning() {
       if (msg) console.warn('🦷 Jaw daemon stderr:', msg);
     });
 
+    // A jaw timeline keeps ticking for a few frames after the daemon dies; the EPIPE from
+    // writing to its closed stdin arrives asynchronously as a stream 'error', which the
+    // try/catch around write() cannot see. Without this handler it is an uncaught exception
+    // ([FATAL] in /var/log/monsterbox.err, 2026-10-10).
+    daemonProcess.stdin.on('error', (err) => {
+      if (!isShuttingDown) console.warn('🦷 Jaw daemon stdin error (daemon gone?):', err.message);
+      cleanup();
+    });
+
     daemonProcess.on('error', (err) => {
       console.error('🦷 Jaw daemon process error:', err.message);
       cleanup();
@@ -157,6 +166,7 @@ function cleanup() {
 function sendAngle(channel, angle, address) {
   if (isTestMode()) return;
   if (!daemonProcess || !isReady) return;
+  if (!daemonProcess.stdin || daemonProcess.stdin.destroyed || !daemonProcess.stdin.writable) return;
 
   const cmd = { cmd: 'set_angle', channel: Number(channel), angle: Number(angle) };
   if (address != null) cmd.address = Number(address);
