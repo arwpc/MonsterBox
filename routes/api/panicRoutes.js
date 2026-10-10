@@ -19,7 +19,7 @@ import express from 'express';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import orchestrationService from '../../services/orchestrationService.js';
-import { resolveCharacter } from '../../services/characterContext.js';
+import { resolveCharacter, resolveCharacterSync } from '../../services/characterContext.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -153,13 +153,21 @@ router.post('/', express.json(), async (req, res) => {
     // over its own loopback is both faster and one less thing to fail.
     if (characterId != null) {
         localActions.push(runLocal('disarm-superpowers', async () => {
-            const conv = await import('../conversation.js');
-            if (typeof conv.disarmLurkCompletely !== 'function') {
-                throw new Error('disarmLurkCompletely unavailable');
-            }
-            // Full shutdown: sub-features AND the lurk master flag AND the motion
-            // watcher. Disabling only the sub-features leaves the trigger armed.
-            await conv.disarmLurkCompletely(characterId);
+            // The lurk state machine goes to `off` with force: PIR watcher and idle
+            // loop stopped, agent stopped, AI-mode switches dropped, head tracking
+            // stopped even when headTracking.alwaysOn, any fleet-event hold ended.
+            // Lurk ON (or a restart, which boots into lurking) brings it back.
+            const { default: lurkStateService } = await import('../../services/lurkStateService.js');
+            const node = resolveCharacterSync({ app: req.app, query: {}, params: {} });
+            const r = await lurkStateService.panic(characterId, { nodeCharacterId: node ? node.id : null });
+            if (!r.success) throw new Error(r.error || 'lurk panic refused');
+        }));
+
+        // Background music PAUSES (the supervisor survives and resumes on the next
+        // return to lurking). audio stopAll above pauses it too; this is explicit.
+        localActions.push(runLocal('pause-background-music', async () => {
+            const { default: bgm } = await import('../../services/backgroundMusicService.js');
+            bgm.pauseAll('panic');
         }));
 
         // Voice orders are another autonomous trigger: a shouted command must
@@ -169,8 +177,16 @@ router.post('/', express.json(), async (req, res) => {
             const svc = await import('../../services/followOrders/followOrdersSuperPowerService.js');
             const listener = await import('../../services/followOrders/followOrdersListener.js');
             const executor = await import('../../services/followOrders/followOrdersExecutor.js');
+            const lock = await import('../../services/characterConfigLock.js');
             const cfg = await svc.readFollowOrdersConfig(characterId);
-            if (cfg.enabled) await svc.writeFollowOrdersConfig(characterId, { ...cfg, enabled: false });
+            const live = lock.withRuntimeToggle(characterId, 'followOrders.enabled', cfg.enabled);
+            // A LOCKED character refuses the write (HTTP 423); that threw here and
+            // skipped the listener stop below. Remember the OFF in memory instead.
+            if (cfg.enabled || live) {
+                await lock.persistRuntimeToggle(
+                    () => svc.writeFollowOrdersConfig(characterId, { ...cfg, enabled: false }),
+                    { characterId, key: 'followOrders.enabled', value: false });
+            }
             await listener.stopStandaloneListener(characterId);
             await executor.stopEverything(characterId);
         }));

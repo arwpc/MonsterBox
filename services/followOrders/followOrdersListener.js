@@ -17,6 +17,7 @@
 import { readFollowOrdersConfig, buildMatchContext, loadPartsSafe } from './followOrdersSuperPowerService.js';
 import { matchOrder } from './orderMatcher.js';
 import { executeOrder } from './followOrdersExecutor.js';
+import { withRuntimeToggle } from '../characterConfigLock.js';
 
 const HISTORY_LIMIT = 50;
 
@@ -77,7 +78,7 @@ export function getListenerStatus(characterId) {
 export async function handleTranscript(characterId, text, meta = {}) {
   try {
     const config = await readFollowOrdersConfig(characterId);
-    if (!config.enabled) return { considered: false, reason: 'disabled' };
+    if (!withRuntimeToggle(characterId, 'followOrders.enabled', config.enabled)) return { considered: false, reason: 'disabled' };
 
     // AI Motion owns "may this character move", whatever asked it to. This is
     // the guest-command trigger. Follow Orders keeps its own enable bit — it is
@@ -215,7 +216,7 @@ export async function startStandaloneListener(characterId) {
   if (state.conversationMicHolders > 0) return { started: false, reason: 'yielded_to_conversation' };
 
   const config = await readFollowOrdersConfig(characterId);
-  if (!config.enabled) return { started: false, reason: 'disabled' };
+  if (!withRuntimeToggle(characterId, 'followOrders.enabled', config.enabled)) return { started: false, reason: 'disabled' };
 
   const listener = await import('../serverSTTListener.js').then(m => m.default || m);
   const deviceId = await microphoneDeviceFor(characterId);

@@ -724,6 +724,10 @@ class OrchestrationService {
         // NOT the `motion` key above — that one is the PIR motion SENSOR. This is
         // motion GENERATION: the character moving as it speaks and on request.
         aiMotion: (on) => ({ method: 'post', path: '/conversation/api/ai-motion', body: { enabled: on } }),
+        // AI mode: wakes each node's lurk state machine (agent + every capability
+        // its parts support, staggered agent-first) or sends it back to lurking.
+        // A wake takes seconds (agent socket, settles, tracker), hence the timeout.
+        ai: (on) => ({ method: 'post', path: '/conversation/api/ai-on', body: { enabled: on }, timeout: 20000 }),
     };
 
     /**
@@ -739,7 +743,7 @@ class OrchestrationService {
         const targets = this.getControllableAnimatronics(ids);
         const results = await Promise.allSettled(targets.map(async (node) => {
             try {
-                const data = await this.httpNode(node, { ...call, timeout: 8000 });
+                const data = await this.httpNode(node, { timeout: 8000, ...call });
                 return { animatronic: node.name, id: node.id, success: data?.success !== false, result: data };
             } catch (error) {
                 return { animatronic: node.name, id: node.id, success: false, error: error.message };
@@ -786,8 +790,12 @@ class OrchestrationService {
             { method: 'post', path: '/scenes/api/queue/emergency-stop' },
             { method: 'post', path: '/api/audio/stop-all' },
             { method: 'post', path: '/api/random-poses/disable' },
+            // Lurk OFF puts each node's lurk state machine in `off`: agent stopped,
+            // PIR watcher stopped, idle loop stopped, AI-mode switches dropped.
+            // (Not disarm.motion(false): that now switches the PIR off as a wake
+            // source in the persisted lurk prefs — a latch that would outlive the
+            // panic, the same trap as the mute below.)
             disarm.lurk(false),
-            disarm.motion(false),
             disarm.head(false),
             // Deliberately NOT disarm.mute(true).
             //

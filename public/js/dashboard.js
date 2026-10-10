@@ -286,34 +286,12 @@
         const j = await r.json();
 
         if (j && j.success) {
-          lurkModeActive = enabled;
-
-          // Sync UI toggles with lurk state
-          if (ui.jawToggle) ui.jawToggle.checked = enabled;
-          if (ui.headTrackToggle) ui.headTrackToggle.checked = enabled;
-
-          // Start/stop the persistent AI agent (server-side; survives navigation)
-          const aiToggle = $('chatAiOnToggle');
-          if (enabled) {
-            // Callout mode: the character speaks one short line every few
-            // minutes instead of holding a billed agent session open all night.
-            if (!j.calloutMode) {
-              if (aiToggle) aiToggle.checked = true;
-              setServerAi(true);
-            }
-            startHeadTrackPolling();
-          } else {
-            if (aiToggle) aiToggle.checked = false;
-            setServerAi(false);
-            stopHeadTrackPolling();
-          }
-
-          // Update lurk UI
-          lurkSleeping = false;
-          updateLurkUI(enabled, j.results);
-          if (statusEl) statusEl.textContent = enabled ? 'Active — Character is alive' : 'Off';
-
-          // Start/stop motion status polling and activity badge polling
+          // The SERVER's lurk state machine owns everything now: Lurk ON arms
+          // it (idle movement, head tracking, PIR wake, background music;
+          // nothing speaks), Lurk OFF disarms it (and ends AI mode). The page
+          // only reflects what the server reports — it never starts the agent.
+          applyLurkStatus(j.status || null);
+          if (enabled) startHeadTrackPolling(); else stopHeadTrackPolling();
           if (enabled) { startLurkMotionPolling(); startActivityPolling(); }
           else { stopLurkMotionPolling(); stopActivityPolling(); }
         } else {
@@ -344,21 +322,40 @@
         Motion: $('lurkBadgeMotion')
       };
 
+      // `results` is the server's last transition (services/lurkStateService.js):
+      // agent/jaw/headTracking/idle/pir, each { enabled|armed, reason }.
       if (active && results) {
         const awake = !lurkSleeping;
-        setBadge(badges.AI, awake); // AI is started client-side
-        setBadge(badges.Jaw, awake && results.jaw && results.jaw.enabled);
-        setBadge(badges.Head, awake && results.headTracking && results.headTracking.enabled);
-        setBadge(badges.Idle, awake && results.randomPose && results.randomPose.enabled);
-        setBadge(badges.Motion, results.motionSensor && results.motionSensor.enabled);
+        const on = (r) => !!(r && (r.enabled === true || r.armed === true));
+        setBadge(badges.AI, awake && on(results.agent));
+        setBadge(badges.Jaw, awake && on(results.jaw));
+        setBadge(badges.Head, on(results.headTracking));
+        setBadge(badges.Idle, on(results.idle));
+        setBadge(badges.Motion, on(results.pir));
       } else {
         Object.values(badges).forEach(b => setBadge(b, false));
       }
+    }
 
-      // Update status text for sleep state
+    /** Reflect the server's lurk state machine status on the Lurk bar and AI switch. */
+    function applyLurkStatus(st) {
+      if (!st) return;
+      const state = st.state || 'off';
+      lurkModeActive = !!st.armed || state === 'awake';
+      lurkSleeping = state === 'lurking';
+      const toggle = $('lurkToggle');
+      if (toggle) toggle.checked = !!st.armed;
+      const aiToggle = $('chatAiOnToggle');
+      if (aiToggle) aiToggle.checked = state === 'awake' || !!st.agentLive;
+      const last = st.lastTransition && st.lastTransition.results ? st.lastTransition.results : null;
+      updateLurkUI(lurkModeActive, last);
       const statusEl = $('lurkStatus');
-      if (active && lurkSleeping && statusEl) {
-        statusEl.textContent = 'Sleeping — Waiting for motion...';
+      if (statusEl) {
+        statusEl.textContent = state === 'awake'
+          ? 'Awake — AI mode' + (st.sleepInMs != null ? ' (lurks again after ' + Math.ceil(st.sleepInMs / 1000) + ' s quiet)' : '')
+          : state === 'lurking'
+            ? (st.eventHold ? 'Held — a fleet event is running' : 'Lurking — moving, watching, waiting for a guest')
+            : 'Off';
       }
     }
 
@@ -436,20 +433,12 @@
       try {
         const r = await fetch('/conversation/api/lurk-mode');
         const j = await r.json();
-        if (j && j.success && j.enabled) {
-          const toggle = $('lurkToggle');
-          if (toggle) toggle.checked = true;
-          lurkModeActive = true;
-          lurkSleeping = !!j.sleeping;
-          updateLurkUI(true, j.motionWatcher ? { motionSensor: { enabled: j.motionWatcher.active } } : null);
-          const statusEl = $('lurkStatus');
-          if (statusEl) {
-            statusEl.textContent = lurkSleeping
-              ? 'Sleeping — Waiting for motion...'
-              : 'Active — Character is alive';
+        if (j && j.success && j.status) {
+          applyLurkStatus(j.status);
+          if (lurkModeActive) {
+            startLurkMotionPolling();
+            startActivityPolling();
           }
-          startLurkMotionPolling();
-          startActivityPolling();
         }
       } catch { /* ignore */ }
     }
@@ -472,36 +461,18 @@
     async function pollLurkMotionStatus() {
       if (!lurkModeActive) { stopLurkMotionPolling(); return; }
       try {
-        const r = await fetch('/conversation/api/lurk-mode/motion-status');
+        // Reflect only. Wake and sleep happen on the server (PIR, schedule,
+        // AI on, inactivity); the page used to start/stop the agent itself here.
+        const r = await fetch('/conversation/api/lurk-mode');
         const j = await r.json();
-        if (!j.success) return;
-
-        const wasSleeping = lurkSleeping;
-        lurkSleeping = !!j.sleeping;
-
-        if (wasSleeping && !lurkSleeping) {
-          // Woke up from motion! Re-enable client-side features
-          const aiToggle = $('chatAiOnToggle');
-          if (aiToggle) aiToggle.checked = true;
-          setServerAi(true);
-          if (ui.jawToggle) ui.jawToggle.checked = true;
-          if (ui.headTrackToggle) ui.headTrackToggle.checked = true;
-          startHeadTrackPolling();
-          updateLurkUI(true, { jaw: { enabled: true }, headTracking: { enabled: true }, randomPose: { enabled: true }, motionSensor: { enabled: true } });
-          const statusEl = $('lurkStatus');
-          if (statusEl) statusEl.textContent = 'Active — Character is alive';
-        } else if (!wasSleeping && lurkSleeping) {
-          // Just fell asleep — disable client-side features
-          const aiToggle = $('chatAiOnToggle');
-          if (aiToggle) aiToggle.checked = false;
-          setServerAi(false);
-          if (ui.jawToggle) ui.jawToggle.checked = false;
-          if (ui.headTrackToggle) ui.headTrackToggle.checked = false;
-          stopHeadTrackPolling();
-          updateLurkUI(true, { motionSensor: { enabled: true } });
-          const statusEl = $('lurkStatus');
-          if (statusEl) statusEl.textContent = 'Sleeping — Waiting for motion...';
+        if (!j || !j.success || !j.status) return;
+        const wasState = lurkSleeping ? 'lurking' : 'other';
+        applyLurkStatus(j.status);
+        const nowState = lurkSleeping ? 'lurking' : 'other';
+        if (wasState !== nowState) {
+          if (nowState === 'lurking' || j.status.state === 'awake') startHeadTrackPolling();
         }
+        if (!lurkModeActive) { stopLurkMotionPolling(); stopActivityPolling(); }
       } catch { /* ignore poll errors */ }
     }
 
@@ -1176,33 +1147,26 @@
        * clicking that toggle, and sequentially rather than all at once, because
        * firing every subsystem simultaneously is what resets a marginal board.
        */
-      async function disableAiDependentFeatures() {
-        const dependents = [
-          { toggle: ui.jawToggle, save: saveJawSettings },
-          { toggle: ui.ledTalkToggle, save: saveLedTalkSettings },
-          { toggle: ui.headTrackToggle, save: saveHeadTrackSettings },
-          { toggle: ui.aiMotionToggle, save: saveAiMotionSettings },
-          { toggle: ui.followOrdersToggle, save: saveFollowOrdersSettings }
-        ];
-        for (const d of dependents) {
-          if (!d.toggle || !d.toggle.checked || typeof d.save !== 'function') continue;
-          d.toggle.checked = false;
-          try { await d.save(); } catch (_) { /* one failure must not strand the rest */ }
-        }
+      /** Re-read each feature switch from the server after AI mode changed. */
+      function refreshFeatureToggles() {
+        try { if (typeof loadJawSettings === 'function') loadJawSettings(); } catch (_) { /* best-effort */ }
+        try { if (typeof loadLedTalkSettings === 'function') loadLedTalkSettings(); } catch (_) { /* best-effort */ }
+        try { if (typeof loadHeadTrackStatus === 'function') loadHeadTrackStatus(); } catch (_) { /* best-effort */ }
+        try { if (typeof loadAiMotionStatus === 'function') loadAiMotionStatus(); } catch (_) { /* best-effort */ }
+        try { if (typeof loadFollowOrdersSettings === 'function') loadFollowOrdersSettings(); } catch (_) { /* best-effort */ }
       }
 
       const aiToggle = $('chatAiOnToggle');
       if (aiToggle) {
         aiToggle.addEventListener('change', async () => {
           const want = aiToggle.checked;
-          setServerAi(want);                 // start/stop the persistent server agent
-          if (want && ui.jawToggle && !ui.jawToggle.checked) {
-            ui.jawToggle.checked = true;
-            saveJawSettings();               // jaw moves while talking
-          }
-          if (!want) {
-            await disableAiDependentFeatures();
-          }
+          // AI mode is the server's: ON wakes the lurk state machine (agent plus
+          // jaw, LED, head tracking, AI motion and orders where the parts allow
+          // them, staggered agent-first); OFF returns it to lurking and drops
+          // exactly the switches the wake turned on. The page no longer flips
+          // feature toggles one by one.
+          await setServerAi(want);
+          refreshFeatureToggles();
           try { disconnectChat(); } catch (_) {}   // close any stray browser-WS viewer
         });
       }
@@ -1947,11 +1911,17 @@ async function saveHeadTrackSettings() {
       try {
         await fetch('/scenes/api/queue/clear', { method: 'POST' });
         const sceneIds = dashboardScenes.map(s => s.id);
-        await fetch('/scenes/api/queue/start-config', {
+        // The queue validator reads `scene_id` (or `id`); `sceneId` was rejected
+        // with a 400 this page never looked at, so Loop All silently did nothing.
+        const r = await fetch('/scenes/api/queue/start-config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mode: 'loop_queue', scenes: sceneIds.map(id => ({ sceneId: id })) })
+          body: JSON.stringify({ mode: 'loop_queue', scenes: sceneIds.map(id => ({ scene_id: id })) })
         });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || (j && j.success === false)) {
+          throw new Error((j && (j.error || (j.errors && j.errors.join('; ')))) || ('HTTP ' + r.status));
+        }
         sceneLoopActive = true;
         updateLoopUI();
       } catch (e) {

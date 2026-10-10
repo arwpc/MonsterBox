@@ -42,7 +42,10 @@ let watcherState = {
   motionDetectedCount: 0,
   // Callbacks set by the caller (conversation route)
   onSleep: null,                 // called when inactivity timeout fires
-  onWake: null                   // called when motion detected while sleeping
+  onWake: null,                  // called when motion detected while sleeping
+  // Called on EVERY detection. The lurk state machine (services/lurkStateService.js)
+  // owns wake/sleep decisions and passes only this, with inactivityTimeoutMs 0.
+  onMotion: null
 };
 
 // ─── Public API ───────────────────────────────────────────────────────
@@ -80,6 +83,7 @@ function start(characterId, opts = {}) {
   watcherState.motionDetectedCount = 0;
   watcherState.onSleep = opts.onSleep || null;
   watcherState.onWake = opts.onWake || null;
+  watcherState.onMotion = typeof opts.onMotion === 'function' ? opts.onMotion : null;
 
   // Start watching the pin. Preferred path is ONE resident python watcher —
   // the old per-poll execFile forked a fresh interpreter every second (~86k
@@ -121,6 +125,7 @@ function stop() {
   watcherState.sleeping = false;
   watcherState.onSleep = null;
   watcherState.onWake = null;
+  watcherState.onMotion = null;
 }
 
 /**
@@ -295,6 +300,12 @@ function onMotionDetected() {
   const wasSleeping = watcherState.sleeping;
   watcherState.motionDetectedCount++;
   watcherState.lastMotionAt = Date.now();
+
+  if (watcherState.onMotion) {
+    try { watcherState.onMotion(watcherState.characterId); } catch (e) {
+      console.error('[LurkMotionWatcher] onMotion callback error:', e.message);
+    }
+  }
 
   if (wasSleeping) {
     // Wake up! Motion detected while sleeping

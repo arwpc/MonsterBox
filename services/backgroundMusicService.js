@@ -22,6 +22,17 @@
  * the speaker is muted — and resumes, from where it left off, resumeDelayMs
  * after the last of those clears.
  *
+ * WHY it follows the lurk state (decision D3, castle-tuning mission): music is
+ * the sound of a character WAITING. It plays only while the node's lurk state
+ * machine (services/lurkStateService.js) reads `lurking`; any wake (PIR, a
+ * schedule, AI on) pauses it, a fleet event hold pauses it, Lurk OFF pauses it,
+ * and the return to lurking resumes it from where it left off.
+ *
+ * WHY Stop-All / panic PAUSE it instead of destroying the supervisor: a stop
+ * used to delete the supervisor, and nothing restarted it until the next boot.
+ * Now it stays paused (by the operator) until the next resume — the machine's
+ * next entry into lurking, a Lurk ON, or a background-music config save.
+ *
  * WHY it never calls serverPlaybackService.stopForCharacter: that runs
  * speaker_cli.py stop, which pkills EVERY pw-play/mpg123 on the node — i.e. the
  * AI's voice. Each track is a handle from audioLoopService.playTrack() and the
@@ -136,6 +147,8 @@ export function isInQuietHours(quietHours, date = new Date()) {
  * @param {object} state
  * @param {boolean} state.enabled
  * @param {boolean} state.hasTracks
+ * @param {string|null} [state.lurkState]     lurk gate: 'lurking'|'awake'|'off'|'event'; null = no machine bound (legacy: no gate)
+ * @param {boolean} [state.operatorPaused]     paused by Stop-All / panic until the next resume
  * @param {boolean} [state.muted]              speaker mute
  * @param {boolean} [state.inQuietHours]
  * @param {boolean} [state.conversationActive] AI session live for this character
@@ -148,6 +161,12 @@ export function isInQuietHours(quietHours, date = new Date()) {
 export function shouldPlay(state = {}) {
     if (!state.enabled) return { play: false, reason: 'disabled' };
     if (!state.hasTracks) return { play: false, reason: 'no-tracks' };
+    if (state.operatorPaused) return { play: false, reason: 'paused' };
+    if (state.lurkState != null && state.lurkState !== 'lurking') {
+        const reason = state.lurkState === 'awake' ? 'awake'
+            : state.lurkState === 'event' ? 'event-hold' : 'not-lurking';
+        return { play: false, reason };
+    }
     if (state.muted) return { play: false, reason: 'muted' };
     if (state.inQuietHours) return { play: false, reason: 'quiet-hours' };
     if (state.conversationActive) return { play: false, reason: 'conversation' };
@@ -259,13 +278,14 @@ export async function writeBackgroundMusicConfig(characterId, patch) {
 // ---------------------------------------------------------------------------
 
 function defaultDeps() {
-    let wsSvc, queue, playback, loopSvc, library;
+    let wsSvc, queue, playback, loopSvc, library, lurk;
     const load = async () => {
         if (!playback) playback = (await import('./serverPlaybackService.js')).default;
         if (!loopSvc) loopSvc = (await import('./audioLoopService.js')).default;
         if (!library) library = (await import('./audioLibraryService.js')).default;
         if (!queue) queue = await import('./scenes/sceneQueue.js');
         if (!wsSvc) wsSvc = (await import('./elevenLabsWebSocketService.js')).default;
+        if (!lurk) lurk = (await import('./lurkStateService.js')).default;
     };
     return {
         readConfig: readBackgroundMusicConfig,
@@ -286,7 +306,10 @@ function defaultDeps() {
                     otherAudioUntil = last.ts + est;
                 }
             } catch (_) { /* none */ }
+            let lurkState = null;
+            try { lurkState = lurk.getGateState(characterId); } catch (_) { /* no machine: legacy, ungated */ }
             return {
+                lurkState,
                 muted: !!playback.isSpeakerMuted(),
                 conversationActive,
                 queueRunning,
@@ -316,6 +339,31 @@ function defaultDeps() {
     };
 }
 
+// A paused track's ffmpeg decoder could survive its SIGTERM: once pw-play is
+// gone nobody drains ffmpeg's stdout, ffmpeg blocks in write() and never acts
+// on the signal. On one node on 2026-10-09 thirty of them held 2.8 GB of RSS — one
+// per pause. The supervisor now pauses on every wake, so it makes sure its own
+// two PIDs are gone: SIGKILL after a grace, only if the PID is still one of
+// the pipeline's own programs (no PID-reuse accidents).
+const REAP_GRACE_MS = 2000;
+function reapStragglers(pids) {
+    if (!Array.isArray(pids) || pids.length === 0) return;
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true') return;
+    const t = setTimeout(async () => {
+        for (const pid of pids) {
+            try {
+                const cmd = await fs.readFile(`/proc/${pid}/cmdline`, 'utf8');
+                if (!/ffmpeg|pw-play/.test(cmd)) continue;
+                const stat = await fs.readFile(`/proc/${pid}/stat`, 'utf8').catch(() => '');
+                if (/\) Z /.test(stat)) continue; // zombie: already dead, awaiting reap
+                process.kill(pid, 'SIGKILL');
+                console.warn(`🎵 background music: decoder pid ${pid} ignored SIGTERM — killed`);
+            } catch (_) { /* already gone */ }
+        }
+    }, REAP_GRACE_MS);
+    if (t.unref) t.unref();
+}
+
 // ---------------------------------------------------------------------------
 // Supervisor
 // ---------------------------------------------------------------------------
@@ -337,6 +385,21 @@ export class BackgroundMusicSupervisor {
         this._quickFails = 0;
         this._retryAfter = 0;
         this._stopped = true;
+        this._operatorPaused = false;
+    }
+
+    /** Stop-All / panic: silence now, keep the supervisor, wait for resume(). */
+    pause(reason = 'stop-all') {
+        this._operatorPaused = true;
+        this._pauseReason = reason;
+        this._pause();
+    }
+
+    /** Clear an operator pause; the next tick decides whether to play. */
+    resume() {
+        this._operatorPaused = false;
+        this._pauseReason = null;
+        this._lastBlockedAt = this.deps.now(); // resume after resumeDelayMs, not abruptly
     }
 
     start() {
@@ -383,9 +446,14 @@ export class BackgroundMusicSupervisor {
             // Other playback reports when it ENDS; count the resume delay from
             // then, not from whichever tick last happened to see it.
             else if (p.otherAudioUntil) this._lastBlockedAt = Math.max(this._lastBlockedAt, p.otherAudioUntil);
+            // While held off by lurk state, keep the resume delay running so
+            // music does not cut in the instant a conversation ends.
+            if (p.lurkState != null && p.lurkState !== 'lurking') this._lastBlockedAt = now;
             const decision = shouldPlay({
                 enabled: cfg.enabled,
                 hasTracks: cfg.tracks.length > 0,
+                operatorPaused: this._operatorPaused,
+                lurkState: p.lurkState,
                 muted: p.muted,
                 inQuietHours: isInQuietHours(cfg.quietHours, new Date(now)),
                 conversationActive: p.conversationActive,
@@ -415,7 +483,10 @@ export class BackgroundMusicSupervisor {
         const h = this._handle;
         this._handle = null;
         this._handleTrack = null;
-        if (h) { try { h.stop(); } catch (e) { console.error('🎵 stop failed:', e.message); } }
+        if (h) {
+            try { h.stop(); } catch (e) { console.error('🎵 stop failed:', e.message); }
+            reapStragglers(h.pids);
+        }
     }
 
     _pause() {
@@ -493,6 +564,8 @@ export class BackgroundMusicSupervisor {
             running: !this._stopped,
             playing: !!this._handle,
             state: this._reason,
+            paused: !!this._operatorPaused,
+            pauseReason: this._pauseReason || null,
             track: this._handleTrack || this.rotation.current(),
             offsetMs: this._offsetMs,
             config: this.config
@@ -519,8 +592,50 @@ class BackgroundMusicService {
             this._supervisors.set(key, sup);
         }
         sup.invalidateConfig();
+        if (sup._operatorPaused) sup.resume();
         sup.start();
         return sup.getStatus();
+    }
+
+    /**
+     * Stop-All / panic: every supervisor goes silent and stays paused until
+     * resume() (next entry into lurking, Lurk ON, a config save). The
+     * supervisors survive — before, a single "Stop Audio" ended music until
+     * the next reboot.
+     */
+    pauseAll(reason = 'stop-all') {
+        let n = 0;
+        for (const sup of this._supervisors.values()) { sup.pause(reason); n += 1; }
+        return n;
+    }
+
+    /**
+     * Clear an operator pause and make sure the supervisor runs when the
+     * character has music configured. Called by the lurk state machine on
+     * every entry into lurking.
+     */
+    async resume(characterId) {
+        const cfg = await readBackgroundMusicConfig(characterId);
+        if (!cfg.enabled) return { resumed: false, reason: 'disabled' };
+        const sup = this._supervisors.get(String(characterId));
+        if (sup) {
+            sup.resume();
+            sup.invalidateConfig();
+            if (sup._stopped) sup.start();
+            this._hookStopAll();
+        } else {
+            this.start(characterId);
+        }
+        await this.nudge(characterId);
+        return { resumed: true };
+    }
+
+    /** Evaluate the play gate now rather than on the next tick. */
+    async nudge(characterId) {
+        const sup = this._supervisors.get(String(characterId));
+        if (!sup) return false;
+        await sup.tick();
+        return true;
     }
 
     _hookStopAll() {
@@ -528,8 +643,8 @@ class BackgroundMusicService {
         this._hooked = true;
         import('./audioLoopService.js')
             .then(m => m.default.onStopAll(() => {
-                if (this._supervisors.size) console.log('🎵 Stop-all audio: background music stopped');
-                this.stopAll();
+                const n = this.pauseAll('stop-all');
+                if (n) console.log('🎵 Stop-all audio: background music paused (resumes on the next return to lurking)');
             }))
             .catch(e => console.error('🎵 could not hook stop-all:', e.message));
     }

@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { updateJsonUnderLock } from './atomicStore.js';
+import { runtimeToggleOverride } from './characterConfigLock.js';
 
 /**
  * AI Motion Super Power Service
@@ -111,6 +112,24 @@ export function invalidateAiMotionCache(characterId) {
  * Returns a config object with defaults merged in. Never throws.
  */
 export async function readAiMotionConfig(characterId) {
+  return withAiMotionOverride(characterId, await readAiMotionConfigFromDisk(characterId));
+}
+
+/**
+ * Overlay the in-memory runtime toggle (characterConfigLock runtimeToggles) on
+ * `enabled`. AI mode (services/lurkStateService.js) switches AI Motion on for
+ * the length of a wake WITHOUT writing super-powers.json, and a locked
+ * character's dashboard toggle lives in the same overlay. Every reader goes
+ * through readAiMotionConfig, so they all see the live value. The cache holds
+ * the disk value only, so a toggle takes effect on the very next read.
+ */
+function withAiMotionOverride(characterId, config) {
+  const override = runtimeToggleOverride(characterId, 'aiMotion.enabled');
+  if (override === undefined || override === config.enabled) return config;
+  return { ...config, enabled: !!override, runtimeOverride: true };
+}
+
+async function readAiMotionConfigFromDisk(characterId) {
   const key = String(characterId);
   const cached = configCache.get(key);
   if (cached && Date.now() - cached.at < CONFIG_CACHE_TTL_MS) return cached.config;
@@ -146,9 +165,28 @@ export async function writeAiMotionConfig(characterId, config) {
   const dataDir = getCharacterDataDir(characterId);
   const configFile = path.join(dataDir, 'super-powers.json');
 
+  // A config that came from readAiMotionConfig while AI mode's runtime
+  // override was live carries that override in `enabled` (and is marked
+  // runtimeOverride). Saving it back (the settings page merges over the current
+  // read; a suite restores a captured config) must not freeze a wake's
+  // temporary switch into the operator's file, so the disk value is kept —
+  // unless the override is still live and the caller's `enabled` differs from
+  // it, i.e. the caller really changed it.
+  let incoming = config || {};
+  if (incoming.runtimeOverride) {
+    const { runtimeOverride, ...rest } = incoming;
+    incoming = rest;
+    const override = runtimeToggleOverride(characterId, 'aiMotion.enabled');
+    const callerChangedIt = override !== undefined && !!rest.enabled !== !!override;
+    if (!callerChangedIt) {
+      const disk = await readAiMotionConfigFromDisk(characterId);
+      incoming = { ...rest, enabled: !!disk.enabled };
+    }
+  }
+
   await fs.mkdir(dataDir, { recursive: true });
   await updateJsonUnderLock(configFile, (fileConfig) => {
-    fileConfig.aiMotion = mergeAiMotionConfig(config);
+    fileConfig.aiMotion = mergeAiMotionConfig(incoming);
     return fileConfig;
   });
 

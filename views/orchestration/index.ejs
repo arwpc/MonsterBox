@@ -45,7 +45,8 @@
 
     <!-- Fleet superpower masters -->
     <div class="mb-btn-group" role="group" aria-label="Fleet superpowers">
-      <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="lurk" title="Toggle Lurk mode on every animatronic">Lurk</button>
+      <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="ai" title="AI mode on every animatronic: wake it (agent plus every capability its parts support); off sends it back to lurking">AI</button>
+      <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="lurk" title="Toggle Lurk mode on every animatronic (idle movement, head tracking, PIR wake, background music; nobody speaks)">Lurk</button>
       <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="jaw" title="Toggle jaw animation fleet-wide">Jaw</button>
       <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="head" title="Toggle head tracking fleet-wide">Head</button>
         <button class="mb-btn mb-btn-sm mb-btn-secondary fcc-sp" data-sp="aiMotion" title="Toggle AI Motion fleet-wide — the characters move as they speak and obey spoken movement requests">AI Motion</button>
@@ -74,7 +75,7 @@
 
     <!-- Panic -->
     <button class="mb-btn mb-btn-sm mb-btn-danger fcc-estop ms-auto" id="estop"
-      title="Immediately halt every animatronic: stop queues, stop audio, disable random poses, mute">
+      title="Immediately halt every animatronic: stop queues, stop audio, disable random poses, Lurk off (agent and PIR off). Does not mute.">
       <i class="bi bi-exclamation-octagon-fill"></i> EMERGENCY STOP</button>
   </div>
 
@@ -1055,7 +1056,7 @@
       fleetAction('Reboot', '/reboot/animatronics', { method: 'POST', body: JSON.stringify({ ids: targetIds() ? targetIds().map(Number) : undefined }) });
   });
   $('#estop').addEventListener('click', async () => {
-    if (await askConfirm('EMERGENCY STOP', 'Halts scene queues, stops audio, disables random poses and mutes every targeted node immediately.', targetLabel()))
+    if (await askConfirm('EMERGENCY STOP', 'Halts scene queues, stops audio (background music pauses), disables random poses, turns Lurk off (agent and PIR off) and head tracking off on every targeted node immediately. Speakers are not muted.', targetLabel()))
       fleetAction('EMERGENCY STOP', '/emergency-stop', { method: 'POST', body: JSON.stringify({ ids: targetIds() }) });
   });
 

@@ -331,6 +331,7 @@
       }
       sceneSelect.innerHTML = sceneHtml || '<option value="">No scenes for this character</option>';
       text($('schSceneCharacter'), state.character ? ('· ' + state.character.name) : '');
+      text($('schWakeCharacter'), state.character ? state.character.name : 'the selected character');
 
       updateMomentHint();
     }).catch(function (error) {
@@ -381,6 +382,7 @@
     var type = currentActionType();
     show($('schMomentField'), type === 'moment');
     show($('schSceneField'), type === 'scene');
+    show($('schWakeField'), type === 'wake');
     show($('schRawField'), type === 'raw');
   }
 
@@ -400,6 +402,8 @@
       action.dryRun = $('schDryRun').checked;
     } else if (type === 'scene') {
       action.sceneId = $('schScene').value;
+      action.characterId = state.character ? state.character.id : null;
+    } else if (type === 'wake') {
       action.characterId = state.character ? state.character.id : null;
     } else {
       action.command = $('schRawCommand').value;

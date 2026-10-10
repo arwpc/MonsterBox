@@ -47,7 +47,7 @@ import randomPoseRoutes from './routes/api/randomPoseRoutes.js';
 import sceneEditorApiRoutes from './routes/api/sceneEditorApi.js';
 import systemApiRoutes from './routes/api/systemRoutes.js';
 import audioLibraryRoutes from './routes/audioLibrary.js';
-import conversationRoutes, { restoreMotionModeOnStartup, startAlwaysOnHeadTracking } from './routes/conversation.js';
+import conversationRoutes from './routes/conversation.js';
 import goblinManagementRoutes from './routes/goblinManagement.js';
 import orchestrationWebRoutes from './routes/orchestration.js';
 import posesRoutes from './routes/poses/index.js';
@@ -1094,28 +1094,37 @@ async function onServerReady(protocol) {
         console.error(`❌ Failed to initialize jaw animation:`, error.message);
     }
 
-    // Re-arm motion mode if this node was armed when it last went down. A
-    // Halloween-night reboot must leave the character listening to its PIR,
-    // not deaf until someone reopens the dashboard.
+    // Speaker mute is RUNTIME-ONLY (decision D3, castle-tuning mission): every
+    // animatronic boots unmuted. serverPlaybackService still restores a mute
+    // persisted by an earlier process; clear it here so a mute set for one night
+    // cannot silently survive into the next show. The mute API still works for
+    // the rest of this process's life. (Quiet hours are enforced where noise is
+    // made — music, callouts, lurk scenes, PIR wakes — not by a sticky flag.)
     try {
-        await restoreMotionModeOnStartup(config && config.selectedCharacter);
+        const { default: playback } = await import('./services/serverPlaybackService.js');
+        if (playback.isSpeakerMuted()) {
+            await playback.setSpeakerMuted(false);
+            console.log('🔈 Speaker mute is runtime-only: the mute persisted by the last run was cleared — this node boots UNMUTED');
+        }
     } catch (error) {
-        console.error(`❌ Failed to restore motion mode:`, error.message);
+        console.error(`❌ Failed to clear the persisted speaker mute:`, error.message);
     }
 
-    // Head tracking ON by default for a character that opted in
-    // (super-powers.json → headTracking.alwaysOn: true). Delayed so the webcam
-    // stream and tracker are ready after boot; a no-op for everyone else.
-    {
-        const alwaysOnCharacterId = config && config.selectedCharacter;
-        const parsedDelay = Number(process.env.MB_HEAD_ALWAYS_ON_DELAY_MS);
-        const alwaysOnDelayMs = Number.isFinite(parsedDelay) && parsedDelay >= 0 ? parsedDelay : 15000;
-        const alwaysOnTimer = setTimeout(() => {
-            startAlwaysOnHeadTracking(alwaysOnCharacterId).catch((error) => {
-                console.error(`❌ Failed to start always-on head tracking:`, error.message);
-            });
-        }, alwaysOnDelayMs);
-        if (typeof alwaysOnTimer.unref === 'function') alwaysOnTimer.unref();
+    // Lurk state machine: the node boots into LURKING (idle loop over idle-tagged
+    // poses, head tracking where a webcam and pan servo exist, the PIR armed,
+    // background music where configured; nothing speaks). The lurk stack starts
+    // after a delay so the webcam is up and the boot inrush is over, and the PIR
+    // is ignored for the first minute (a floating line used to wake a node
+    // during boot). Replaces the old motion-mode re-arm and the always-on
+    // head-tracking start (headTracking.alwaysOn still keeps tracking running
+    // through Lurk OFF). See services/lurkStateService.js.
+    try {
+        if (config && config.selectedCharacter != null) {
+            const { default: lurkStateService } = await import('./services/lurkStateService.js');
+            await lurkStateService.init(config.selectedCharacter);
+        }
+    } catch (error) {
+        console.error(`❌ Failed to start the lurk state machine:`, error.message);
     }
 
     // Background music is opt-in per character (super-powers.json →
@@ -1297,6 +1306,15 @@ async function gracefulShutdown(signal) {
         backgroundMusicService.stopAll();
     } catch (e) {
         console.warn('Background music cleanup:', (e && e.message) || e);
+    }
+
+    // The lurk state machine's timers and its resident PIR watcher go first, so
+    // the watcher's exit is not mistaken for a crash and respawned mid-shutdown.
+    try {
+        const { default: lurkStateService } = await import('./services/lurkStateService.js');
+        await lurkStateService.shutdown();
+    } catch (e) {
+        console.warn('Lurk state cleanup:', (e && e.message) || e);
     }
 
     try {

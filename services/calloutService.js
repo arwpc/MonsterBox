@@ -14,6 +14,13 @@
  * writable on a LOCKED character, see characterConfigLock.RUNTIME_STATE_PATTERN).
  * Absent file or enabled:false => the node behaves exactly as before.
  *
+ * OFF by default and gated on the lurk state (decision D3, castle-tuning
+ * mission): a scheduled callout speaks only while the node's lurk state machine
+ * (services/lurkStateService.js) reads `lurking` — never while awake (a guest
+ * conversation owns the voice), never during a fleet event hold, never with
+ * Lurk OFF — and never in quiet hours. The operator brief is "nobody speaks
+ * until woken"; enabling callouts is the operator's explicit exception.
+ *
  * Cost on a Pi: one unref'd setTimeout per character, no polling, no per-tick
  * disk writes (lastCalloutAt lives in RAM); logs on transitions and on each
  * callout only.
@@ -49,7 +56,7 @@ const UNKNOWN_PLAYBACK_MS = 4000;
 // sooner than a full interval, so the next callout is not pushed out 5 minutes
 // by a 20-second line.
 const TRANSIENT_RETRY_MS = 30 * 1000;
-const TRANSIENT_REASONS = new Set(['conversation', 'scene-queue', 'other-audio', 'in-flight']);
+const TRANSIENT_REASONS = new Set(['conversation', 'scene-queue', 'other-audio', 'in-flight', 'awake', 'event-hold']);
 
 const HHMM = /^([01]?\d|2[0-3]):([0-5]\d)$/;
 
@@ -168,12 +175,18 @@ export function nextDelayMs(intervalMs, jitterPct = 0, random = Math.random) {
  * @param {boolean} [s.conversationActive]
  * @param {boolean} [s.queueRunning]
  * @param {boolean} [s.otherAudioActive]
- * @param {boolean} [s.ignoreEnabled]     operator test on a disabled character
+ * @param {boolean} [s.ignoreEnabled]     operator test on a disabled character (also skips the lurk gate)
+ * @param {string|null} [s.lurkState]     lurk gate: 'lurking'|'awake'|'off'|'event'; null = no machine
+ *                                        bound to this character (blocked); undefined = ungated (legacy callers)
  * @returns {{go: boolean, reason: string}}
  */
 export function decideCallout(s = {}) {
     if (!s.enabled && !s.ignoreEnabled) return { go: false, reason: 'disabled' };
     if (s.inFlight) return { go: false, reason: 'in-flight' };
+    if (s.lurkState !== undefined && s.lurkState !== 'lurking' && !s.ignoreEnabled) {
+        const reason = s.lurkState === 'awake' ? 'awake' : s.lurkState === 'event' ? 'event-hold' : 'not-lurking';
+        return { go: false, reason };
+    }
     if (s.muted) return { go: false, reason: 'muted' };
     if (s.inQuietHours && !s.force) return { go: false, reason: 'quiet-hours' };
     if (s.conversationActive) return { go: false, reason: 'conversation' };
@@ -226,22 +239,21 @@ function statePath(characterId) {
 }
 
 /**
- * Motion mode's inactivity sleep switches jaw animation OFF
- * (disableLurkSuperpowers), and most scheduled callouts land while the
- * character is asleep — so without this the line would play through a frozen
- * jaw. Hold the jaw ON in memory (runtime toggle overlay, no disk write) for the
- * length of the line, ONLY when the PIR watcher put this character to sleep; an
- * operator who switched the jaw off with motion mode disarmed is respected.
- * Locked characters are left exactly as frozen. Returns a release function.
+ * Callouts speak only while lurking, and lurking leaves the jaw at its saved
+ * value (AI mode switches it on in memory only while awake) — so a character
+ * whose saved jaw flag is off would deliver the line through a frozen jaw.
+ * Hold the jaw ON in memory (runtime toggle overlay, no disk write) for the
+ * length of the line while the lurk state machine reads `lurking`; anything
+ * already overlaid (an operator toggle) is respected. Locked characters are left
+ * exactly as frozen. Returns a release function.
  */
 async function holdJawForCallout(characterId) {
     const KEY = 'jawAnimation.enabled';
     try {
         const lock = await import('./characterConfigLock.js');
         if (lock.isCharacterLocked(characterId)) return () => {};
-        const watcher = (await import('./lurkMotionWatcherService.js')).default;
-        const ws = watcher.getStatus();
-        if (!ws.active || !ws.sleeping || Number(ws.characterId) !== Number(characterId)) return () => {};
+        const lurk = (await import('./lurkStateService.js')).default;
+        if (lurk.getGateState(characterId) !== 'lurking') return () => {};
         if (lock.runtimeToggleOverride(characterId, KEY) !== undefined) return () => {};
         lock.rememberRuntimeToggle(characterId, KEY, true);
         return () => {
@@ -256,8 +268,9 @@ async function holdJawForCallout(characterId) {
 }
 
 function defaultDeps() {
-    let wsSvc, queue, playback, characterSvc;
+    let wsSvc, queue, playback, characterSvc, lurk;
     const load = async () => {
+        if (!lurk) lurk = (await import('./lurkStateService.js')).default;
         if (!playback) playback = (await import('./serverPlaybackService.js')).default;
         if (!queue) queue = await import('./scenes/sceneQueue.js');
         if (!wsSvc) wsSvc = (await import('./elevenLabsWebSocketService.js')).default;
@@ -299,7 +312,9 @@ function defaultDeps() {
             } catch (_) { /* none */ }
             let muted = false;
             try { muted = !!playback.isSpeakerMuted(); } catch (_) { /* assume audible */ }
-            return { muted, conversationActive, queueRunning, otherAudioActive };
+            let lurkState = null;
+            try { lurkState = lurk.getGateState(characterId); } catch (_) { /* no machine: blocked */ }
+            return { muted, conversationActive, queueRunning, otherAudioActive, lurkState };
         },
         /**
          * ONE line through the existing one-shot agent path (the same

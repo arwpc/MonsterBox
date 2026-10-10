@@ -146,6 +146,7 @@
         <div class="mb-row-sm mb-row-wrap">
           <label class="mb-chip"><input type="radio" name="schActionType" value="moment" checked title="Run a yard-theater moment"> Yard-theater moment</label>
           <label class="mb-chip"><input type="radio" name="schActionType" value="scene" title="Play a scene on this node"> Play a scene</label>
+          <label class="mb-chip"><input type="radio" name="schActionType" value="wake" title="Wake the character into AI mode"> Wake (AI mode)</label>
           <label class="mb-chip"><input type="radio" name="schActionType" value="raw" title="Run a raw shell command"> Raw command</label>
         </div>
 
@@ -163,6 +164,13 @@
           <label class="mb-field-label" for="schScene">Scene <span class="mb-text-secondary" id="schSceneCharacter"></span></label>
           <select class="mb-select" id="schScene" title="Choose which scene plays"></select>
           <span class="mb-field-hint">Plays through this node's own scene API, for the character selected in the nav bar.</span>
+        </div>
+
+        <div class="mb-field sch-hidden" id="schWakeField">
+          <span class="mb-field-label">Wake <span id="schWakeCharacter">the selected character</span></span>
+          <span class="mb-field-hint">Switches AI mode on, as if a guest walked past the PIR: the agent plus every
+            capability the character's parts support. It goes back to lurking after the inactivity timeout,
+            never in the middle of a conversation.</span>
         </div>
 
         <div class="mb-field sch-hidden" id="schRawField">

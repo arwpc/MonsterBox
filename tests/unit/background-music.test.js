@@ -324,3 +324,57 @@ describe('audioLoopService: own-only stop + dead pw-play detection', () => {
         }
     });
 });
+
+describe('backgroundMusic: lurk state gate and operator pause (decision D3)', () => {
+    it('plays while lurking, pauses on a wake, resumes at the offset after lurking returns', async () => {
+        const h = makeHarness();
+        h.probe.lurkState = 'lurking';
+        await h.sup.tick();
+        expect(h.plays).to.have.length(1);
+        h.now += 20000;
+        h.probe.lurkState = 'awake';
+        await h.sup.tick();
+        expect(h.handles[0].stopped).to.equal(true);
+        expect(h.sup.getStatus().state).to.equal('awake');
+        h.now += 60000;
+        await h.sup.tick();
+        expect(h.plays).to.have.length(1);
+        h.probe.lurkState = 'lurking';
+        h.now += 1000;
+        await h.sup.tick(); // the resume delay still runs after a wake
+        expect(h.plays).to.have.length(1);
+        h.now += 6000;
+        await h.sup.tick();
+        expect(h.plays).to.have.length(2);
+        expect(h.plays[1].opts.offsetMs).to.equal(20000);
+    });
+
+    it('a fleet event hold or Lurk OFF keeps it silent', async () => {
+        const h = makeHarness();
+        h.probe.lurkState = 'event';
+        await h.sup.tick();
+        expect(h.plays).to.have.length(0);
+        expect(h.sup.getStatus().state).to.equal('event-hold');
+        h.probe.lurkState = 'off';
+        await h.sup.tick();
+        expect(h.sup.getStatus().state).to.equal('not-lurking');
+    });
+
+    it('Stop-All pauses without destroying the supervisor; resume() brings it back', async () => {
+        const h = makeHarness();
+        h.probe.lurkState = 'lurking';
+        await h.sup.tick();
+        h.now += 10000;
+        h.sup.pause('stop-all');
+        expect(h.handles[0].stopped).to.equal(true);
+        h.now += 60000;
+        await h.sup.tick();
+        expect(h.plays).to.have.length(1);
+        expect(h.sup.getStatus()).to.include({ paused: true, state: 'paused' });
+        h.sup.resume();
+        h.now += 6000;
+        await h.sup.tick();
+        expect(h.plays).to.have.length(2);
+        expect(h.plays[1].opts.offsetMs).to.equal(10000);
+    });
+});

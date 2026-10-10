@@ -16,9 +16,11 @@
  * it writable on a LOCKED character, see characterConfigLock). Absent file or
  * enabled:false => the node behaves exactly as before.
  *
- * "Waiting for people" means: lurk mode is on, or the PIR motion watcher is
- * armed and asleep. A guest who just woke the PIR gets the conversation /
- * callout path, not a scripted scene over the top of them.
+ * "Waiting for people" means the node's lurk state machine
+ * (services/lurkStateService.js) reads `lurking`. Awake (a guest, AI mode), a
+ * fleet event hold, or Lurk OFF all block. OFF by default (decision D3,
+ * castle-tuning mission): lurk scenes usually speak, and the operator brief is
+ * "nobody speaks until woken" — enabling them is an explicit opt-in.
  */
 
 import fs from 'fs/promises';
@@ -44,7 +46,7 @@ const MAX_SCENES = 50;
 // Same windows as callouts: a blocked turn retries soon instead of waiting a
 // whole interval behind a 20-second line.
 const TRANSIENT_RETRY_MS = 30 * 1000;
-const TRANSIENT_REASONS = new Set(['conversation', 'scene-queue', 'other-audio', 'callout', 'in-flight']);
+const TRANSIENT_REASONS = new Set(['conversation', 'scene-queue', 'other-audio', 'callout', 'in-flight', 'guests-present']);
 const RECENT_AUDIO_GRACE_MS = 3000;
 const UNKNOWN_PLAYBACK_MS = 4000;
 const HHMM = /^([01]?\d|2[0-3]):([0-5]\d)$/;
@@ -126,6 +128,19 @@ export function nextSceneId(sceneIds, lastId) {
     return sceneIds[(i + 1) % sceneIds.length];
 }
 
+/**
+ * Did startWithConfig actually start the scene? Its returned status is read
+ * AFTER runLoop has synchronously shifted the only item off the queue, so the
+ * old `status.length > 0` check reported "did not start" for every scene that
+ * DID start (22 false lines in monsterbox.err on 2026-10-09). A started queue
+ * is `running` (runLoop sets it before its first await); a missing scene id
+ * leaves the queue empty and runLoop exits synchronously with running=false.
+ */
+export function queueStarted(status) {
+    if (!status || typeof status !== 'object') return false;
+    return !!(status.running || status.nowPlaying || (Number(status.length) || 0) > 0);
+}
+
 function statePath(characterId) {
     return path.join(resolveCharacterDataDir(Number(characterId)), STATE_FILE);
 }
@@ -135,12 +150,12 @@ function isTestMode() {
 }
 
 function defaultDeps() {
-    let wsSvc, queue, playback, watcher, callouts;
+    let wsSvc, queue, playback, lurk, callouts;
     const load = async () => {
         if (!playback) playback = (await import('./serverPlaybackService.js')).default;
         if (!queue) queue = await import('./scenes/sceneQueue.js');
         if (!wsSvc) wsSvc = (await import('./elevenLabsWebSocketService.js')).default;
-        if (!watcher) watcher = (await import('./lurkMotionWatcherService.js')).default;
+        if (!lurk) lurk = (await import('./lurkStateService.js')).default;
         if (!callouts) callouts = (await import('./calloutService.js')).default;
     };
     return {
@@ -164,18 +179,8 @@ function defaultDeps() {
         async probe(characterId) {
             await load();
             const now = Date.now();
-            let lurkEnabled = false;
-            try {
-                const lurk = JSON.parse(await fs.readFile(
-                    path.join(resolveCharacterDataDir(Number(characterId)), 'lurk-mode-state.json'), 'utf8'));
-                lurkEnabled = !!(lurk && lurk.enabled);
-            } catch (_) { /* no lurk file: not lurking */ }
-            let watcherActive = false;
-            let watcherSleeping = false;
-            try {
-                watcherActive = !!watcher.isActive();
-                watcherSleeping = !!watcher.isSleeping();
-            } catch (_) { /* treat as not armed */ }
+            let gate = null;
+            try { gate = lurk.getGateState(characterId); } catch (_) { /* no machine: not lurking */ }
             let conversationActive = false;
             try { conversationActive = !!wsSvc.hasActiveSession(characterId); } catch (_) { /* none */ }
             let queueRunning = false;
@@ -193,9 +198,9 @@ function defaultDeps() {
             let muted = false;
             try { muted = !!playback.isSpeakerMuted(); } catch (_) { /* assume audible */ }
             return {
-                lurking: lurkEnabled || watcherActive,
-                // An armed watcher that is AWAKE means someone just walked up.
-                guestsPresent: watcherActive && !watcherSleeping,
+                lurking: gate === 'lurking',
+                // Awake = someone woke it (PIR, schedule, AI on): their turn, not a scene's.
+                guestsPresent: gate === 'awake',
                 conversationActive, queueRunning, calloutInFlight, otherAudioActive, muted
             };
         },
@@ -205,7 +210,7 @@ function defaultDeps() {
                 mode: 'sequential',
                 scenes: [{ scene_id: sceneId }]
             });
-            return { success: !!(status && status.length > 0), status };
+            return { success: queueStarted(status), status };
         }
     };
 }

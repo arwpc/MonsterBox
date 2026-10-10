@@ -150,15 +150,14 @@ describe('Dashboard API — Deep Functional Tests', () => {
 
   // ── Monster Features: Speaker Mute ───────────────────────────────
   describe('Speaker Mute Toggle', () => {
-    // The mute flag PERSISTS to data/speaker-state.json and is reapplied on boot
-    // ("Speaker mute restored from disk -- this node boots muted"), so a run that
-    // dies between the mute and the unmute leaves the show silent through every
-    // subsequent reboot. So restore the value the operator actually had rather
-    // than a hardcoded false -- a deliberately-silent night must survive the suite.
+    // Mute is RUNTIME-ONLY since v10.7.0 (decision D3, castle-tuning mission):
+    // server.js clears any persisted mute at boot, so every node boots unmuted.
+    // Within one process the flag still holds, so restore the value the operator
+    // had rather than a hardcoded false -- a deliberately-muted evening must
+    // survive the suite.
     //
     // No afterEach here on purpose: 'GET should confirm muted state' asserts the
-    // flag survives between cases, so unmuting after every case would break the
-    // very persistence this block exists to cover.
+    // flag holds between cases, so unmuting after every case would break it.
     let originalMuted = false;
 
     before(async () => {

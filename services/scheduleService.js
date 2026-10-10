@@ -231,6 +231,17 @@ export function buildCommand(action = {}) {
         return `cd ${REPO_ROOT} && (curl -sk -X POST "${url}") >> ${logPathFor('scenes')} 2>&1`;
     }
 
+    if (type === 'wake') {
+        // Wake the character into AI mode through the node's lurk state machine
+        // (POST /conversation/api/wake). Works without a PIR; a wake while the
+        // character is already awake just counts as activity.
+        const characterId = String(action.characterId || '').replace(/[^\w-]/g, '');
+        if (!characterId) throw new Error('Wake action needs a character');
+        const url = `https://localhost:3000/conversation/api/wake?characterId=${characterId}`;
+        return `cd ${REPO_ROOT} && (curl -sk -X POST -H 'Content-Type: application/json' -d '{"source":"schedule"}' "${url}")`
+            + ` >> ${logPathFor('wake')} 2>&1`;
+    }
+
     // Escape hatch: the operator's own shell, still wrapped and still logged.
     const raw = String(action.command || '').trim();
     if (!raw) throw new Error('Command is empty');
