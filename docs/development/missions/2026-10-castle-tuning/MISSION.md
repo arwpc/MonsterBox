@@ -279,3 +279,10 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   played for real (lamp, arm, cached line, 15 s, clean logs); scenes 1,2,4–10 playing for real now in sequence.
   Still running: 1a conversation, 1d goblins. Next: 1a/1d commits → gate → deploy all six → per-node runtime state
   (callouts off, lurk scenes off; Dragomir lurk rotation → scenes 1,2) → push Orlok/Dragomir shows + lock refresh.
+- 2026-10-10 10:55 — phase 1a DONE (conversation, commit 61a15133; hooks wired by the lead: ai-status latency/mode,
+  lurk ignores unprompted agent speech + one-shots, panic stops the agent immediately). Shows DONE and committed
+  for Orlok, Sir Dragomir, Groundbreaker (voice-only, empty pose set), Renfield; PumpkinHead and Mina authors
+  running. Orlok's ten scenes PLAYED FOR REAL on this node: all steps succeeded except casts to the offline
+  Goblin 1; walls 33/37/15/100/102/87/50/26/26/34 s (event parts 8 ≈ 26 s, 9 ≈ 26 s, 10 ≈ 34 s vs budgets
+  28/20–25/24–28 — the conductor waits per part, so only the totals stretch). A mid-run service restart by another
+  worker cut three responses; those three were replayed clean. Still running: 1d goblins.
