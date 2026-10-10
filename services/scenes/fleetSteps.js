@@ -213,12 +213,12 @@ export function createFleetSteps(deps = {}) {
       const t = target(node, self);
       let r;
       try {
-        r = await http(t, { method: 'post', path: `/audio-library/api/audio/${encodeURIComponent(audioId)}/play`, body: { characterId: cid, volume, loop }, timeout: AUDIO_TIMEOUT_MS });
+        r = await http(t, { method: 'post', path: `/audio-library/api/audio/${encodeURIComponent(audioId)}/play`, body: { characterId: cid, volume, loop, background: true }, timeout: AUDIO_TIMEOUT_MS });
         if (r && r.success === false) throw new Error(r.error || r.message || 'device refused');
       } catch (primary) {
         // Same fallback the orchestration play-audio route uses: the conversation
         // player resolves by id, title or filename on older builds.
-        r = await http(t, { method: 'post', path: '/conversation/api/play-audio', body: { audioId, audio: { id: audioId }, characterId: cid, volume, loop }, timeout: AUDIO_TIMEOUT_MS });
+        r = await http(t, { method: 'post', path: '/conversation/api/play-audio', body: { audioId, audio: { id: audioId }, characterId: cid, volume, loop, background: true }, timeout: AUDIO_TIMEOUT_MS });
         if (r && r.success === false) throw new Error(r.error || primary.message);
       }
       return { audioId, muted: !!(r && r.muted), loop };

@@ -315,12 +315,34 @@ router.post('/api/audio/:id/play', async (req, res) => {
         const audioBuffer = await fs.readFile(audioFilePath);
 
         // Play through selected speaker (if provided) or character's configured speaker
-        const playResult = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
+        const playPromise = serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
             characterId: characterId,
             speakerPartId: speakerPartId,
             contentType: `audio/${audio.format}`,
             volume: volume || 100
         });
+
+        // A music bed is minutes long. A caller that fans a bed out to the whole fleet (the fleet-audio
+        // scene step, the orchestration play-audio route) cannot wait for it to END — it timed out at
+        // 15 s while the bed was audibly playing on every node (event rehearsal 2026-10-10). With
+        // background:true the request returns as soon as playback has been handed to the player; the
+        // outcome is logged here and the play is recorded when it really finishes.
+        if (req.body && req.body.background === true) {
+            playPromise.then(async (r) => {
+                if (r && r.success && !r.muted) await audioLibraryService.recordPlay(req.params.id).catch(() => {});
+                if (r && !r.success) console.warn(`Background play of \"${audio.title}\" failed: ${r.error}`);
+            }).catch((err) => console.warn(`Background play of \"${audio.title}\" threw: ${err.message}`));
+            return res.json({
+                success: true,
+                started: true,
+                background: true,
+                message: `Started \"${audio.title}\" on ${speakerPartId ? `speaker part ${speakerPartId}` : `character ${characterId} speaker`} (not waiting for it to end)`,
+                loop: false,
+                audio: { id: audio.id, title: audio.title, duration: audio.duration }
+            });
+        }
+
+        const playResult = await playPromise;
 
         if (playResult.success) {
             // A muted speaker "succeeds" without touching the hardware

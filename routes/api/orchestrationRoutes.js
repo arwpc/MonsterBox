@@ -1091,7 +1091,10 @@ router.post('/animatronic/:id/play-audio', express.json(), async (req, res) => {
                 {
                     characterId: animatronic.characterId,
                     volume: Number.isFinite(volume) ? volume : 100,
-                    loop: loop === true  // Pass loop parameter to the device
+                    loop: loop === true,  // Pass loop parameter to the device
+                    // A fleet fan-out must not wait for a minutes-long track to end (see the node route);
+                    // pass background:false to wait for the clip (short stingers from a script).
+                    background: req.body.background !== false
                 },
                 { timeout: 30000 }
             );
