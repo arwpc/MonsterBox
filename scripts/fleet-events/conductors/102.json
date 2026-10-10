@@ -2,50 +2,256 @@
   "id": 102,
   "name": "Event: The Count's Orders",
   "description": "Fleet event 2 (conductor). Orlok musters the household and gives five orders; the knight refuses, Renfield records everything, Pumpkinhead complains about the pumpkin sales, Groundbreaker misunderstands 'quietly', Mina sings the house to order. Script: docs/characters/FLEET-EVENTS.md.",
-  "tags": ["fleet-event", "conductor"],
+  "tags": [
+    "fleet-event",
+    "conductor"
+  ],
   "steps": [
-    { "type": "fleet-mode", "mode": "hold", "node": "all", "reason": "fleet-event 102 The Count's Orders", "maxMs": 600000 },
-    { "type": "fleet-audio", "node": "all", "audioId": "fleet-event-counts-march", "volume": 35, "loop": false, "concurrent": true },
-    { "type": "wait", "duration": 3000 },
-    { "type": "fleet-scene", "node": "Orlok", "scene": 9, "wait": true, "timeoutMs": 60000 },
-    { "type": "servo", "partId": "15", "angle": 70, "duration": 1500 },
-    { "type": "light", "partId": "8", "state": "on", "duration": 1000, "concurrent": true },
-    { "type": "sayThis", "text": "[deep voice] Dragomir. Ride down and put Pumpkinhead in his place. He mocks my gardens and he mocks me." },
-    { "type": "goblin-video", "goblinName": "Goblin 2", "videoId": "Pha Wraith Unholyhovering Win H.mp4", "waitMs": 0 },
-    { "type": "fleet-scene", "node": "Sir Dragomir", "scene": 9, "wait": true, "timeoutMs": 60000 },
-    { "type": "servo", "partId": "15", "angle": 116, "duration": 1500 },
-    { "type": "sayThis", "text": "Renfield. Record that the knight refused me. Then draft a contract: Pumpkinhead's patch, mine, in perpetuity." },
-    { "type": "goblin-video", "goblinName": "Goblin 1", "videoId": "Pha Spinster Mixtureofmadness Win H.mp4", "waitMs": 0 },
-    { "type": "fleet-scene", "node": "Renfield", "scene": 9, "wait": true, "timeoutMs": 60000 },
-    { "type": "light", "partId": "8", "state": "on", "duration": 1000, "concurrent": true },
-    { "type": "sayThis", "text": "Pumpkinhead. Your patch is mine by contract. Deliver forty pumpkins to the road by midnight. Nu... make it fifty." },
-    { "type": "goblin-video", "goblinName": "Goblin 2", "videoId": "Firepumpkin.mp4", "waitMs": 0 },
-    { "type": "goblin-video", "goblinName": "Goblin 3", "videoId": "Firepumpkin.mp4", "waitMs": 0 },
-    { "type": "fleet-scene", "node": "PumpkinHead", "scene": 9, "wait": true, "timeoutMs": 60000 },
-    { "type": "sayThis", "text": "Groundbreaker. Rise, and guard the road. Quietly. [pause] I said quietly." },
-    { "type": "goblin-video", "goblinName": "Goblin 2", "videoId": "Bigskull.mp4", "waitMs": 0 },
-    { "type": "goblin-video", "goblinName": "Goblin 1", "videoId": "Batattack.mp4", "waitMs": 0 },
-    { "type": "fleet-scene", "node": "Groundbreaker", "scene": 9, "wait": true, "timeoutMs": 60000 },
-    { "type": "light", "partId": "8", "state": "on", "duration": 0 },
-    { "type": "servo", "partId": "15", "angle": 99, "duration": 1500 },
-    { "type": "sayThis", "text": "Mina. Doamna mea. The house is loud and stupid tonight. Sing it to order, as only you can." },
-    { "type": "goblin-video", "goblinName": "Goblin 1", "videoId": "Floatinglady.mp4", "waitMs": 0 },
-    { "type": "goblin-video", "goblinName": "Goblin 3", "videoId": "Moon.mp4", "waitMs": 0 },
-    { "type": "fleet-scene", "node": "Mina", "scene": 9, "wait": true, "timeoutMs": 60000 },
-    { "type": "sayThis", "text": "[chuckles] The knight sulks. The solicitor scribbles. The pumpkin plots. The giant shouts. The lady sings." },
-    { "type": "light", "partId": "8", "state": "off", "duration": 0 },
-    { "type": "wait", "duration": 400 },
-    { "type": "light", "partId": "8", "state": "on", "duration": 400 },
-    { "type": "wait", "duration": 400 },
-    { "type": "light", "partId": "8", "state": "on", "duration": 400 },
-    { "type": "wait", "duration": 400 },
-    { "type": "light", "partId": "8", "state": "on", "duration": 400 },
-    { "type": "linear-actuator", "partId": "1", "direction": "extend", "speed": 50, "duration": 2000, "concurrent": true },
-    { "type": "sayThis", "text": "My household. Perfect. Go, prieteni... tell the road what you saw. Noapte bună." },
-    { "type": "linear-actuator", "partId": "1", "direction": "retract", "speed": 50, "duration": 2000 },
-    { "type": "servo", "partId": "15", "angle": 99, "duration": 1500 },
-    { "type": "wait", "duration": 1500 },
-    { "type": "fleet-stop-audio", "node": "all" },
-    { "type": "fleet-mode", "mode": "release", "node": "all", "reason": "fleet-event 102 finished" }
+    {
+      "type": "fleet-mode",
+      "mode": "hold",
+      "node": "all",
+      "reason": "fleet-event 102 The Count's Orders",
+      "maxMs": 600000
+    },
+    {
+      "type": "fleet-audio",
+      "node": "all",
+      "audioId": "fleet-event-counts-march",
+      "volume": 35,
+      "loop": false,
+      "concurrent": true
+    },
+    {
+      "type": "wait",
+      "duration": 3000
+    },
+    {
+      "type": "fleet-scene",
+      "node": "Orlok",
+      "scene": 9,
+      "wait": true,
+      "timeoutMs": 60000
+    },
+    {
+      "type": "servo",
+      "partId": "15",
+      "angle": 70,
+      "duration": 1500
+    },
+    {
+      "type": "light",
+      "partId": "8",
+      "state": "on",
+      "duration": 1000,
+      "concurrent": true
+    },
+    {
+      "type": "sayThis",
+      "text": "[deep voice] Dragomir. Ride down and put Pumpkinhead in his place. He mocks my gardens and he mocks me."
+    },
+    {
+      "type": "goblin-video",
+      "goblinName": "Goblin 2",
+      "videoId": "Pha Wraith Unholyhovering Win H.mp4",
+      "waitMs": 0
+    },
+    {
+      "type": "fleet-scene",
+      "node": "Sir Dragomir",
+      "scene": 9,
+      "wait": true,
+      "timeoutMs": 60000
+    },
+    {
+      "type": "servo",
+      "partId": "15",
+      "angle": 116,
+      "duration": 1500
+    },
+    {
+      "type": "sayThis",
+      "text": "Renfield. Record that the knight refused me. Then draft a contract: Pumpkinhead's patch, mine, in perpetuity."
+    },
+    {
+      "type": "goblin-video",
+      "goblinName": "Goblin 1",
+      "videoId": "Pha Spinster Mixtureofmadness Win H.mp4",
+      "waitMs": 0
+    },
+    {
+      "type": "fleet-scene",
+      "node": "Renfield",
+      "scene": 9,
+      "wait": true,
+      "timeoutMs": 60000
+    },
+    {
+      "type": "light",
+      "partId": "8",
+      "state": "on",
+      "duration": 1000,
+      "concurrent": true
+    },
+    {
+      "type": "sayThis",
+      "text": "Pumpkinhead. Your patch is mine by contract. Deliver forty pumpkins to the road by midnight. Nu... make it fifty."
+    },
+    {
+      "type": "goblin-video",
+      "goblinName": "Goblin 2",
+      "videoId": "Firepumpkin.mp4",
+      "waitMs": 0
+    },
+    {
+      "type": "goblin-video",
+      "goblinName": "Goblin 3",
+      "videoId": "Firepumpkin.mp4",
+      "waitMs": 0
+    },
+    {
+      "type": "fleet-scene",
+      "node": "PumpkinHead",
+      "scene": 9,
+      "wait": true,
+      "timeoutMs": 60000
+    },
+    {
+      "type": "sayThis",
+      "text": "Groundbreaker. Rise, and guard the road. Quietly. [pause] I said quietly."
+    },
+    {
+      "type": "goblin-video",
+      "goblinName": "Goblin 2",
+      "videoId": "Skullfloor.mp4",
+      "waitMs": 0
+    },
+    {
+      "type": "goblin-video",
+      "goblinName": "Goblin 1",
+      "videoId": "Batattack.mp4",
+      "waitMs": 0
+    },
+    {
+      "type": "fleet-scene",
+      "node": "Groundbreaker",
+      "scene": 9,
+      "wait": true,
+      "timeoutMs": 60000
+    },
+    {
+      "type": "light",
+      "partId": "8",
+      "state": "on",
+      "duration": 0
+    },
+    {
+      "type": "servo",
+      "partId": "15",
+      "angle": 99,
+      "duration": 1500
+    },
+    {
+      "type": "sayThis",
+      "text": "Mina. Doamna mea. The house is loud and stupid tonight. Sing it to order, as only you can."
+    },
+    {
+      "type": "goblin-video",
+      "goblinName": "Goblin 1",
+      "videoId": "Floatinglady.mp4",
+      "waitMs": 0
+    },
+    {
+      "type": "goblin-video",
+      "goblinName": "Goblin 3",
+      "videoId": "Moon.mp4",
+      "waitMs": 0
+    },
+    {
+      "type": "fleet-scene",
+      "node": "Mina",
+      "scene": 9,
+      "wait": true,
+      "timeoutMs": 60000
+    },
+    {
+      "type": "sayThis",
+      "text": "[chuckles] The knight sulks. The solicitor scribbles. The pumpkin plots. The giant shouts. The lady sings."
+    },
+    {
+      "type": "light",
+      "partId": "8",
+      "state": "off",
+      "duration": 0
+    },
+    {
+      "type": "wait",
+      "duration": 400
+    },
+    {
+      "type": "light",
+      "partId": "8",
+      "state": "on",
+      "duration": 400
+    },
+    {
+      "type": "wait",
+      "duration": 400
+    },
+    {
+      "type": "light",
+      "partId": "8",
+      "state": "on",
+      "duration": 400
+    },
+    {
+      "type": "wait",
+      "duration": 400
+    },
+    {
+      "type": "light",
+      "partId": "8",
+      "state": "on",
+      "duration": 400
+    },
+    {
+      "type": "linear-actuator",
+      "partId": "1",
+      "direction": "extend",
+      "speed": 50,
+      "duration": 2000,
+      "concurrent": true
+    },
+    {
+      "type": "sayThis",
+      "text": "My household. Perfect. Go, prieteni... tell the road what you saw. Noapte bună."
+    },
+    {
+      "type": "linear-actuator",
+      "partId": "1",
+      "direction": "retract",
+      "speed": 50,
+      "duration": 2000
+    },
+    {
+      "type": "servo",
+      "partId": "15",
+      "angle": 99,
+      "duration": 1500
+    },
+    {
+      "type": "wait",
+      "duration": 1500
+    },
+    {
+      "type": "fleet-stop-audio",
+      "node": "all"
+    },
+    {
+      "type": "fleet-mode",
+      "mode": "release",
+      "node": "all",
+      "reason": "fleet-event 102 finished"
+    }
   ]
 }

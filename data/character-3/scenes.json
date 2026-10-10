@@ -1289,7 +1289,7 @@
       {
         "type": "goblin-video",
         "goblinName": "Goblin 2",
-        "videoId": "Bigskull.mp4",
+        "videoId": "Skullfloor.mp4",
         "waitMs": 0
       },
       {
@@ -1517,7 +1517,7 @@
       {
         "type": "goblin-video",
         "goblinName": "Goblin 2",
-        "videoId": "Pha Siren Seaofsirens Win H.mp4",
+        "videoId": "Pha Siren Fearsafloat Win H.mp4",
         "waitMs": 0
       },
       {
