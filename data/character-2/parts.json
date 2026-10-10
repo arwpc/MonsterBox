@@ -10,12 +10,13 @@
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 11
+      "channel": 11,
+      "inputGainPercent": 137
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-09-25T20:19:33.507Z"
+    "updated": "2026-09-27T21:44:44.128Z"
   },
   {
     "id": "2",
@@ -77,7 +78,11 @@
     "pin": null,
     "description": "Coffin door actuator. invertDirection restored 2026-09-21: docs/character_mina.md and CHANGELOG v8.0.0 record this door as wired with opposite DIR polarity to Orlok (API extend = DIR HIGH = open); the flag had been dropped from this file by a rewrite.",
     "config": {
-      "invertDirection": true
+      "invertDirection": true,
+      "controlBoard": "MDD10A",
+      "maxExtension": 15000,
+      "maxRetraction": 15000,
+      "modelId": "1759010196402"
     },
     "created": "2025-10-12T06:00:03.000Z",
     "enabled": true,
@@ -86,7 +91,8 @@
     "pwmPin": 13,
     "maxExtension": 15000,
     "maxRetraction": 15000,
-    "modelId": "1759010196402"
+    "modelId": "1759010196402",
+    "updated": "2026-09-25T23:23:34.254Z"
   },
   {
     "id": "5",

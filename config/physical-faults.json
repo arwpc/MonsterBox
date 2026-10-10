@@ -44,6 +44,31 @@
         }
       }
     },
+    "2": {
+      "_note": "Mina. Operator 2026-10-09 22:40 CDT, after powering her back on: 'no hardware works other than light - linear actuator does not'. Her servo V+ rail was already found dead on 2026-09-06. The Burning Rose lamp (part 5, GPIO 16) works; the laser on PCA channel 15 (part 10) is unverified. Clear these entries when the servo rail and the coffin actuator are repaired.",
+      "parts": {
+        "1": {
+          "status": "broken",
+          "reason": "Mina jaw servo (PCA ch 11) — servo power rail dead; does not move. Operator 2026-10-09.",
+          "since": "2026-10-09"
+        },
+        "2": {
+          "status": "broken",
+          "reason": "Mina neck servo (PCA ch 7) — servo power rail dead; does not move. Operator 2026-10-09.",
+          "since": "2026-10-09"
+        },
+        "3": {
+          "status": "broken",
+          "reason": "Mina eye servo (PCA ch 3) — servo power rail dead; does not move. Operator 2026-10-09.",
+          "since": "2026-10-09"
+        },
+        "4": {
+          "status": "broken",
+          "reason": "Mina coffin door linear actuator — does not move. Operator 2026-10-09: 'linear actuator does not [work]'.",
+          "since": "2026-10-09"
+        }
+      }
+    },
     "3": {
       "_note": "Orlok is the only physically damaged rig as of 2026-08-21 (operator, verbatim: 'only orlock is physically hacked with bad back left arm forearm and elbow').",
       "parts": {

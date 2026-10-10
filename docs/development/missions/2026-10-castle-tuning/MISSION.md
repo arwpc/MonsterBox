@@ -207,3 +207,19 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
 - 2026-10-09 20:37 — all six agent configs backed up to `/home/remote/fleet-backups/elevenlabs-agents/20261009-203704/`.
 - 2026-10-09 20:58 — recon complete for conversation, lurk, goblins (scenes/tests recon still running). Lab agent
   `agent_6701m4hqprpefaj9xdnj9548cmpv` (duplicate of Orlok) exists for A/B; delete at the end.
+- 2026-10-09 21:00–21:30 — phase-1 workers 1a–1d launched (conversation, lurk, personas, goblins). The lead session
+  was cut off at ~21:30 and the Pi rebooted at ~22:03 (wiping /tmp, including every worker scratchpad). The
+  half-written tree then crash-looped monsterbox.service at boot: the goblin-engineer's header rewrite of
+  `services/goblinManagerService.js` had dropped the HEAD helper block (`sanitizeGoblinFilename`, `rsyncToGoblin`,
+  `fetchWithTimeout`, …).
+- 2026-10-09 22:13 — recovery lead (new session): helper block restored verbatim from HEAD, service healthy again
+  (`/health` 10.7.0). Verified by REST that the six real ElevenLabs agents are untouched (only the lab agent
+  carries the new Orlok prompt + D2 settings). Worker briefs preserved under `briefs/`; predecessor action logs
+  under `/home/remote/mission-scratch/prior/`. All four workers relaunched with resume briefs at 22:16.
+- 2026-10-09 22:40 — operator: Renfield and Groundbreaker brought back up; Mina being powered on, but on Mina
+  "no hardware works other than light - linear actuator does not". Recorded as physical faults for Mina parts
+  1–4 (jaw, neck, eye, coffin door) so autonomous code, the validator and the scene author build her show from
+  voice + the Burning Rose lamp only; her jaw animation must be OFF on her node (dead servo would only add the
+  jaw pre-analysis delay to every line). Phase 3a: `docs/characters/FLEET-EVENTS.md` written (three event
+  scripts: 101 The Lighting of the Castle, 102 The Count's Orders, 103 One Song for Warner Castle); original
+  instrumental beds being generated with the ElevenLabs Music API into the audio library.
