@@ -9,10 +9,50 @@
         "home",
         "reset"
       ],
-      "description": "The Burning Rose dark. Every scene and event part ends here.",
+      "description": "Coffin closed (1 s retract), rose and laser off, servos parked: jaw 28, neck 140, eye 89. Every scene and event part ends here.",
       "parts": [
         {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 28
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 140
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 89
+          }
+        },
+        {
+          "partId": 4,
+          "type": "linear_actuator",
+          "target": {
+            "direction": "retract",
+            "speed": 40,
+            "durationMs": 1000
+          }
+        },
+        {
           "partId": 5,
+          "type": "light",
+          "target": {
+            "action": "turnOff",
+            "state": "off",
+            "brightness": 100,
+            "duration": 0
+          }
+        },
+        {
+          "partId": 10,
           "type": "light",
           "target": {
             "action": "turnOff",
@@ -23,8 +63,9 @@
         }
       ],
       "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z"
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1200
     },
     {
       "id": 2,
@@ -48,8 +89,8 @@
         }
       ],
       "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z"
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z"
     },
     {
       "id": 3,
@@ -72,18 +113,323 @@
         }
       ],
       "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z"
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "name": "Gaze: The Guest",
+      "category": "scene",
+      "tags": [
+        "gaze"
+      ],
+      "description": "Neck and eye to the guest in front of the coffin (the parked line).",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 140
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 92
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1200
+    },
+    {
+      "id": 5,
+      "name": "Gaze: Up to the Castle",
+      "category": "scene",
+      "tags": [
+        "gaze"
+      ],
+      "description": "Neck turns up toward the castle and the Count's hall; eye follows.",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 122
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 80
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 2400
+    },
+    {
+      "id": 6,
+      "name": "Gaze: The Hill",
+      "category": "scene",
+      "tags": [
+        "gaze"
+      ],
+      "description": "Neck and eye toward the hill where her knight stands.",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 160
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 102
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 2400
+    },
+    {
+      "id": 7,
+      "name": "Gaze: The Moon",
+      "category": "scene",
+      "tags": [
+        "gaze"
+      ],
+      "description": "Up to the little window and the moon: neck a little toward the castle, eye high.",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 128
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 112
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 2400
+    },
+    {
+      "id": 8,
+      "name": "Gaze: The Yard",
+      "category": "scene",
+      "tags": [
+        "gaze"
+      ],
+      "description": "Out over the yard, where the household sings.",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 148
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 84
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1200
+    },
+    {
+      "id": 9,
+      "name": "Sway: Toward the Castle",
+      "category": "scene",
+      "tags": [
+        "sway"
+      ],
+      "description": "Slow neck sway toward the castle (3 s).",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 126
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 3000
+    },
+    {
+      "id": 17,
+      "name": "Sway: Toward the Hill",
+      "category": "scene",
+      "tags": [
+        "sway"
+      ],
+      "description": "Slow neck sway toward the hill (3 s).",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 154
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 3000
+    },
+    {
+      "id": 18,
+      "name": "Gaze: Down and Away",
+      "category": "scene",
+      "tags": [
+        "gaze"
+      ],
+      "description": "She looks down and away, remembering.",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 134
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 68
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1500
+    },
+    {
+      "id": 25,
+      "name": "Eye: Drift Up",
+      "category": "scene",
+      "tags": [
+        "eye"
+      ],
+      "description": "The eye drifts up, listening above.",
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 104
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1500
+    },
+    {
+      "id": 26,
+      "name": "Eye: Drift Down",
+      "category": "scene",
+      "tags": [
+        "eye"
+      ],
+      "description": "The eye drifts down, listening below.",
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 76
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1500
+    },
+    {
+      "id": 27,
+      "name": "Jaw: Hum",
+      "category": "scene",
+      "tags": [
+        "jaw"
+      ],
+      "description": "The jaw parts a little, as if humming along (no speech running).",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 38
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 500
+    },
+    {
+      "id": 28,
+      "name": "Jaw: Hum Close",
+      "category": "scene",
+      "tags": [
+        "jaw"
+      ],
+      "description": "The jaw closes after a hum.",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 28
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 500
     },
     {
       "id": 10,
       "name": "Idle: Ember Breath",
       "category": "idle",
       "tags": [
-        "idle",
-        "light"
+        "idle"
       ],
-      "description": "The rose glows for a slow breath (1.5 s), then dark.",
+      "description": "The rose glows for a slow breath (1.5 s) while the eye eases a little low.",
       "parts": [
         {
           "partId": 5,
@@ -94,22 +440,28 @@
             "brightness": 100,
             "duration": 1500
           }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 84
+          }
         }
       ],
       "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1500,
       "weight": 10,
-      "holdVariance": 2000,
-      "transitionDurationMs": 1500
+      "holdVariance": 2000
     },
     {
       "id": 11,
       "name": "Idle: Flicker",
       "category": "idle",
       "tags": [
-        "idle",
-        "light"
+        "idle"
       ],
       "description": "A quick flicker of the rose (0.3 s), as if something passed the coffin.",
       "parts": [
@@ -125,22 +477,215 @@
         }
       ],
       "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 800,
       "weight": 6,
-      "holdVariance": 1500,
-      "transitionDurationMs": 800
+      "holdVariance": 1500
     },
     {
       "id": 12,
       "name": "Idle: Heartbeat",
       "category": "idle",
       "tags": [
-        "idle",
-        "light"
+        "idle"
       ],
-      "description": "One short pulse (0.6 s), like a slow heart below the floor.",
+      "description": "One short pulse (0.6 s) like a slow heart below the floor; the jaw cracks open 5 degrees.",
       "parts": [
+        {
+          "partId": 5,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 600
+          }
+        },
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 33
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1000,
+      "weight": 8,
+      "holdVariance": 1500
+    },
+    {
+      "id": 13,
+      "name": "Idle: Slow Glow",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "description": "A long, low glow (3.5 s); the neck eases a little toward the castle.",
+      "parts": [
+        {
+          "partId": 5,
+          "type": "light",
+          "target": {
+            "action": "turnOn",
+            "state": "on",
+            "brightness": 100,
+            "duration": 3500
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 132
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 2000,
+      "weight": 7,
+      "holdVariance": 2500
+    },
+    {
+      "id": 14,
+      "name": "Idle: Glance at the Hill",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "description": "Neck and eye drift toward the knight's hill.",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 156
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 100
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 2500,
+      "weight": 6,
+      "holdVariance": 2500
+    },
+    {
+      "id": 15,
+      "name": "Idle: Glance at the Castle",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "description": "Neck and eye drift toward the castle.",
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 124
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 80
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 2500,
+      "weight": 6,
+      "holdVariance": 2500
+    },
+    {
+      "id": 16,
+      "name": "Idle: Dark Rest",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "description": "Rose dark, jaw and eye back to rest, neck to centre, the door settled shut (0.5 s retract).",
+      "parts": [
+        {
+          "partId": 5,
+          "type": "light",
+          "target": {
+            "action": "turnOff",
+            "state": "off",
+            "brightness": 100,
+            "duration": 0
+          }
+        },
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 28
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 140
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 89
+          }
+        },
+        {
+          "partId": 4,
+          "type": "linear_actuator",
+          "target": {
+            "direction": "retract",
+            "speed": 35,
+            "durationMs": 500
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 2000,
+      "weight": 8,
+      "holdVariance": 4000
+    },
+    {
+      "id": 19,
+      "name": "Idle: Jaw Crack",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "description": "The jaw cracks open 10 degrees with a pulse of the rose, as if she almost spoke.",
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 38
+          }
+        },
         {
           "partId": 5,
           "type": "light",
@@ -153,123 +698,159 @@
         }
       ],
       "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z",
-      "weight": 9,
-      "holdVariance": 1500,
-      "transitionDurationMs": 1000
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 900,
+      "weight": 5,
+      "holdVariance": 2000
     },
     {
-      "id": 13,
-      "name": "Idle: Slow Glow",
+      "id": 20,
+      "name": "Idle: Jaw Close",
       "category": "idle",
       "tags": [
-        "idle",
-        "light"
+        "idle"
       ],
-      "description": "A long, low glow (3.5 s) while she remembers something.",
+      "description": "The jaw closes; the eye returns to the guest.",
       "parts": [
         {
-          "partId": 5,
-          "type": "light",
+          "partId": 1,
+          "type": "servo",
           "target": {
-            "action": "turnOn",
-            "state": "on",
-            "brightness": 100,
-            "duration": 3500
+            "angleDeg": 28
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 92
           }
         }
       ],
       "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z",
-      "weight": 8,
-      "holdVariance": 2500,
-      "transitionDurationMs": 2000
-    },
-    {
-      "id": 14,
-      "name": "Idle: Long Remembering",
-      "category": "idle",
-      "tags": [
-        "idle",
-        "light"
-      ],
-      "description": "The rose burns for six seconds, then goes out.",
-      "parts": [
-        {
-          "partId": 5,
-          "type": "light",
-          "target": {
-            "action": "turnOn",
-            "state": "on",
-            "brightness": 100,
-            "duration": 6000
-          }
-        }
-      ],
-      "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z",
-      "weight": 4,
-      "holdVariance": 3000,
-      "transitionDurationMs": 2500
-    },
-    {
-      "id": 15,
-      "name": "Idle: Candle",
-      "category": "idle",
-      "tags": [
-        "idle",
-        "light"
-      ],
-      "description": "A candle-length glow (2.2 s).",
-      "parts": [
-        {
-          "partId": 5,
-          "type": "light",
-          "target": {
-            "action": "turnOn",
-            "state": "on",
-            "brightness": 100,
-            "duration": 2200
-          }
-        }
-      ],
-      "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 900,
       "weight": 7,
-      "holdVariance": 2000,
-      "transitionDurationMs": 1500
+      "holdVariance": 2000
     },
     {
-      "id": 16,
-      "name": "Idle: Dark Rest",
+      "id": 21,
+      "name": "Idle: Coffin Breath",
       "category": "idle",
       "tags": [
-        "idle",
-        "light"
+        "idle"
       ],
-      "description": "The rose dark; she rests.",
+      "description": "The coffin door breathes open a few millimetres (0.3 s extend) under a 1.5 s glow.",
       "parts": [
+        {
+          "partId": 4,
+          "type": "linear_actuator",
+          "target": {
+            "direction": "extend",
+            "speed": 35,
+            "durationMs": 300
+          }
+        },
         {
           "partId": 5,
           "type": "light",
           "target": {
-            "action": "turnOff",
-            "state": "off",
+            "action": "turnOn",
+            "state": "on",
             "brightness": 100,
-            "duration": 0
+            "duration": 1500
           }
         }
       ],
       "transitionProfile": "ease_in_out",
-      "created": "2026-10-10T17:00:00.000Z",
-      "modified": "2026-10-10T17:00:00.000Z",
-      "weight": 8,
-      "holdVariance": 4000,
-      "transitionDurationMs": 2000
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1000,
+      "weight": 3,
+      "holdVariance": 3000
+    },
+    {
+      "id": 22,
+      "name": "Idle: Coffin Settle",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "description": "The door settles shut (0.5 s retract); the eye eases back.",
+      "parts": [
+        {
+          "partId": 4,
+          "type": "linear_actuator",
+          "target": {
+            "direction": "retract",
+            "speed": 35,
+            "durationMs": 500
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 86
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1000,
+      "weight": 4,
+      "holdVariance": 2000
+    },
+    {
+      "id": 23,
+      "name": "Idle: Eye Wander Low",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "description": "Only the eye moves: down and to one side.",
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 70
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1800,
+      "weight": 5,
+      "holdVariance": 2000
+    },
+    {
+      "id": 24,
+      "name": "Idle: Eye Wander High",
+      "category": "idle",
+      "tags": [
+        "idle"
+      ],
+      "description": "Only the eye moves: up, listening to the floor above.",
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 108
+          }
+        }
+      ],
+      "transitionProfile": "ease_in_out",
+      "created": "2026-10-10T22:00:00.000Z",
+      "modified": "2026-10-10T22:00:00.000Z",
+      "transitionDurationMs": 1800,
+      "weight": 5,
+      "holdVariance": 2000
     }
   ],
   "templates": {}
