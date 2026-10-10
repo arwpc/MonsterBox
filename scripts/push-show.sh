@@ -19,7 +19,14 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$REPO/data/character-$CHAR"
 REMOTE_USER="${MB_SSH_USER:-remote}"
 REMOTE="/home/$REMOTE_USER/MonsterBox"
-SSH="ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new $REMOTE_USER@$IP"
+# Key trust is the norm; a node without it (a freshly replaced Pi) takes the fleet password through sshpass -e
+# (the env var, never argv), the same way deploy-to-animatronic.sh does.
+if [ -n "${MONSTERBOX_SSH_PASSWORD:-}" ] && ! ssh -o BatchMode=yes -o ConnectTimeout=6 "$REMOTE_USER@$IP" true 2>/dev/null; then
+  export SSHPASS="$MONSTERBOX_SSH_PASSWORD"; PW="sshpass -e"; BATCH="-o BatchMode=no"
+else
+  PW=""; BATCH="-o BatchMode=yes"
+fi
+SSH="$PW ssh $BATCH -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new $REMOTE_USER@$IP"
 TS="$(date +%Y%m%dT%H%M%S)"
 say() { printf '== %s\n' "$*"; }
 
@@ -37,9 +44,9 @@ say "backup on the node → data/character-$CHAR/backups/*.pre-push-$TS.json"
 $SSH "mkdir -p $REMOTE/data/character-$CHAR/backups && cd $REMOTE/data/character-$CHAR && for f in poses scenes; do [ -f \$f.json ] && cp \$f.json backups/\$f.pre-push-$TS.json; done; ls backups | tail -2 | sed 's/^/   /'"
 
 say "copy show files"
-scp -q -o BatchMode=yes "$SRC/poses.json" "$SRC/scenes.json" "$REMOTE_USER@$IP:$REMOTE/data/character-$CHAR/" && echo "   poses.json, scenes.json copied"
+$PW scp -q $BATCH "$SRC/poses.json" "$SRC/scenes.json" "$REMOTE_USER@$IP:$REMOTE/data/character-$CHAR/" && echo "   poses.json, scenes.json copied"
 if [ -d "$REPO/data/tts-cache/$CHAR" ]; then
-  rsync -a --itemize-changes "$REPO/data/tts-cache/$CHAR/" "$REMOTE_USER@$IP:$REMOTE/data/tts-cache/$CHAR/" | grep -c '^>f' | sed 's/^/   tts-cache clips copied: /'
+  $PW rsync -a --itemize-changes -e "ssh $BATCH" "$REPO/data/tts-cache/$CHAR/" "$REMOTE_USER@$IP:$REMOTE/data/tts-cache/$CHAR/" | grep -c '^>f' | sed 's/^/   tts-cache clips copied: /'
 fi
 
 say "lurk rotation → the two silent lurk pieces (1, 2), rotation stays OFF unless the operator enables it"
