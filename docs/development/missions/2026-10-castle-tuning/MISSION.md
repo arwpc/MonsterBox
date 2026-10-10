@@ -256,16 +256,16 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
 
 | # | Operator goal | Covered by | State |
 |---|---|---|---|
-| 1a | Slow to respond, too long, lecture-like | D2 agents (turn_v3 eager, ≤25-word prompts, LLM by measurement) + D1 client latency work | agents DONE (1c); client in 1a; live re-measure in phase 2 |
-| 1b | Hard to interrupt, won't listen | D1 full-duplex on XVF3800 nodes, agent-decided `interruption`, echo-aware barge-in elsewhere | 1a running |
-| 1c | Lag / cut off mid-sentence | D1 ordered chunks, drain-on-stop, no SIGTERM from other sessions, reconnect | 1a running |
-| 1d | Lurk simplified: move occasionally, head tracking, random movement, silent until PIR/schedule/AI-on; AI mode = all capabilities; unmuted by default; Orlok keeps music | D3 lurk state machine + idle-tagged poses from every scene author | 1b running; poses in 3b |
+| 1a | Slow to respond, too long, lecture-like | D2 agents + D1 client | DONE: 15–27 words/turn; live guest turns median 1.5 s speech-end → playback (was 10–22 s) |
+| 1b | Hard to interrupt, won't listen | D1 full-duplex on XVF3800 nodes, agent-decided `interruption`, echo-aware barge-in elsewhere | DONE (61a15133); real guests interrupted Orlok acoustically; human interruption test on peers pending (tracker) |
+| 1c | Lag / cut off mid-sentence | D1 ordered chunks, drain-on-stop, no SIGTERM from other sessions, reconnect | DONE (61a15133) |
+| 1d | Lurk simplified: move occasionally, head tracking, random movement, silent until PIR/schedule/AI-on; AI mode = all capabilities; unmuted by default; Orlok keeps music | D3 lurk state machine + idle-tagged poses from every scene author | DONE (c246bd18), live on all six nodes |
 | 2 | Six personalities per the brief (Orlok deeper + Romanian, Mina lullabies, Groundbreaker ground + protector, Dragomir starts/carriages/anti-Pumpkinhead, Pumpkinhead vs Renfield's sales, Renfield names/contracts/pen) | D2 prompts + bible | DONE except Orlok's DEPTH: ElevenLabs cannot; playback pitch shift briefed (`brief-orlok-pitch.md`), daylight audition pending |
-| 3 | Ten new scenes per character, delete old scenes/poses, max part combinations, stories drive movement, cast video | D4 + `brief-scene-author.md`; validator/cache/replace from 1e | Orlok + Dragomir authors running; Mina (lamp-only), PumpkinHead, Groundbreaker, Renfield next; push per node + lock refresh (3b) |
-| 4 | Goblins all working, looped playlists per window | D5 reels, keep-alive, resolver, hints | 1d running; Goblins 1 and 4 need hands |
-| 5 | Rebuild tests around the new scenes, hardware tests, AI-config UI | D6 phase 4 (test-engineer + ui-engineer) | NOT STARTED — after 3b |
-| 6 | Three fleet events with music, video, movement; every half hour; return to original state | D7 scripts, conductors, runner, beds; `fleet-mode hold/release`; cron | scripts/conductors/runner/beds DONE; hold/release endpoints in 1b; rehearsal + cron (3c) after 3b |
-| D8 | Chicago time + NTP on every Pi, enforced and reported | verified by hand 10-09; baseline/provision scripts + fleet-health `time` + `check:time` | NOT DONE — small follow-up task |
+| 3 | Ten new scenes per character, delete old scenes/poses, max part combinations, stories drive movement, cast video | D4 + `brief-scene-author.md`; validator/cache/replace from 1e | DONE: six shows committed, pushed to every node (`push-show.sh`), locks refreshed; Orlok's ten played for real |
+| 4 | Goblins all working, looped playlists per window | D5 reels, keep-alive, resolver, hints | DONE for Goblins 2 and 3 (proven looping, keep-alive acting); Goblins 1 and 4 staged, off the network (hands) |
+| 5 | Rebuild tests around the new scenes, hardware tests, AI-config UI | D6 phase 4 (test-engineer + ui-engineer) | DONE: live-data guard, browser fixture, specs on the new contracts, parts-alive hardware test (proven on Orlok), AI settings page + Studio palette (90e5deeb, 93136a64) |
+| 6 | Three fleet events with music, video, movement; every half hour; return to original state | D7 scripts, conductors, runner, beds; `fleet-mode hold/release`; cron | DONE: all three rehearsed for real (every node back to lurking, Goblins back on reels), rehearsal defects fixed and re-proven, schedule `*/30 17-22` armed |
+| D8 | Chicago time + NTP on every Pi, enforced and reported | baseline/provision scripts + fleet-health `time` + `check:time` | DONE (d42eb74e, 751cabac): every node reports zone/NTP/sync/offset in fleet-health, all six OK |
 | — | Deploy everything to all nodes; Mina's files when she is on | phase 2 + 3b | pending |
 - 2026-10-10 10:35 — D8 enforcement landed: `apply-baseline.sh` step 8 and the Goblin provision/stabilize scripts
   converge America/Chicago + NTP; `npm run check:time` (scripts/check-time.mjs) prints the fleet clock matrix:
@@ -316,3 +316,8 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   fixes): 22 ok; the remaining failures were Goblin 1 offline and the two timing items fixed in 6a5a8f2f.
   Half-hour schedule armed (`*/30 17-22 * * *`, through /schedule). Phase 4 UI DONE (commit 90e5deeb); phase 5
   docs DONE (dbe2fe13). Test engineer still running. Final peer deploy starting.
+- 2026-10-10 15:20 — phase 4 tests DONE (93136a64: gate green, 1103 unit, browser re-runs clean, parts-alive
+  proven on Orlok); fleet log review and ear-check recorded; PumpkinHead's crash-looping MCP user units disabled at
+  operator direction; 50 commits pushed to origin (gate green on push). MISSION COMPLETE except the operator items
+  in KNOWN-BUGS (Renfield key/baseline, Goblins 1/4, Goblin 3 orientation, Goblin 2 heat, Orlok pitch audition,
+  daylight human-interruption test on peers, Mina lullabies by ear). Tagging v10.7.0.
