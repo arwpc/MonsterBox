@@ -39,6 +39,8 @@ const KNOWN_STEP_TYPES = new Set([
   'light', 'led', 'audio', 'sayThis', 'askAI',
   'goblin-video', 'wait', 'delay', 'sensor',
   'pose', 'hardware', 'jaw-animation', 'head-tracking',
+  // Cross-node steps (mission D7, services/scenes/fleetSteps.js).
+  'fleet-scene', 'fleet-say', 'fleet-audio', 'fleet-stop-audio', 'fleet-mode',
 ]);
 
 const KNOWN_PART_TYPES = new Set([

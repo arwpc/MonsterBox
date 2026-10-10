@@ -80,6 +80,7 @@
     "migrate:models": "node scripts/migrate-models.js",
     "migrate:calibration": "node scripts/migrate-calibration-v15.mjs",
     "validate:schemas": "node scripts/validate-schemas.mjs",
+    "validate:scenes": "node scripts/validate-scenes.mjs all --quiet --baseline tests/baseline/scene-validator-baseline.json",
     "audit:resolver": "node scripts/ensure-resolver-usage.mjs",
     "audit:independence": "node scripts/audit-character-independence.mjs",
     "test:pact": "BASE_URL=http://localhost:3100 mocha --require tests/setup.js tests/pact --reporter spec --exit --timeout 10000",

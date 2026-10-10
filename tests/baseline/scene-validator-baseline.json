@@ -1,0 +1,7 @@
+{
+  "_readme": "Known legacy scene/pose errors that predate scripts/validate-scenes.mjs (2026-10-09). The castle-tuning scene rebuild deletes these scenes; this list may only shrink. Remove an entry when its scene is fixed or deleted (the validator reports stale entries).",
+  "entries": [
+    { "file": "data/character-2/scenes.json", "scene": 100, "step": 0, "message": "audio step uses \"audioFile\"; the executor reads \"audioId\"" },
+    { "file": "data/character-3/scenes.json", "scene": 107, "step": 1, "message": "goblin-video needs a videoId (a filename on that Goblin)" }
+  ]
+}

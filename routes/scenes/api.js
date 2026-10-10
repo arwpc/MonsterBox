@@ -10,12 +10,35 @@ import sceneQueue from '../../services/scenes/sceneQueue.js';
 import scenesService from '../../services/scenes/scenesService.js';
 import armedModeRoutes from './armed-mode.js';
 import { resolveCharacterSync } from '../../services/characterContext.js';
+import { isConfigLockedError } from '../../services/characterConfigLock.js';
+import poseRepository from '../../services/poses/poseRepository.js';
+import { validateCharacterData, loadValidationContext, loadCharacterFiles, formatIssue } from '../../services/scenes/sceneValidator.js';
 
 const router = express.Router();
 
 function getCurrentCharacterId(req) {
   const ctx = resolveCharacterSync(req);
   return ctx ? ctx.id : null;
+}
+
+// A locked character's scenes are frozen on purpose: answer 423 with the lock's
+// own text and code, not a 500 that reads like a crash.
+function sendWriteError(res, e, fallbackStatus = 500) {
+  if (isConfigLockedError(e)) {
+    return res.status(423).json({ success: false, code: 'CHARACTER_CONFIG_LOCKED', error: e.message });
+  }
+  return res.status(fallbackStatus).json({ success: false, error: e && e.message });
+}
+
+/**
+ * Validate scenes for a character against its parts, its CURRENT poses, the
+ * audio library, Goblins and hazards (services/scenes/sceneValidator.js).
+ */
+async function validateScenesFor(characterId, scenes) {
+  const ctx = await loadValidationContext();
+  const files = await loadCharacterFiles(characterId);
+  const poses = await poseRepository.loadPoses(characterId);
+  return validateCharacterData({ characterId, scenes, parts: files.parts, posesForLookup: poses, ctx });
 }
 
 async function respondWithScenes(req, res) {
@@ -292,7 +315,7 @@ router.post('/reorder', express.json(), async (req, res) => {
     await scenesService.saveScenes(reordered, getCurrentCharacterId(req));
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ success: false, error: e && e.message });
+    sendWriteError(res, e);
   }
 });
 
@@ -323,7 +346,7 @@ router.post('/', express.json(), async (req, res) => {
     }, getCurrentCharacterId(req));
     res.json({ success: true, scene });
   } catch (e) {
-    res.status(500).json({ success: false, error: e && e.message });
+    sendWriteError(res, e);
   }
 });
 
@@ -340,7 +363,7 @@ router.put('/:id', express.json(), async (req, res) => {
     await scenesService.saveScenes(scenes, getCurrentCharacterId(req));
     res.json({ success: true, scene: next });
   } catch (e) {
-    res.status(500).json({ success: false, error: e && e.message });
+    sendWriteError(res, e);
   }
 });
 
@@ -354,7 +377,7 @@ router.delete('/:id', async (req, res) => {
     await scenesService.saveScenes(scenes, getCurrentCharacterId(req));
     res.json({ success: true, removed });
   } catch (e) {
-    res.status(500).json({ success: false, error: e && e.message });
+    sendWriteError(res, e);
   }
 });
 
@@ -473,7 +496,7 @@ router.post('/from-template', express.json(), async (req, res) => {
     }, getCurrentCharacterId(req));
     res.json({ success: true, scene });
   } catch (e) {
-    res.status(500).json({ success: false, error: e && e.message });
+    sendWriteError(res, e);
   }
 });
 
@@ -500,7 +523,7 @@ router.post('/:id/duplicate', express.json(), async (req, res) => {
     await scenesService.saveScenes(scenes, getCurrentCharacterId(req));
     res.json({ success: true, scene: duplicate });
   } catch (e) {
-    res.status(500).json({ success: false, error: e && e.message });
+    sendWriteError(res, e);
   }
 });
 
@@ -523,6 +546,38 @@ router.get('/export', async (req, res) => {
   }
 });
 
+/**
+ * Replace the whole scene library: POST /scenes/api/replace {scenes:[...]}
+ * (?validateOnly=1 checks without writing). Lock → 423, invalid → 400 with
+ * file:scene:step messages, otherwise the old file is backed up to
+ * data/character-<id>/backups/ and the new one written atomically.
+ */
+router.post('/replace', express.json({ limit: '10mb' }), async (req, res) => {
+  try {
+    const characterId = getCurrentCharacterId(req);
+    const scenes = req.body && req.body.scenes;
+    if (!characterId) return res.status(400).json({ success: false, error: 'no character selected' });
+    if (!Array.isArray(scenes)) return res.status(400).json({ success: false, error: 'scenes array required' });
+    const validateOnly = ['1', 'true'].includes(String(req.query.validateOnly || '').toLowerCase());
+    if (!validateOnly) {
+      // Refuse a locked character before reporting on content it may not take anyway.
+      const { assertCharacterConfigWritable } = await import('../../services/characterConfigLock.js');
+      assertCharacterConfigWritable(characterId, 'replacing scenes.json');
+    }
+    const check = await validateScenesFor(characterId, scenes);
+    const warnings = check.warnings.map(formatIssue);
+    if (check.errors.length) {
+      return res.status(400).json({ success: false, characterId, error: `${check.errors.length} validation error(s)`, errors: check.errors.map(formatIssue), warnings });
+    }
+    if (validateOnly) return res.json({ success: true, characterId, validateOnly: true, count: scenes.length, warnings });
+    const r = await scenesService.replaceScenes(scenes, characterId);
+    console.log(`🎬 Scenes replaced for character ${characterId}: ${r.count} scene(s), backup ${r.backup || '(none — no previous file)'}`);
+    res.json({ success: true, characterId, count: r.count, backup: r.backup, warnings });
+  } catch (e) {
+    sendWriteError(res, e);
+  }
+});
+
 router.post('/import', express.json(), async (req, res) => {
   try {
     const importData = req.body || {};
@@ -530,6 +585,12 @@ router.post('/import', express.json(), async (req, res) => {
 
     if (!importData.scenes || !Array.isArray(importData.scenes)) {
       return res.status(400).json({ success: false, error: 'Invalid import data: scenes array required' });
+    }
+
+    // Merge semantics are unchanged, but what is merged must be playable.
+    const check = await validateScenesFor(getCurrentCharacterId(req), importData.scenes);
+    if (check.errors.length) {
+      return res.status(400).json({ success: false, error: `${check.errors.length} validation error(s)`, errors: check.errors.map(formatIssue), warnings: check.warnings.map(formatIssue) });
     }
 
     const scenes = await scenesService.loadScenes(getCurrentCharacterId(req));
@@ -556,7 +617,7 @@ router.post('/import', express.json(), async (req, res) => {
     await scenesService.saveScenes(scenes, getCurrentCharacterId(req));
     res.json({ success: true, imported, updated, skipped, total: importData.scenes.length });
   } catch (e) {
-    res.status(500).json({ success: false, error: e && e.message });
+    sendWriteError(res, e);
   }
 });
 

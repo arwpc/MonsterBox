@@ -7,6 +7,18 @@ import poseRepository from '../services/poses/poseRepository.js';
 import poseEngine from '../services/poses/poseEngine.js';
 import poseHealth from '../services/poses/poseHealth.js';
 import { resolveCharacterSync } from '../services/characterContext.js';
+import { isConfigLockedError, assertCharacterConfigWritable } from '../services/characterConfigLock.js';
+
+/**
+ * A locked character refuses configuration writes with CHARACTER_CONFIG_LOCKED;
+ * answer that as HTTP 423 with the lock's own text instead of a 400/500 that
+ * reads like bad input or a crash. Returns true when it answered.
+ */
+function sendIfLocked(res, error) {
+    if (!isConfigLockedError(error)) return false;
+    res.status(423).json({ success: false, code: 'CHARACTER_CONFIG_LOCKED', error: error.message });
+    return true;
+}
 
 /**
  * Get all poses for current character
@@ -92,6 +104,7 @@ export async function createPose(req, res) {
         });
     } catch (error) {
         console.error('Error creating pose:', error);
+        if (sendIfLocked(res, error)) return;
         res.status(400).json({
             success: false,
             error: 'Failed to create pose',
@@ -129,6 +142,7 @@ export async function updatePose(req, res) {
         });
     } catch (error) {
         console.error('Error updating pose:', error);
+        if (sendIfLocked(res, error)) return;
         res.status(400).json({
             success: false,
             error: 'Failed to update pose',
@@ -159,11 +173,60 @@ export async function deletePose(req, res) {
         });
     } catch (error) {
         console.error('Error deleting pose:', error);
+        if (sendIfLocked(res, error)) return;
         res.status(500).json({
             success: false,
             error: 'Failed to delete pose',
             message: error.message
         });
+    }
+}
+
+/**
+ * Replace the whole pose library: POST /poses/api/replace {poses:[...], templates?}
+ * (?validateOnly=1 checks without writing). Lock → 423; invalid → 400 with
+ * file:pose:part messages (services/scenes/sceneValidator.js); otherwise the old
+ * file is backed up to data/character-<id>/backups/ and the new one written
+ * atomically. Scenes that reference a pose id the new library lacks come back
+ * as warnings — replace the scenes next.
+ */
+export async function replacePoses(req, res) {
+    try {
+        const characterId = getCurrentCharacterId(req);
+        const body = req.body || {};
+        const poses = Array.isArray(body) ? body : body.poses;
+        if (!Array.isArray(poses)) {
+            return res.status(400).json({ success: false, error: 'poses array required' });
+        }
+        const validateOnly = ['1', 'true'].includes(String(req.query.validateOnly || '').toLowerCase());
+        if (!validateOnly) assertCharacterConfigWritable(characterId, 'replacing poses.json');
+
+        const { validateCharacterData, loadValidationContext, loadCharacterFiles, formatIssue } = await import('../services/scenes/sceneValidator.js');
+        const ctx = await loadValidationContext();
+        const files = await loadCharacterFiles(characterId);
+        const posesFile = { characterId: Number(characterId), poses };
+        const check = await validateCharacterData({ characterId, poses: posesFile, parts: files.parts, ctx });
+        const warnings = check.warnings.map(formatIssue);
+        // Scenes already on disk that would lose their pose.
+        const ids = new Set(poses.map(p => p && p.id));
+        for (const scene of (Array.isArray(files.scenes) ? files.scenes : [])) {
+            (scene.steps || []).forEach((step, i) => {
+                if (step && (step.type === 'pose' || (!step.type && step.poseId != null)) && !ids.has(parseInt(step.poseId, 10))) {
+                    warnings.push(`${files.scenesPath}:scene ${scene.id}:step ${i} — references pose ${step.poseId}, which the new library does not have`);
+                }
+            });
+        }
+        if (check.errors.length) {
+            return res.status(400).json({ success: false, characterId, error: `${check.errors.length} validation error(s)`, errors: check.errors.map(formatIssue), warnings });
+        }
+        if (validateOnly) return res.json({ success: true, characterId, validateOnly: true, count: poses.length, warnings });
+        const r = await poseRepository.replacePoses(characterId, poses, body.templates);
+        console.log(`🎭 Poses replaced for character ${characterId}: ${r.count} pose(s), backup ${r.backup || '(none — no previous file)'}`);
+        res.json({ success: true, characterId, count: r.count, backup: r.backup, warnings });
+    } catch (error) {
+        console.error('Error replacing poses:', error);
+        if (sendIfLocked(res, error)) return;
+        res.status(500).json({ success: false, error: 'Failed to replace poses', message: error.message });
     }
 }
 
@@ -350,6 +413,7 @@ export async function createFromTemplate(req, res) {
         });
     } catch (error) {
         console.error('Error creating pose from template:', error);
+        if (sendIfLocked(res, error)) return;
         res.status(400).json({
             success: false,
             error: 'Failed to create pose from template',
@@ -417,6 +481,7 @@ export default {
     createPose,
     updatePose,
     deletePose,
+    replacePoses,
     executePose,
     getPosesByCategory,
     getTemplates,

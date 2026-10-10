@@ -68,7 +68,10 @@ export function validateQueueDefinition(def){
   const scenes = Array.isArray(q.scenes) ? q.scenes : [];
   if (scenes.length === 0) throw new Error('Queue must include at least one scene');
   const items = scenes.map((it) => {
-    const scene_id = it.scene_id != null ? String(it.scene_id) : String(it.id || '');
+    // `sceneId` is what the dashboard's Loop All sends; it used to be rejected
+    // with "scene_id is required", so the button silently did nothing.
+    const raw = it.scene_id != null ? it.scene_id : (it.sceneId != null ? it.sceneId : it.id);
+    const scene_id = raw != null ? String(raw) : '';
     if (!scene_id) throw new Error('scene_id is required for each item');
     let lifecycle = null;
     if (it.lifecycle) {

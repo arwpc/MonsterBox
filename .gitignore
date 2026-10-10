@@ -121,3 +121,7 @@ data/log-review-state.json
 data/character-*/images/.thumbs/
 data/character-*/motion-armed-state.json
 data/character-*/callout-state.json
+# Rendered scene speech (services/scenes/ttsCache.js) — regenerable, never committed
+data/tts-cache/
+# Wholesale scene/pose replace backups (routes/scenes/api.js, controllers/posesController.js)
+data/character-*/backups/

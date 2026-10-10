@@ -1,0 +1,35 @@
+{
+  "_readme": [
+    "Authoring rules for scenes and poses that come from PHYSICAL damage history, enforced by",
+    "services/scenes/sceneValidator.js (npm run validate:scenes, and the /scenes/api/replace and",
+    "/poses/api/replace endpoints). This is NOT the retired runtime safety-limit system",
+    "(config/hardware-safety.json stays empty by operator ruling 2026-08-20): nothing here clamps or",
+    "refuses a command at play time. It only stops an authored scene or pose from being SAVED in a",
+    "shape that has hurt this hardware before, so the show never does it unattended.",
+    "",
+    "Keys are character ids (data/characters.json), part ids are strings as in parts.json.",
+    "  exclusiveParts:  part-id sets that must never move together - not in one pose, not in one",
+    "                   step, not in one concurrent group of steps.",
+    "  partAngleRanges: allowed real-degree window for a servo; forbidPresets refuses usePreset",
+    "                   (__MIN__/__MAX__ on an uncalibrated multi-turn part can mean a full wrap),",
+    "                   forbidContinuous refuses a continuous spin target in a pose.",
+    "  maxMotorSpeed:   ceiling for every motor part of the character, in percent (a motor step",
+    "                   with no speed runs at the executor default of 50, so it must state one)."
+  ],
+  "characters": {
+    "3": {
+      "_note": "Elbow (4) and forearm (5) share a rail that has blown its fuse under simultaneous load.",
+      "exclusiveParts": [["4", "5"]]
+    },
+    "4": {
+      "_note": "Part 1 is the 900-degree multi-turn neck; outside 372-406 it wraps and tears the head cabling.",
+      "partAngleRanges": {
+        "1": { "min": 372, "max": 406, "forbidPresets": true, "forbidContinuous": true }
+      }
+    },
+    "1": {
+      "_note": "The wiper motor browns out and resets the Pi when started hard; never above 40 percent.",
+      "maxMotorSpeed": 40
+    }
+  }
+}

@@ -7,6 +7,7 @@
  *
  * Steps (in order, each may abort the gate):
  *   1. validate:schemas          — per-character data files conform to schemas
+ *   1b. validate:scenes          — scene/pose references, hazards and durations (scripts/validate-scenes.mjs)
  *   2. audit:resolver             — no direct character-state reads outside allowlist
  *   3. audit:independence         — bias-pattern ratchet (Pillar 5; stub no-op if absent)
  *   3b. audit:design-system      — UI consistency ratchet; counts may only shrink
@@ -41,6 +42,7 @@ const TIMEOUT_SCALE = Math.max(1, Number(process.env.MB_GATE_TIMEOUT_SCALE) || 1
 
 const STEPS = [
   { name: 'validate:schemas',     cmd: 'npm', args: ['run', '--silent', 'validate:schemas'], timeoutMs: 10_000 },
+  { name: 'validate:scenes',      cmd: 'npm', args: ['run', '--silent', 'validate:scenes'],  timeoutMs: 15_000 },
   { name: 'audit:resolver',       cmd: 'npm', args: ['run', '--silent', 'audit:resolver'],   timeoutMs: 10_000 },
   { name: 'audit:independence',   cmd: 'npm', args: ['run', '--silent', 'audit:independence'], timeoutMs: 10_000 },
   { name: 'audit:design-system',  cmd: 'npm', args: ['run', '--silent', 'audit:design-system'], timeoutMs: 20_000 },

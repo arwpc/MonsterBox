@@ -1,6 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { execFile } from 'child_process';
 import { fileURLToPath } from 'url';
+import { runWrapper } from '../hardwareService/exec.js';
+import { generateSpeechCached } from './ttsCache.js';
 import { getTTSConfig, getTTSConfigForCharacter } from '../aiConfigStore.js';
 import { readConfig } from '../configService.js';
 import elevenLabsTTSService from '../elevenLabsTTSService.js';
@@ -142,9 +145,58 @@ async function resolvePresetToActuatorParams(partId, presetName, characterId) {
   return resolvePresetToMotorParams(partId, presetName, characterId);
 }
 
+// A library clip's playback is bounded by its own length, not by the 30 s
+// default every hardware wrapper gets: the non-jaw audio path waits for the
+// player to exit, so a 125 s music bed was SIGKILLed at 30 s ("Hardware command
+// timed out after 30000ms", scenes 111 and 113 in scene-analytics). The margin
+// covers player start-up and a cold USB sink; the cap keeps a wedged player from
+// holding a scene forever.
+export const AUDIO_TIMEOUT_MARGIN_MS = 10 * 1000;
+export const AUDIO_TIMEOUT_CAP_MS = 15 * 60 * 1000;
+
+export function deriveAudioTimeoutMs(durationSec) {
+  const d = Number(durationSec);
+  if (!Number.isFinite(d) || d <= 0) return AUDIO_TIMEOUT_CAP_MS;
+  return Math.min(AUDIO_TIMEOUT_CAP_MS, Math.round(d * 1000) + AUDIO_TIMEOUT_MARGIN_MS);
+}
+
+// Library entry for an audio step's id (or filename), for its recorded duration.
+async function findLibraryEntry(audioId) {
+  if (!audioId) return null;
+  try {
+    const libPath = path.resolve(__dirname, '..', '..', 'data', 'audio-library', 'library.json');
+    const library = JSON.parse(await fs.readFile(libPath, 'utf8'));
+    const list = library.audio || library;
+    if (!Array.isArray(list)) return null;
+    const base = path.basename(String(audioId));
+    return list.find(a => a.id === audioId) || list.find(a => a.filename === base) || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Clip length in seconds from ffprobe, for files the library has no duration for.
+function probeDurationSec(file) {
+  return new Promise((resolve) => {
+    execFile('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', file],
+      { timeout: 5000 }, (err, stdout) => {
+        if (err) return resolve(null);
+        const d = parseFloat(String(stdout).trim());
+        resolve(Number.isFinite(d) && d > 0 ? d : null);
+      });
+  });
+}
+
+export async function resolveAudioDurationSec(audioId, filename) {
+  const entry = await findLibraryEntry(audioId);
+  if (entry && Number(entry.duration) > 0) return Number(entry.duration);
+  return filename ? probeDurationSec(filename) : null;
+}
+
 async function resolveAudioFile(audioId) {
   // Allow absolute or relative; if bare filename, resolve under data/audio-library/files
   if (!audioId) return null;
+  audioId = String(audioId);
   if (audioId.startsWith('/') || audioId.startsWith('./')) return path.resolve(audioId);
 
   // Load audio library to get the actual filename
@@ -207,7 +259,30 @@ async function executeAudioStep(step, characterId, emit) {
     }
   }
 
-  const r = await hardwareService.HARDWARE_CONTROLLERS.speaker.play({ audioDeviceId: deviceId, filename, volume: step.volume != null ? step.volume : 100 });
+  // Same wrapper and arguments as the speaker controller's play(), but with a
+  // timeout sized to this clip (see deriveAudioTimeoutMs) instead of the 30 s
+  // wrapper default that killed every longer track mid-play.
+  const volume = step.volume != null ? Number(step.volume) : 100;
+  const durationSec = await resolveAudioDurationSec(step.audioId, filename);
+  const timeoutMs = deriveAudioTimeoutMs(durationSec);
+  const args = ['play', String(filename)];
+  if (Number.isFinite(volume)) args.push(String(volume));
+  args.push('--device', String(deviceId || 'default'));
+  const startedAt = Date.now();
+  console.log(`🔊 Scene audio "${step.audioId}" (${durationSec != null ? durationSec.toFixed(1) + ' s' : 'unknown length'}, timeout ${Math.round(timeoutMs / 1000)} s) on ${deviceId}`);
+  let r;
+  try {
+    const out = await runWrapper('speaker_cli.py', args, { timeoutMs });
+    let parsed = null;
+    const lines = String(out || '').trim().split(/\r?\n/).filter(Boolean);
+    for (let i = lines.length - 1; i >= 0 && !parsed; i--) { try { parsed = JSON.parse(lines[i]); } catch (_) { /* not JSON */ } }
+    const ok = parsed ? parsed.status === 'success' : false;
+    r = { success: ok, partType: 'speaker', deviceId, filename, volume, durationSec, timeoutMs, elapsedMs: Date.now() - startedAt,
+      player: parsed && parsed.player, simulated: !!(parsed && parsed.simulated), error: ok ? undefined : ((parsed && (parsed.message || parsed.error)) || 'speaker_cli reported failure') };
+  } catch (err) {
+    r = { success: false, partType: 'speaker', deviceId, filename, durationSec, timeoutMs, elapsedMs: Date.now() - startedAt, error: String(err.message || err) };
+  }
+  console.log(`🔊 Scene audio "${step.audioId}" ${r.success ? 'finished' : 'failed'} after ${(r.elapsedMs / 1000).toFixed(1)} s${r.success ? '' : ': ' + r.error}`);
   emit && emit({ type: 'step', status: r.success ? 'complete' : 'error', stepType: 'audio', audioId: step.audioId, result: r });
   if (!r.success) throw new Error(r.error || 'Audio play failed');
   return r;
@@ -245,11 +320,17 @@ async function executeSayThisStep(step, characterId, emit) {
 
   const ttsCfg = await getTTSConfigForCharacter(characterId);
   const voiceId = step.voiceId || ttsCfg.voice_id;
-  const gen = await elevenLabsTTSService.generateSpeech(text, voiceId, ttsCfg);
+  // Scripted lines replay from the disk cache (data/tts-cache/<char>/); only a
+  // miss — or an explicit nocache:true on the step — costs an ElevenLabs call.
+  const gen = await generateSpeechCached({
+    text, voiceId, ttsCfg, characterId, nocache: step.nocache === true,
+    generate: (t, v, cfg) => elevenLabsTTSService.generateSpeech(t, v, cfg)
+  });
   if (!gen.success) {
     emit && emit({ type: 'step', status: 'error', stepType: 'sayThis', error: gen.error });
     throw new Error(gen.error || 'TTS generation failed');
   }
+  console.log(`🗣️ Scene sayThis (character ${characterId}): ${gen.cached ? 'TTS cache hit' : (gen.bypassed ? 'live (nocache)' : 'live render, cached')} — "${text.slice(0, 60)}"`);
 
   // Use jaw-synced playback when jaw animation is enabled
   try {
@@ -283,10 +364,13 @@ async function executeAskAIStep(step, characterId, emit) {
   if (!question) throw new Error('askAI.step requires question');
   emit && emit({ type: 'step', status: 'start', stepType: 'askAI', question });
 
-  const ttsCfg = await getTTSConfigForCharacter(characterId);
-
-  // Try real AI conversation via ElevenLabs WebSocket agent
+  // The agent SPEAKS its own reply: askAgentQuestion plays the agent's audio on
+  // this character's speaker (live session or one-shot socket). This step used
+  // to take the reply text and render it a second time through TTS, so every
+  // askAI line was heard twice. Now the step only waits for the agent, keeps the
+  // reply text in its result and the speech log, and plays nothing itself.
   let responseText;
+  let answeredOnLiveSession = false;
   try {
     const { default: characterService } = await import('../characterService.js');
     const character = await characterService.getCharacterById(characterId);
@@ -299,55 +383,64 @@ async function executeAskAIStep(step, characterId, emit) {
       );
       if (aiResponse && aiResponse.success && aiResponse.response) {
         responseText = aiResponse.response;
+        answeredOnLiveSession = !!aiResponse.viaSession;
       }
     }
   } catch (aiErr) {
     console.warn(`⚠️ Scene askAI: AI agent unavailable for character ${characterId}:`, aiErr.message);
   }
 
-  // Fallback if AI agent is not configured or failed
   if (!responseText) {
-    responseText = `I heard your question: "${question}". I'm not able to answer right now, but I'm always listening.`;
+    // No agent, or it did not answer: nothing was said. Record the miss (the
+    // step is non-fatal) rather than inventing a canned line.
+    const error = 'askAI: the character\'s agent gave no reply';
+    emit && emit({ type: 'step', status: 'error', stepType: 'askAI', error });
+    throw new Error(error);
   }
 
-  const voiceId = step.voiceId || ttsCfg.voice_id;
-  const gen = await elevenLabsTTSService.generateSpeech(responseText, voiceId, ttsCfg);
-  if (!gen.success) {
-    emit && emit({ type: 'step', status: 'error', stepType: 'askAI', error: gen.error });
-    throw new Error(gen.error || 'TTS generation failed');
+  // The live-session path already logs the agent's line; the one-shot socket
+  // does not, so log it here exactly once.
+  if (!answeredOnLiveSession && responseText !== 'Response received') {
+    recordSpeech(characterId, { speaker: 'character', source: 'scene', text: responseText });
   }
+  const result = { success: true, response: responseText, spokenBy: 'agent', viaLiveSession: answeredOnLiveSession };
+  emit && emit({ type: 'step', status: 'complete', stepType: 'askAI', result, response: responseText });
+  return result;
+}
 
-  // Use jaw-synced playback when jaw animation is enabled
-  try {
-    const jawService = await import('../jawAnimationSuperPowerService.js');
-    const jawConfig = await jawService.readJawConfig(characterId);
-    if (jawConfig.enabled && jawConfig.servoPartId) {
-      const result = await jawService.playWithJawSync(characterId, gen.audioBuffer, gen.contentType);
-      emit && emit({ type: 'step', status: result.success ? 'complete' : 'error', stepType: 'askAI', result, response: responseText });
-      if (!result.success) throw new Error(result.message || 'Jaw-synced playback failed');
-      return { ...result, response: responseText };
-    }
-  } catch (jawErr) {
-    if (jawErr.message && !jawErr.message.includes('disabled')) {
-      console.warn('Scene askAI jaw sync failed, falling back:', jawErr.message);
-    }
+/**
+ * Turn a step's goblinId / goblinName into a registry id. Scenes cast by name
+ * ("Goblin 2") so a re-registered unit keeps its casts; the manager's
+ * resolveGoblin is authoritative (id, case-insensitive name, loose name, and an
+ * ambiguity refusal), with a local case-insensitive name match for builds that
+ * predate it.
+ */
+export function resolveGoblinRef(step, manager = goblinManagerService) {
+  const ref = step.goblinId != null && String(step.goblinId).trim() !== '' ? step.goblinId : step.goblinName;
+  if (ref == null || String(ref).trim() === '') return { success: false, error: 'goblin.step requires goblinId or goblinName' };
+  if (manager && typeof manager.resolveGoblin === 'function') {
+    const r = manager.resolveGoblin(ref);
+    return r && r.success ? { success: true, id: r.id, goblin: r.goblin } : { success: false, error: (r && r.error) || `Goblin not found: ${ref}` };
   }
-
-  // Use playAIOnCharacterSpeaker (one-shot process) so the step blocks until
-  // audio finishes playing — same rationale as executeSayThisStep.
-  const play = await serverPlaybackService.playAIOnCharacterSpeaker(gen.audioBuffer, { contentType: gen.contentType, characterId });
-  emit && emit({ type: 'step', status: play.success ? 'complete' : 'error', stepType: 'askAI', result: play, response: responseText });
-  if (!play.success) throw new Error(play.error || 'TTS playback failed');
-  return { ...play, response: responseText };
+  const list = manager && manager.goblins instanceof Map ? Array.from(manager.goblins.values()) : [];
+  const key = String(ref).trim().toLowerCase();
+  const hits = list.filter(g => g && (String(g.id).toLowerCase() === key || String(g.name || '').trim().toLowerCase() === key));
+  if (hits.length === 1) return { success: true, id: hits[0].id, goblin: hits[0] };
+  return { success: false, error: hits.length > 1 ? `"${ref}" matches more than one Goblin — use the id` : `Goblin not found: ${ref}` };
 }
 
 async function executeGoblinVideoStep(step, characterId, emit) {
-  const { goblinId, videoId, options = {} } = step;
+  const { videoId, options = {} } = step;
 
-  if (!goblinId) throw new Error('goblin.step requires goblinId');
+  const resolved = resolveGoblinRef(step);
+  if (!resolved.success) throw new Error(resolved.error);
+  const goblinId = resolved.id;
   if (!videoId) throw new Error('goblin.step requires videoId (filename)');
+  // Hold the scene while the clip plays (the cast itself returns once mpv is
+  // confirmed on the file, about 1.5 s in). Capped so a typo cannot freeze a show.
+  const waitMs = Math.min(Math.max(0, parseInt(step.waitMs, 10) || 0), 10 * 60 * 1000);
 
-  emit && emit({ type: 'step', status: 'start', stepType: 'goblin', goblinId, videoId });
+  emit && emit({ type: 'step', status: 'start', stepType: 'goblin', goblinId, goblinName: step.goblinName, videoId, waitMs });
 
   try {
     // Check if Goblin exists. Its online state is NOT judged here: the registry
@@ -382,6 +475,11 @@ async function executeGoblinVideoStep(step, characterId, emit) {
 
     if (!playResult.success) {
       throw new Error(`Failed to play video on Goblin: ${playResult.error}`);
+    }
+
+    if (waitMs > 0) {
+      await new Promise(r => setTimeout(r, waitMs));
+      playResult.waitedMs = waitMs;
     }
 
     emit && emit({
@@ -836,6 +934,16 @@ async function executeHeadTrackingStep(step, characterId, emit) {
 export async function executeStep(step, characterId, emit, options) {
   const dryRun = options && options.dryRun;
   const t = (step.type || (step.poseId != null ? 'pose' : null));
+  if (dryRun && FLEET_TYPES.has(t)) {
+    // A dry run of a conductor scene must still show where each cross-node step
+    // would land — resolution only, no network, nothing sent.
+    const { default: fleetSteps } = await import('./fleetSteps.js');
+    emit && emit({ type: 'step', status: 'start', stepType: t, dryRun: true });
+    const r = fleetSteps.dryResolve(step, { characterId });
+    emit && emit({ type: 'step', status: r.success ? 'complete' : 'error', stepType: t, dryRun: true, result: r });
+    if (!r.success) throw new Error(r.error);
+    return r;
+  }
   if (dryRun) {
     // Simulate success for all step types without side effects
     emit && emit({ type: 'step', status: 'start', stepType: t, dryRun: true });
@@ -917,8 +1025,41 @@ export async function executeStep(step, characterId, emit, options) {
       return executeJawAnimationStep(step, characterId, emit);
     case 'head-tracking':
       return executeHeadTrackingStep(step, characterId, emit);
+    case 'fleet-scene':
+    case 'fleet-say':
+    case 'fleet-audio':
+    case 'fleet-stop-audio':
+    case 'fleet-mode':
+      return executeFleetStep(step, characterId, emit, options);
     default:
       throw new Error('Unknown step type: ' + t);
+  }
+}
+
+const FLEET_TYPES = new Set(['fleet-scene', 'fleet-say', 'fleet-audio', 'fleet-stop-audio', 'fleet-mode']);
+
+// Cross-node steps (services/scenes/fleetSteps.js). The local runners let a
+// step aimed at THIS node run in-process: a scene through this executor and a
+// line through the cached sayThis path, instead of an HTTPS call to ourselves.
+async function executeFleetStep(step, characterId, emit, options) {
+  const { default: fleetSteps } = await import('./fleetSteps.js');
+  emit && emit({ type: 'step', status: 'start', stepType: step.type, node: step.node });
+  const local = {
+    playScene: async (sceneId, cid, opts) => {
+      const { getSceneById } = await import('./scenesService.js');
+      const scene = await getSceneById(sceneId, cid);
+      if (!scene) throw new Error(`Scene ${sceneId} not found for character ${cid}`);
+      return executeScene(scene, cid, null, opts);
+    },
+    say: (text, cid) => executeSayThisStep({ type: 'sayThis', text }, cid, null)
+  };
+  try {
+    const r = await fleetSteps.run(step, { characterId, emit, opts: options || {}, local });
+    emit && emit({ type: 'step', status: 'complete', stepType: step.type, result: r });
+    return r;
+  } catch (err) {
+    emit && emit({ type: 'step', status: 'error', stepType: step.type, error: err.message });
+    throw err;
   }
 }
 
@@ -941,7 +1082,10 @@ const NON_FATAL_STEP_TYPES = new Set([
   // stack, and sayThis/askAI on a live ElevenLabs round trip. One hiccup should
   // cost a line of dialogue, not the rest of the performance. Note the shape this
   // used to have: a dead servo was survivable while a stuttering network was not.
-  'audio', 'sayThis', 'askAI'
+  'audio', 'sayThis', 'askAI',
+  // Cross-node steps depend on other machines being up; a dark node costs its
+  // beat, never the conductor's whole show.
+  'fleet-scene', 'fleet-say', 'fleet-audio', 'fleet-stop-audio', 'fleet-mode'
 ]);
 
 async function executeStepsWithConcurrency(steps, characterId, emit, opts) {

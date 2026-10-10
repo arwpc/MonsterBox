@@ -7,6 +7,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { writeJsonAtomic, withFileLock } from '../atomicStore.js';
+import { assertConfigPathWritable } from '../characterConfigLock.js';
+import { backupDataFile } from '../scenes/scenesService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,6 +82,29 @@ export async function savePoses(posesData) {
         console.error('❌ Failed to save poses:', error.message);
         throw error;
     }
+}
+
+/**
+ * Replace a character's whole pose library. Keeps the file's own templates
+ * (never writes the built-in defaults into it). Lock-checked first, backed up
+ * to data/character-<id>/backups/, then written atomically under the same
+ * per-character lock as addPose.
+ * @returns {Promise<{backup: string|null, count: number, file: string}>}
+ */
+export async function replacePoses(characterId, poses, templates) {
+    const posesFile = getPosesFilePath(characterId);
+    assertConfigPathWritable(posesFile, 'replacing poses.json');
+    return withFileLock(`poses:${characterId}`, async () => {
+        let existing = null;
+        try { existing = JSON.parse(await fs.readFile(posesFile, 'utf8')); } catch (_) { /* new file */ }
+        const backup = await backupDataFile(posesFile, 'poses');
+        const out = { characterId: Number(characterId), poses: poses || [] };
+        const keepTemplates = templates !== undefined ? templates : (existing && existing.templates);
+        if (keepTemplates) out.templates = keepTemplates;
+        await fs.mkdir(path.dirname(posesFile), { recursive: true });
+        await writeJsonAtomic(posesFile, out);
+        return { backup, count: out.poses.length, file: posesFile };
+    });
 }
 
 /**
@@ -235,6 +260,7 @@ export function validatePose(poseData) {
 export default {
     loadPoses,
     savePoses,
+    replacePoses,
     getPose,
     addPose,
     updatePose,

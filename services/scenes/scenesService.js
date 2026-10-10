@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from '../configService.js';
 import { writeJsonAtomic, withFileLock } from '../atomicStore.js';
+import { assertConfigPathWritable } from '../characterConfigLock.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +59,40 @@ export async function mutateScenes(mutator, characterId) {
   });
 }
 
+/**
+ * Copy a character data file into data/character-<id>/backups/ before it is
+ * replaced wholesale. Returns the backup path, or null when there was nothing
+ * to back up. Callers must have passed the lock check first: this is a plain
+ * write, and a locked character's directory must not grow files either.
+ */
+export async function backupDataFile(filePath, label) {
+  let raw;
+  try { raw = await fs.readFile(filePath, 'utf8'); } catch (_) { return null; }
+  const dir = path.join(path.dirname(filePath), 'backups');
+  await fs.mkdir(dir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const dest = path.join(dir, `${label}-${stamp}.json`);
+  await fs.writeFile(dest, raw, 'utf8');
+  return dest;
+}
+
+/**
+ * Replace a character's whole scene library (bulk import after a rebuild).
+ * Lock-checked before anything is written, backed up, then written atomically
+ * under the same per-file lock as every other scenes write.
+ * @returns {Promise<{backup: string|null, count: number, file: string}>}
+ */
+export async function replaceScenes(scenes, characterId) {
+  const filePath = await getScenesFilePath(characterId);
+  assertConfigPathWritable(filePath, 'replacing scenes.json');
+  return withFileLock(`scenes:${filePath}`, async () => {
+    const backup = await backupDataFile(filePath, 'scenes');
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await writeJsonAtomic(filePath, scenes || []);
+    return { backup, count: (scenes || []).length, file: filePath };
+  });
+}
+
 export async function nextSceneId(characterId) {
   const scenes = await loadScenes(characterId);
   let maxId = 0;
@@ -83,5 +118,5 @@ export async function loadTemplates() {
   }
 }
 
-export default { loadScenes, saveScenes, mutateScenes, nextSceneId, getSceneById, loadTemplates };
+export default { loadScenes, saveScenes, mutateScenes, replaceScenes, backupDataFile, nextSceneId, getSceneById, loadTemplates };
 

@@ -43,6 +43,9 @@ router.get('/', async (req, res, next) => {
 
 router.get('/api/poses', posesController.getAllPoses);
 
+// Bulk replace (validated, backed up, 423 when the character is locked).
+router.post('/api/replace', posesController.replacePoses);
+
 // Per-part safety posture (quarantine state, blockReason, angle window) so the
 // editor can refuse to build a pose out of a part the hardware layer will refuse.
 router.get('/api/part-safety', posesController.getPartSafety);

@@ -34,7 +34,12 @@
                 "pose",
                 "hardware",
                 "jaw-animation",
-                "head-tracking"
+                "head-tracking",
+                "fleet-scene",
+                "fleet-say",
+                "fleet-audio",
+                "fleet-stop-audio",
+                "fleet-mode"
               ]
             }
           }
