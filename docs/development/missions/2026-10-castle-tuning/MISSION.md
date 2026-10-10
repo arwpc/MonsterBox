@@ -241,3 +241,7 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   the beds' library ids (registered by the rescan at the next restart). `brief-orlok-pitch.md` queued for the
   conversation engineer after D1 (daylight audition). Pi load ≈ 8 with five workers; no more agents until a slot
   frees. Still running: 1a conversation, 1b lurk, 1d goblins, scene authors Orlok + Sir Dragomir.
+- 2026-10-09 23:12 — operator: "set all of their volumes at 25% - its late". Done via `PUT /api/orchestration/volume
+  {volume:25}`; every node reads back 25 % (`GET /api/system/volume`); Orlok's sink stays MUTED at the device
+  level. Every restart/deploy re-applies canonical `sinkVolume`, so the lead re-applies 25 % after each restart
+  tonight; `POST /api/orchestration/volume/restore-canonical` brings show levels back in daylight.
