@@ -585,6 +585,14 @@ async function executeMotorStep(step, characterId, emit) {
     console.warn(`[SceneExecutor] Could not enforce bounds for motor part ${partId}:`, e.message);
   }
 
+  // The position estimate can clamp a move to nothing (the part already sits at that end of its
+  // measured travel). The wrapper refuses a zero duration ("Duration must be positive"), which read as a
+  // hardware failure in a show (event 101 proof run, 2026-10-10). Nothing to move is not an error.
+  if (effectiveDuration <= 0) {
+    console.warn(`[SceneExecutor] motor part ${partId} ${direction}: already at its travel limit by the position estimate — nothing to move`);
+    emit && emit({ type: 'step', status: 'skipped', stepType: 'motor', partId, direction, reason: 'at travel limit' });
+    return { success: true, skipped: true, reason: 'at travel limit (position estimate)', partId, direction };
+  }
   emit && emit({ type: 'step', status: 'start', stepType: 'motor', partId, direction, speed: effectiveSpeed, duration: effectiveDuration, usePreset, presetName });
   const r = await hardwareService.controlPart(String(partId), 'control', { direction, speed: effectiveSpeed, duration: effectiveDuration }, { characterId });
 
@@ -658,6 +666,14 @@ async function executeLinearActuatorStep(step, characterId, emit) {
   // Linear actuators use 'extend' or 'retract' actions, not 'control'
   const action = direction === 'retract' ? 'retract' : 'extend';
 
+  // The position estimate can clamp a move to nothing (the part already sits at that end of its
+  // measured travel). The wrapper refuses a zero duration ("Duration must be positive"), which read as a
+  // hardware failure in a show (event 101 proof run, 2026-10-10). Nothing to move is not an error.
+  if (effectiveDuration <= 0) {
+    console.warn(`[SceneExecutor] linear-actuator part ${partId} ${direction}: already at its travel limit by the position estimate — nothing to move`);
+    emit && emit({ type: 'step', status: 'skipped', stepType: 'linear-actuator', partId, direction, reason: 'at travel limit' });
+    return { success: true, skipped: true, reason: 'at travel limit (position estimate)', partId, direction };
+  }
   emit && emit({ type: 'step', status: 'start', stepType: 'linear-actuator', partId, direction, speed: effectiveSpeed, duration: effectiveDuration, usePreset, presetName });
   const r = await hardwareService.controlPart(String(partId), action, { speed: effectiveSpeed, duration: effectiveDuration }, { characterId });
 

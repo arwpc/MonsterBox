@@ -262,7 +262,7 @@ class GoblinManagerService {
         // Device proof timing: first look after the start, then a second look this much
         // later. A file mpv cannot hold (display owned by a stray mpv, TV off) still
         // looks "running" 1.5 s in; the second look and the spawn count catch it.
-        this.proofDelays = { first: 1500, settle: 8000 };
+        this.proofDelays = { first: 1500, settle: 8000, castMax: 6000 };
         this.keepAlive = {
             config: { ...KEEPALIVE_DEFAULTS },
             running: false,
@@ -1308,12 +1308,22 @@ class GoblinManagerService {
     }
 
     async _confirmPlaying(goblinId, filename) {
+        // One read at 1.5 s called real casts "unplayable" on a throttled Pi 3B (Goblin 2 at 79 °C needs
+        // 2–4 s to swap mpv over). Poll until the file shows, up to proofDelays.castMax.
+        const want = path.basename(String(filename));
+        const deadline = Date.now() + (this.proofDelays.castMax || 6000);
+        let playback = null;
+        let showing = false;
         await sleep(this.proofDelays.first);
-        const playback = await this.getGoblinPlayback(goblinId);
-        if (!playback.success) {
-            return { success: false, accepted: true, error: `Play accepted but the Goblin's status could not be read: ${playback.error}` };
+        for (;;) {
+            playback = await this.getGoblinPlayback(goblinId);
+            if (!playback.success) {
+                return { success: false, accepted: true, error: `Play accepted but the Goblin's status could not be read: ${playback.error}` };
+            }
+            showing = !!(playback.mpvRunning && playback.currentVideo === want);
+            if (showing || Date.now() >= deadline) break;
+            await sleep(500);
         }
-        const showing = playback.mpvRunning && playback.currentVideo === path.basename(String(filename));
         return {
             success: showing,
             accepted: true,

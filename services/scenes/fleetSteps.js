@@ -37,7 +37,9 @@ const APP_ROOT = path.resolve(__dirname, '..', '..');
 
 export { FLEET_STEP_TYPES, looseKey, resolveFleetNodes, isSelfNode };
 
-const PROBE_TIMEOUT_MS = 2500;
+// 2.5 s skipped two healthy nodes mid-show (a Pi answering slowly under its own event part); a show
+// that waits six seconds for a probe loses less than one that leaves a character out.
+const PROBE_TIMEOUT_MS = 6000;
 const DEFAULT_SCENE_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_SCENE_TIMEOUT_MS = 15 * 60 * 1000;
 const SAY_TIMEOUT_MS = 90 * 1000;
