@@ -245,3 +245,25 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   {volume:25}`; every node reads back 25 % (`GET /api/system/volume`); Orlok's sink stays MUTED at the device
   level. Every restart/deploy re-applies canonical `sinkVolume`, so the lead re-applies 25 % after each restart
   tonight; `POST /api/orchestration/volume/restore-canonical` brings show levels back in daylight.
+- 2026-10-10 ≈09:55 — POWER LOSS on Orlok (second interruption). Back at ≈09:58; service healthy on the dirty tree,
+  every dirty file parses, head tracking running from boot (the new lurk boot path). All five workers resumed from
+  their saved transcripts at 10:30 (conversation, lurk, goblins, Orlok author, Dragomir author). Operator: daytime,
+  "make as much noise as you like with volume and move however you like" — Orlok's sink unmuted, canonical volumes
+  restored fleet-wide (Mina unreachable again at 10:30: EHOSTUNREACH). A test left a synthetic microphone part
+  (id 987657, "Device Stamp Test Mic") in Orlok's parts.json — remove at cleanup.
+
+## Goals checklist (operator brief → where each lands; reviewed 2026-10-10 10:35 at the operator's request)
+
+| # | Operator goal | Covered by | State |
+|---|---|---|---|
+| 1a | Slow to respond, too long, lecture-like | D2 agents (turn_v3 eager, ≤25-word prompts, LLM by measurement) + D1 client latency work | agents DONE (1c); client in 1a; live re-measure in phase 2 |
+| 1b | Hard to interrupt, won't listen | D1 full-duplex on XVF3800 nodes, agent-decided `interruption`, echo-aware barge-in elsewhere | 1a running |
+| 1c | Lag / cut off mid-sentence | D1 ordered chunks, drain-on-stop, no SIGTERM from other sessions, reconnect | 1a running |
+| 1d | Lurk simplified: move occasionally, head tracking, random movement, silent until PIR/schedule/AI-on; AI mode = all capabilities; unmuted by default; Orlok keeps music | D3 lurk state machine + idle-tagged poses from every scene author | 1b running; poses in 3b |
+| 2 | Six personalities per the brief (Orlok deeper + Romanian, Mina lullabies, Groundbreaker ground + protector, Dragomir starts/carriages/anti-Pumpkinhead, Pumpkinhead vs Renfield's sales, Renfield names/contracts/pen) | D2 prompts + bible | DONE except Orlok's DEPTH: ElevenLabs cannot; playback pitch shift briefed (`brief-orlok-pitch.md`), daylight audition pending |
+| 3 | Ten new scenes per character, delete old scenes/poses, max part combinations, stories drive movement, cast video | D4 + `brief-scene-author.md`; validator/cache/replace from 1e | Orlok + Dragomir authors running; Mina (lamp-only), PumpkinHead, Groundbreaker, Renfield next; push per node + lock refresh (3b) |
+| 4 | Goblins all working, looped playlists per window | D5 reels, keep-alive, resolver, hints | 1d running; Goblins 1 and 4 need hands |
+| 5 | Rebuild tests around the new scenes, hardware tests, AI-config UI | D6 phase 4 (test-engineer + ui-engineer) | NOT STARTED — after 3b |
+| 6 | Three fleet events with music, video, movement; every half hour; return to original state | D7 scripts, conductors, runner, beds; `fleet-mode hold/release`; cron | scripts/conductors/runner/beds DONE; hold/release endpoints in 1b; rehearsal + cron (3c) after 3b |
+| D8 | Chicago time + NTP on every Pi, enforced and reported | verified by hand 10-09; baseline/provision scripts + fleet-health `time` + `check:time` | NOT DONE — small follow-up task |
+| — | Deploy everything to all nodes; Mina's files when she is on | phase 2 + 3b | pending |
