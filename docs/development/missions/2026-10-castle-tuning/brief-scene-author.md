@@ -37,7 +37,10 @@ Ten scenes, named `<Character>: <Title>`, ids 1–10, each with a one-line `desc
   with a 100 ms `wait` so the conductor's call lands cleanly and ends in your Home pose.
 
 Poses (`poses.json`): a `Home` pose; at least six `idle`-tagged poses with `weight > 0`, `holdVariance` and
-`transitionDurationMs` set, small safe moves spread across the parts the character can move; expressive poses
+`transitionDurationMs` set, small safe moves spread across the parts the character can move — and because head
+tracking holds the head/pan servo while lurking (the servo priority manager denies the idle loop on that part),
+at least half of the idle poses must move something other than the head (an arm, a light, the jaw a crack, the
+pen, the coffin door a few millimetres, a motor pulse) or the character will not move at all while tracking; expressive poses
 used by the scenes (name them for the story beat). Every servo angle inside its calibrated window; no pose or
 step drives a part listed broken in `config/physical-faults.json`; Orlok parts 4 and 5 never together; Sir
 Dragomir part 1 only inside 372–406° and never full-range presets; PumpkinHead motor ≤ 40 %; Groundbreaker's head

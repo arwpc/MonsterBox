@@ -152,6 +152,16 @@ character's scenes 8–10) plus Goblin casts (play-once, so the reels resume) an
 conversation, and runs from the managed crontab every 30 minutes in show hours (`*/30 17-22 * * *`, visible on
 /schedule, operator-adjustable). Every event ends with `fleet-mode release`; the runner also releases on failure.
 
+D8 **Time** (operator, 21:27: "be sure time is synced to the Chicago time zone and these guys are updating time
+via NTP on their RPis") — verified 2026-10-09 21:27 CDT on every reachable Pi (Orlok, PumpkinHead, Sir Dragomir,
+Groundbreaker, Renfield, Goblin 2, Goblin 3): `America/Chicago`, `systemd-timesyncd` active, clock synchronized,
+identical to the second. Mina, Goblin 1 and Goblin 4 are off the network and get the same check when they return.
+To keep it true: `scripts/node-baseline/apply-baseline.sh` and `scripts/goblin-os/provision-goblin.sh` /
+`stabilize-goblin.sh` set `timedatectl set-timezone America/Chicago` and `set-ntp true` (neither does today);
+`/api/orchestration/fleet-health` reports `time {zone, ntpSynced, localTime, offsetMs}` per node and the Fleet
+Command Center flags drift or an unsynced clock; `npm run check:time` prints the fleet matrix. Schedules, quiet
+hours and the half-hour event rotation all depend on this.
+
 D6 **Tests/UI** — unit + system tests follow the new services; browser specs updated for the new scenes;
 hardware tests per character part list; AI settings page shows live conversation latency, duplex mode, and
 agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
