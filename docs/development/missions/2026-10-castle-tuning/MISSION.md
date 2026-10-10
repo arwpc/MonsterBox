@@ -223,3 +223,13 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   jaw pre-analysis delay to every line). Phase 3a: `docs/characters/FLEET-EVENTS.md` written (three event
   scripts: 101 The Lighting of the Castle, 102 The Count's Orders, 103 One Song for Warner Castle); original
   instrumental beds being generated with the ElevenLabs Music API into the audio library.
+- 2026-10-09 23:05 — phase 1c DONE (persona-writer): D2 applied to all six agents at 22:37–22:41 CDT, verified by
+  GET after each PATCH; LLMs chosen by measurement (Orlok, Dragomir, Renfield → gemini-3.5-flash-lite; Mina,
+  PumpkinHead, Groundbreaker → gpt-5.4-mini; claude-haiku-4-5 was fastest but lectured at 37–48 words); words per
+  turn 15–27 (was 31–53); Orlok's VOICE UNCHANGED (the designed candidate measured higher, not deeper; the only
+  achievable lever is a node-side rubberband pitch shift on the playback path, queued as a daylight follow-up for
+  the conversation engineer). Report `report-personas.md`, bible `docs/characters/STORY-BIBLE.md`. Phase 1e DONE
+  (scene-infra, commit d4d861c5): fleet step types, validator (gate step 1b), TTS cache + prerender, replace
+  endpoints, askAI single-play, audio steps to clip length; report `report-scene-infra.md`. Three event music beds
+  generated (ElevenLabs Music API, 230/260/235 s) and loudness-normalized for the library. Scene authors for Orlok
+  and Sir Dragomir launched 23:06 (two concurrent; conversation, lurk and goblin workers still running).

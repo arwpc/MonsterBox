@@ -1,0 +1,20 @@
+{
+  "_readme": [
+    "Fleet events: the orchestrated shows (docs/characters/FLEET-EVENTS.md). Each is a conductor scene hosted on",
+    "this node's selected character (Orlok). run-next.mjs rotates through `events` in order, one per invocation,",
+    "and is fired by the managed crontab every half hour in show hours (see README.md).",
+    "quietHours: the runner refuses to start a show between start and end (local time, America/Chicago on every Pi).",
+    "busyRetry: when any node reports a live guest conversation, wait delayMs and look again, up to attempts times.",
+    "playTimeoutMs: how long one conductor may run before the runner gives up on it and releases every node."
+  ],
+  "events": [
+    { "sceneId": 101, "name": "The Lighting of the Castle" },
+    { "sceneId": 102, "name": "The Count's Orders" },
+    { "sceneId": 103, "name": "One Song for Warner Castle" }
+  ],
+  "quietHours": { "start": "23:00", "end": "08:00" },
+  "busyRetry": { "attempts": 3, "delayMs": 300000 },
+  "playTimeoutMs": 720000,
+  "stateFile": "data/fleet-events-state.json",
+  "lockFile": "data/fleet-events.lock"
+}
