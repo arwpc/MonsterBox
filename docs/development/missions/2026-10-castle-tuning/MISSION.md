@@ -298,3 +298,11 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   the one real failure was test residue the timeout had left in Orlok's live parts.json — synthetic parts
   987655/987657 — removed). PHASE 2 ROLLOUT RUNNING (`/home/remote/mission-scratch/phase2.sh`): deploy →
   health → symbol grep → push-show → lurk-state, nodes 1, 4, 5, 6, 2, then Orlok.
+- 2026-10-10 13:00 — PHASE 2 DONE on all six nodes: code 10.7.0 with every new symbol, shows pushed, lurk
+  rotation → [1,2] (off), callouts and lurk scenes off, every node in `lurking`; locks verified on PumpkinHead's
+  and Sir Dragomir's nodes (fingerprints now ignore node-local `backups/`). A LAN/internet outage 11:31–12:50 cut
+  Mina's and Orlok's pushes and killed the test engineer (both resumed); Renfield's new Pi has no key trust from
+  Orlok (an ssh-copy-id was refused by the session's permission layer — operator action), so his deploy and push
+  used the fleet password through `MONSTERBOX_SSH_PASSWORD` (push-show gained that fallback). Daylight rehearsal of
+  events 101/102/103 running now (`/home/remote/mission-scratch/rehearse.sh`). Test engineer (phase 4) running;
+  UI engineer next; then docs, log review, memory, tag.
