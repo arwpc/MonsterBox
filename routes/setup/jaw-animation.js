@@ -159,6 +159,7 @@ router.post('/api/jaw-animation/:characterId', async (req, res) => {
     }
 
     // Get servo calibration data if servo is selected
+    let calibrationNote = null;
     if (jawConfig.servoPartId) {
       const servos = await jawAnimationService.getAvailableServos(characterId);
       // Part ids are strings in the parts store but arrive as numbers from any
@@ -178,7 +179,6 @@ router.post('/api/jaw-animation/:characterId', async (req, res) => {
       // all on 2026-10-10 ("Selected servo must be calibrated before use") while the jaw itself worked
       // through the runtime overlay. Keep the jaw window the caller or the existing config carries, and say
       // in the answer that calibration will refine it.
-      let calibrationNote = null;
       if (selectedServo.calibrated) {
         jawConfig.minAngle = selectedServo.minAngle;
         jawConfig.maxAngle = selectedServo.maxAngle;
