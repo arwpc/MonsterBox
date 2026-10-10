@@ -2120,6 +2120,16 @@ Groundbreaker, Mina; Renfield through the fleet password). Everything below is t
 - 🟢 **`avahi-browse failed` on Dragomir, Groundbreaker, Renfield** (a handful per node, binary present): mDNS
   browse timed out while the nodes were restarting; discovery fell back to `config/animatronics.json` as
   designed and the registry shows all six online.
+- 🟡 **Ear-check 13:58 after the rollout: PumpkinHead AUDIBLE (recall 77 %), Mina AUDIBLE (67 %), Orlok
+  and Sir Dragomir and Groundbreaker not proven by the ear-check.** On the two XVF3800 nodes the collector's
+  array capture produced no file (`scp: /tmp/mb-earcheck-floor-c3.wav: No such file`): the known trap that
+  `arecord`/`parec` open the array and deliver zero frames, so the verdict fell back to the webcam mics
+  (Orlok rise 3.6 dB, Dragomir 4.4 dB "garbled"), which is a capture statement, not a speaker one. Groundbreaker's
+  USB adapter mic jack is dead (floor −83.6 dB, known since 2026-09-06). Speaker-side evidence from the same hour:
+  every event line and bed opened a player on each node (mpg123/pw-play processes, bytes written, exit 0) and the
+  operator was in the yard for the rehearsals. To close this: teach `scripts/fleet-audio/earcheck.mjs` to capture
+  XVF3800 nodes through `python_wrappers/microphone_cli.py` (PyAudio, judged on frames), the only path that
+  streams from the array (`docs/hardware/RESPEAKER-XVF3800.md` → Capture traps).
 - 🟢 **Orlok: "37 tracked CODE files modified"** at review time were the test engineer's uncommitted work in
   progress; committed before the tag.
 
