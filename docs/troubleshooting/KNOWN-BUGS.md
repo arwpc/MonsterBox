@@ -2127,7 +2127,10 @@ Groundbreaker, Mina; Renfield through the fleet password). Everything below is t
   (Orlok rise 3.6 dB, Dragomir 4.4 dB "garbled"), which is a capture statement, not a speaker one. Groundbreaker's
   USB adapter mic jack is dead (floor −83.6 dB, known since 2026-09-06). Speaker-side evidence from the same hour:
   every event line and bed opened a player on each node (mpg123/pw-play processes, bytes written, exit 0) and the
-  operator was in the yard for the rehearsals. To close this: teach `scripts/fleet-audio/earcheck.mjs` to capture
+  operator was in the yard for the rehearsals. Orlok has stronger proof than the collector: his own array
+  transcribed his own spoken lines twice today (10:00 self-echo transcripts "Do you fear the dark, copile?";
+  13:3x `ai-status` turn "Killing plots. The giant shouts." during event 102), which is intelligible sound in
+  the air captured by the app's own PyAudio path. To close this: teach `scripts/fleet-audio/earcheck.mjs` to capture
   XVF3800 nodes through `python_wrappers/microphone_cli.py` (PyAudio, judged on frames), the only path that
   streams from the array (`docs/hardware/RESPEAKER-XVF3800.md` → Capture traps).
 - 🟢 **Orlok: "37 tracked CODE files modified"** at review time were the test engineer's uncommitted work in
