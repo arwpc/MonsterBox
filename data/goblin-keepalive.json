@@ -1,0 +1,13 @@
+{
+  "_comment": "Goblin keep-alive (services/goblinManagerService.js). ONE node runs it: the one whose hostname equals controllerHost. Every pollIntervalMs it reads each Goblin's /playback-status; a stopped non-empty queue is started again, and a Goblin that comes back (or shows an empty queue) gets its staged show playlist (role 'show' in data/goblin-playlists.json). Never restarts goblin.service or reboots; at most one start per Goblin per minute (floor not configurable); never during a cast or another command. A Stop from Video Control holds a screen dark stopHoldMs (body holdMinutes overrides). Toggle: POST /video-library/api/goblins/keepalive {enabled}. Status: GET same path. Env MB_GOBLIN_KEEPALIVE=on|off overrides this file.",
+  "enabled": true,
+  "controllerHost": "orlok",
+  "pollIntervalMs": 30000,
+  "minActionIntervalMs": 60000,
+  "stoppedDebounceMs": 20000,
+  "stopHoldMs": 600000,
+  "castGuardMs": 180000,
+  "castMinGuardMs": 20000,
+  "maxBackoffMs": 1800000,
+  "startupDelayMs": 45000
+}

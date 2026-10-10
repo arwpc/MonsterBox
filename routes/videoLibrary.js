@@ -8,6 +8,7 @@ import { promises as fs, createReadStream } from 'fs';
 import multer from 'multer';
 import path from 'path';
 import goblinManagerService from '../services/goblinManagerService.js';
+import goblinPlaylistService from '../services/goblinPlaylistService.js';
 import videoLibraryService from '../services/videoLibraryService.js';
 
 const router = express.Router();
@@ -501,7 +502,7 @@ router.post('/api/goblins/:id/play', async (req, res) => {
  */
 router.post('/api/goblins/:id/stop', async (req, res) => {
     try {
-        const result = await goblinManagerService.stopGoblin(req.params.id);
+        const result = await goblinManagerService.stopGoblin(req.params.id, holdOption(req.body));
         res.status(result.success ? 200 : 502).json(result);
     } catch (error) {
         console.error('Error stopping Goblin:', error);
@@ -519,11 +520,25 @@ router.get('/api/goblins/board', async (req, res) => {
     try {
         const playbackOnly = req.query.playbackOnly === '1';
         const registry = await goblinManagerService.getGoblins({});
-        const goblins = (registry && registry.goblins) || [];
+        // Board order is the operator's numbering (Goblin 1, 2, 3, 4), not last-seen.
+        const goblins = ((registry && registry.goblins) || []).slice()
+            .sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id), 'en', { numeric: true }));
         const board = await Promise.all(goblins.map(async (g) => {
+            const keepAlive = goblinManagerService.keepAliveStatusFor(g.id);
+            const show = keepAlive.stagedPlaylist;
             const entry = {
                 id: g.id, name: g.name || g.id, endpoint: g.endpoint, status: g.status,
                 expectedOffline: goblinManagerService.isExpectedOffline(g),
+                // Where the screen is and how it reads (the reels were cut for these).
+                display: goblinManagerService.displayHints(g),
+                // The staged show and what the keep-alive last did about this screen.
+                show: show ? { ...show, onScreen: false } : null,
+                keepAlive: {
+                    running: keepAlive.running, hold: keepAlive.hold, busy: keepAlive.busy, cast: keepAlive.cast,
+                    lastDecision: keepAlive.lastDecision, lastAction: keepAlive.lastAction,
+                    needsAttention: keepAlive.needsAttention, stormSuspected: keepAlive.stormSuspected,
+                    backoffUntil: keepAlive.backoffUntil
+                },
                 online: false, playback: null, videos: null, error: null
             };
             if (entry.expectedOffline && g.status !== 'online') return entry;
@@ -531,6 +546,11 @@ router.get('/api/goblins/board', async (req, res) => {
             if (!pb.success) { entry.error = pb.error; return entry; }
             entry.online = true;
             entry.playback = pb;
+            if (entry.show && pb.queue) {
+                const queued = (Array.isArray(pb.queue.videos) ? pb.queue.videos : []).map(v => (v && v.filename) || v);
+                entry.show.onScreen = queued.length === entry.show.files.length
+                    && entry.show.files.every((f, k) => f === queued[k]) && !!pb.mpvRunning;
+            }
             if (!playbackOnly) {
                 const list = await goblinManagerService.listGoblinVideos(g.id);
                 entry.videos = list.success ? list.videos.map(v => ({ filename: v.filename, size: v.size })) : [];
@@ -563,14 +583,26 @@ router.post('/api/goblins/control', async (req, res) => {
         if ((action === 'play' || action === 'loop') && (!filename || typeof filename !== 'string')) {
             return res.status(400).json({ success: false, error: `${action} needs a filename` });
         }
-        const results = await Promise.all(ids.map(async (goblinId) => {
+        // goblinIds may be names ("Goblin 2"): each is resolved on its own, and one that
+        // matches no Goblin (or two) fails alone instead of failing the whole request.
+        const seen = new Set();
+        const results = await Promise.all(ids.map(async (requested) => {
+            const found = goblinManagerService.resolveGoblin(requested);
+            if (!found.success) return { goblinId: requested, success: false, error: found.error };
+            const goblinId = found.id;
+            if (seen.has(goblinId)) return { goblinId, goblinName: found.goblin.name, success: false, duplicate: true, error: 'named twice in this request' };
+            seen.add(goblinId);
             try {
                 let r;
                 if (action === 'play') r = await goblinManagerService.playVideoOnGoblin(goblinId, filename);
                 else if (action === 'loop') r = await goblinManagerService.loopVideoOnGoblin(goblinId, filename);
-                else if (action === 'stop') r = await goblinManagerService.stopGoblin(goblinId);
+                else if (action === 'stop') r = await goblinManagerService.stopGoblin(goblinId, holdOption(req.body));
                 else r = await goblinManagerService.resumeGoblinQueue(goblinId);
-                return { goblinId, goblinName: r.goblinName, success: !!r.success, error: r.error, notOnGoblin: !!r.notOnGoblin, playback: r.playback || null };
+                return {
+                    goblinId, requested: requested !== goblinId ? requested : undefined, goblinName: r.goblinName || found.goblin.name,
+                    success: !!r.success, error: r.error, notOnGoblin: !!r.notOnGoblin, busy: !!r.busy,
+                    playback: r.playback || null, hold: r.hold || null, spawns: r.spawns ?? null
+                };
             } catch (err) {
                 return { goblinId, success: false, error: err.message };
             }
@@ -579,6 +611,79 @@ router.post('/api/goblins/control', async (req, res) => {
         res.status(successful ? 200 : 502).json({ success: successful > 0, action, filename: filename || null, total: results.length, successful, failed: results.length - successful, results });
     } catch (error) {
         console.error('Error controlling Goblins:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * A Stop holds the keep-alive off that screen (default: the keep-alive's
+ * stopHoldMs). `holdMinutes: 0` stops without a hold — the keep-alive may start
+ * the queue again a minute later.
+ */
+function holdOption(body) {
+    const minutes = body && body.holdMinutes;
+    if (minutes === undefined || minutes === null || minutes === '') return {};
+    const n = Number(minutes);
+    return Number.isFinite(n) && n >= 0 ? { holdMs: Math.min(n, 24 * 60) * 60000 } : {};
+}
+
+/**
+ * GET /api/goblins/resolve?name=… - Which Goblin a name (or id) means: exact id,
+ * then the name case-insensitively, then the name ignoring spaces ("goblin3").
+ * 404 when nothing matches, 409 when more than one Goblin answers to it.
+ */
+router.get('/api/goblins/resolve', (req, res) => {
+    const found = goblinManagerService.resolveGoblin(String(req.query.name || req.query.id || ''));
+    if (!found.success) return res.status(found.ambiguous ? 409 : 404).json(found);
+    const g = found.goblin;
+    res.json({ success: true, id: found.id, name: g.name, matchedBy: found.matchedBy, endpoint: g.endpoint, display: goblinManagerService.displayHints(g) });
+});
+
+/**
+ * GET /api/goblins/keepalive - What the keep-alive is doing for every Goblin.
+ * POST /api/goblins/keepalive { enabled?: bool, releaseHold?: [id|name] } - turn it
+ * on/off for the fleet (persisted in data/goblin-keepalive.json; turning it on makes
+ * this node the controller), or lift a Stop's hold / a stand-down on some Goblins.
+ */
+router.get('/api/goblins/keepalive', (req, res) => {
+    res.json(goblinManagerService.getKeepAliveStatus());
+});
+
+router.post('/api/goblins/keepalive', async (req, res) => {
+    try {
+        const { enabled, releaseHold } = req.body || {};
+        const released = [];
+        if (Array.isArray(releaseHold)) {
+            for (const target of releaseHold) released.push(goblinManagerService.releaseHold(target));
+        }
+        let status;
+        if (typeof enabled === 'boolean') status = await goblinManagerService.setKeepAliveEnabled(enabled);
+        else status = goblinManagerService.getKeepAliveStatus();
+        if (typeof enabled !== 'boolean' && !Array.isArray(releaseHold)) {
+            return res.status(400).json({ success: false, error: 'send enabled (true|false) and/or releaseHold ([ids or names])' });
+        }
+        res.json({ ...status, released });
+    } catch (error) {
+        console.error('Error changing the Goblin keep-alive:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/goblins/:id/show - Put a Goblin back on its staged show (its playlist
+ * with role "show"): copied first if the device lacks the file, then started and
+ * proven by two device reads. :id may be a name.
+ */
+router.post('/api/goblins/:id/show', async (req, res) => {
+    try {
+        const found = goblinManagerService.resolveGoblin(req.params.id);
+        if (!found.success) return res.status(found.ambiguous ? 409 : 404).json(found);
+        const show = goblinPlaylistService.getShowPlaylist(found.id);
+        if (!show) return res.status(404).json({ success: false, error: `${found.goblin.name} has no staged show playlist` });
+        const result = await goblinPlaylistService.deployPlaylist(show.id, [found.id], true);
+        res.status(result.success ? 200 : 502).json({ ...result, playlistName: show.name });
+    } catch (error) {
+        console.error('Error starting a Goblin show:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

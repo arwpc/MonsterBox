@@ -1390,48 +1390,27 @@ class GoblinManager {
     }
 
     async playNow(filename) {
+        // Play once, then the Goblin goes back to its own loop — through Video Control's
+        // control route, so the manager serializes it with every other command on that
+        // Goblin and proves it from the device. This button used to stop, clear,
+        // enqueue-priority (which already starts the queue) and start AGAIN, straight at
+        // the device: the show loop was replaced by one non-looping clip, and the double
+        // start could leave a second mpv behind.
         try {
-            // Stop current queue
-            await fetch(`${this.currentQueueGoblin.endpoint}/queue/stop`, {
-                method: 'POST'
-            });
-
-            // Clear queue
-            await fetch(`${this.currentQueueGoblin.endpoint}/queue/clear`, {
-                method: 'POST'
-            });
-
-            // Add video to priority queue
-            const response = await fetch(`${this.currentQueueGoblin.endpoint}/queue/enqueue-priority`, {
+            const goblin = this.currentQueueGoblin;
+            const response = await fetch('/video-library/api/goblins/control', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename })
+                body: JSON.stringify({ action: 'play', filename, goblinIds: [goblin.id] })
             });
-
             const data = await response.json();
-
-            if (data.success) {
-                // Start queue in sequential mode
-                const startResponse = await fetch(`${this.currentQueueGoblin.endpoint}/queue/start`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        videos: [filename],
-                        mode: 'sequential'
-                    })
-                });
-
-                const startData = await startResponse.json();
-
-                if (startData.success) {
-                    await this.loadVideoQueue(this.currentQueueGoblin);
-                    await this.updatePlaybackStatus();
-                    this.showSuccess(`Now playing: ${filename}`);
-                } else {
-                    this.showError('Failed to start playback');
-                }
+            const result = (data.results && data.results[0]) || data;
+            await this.loadVideoQueue(goblin);
+            await this.updatePlaybackStatus();
+            if (result.success) {
+                this.showSuccess(`Now playing: ${filename} (then back to ${goblin.name}'s loop)`);
             } else {
-                this.showError('Failed to queue video');
+                this.showError(`Failed to play ${filename}: ${result.error || 'no answer'}`);
             }
         } catch (error) {
             console.error('Error playing video:', error);

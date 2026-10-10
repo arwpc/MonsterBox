@@ -19,17 +19,13 @@ class GoblinVideoService {
      */
     async scanGoblinVideos(goblinId) {
         try {
-            // getGoblin is async → { success, goblin }. Without await, `goblin` was a
-            // Promise, so every scan/play/status/stop reported the Goblin offline.
-            const goblinResult = await goblinManagerService.getGoblin(goblinId);
-            const goblin = goblinResult.success ? goblinResult.goblin : null;
+            // The manager resolves a name or id and pings the device before calling it
+            // offline (the registry marks every Goblin offline for a while after a restart).
+            const { goblin, error } = await goblinManagerService._onlineGoblin(goblinId);
             if (!goblin) {
-                return { success: false, error: goblinResult.error || 'Goblin not found' };
+                return { success: false, error: error === 'Goblin not found' ? error : 'Goblin is offline' };
             }
-
-            if (goblin.status !== 'online') {
-                return { success: false, error: 'Goblin is offline' };
-            }
+            goblinId = goblin.id;
 
             const response = await axios.get(`${goblin.endpoint}/api/videos/scan`, {
                 timeout: 60000 // 60 second timeout for scanning
@@ -141,28 +137,13 @@ class GoblinVideoService {
      */
     async playVideoImmediate(goblinId, filename, options = {}) {
         try {
-            // getGoblin is async → { success, goblin }. Without await, `goblin` was a
-            // Promise, so every scan/play/status/stop reported the Goblin offline.
-            const goblinResult = await goblinManagerService.getGoblin(goblinId);
-            const goblin = goblinResult.success ? goblinResult.goblin : null;
-            if (!goblin) {
-                return { success: false, error: goblinResult.error || 'Goblin not found' };
-            }
-
-            if (goblin.status !== 'online') {
-                return { success: false, error: 'Goblin is offline' };
-            }
-
-            const response = await axios.post(
-                `${goblin.endpoint}/api/video/play-immediate`,
-                {
-                    filename,
-                    returnToQueue: options.returnToQueue !== false // Default true
-                },
-                { timeout: 5000 }
-            );
-
-            return response.data;
+            // Through the manager: serialized with every other command on that Goblin,
+            // remembered as a cast (the keep-alive stays off the screen while it plays),
+            // checked against the device's listing and proven by the device's status.
+            // The device's own answer (playing, interrupted, willReturnToQueue) is kept.
+            return await goblinManagerService.playVideoOnGoblin(goblinId, filename, {
+                returnToQueue: options.returnToQueue !== false // Default true
+            });
         } catch (error) {
             console.error(`Error playing video on ${goblinId}:`, error.message);
             return {
@@ -179,16 +160,9 @@ class GoblinVideoService {
      */
     async getPlaybackStatus(goblinId) {
         try {
-            // getGoblin is async → { success, goblin }. Without await, `goblin` was a
-            // Promise, so every scan/play/status/stop reported the Goblin offline.
-            const goblinResult = await goblinManagerService.getGoblin(goblinId);
-            const goblin = goblinResult.success ? goblinResult.goblin : null;
+            const { goblin, error } = await goblinManagerService._onlineGoblin(goblinId);
             if (!goblin) {
-                return { success: false, error: goblinResult.error || 'Goblin not found' };
-            }
-
-            if (goblin.status !== 'online') {
-                return { success: false, error: 'Goblin is offline' };
+                return { success: false, error: error === 'Goblin not found' ? error : 'Goblin is offline' };
             }
 
             const response = await axios.get(`${goblin.endpoint}/api/status`, {
@@ -212,23 +186,9 @@ class GoblinVideoService {
      */
     async stopPlayback(goblinId) {
         try {
-            // getGoblin is async → { success, goblin }. Without await, `goblin` was a
-            // Promise, so every scan/play/status/stop reported the Goblin offline.
-            const goblinResult = await goblinManagerService.getGoblin(goblinId);
-            const goblin = goblinResult.success ? goblinResult.goblin : null;
-            if (!goblin) {
-                return { success: false, error: goblinResult.error || 'Goblin not found' };
-            }
-
-            if (goblin.status !== 'online') {
-                return { success: false, error: 'Goblin is offline' };
-            }
-
-            const response = await axios.post(`${goblin.endpoint}/stop-all`, {}, {
-                timeout: 5000
-            });
-
-            return response.data;
+            // The manager's stop: /queue/stop (flag down before mpv is killed, so the
+            // device cannot respawn the clip mid-stop), read back, serialized.
+            return await goblinManagerService.stopGoblin(goblinId);
         } catch (error) {
             console.error(`Error stopping playback on ${goblinId}:`, error.message);
             return {

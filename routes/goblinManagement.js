@@ -274,6 +274,11 @@ router.post('/api/goblin/:id/play-video', async (req, res) => {
 
 /**
  * POST /api/goblin/:id/stop-all - Stop all playback on Goblin
+ *
+ * Goes through the manager's stop (serialized with every other command on that
+ * Goblin, /queue/stop so the device cannot respawn the clip mid-stop, read back and
+ * proven). The device's raw /stop-all used to be called here directly, with a fetch
+ * `timeout` option that native fetch ignores. Body { holdMinutes } as on Video Control.
  */
 router.post('/api/goblin/:id/stop-all', async (req, res) => {
     try {
@@ -283,24 +288,29 @@ router.post('/api/goblin/:id/stop-all', async (req, res) => {
             return res.status(404).json(goblinResult);
         }
 
-        const goblin = goblinResult.goblin;
-
-        if (goblin.status !== 'online') {
-            return res.status(400).json({ success: false, error: 'Goblin is not online' });
-        }
-
-        // Send stop command to Goblin
-        const response = await fetch(`${goblin.endpoint}/stop-all`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            timeout: 10000
-        });
-
-        const result = await response.json();
-        res.json(result);
+        const minutes = req.body && req.body.holdMinutes;
+        const options = minutes !== undefined && minutes !== null && minutes !== '' && Number(minutes) >= 0
+            ? { holdMs: Math.min(Number(minutes), 24 * 60) * 60000 } : {};
+        const result = await goblinManagerService.stopGoblin(goblinResult.goblin.id, options);
+        res.status(result.success ? 200 : 502).json(result);
     } catch (error) {
         console.error('Error stopping playback on Goblin:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * PUT /api/goblin/:id/display - Where the screen is and how it reads:
+ * { location?, placement?, orientation? ('landscape'|'portrait-cw'|'portrait-ccw'|'unknown'), readsFrom? }
+ * Shown on Video Control; kept across re-registration. :id may be a name.
+ */
+router.put('/api/goblin/:id/display', async (req, res) => {
+    try {
+        const result = await goblinManagerService.updateGoblinDisplay(req.params.id, req.body || {});
+        res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+        console.error('Error updating Goblin display hints:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
 
@@ -563,7 +573,8 @@ router.get('/api/playlists', (req, res) => {
     try {
         const filters = {
             goblinId: req.query.goblinId,
-            search: req.query.search
+            search: req.query.search,
+            role: req.query.role
         };
 
         const playlists = goblinPlaylistService.getAllPlaylists(filters);
@@ -648,10 +659,14 @@ router.delete('/api/playlists/:id', async (req, res) => {
 
 /**
  * POST /api/playlists/:id/deploy - Deploy playlist to Goblin(s)
+ * { goblinIds: [id or name, …] | 'all', startImmediately = true }
+ * Per Goblin: ping, presence check against the device's own listing (missing files
+ * copied from their `source` on this node), queue replaced under that Goblin's lock,
+ * proven by two device reads. `deployed` lists only proven Goblins; 502 when any failed.
  */
 router.post('/api/playlists/:id/deploy', async (req, res) => {
     try {
-        const { goblinIds, startImmediately = true } = req.body;
+        const { goblinIds, startImmediately = true } = req.body || {};
 
         if (!goblinIds) {
             return res.status(400).json({ success: false, error: 'Missing goblinIds' });
@@ -666,7 +681,7 @@ router.post('/api/playlists/:id/deploy', async (req, res) => {
         if (result.success) {
             res.json(result);
         } else {
-            res.status(400).json(result);
+            res.status(Array.isArray(result.failed) ? 502 : 400).json(result);
         }
     } catch (error) {
         console.error('Error deploying playlist:', error);

@@ -1,0 +1,747 @@
+{
+  "goblinId": "goblin-192-168-8-244",
+  "name": "Goblin 4",
+  "publishedAt": "2026-10-10T16:05:23.968Z",
+  "source": "previous",
+  "sourceDetail": "device did not answer (fetch failed); kept the list published 2026-10-10T03:52:13.389Z (assumed)",
+  "note": "clips = the video files this unit holds (what a scene may cast to it). staged = files of its staged show playlist that are not on the unit yet; the keep-alive copies them when it returns.",
+  "count": 72,
+  "clips": [
+    {
+      "filename": "307 Jb Hd.mp4",
+      "bytes": 1365990,
+      "duration": 11.67,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "312 Jb Hd.mp4",
+      "bytes": 9966388,
+      "duration": 20,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "403 Jb Hd.mp4",
+      "bytes": 2922591,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "404 Jb Hd.mp4",
+      "bytes": 27405877,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "407 Jb Hd.mp4",
+      "bytes": 1607521,
+      "duration": 15,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "415 Jb Hd.mp4",
+      "bytes": 9315076,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "487 Jb Hd.mp4",
+      "bytes": 14457818,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "488 Jb Hd.mp4",
+      "bytes": 7561802,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "490 Jb Hd.mp4",
+      "bytes": 5429334,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "494 Jb Hd.mp4",
+      "bytes": 7693134,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "497 Jb Hd.mp4",
+      "bytes": 24666418,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "499 Jb Hd.mp4",
+      "bytes": 8167991,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "541 Jb Hd.mp4",
+      "bytes": 8098879,
+      "duration": 15,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "542 Jb Hd.mp4",
+      "bytes": 5169573,
+      "duration": 8.33,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "543 Jb Hd.mp4",
+      "bytes": 831274,
+      "duration": 6.7,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "544 Jb Hd.mp4",
+      "bytes": 3346386,
+      "duration": 11.7,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "545 Jb Hd.mp4",
+      "bytes": 5984321,
+      "duration": 10.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "546 Jb Hd.mp4",
+      "bytes": 5381964,
+      "duration": 7.27,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "547 Jb Hd.mp4",
+      "bytes": 3238974,
+      "duration": 6.37,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "548 Jb Hd.mp4",
+      "bytes": 5087229,
+      "duration": 8,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "549 Jb Hd.mp4",
+      "bytes": 5797153,
+      "duration": 11.67,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "550 Jb Hd.mp4",
+      "bytes": 5513161,
+      "duration": 11.67,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "551 Jb Hd.mp4",
+      "bytes": 15976035,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "552 Jb Hd.mp4",
+      "bytes": 20690250,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "553 Jb Hd.mp4",
+      "bytes": 30991624,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "554 Jb Hd.mp4",
+      "bytes": 14279231,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "555 Jb Hd.mp4",
+      "bytes": 16079120,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "556 Jb Hd.mp4",
+      "bytes": 7867842,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "557 Jb Hd.mp4",
+      "bytes": 16554588,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "558 Jb Hd.mp4",
+      "bytes": 12665239,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "559 Jb Hd.mp4",
+      "bytes": 19702567,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "560 Jb Hd.mp4",
+      "bytes": 17357154,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "682 Jb Hd.mp4",
+      "bytes": 10116269,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "683 Jb Hd.mp4",
+      "bytes": 35124908,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "684 Jb Hd.mp4",
+      "bytes": 5528467,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "687 Jb Hd.mp4",
+      "bytes": 4900133,
+      "duration": 30.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "688 Jb Hd.mp4",
+      "bytes": 53121358,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "689 Jb Hd.mp4",
+      "bytes": 25072249,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "694 Jb Hd.mp4",
+      "bytes": 28466937,
+      "duration": 30,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Batattack.mp4",
+      "bytes": 1484785,
+      "duration": 10.01,
+      "resolution": "960x540",
+      "fps": 23.976,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Bigskull.mp4",
+      "bytes": 3097874,
+      "duration": 30.43,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Firepumpkin.mp4",
+      "bytes": 3948041,
+      "duration": 30.04,
+      "resolution": "960x540",
+      "fps": 25,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Floatinglady.mp4",
+      "bytes": 1650170,
+      "duration": 12.05,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Greenskull.mp4",
+      "bytes": 5182179,
+      "duration": 30.96,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Hugeskelly.mp4",
+      "bytes": 712908,
+      "duration": 6.03,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Monstergoop.mp4",
+      "bytes": 2861885,
+      "duration": 10.71,
+      "resolution": "1002x720",
+      "fps": 24,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Moon.mp4",
+      "bytes": 3401279,
+      "duration": 30.8,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Buffer Black H.mp4",
+      "bytes": 41111,
+      "duration": 15.02,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Poltergeist Ampedup Win H.mp4",
+      "bytes": 8414775,
+      "duration": 49.73,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Poltergeist Discharged Win H.mp4",
+      "bytes": 4924199,
+      "duration": 46.06,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Poltergeist Elecrticslide Win H.mp4",
+      "bytes": 4935100,
+      "duration": 54.4,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Poltergeist Startlescare Win H.mp4",
+      "bytes": 1237305,
+      "duration": 15.02,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Siren Fearsafloat Win H.mp4",
+      "bytes": 5579354,
+      "duration": 90.43,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Siren Seaofsirens Win H.mp4",
+      "bytes": 9129300,
+      "duration": 58.41,
+      "resolution": "1280x646",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Siren Sirenssway Win H.mp4",
+      "bytes": 5480391,
+      "duration": 68.42,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Siren Startlescare Win H.mp4",
+      "bytes": 1790625,
+      "duration": 25.71,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Spinster Behaveorbedead Win H.mp4",
+      "bytes": 3202222,
+      "duration": 64.41,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Spinster Mixtureofmadness Win H.mp4",
+      "bytes": 4447406,
+      "duration": 79.77,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Spinster Startlescare Win H.mp4",
+      "bytes": 1421962,
+      "duration": 18.37,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Spinster Teafortwo Win H.mp4",
+      "bytes": 3861298,
+      "duration": 64.75,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Wraith Faceofdeath Win H.mp4",
+      "bytes": 3136866,
+      "duration": 26.71,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Wraith Riseofthewraiths Win H.mp4",
+      "bytes": 9079698,
+      "duration": 53.4,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Wraith Soulseeker Win H.mp4",
+      "bytes": 8314346,
+      "duration": 62.74,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Wraith Startlescare Win H.mp4",
+      "bytes": 1220547,
+      "duration": 16.7,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Pha Wraith Unholyhovering Win H.mp4",
+      "bytes": 3199395,
+      "duration": 45.06,
+      "resolution": "1280x720",
+      "fps": 29.97,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Sauron.mp4",
+      "bytes": 4871141,
+      "duration": 58.88,
+      "resolution": "640x360",
+      "fps": 25,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Scary Face.mp4",
+      "bytes": 3512877,
+      "duration": 9.9,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Skellycrawler.mp4",
+      "bytes": 2301875,
+      "duration": 20.27,
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Skellyskrape.mp4",
+      "bytes": 1923345,
+      "duration": 14.01,
+      "resolution": "1280x720",
+      "fps": 23.976,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Skullfire.mp4",
+      "bytes": 369692,
+      "duration": 6.25,
+      "resolution": "616x510",
+      "fps": 24,
+      "codec": "h264",
+      "audio": null,
+      "kind": "clip"
+    },
+    {
+      "filename": "Skullfloor.mp4",
+      "bytes": 1712061,
+      "duration": 30.02,
+      "resolution": "1280x710",
+      "fps": 24,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    },
+    {
+      "filename": "Stumblingelectricsman.mp4",
+      "bytes": 2231147,
+      "duration": 32.53,
+      "resolution": "560x540",
+      "fps": 30,
+      "codec": "h264",
+      "audio": "aac",
+      "kind": "clip"
+    }
+  ],
+  "staged": [
+    {
+      "filename": "reel-goblin1-showcase.mp4",
+      "playlistId": "show-goblin-4",
+      "source": "/home/remote/goblin-reels/reels/reel-goblin1-showcase.mp4",
+      "meta": {
+        "bytes": 155805956,
+        "duration": 495.31,
+        "resolution": "1280x720",
+        "fps": 30,
+        "codec": "h264",
+        "audio": null,
+        "kind": "reel"
+      }
+    }
+  ]
+}

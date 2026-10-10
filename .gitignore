@@ -125,3 +125,4 @@ data/character-*/callout-state.json
 data/tts-cache/
 # Wholesale scene/pose replace backups (routes/scenes/api.js, controllers/posesController.js)
 data/character-*/backups/
+data/goblin-keepalive-state.json

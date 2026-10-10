@@ -711,8 +711,10 @@ class VideoLibrary {
                         <strong class="mb-serif">${this.escapeHtml(g.name)}</strong>
                         <span class="mb-status-badge ${g.online ? 'online' : 'offline'}">${status}</span>
                     </div>
+                    ${this.renderDisplayHints(g)}
                     <div class="vid-goblin-thumb vid-board-thumb${thumb ? '' : ' vid-goblin-thumb-missing'}">${thumb}<i class="bi ${g.online ? 'bi-moon-stars' : 'bi-plug'}"></i></div>
                     <div class="vid-board-now${pb.file ? ' vid-board-live' : ''}">${this.escapeHtml(g.online ? pb.text : (g.error || 'Not reachable'))}</div>
+                    ${this.renderShowState(g)}
                     ${g.online ? `
                     <div class="vid-board-pick">
                         <select class="mb-select mb-select-sm vid-board-select" title="A video on ${this.escapeAttr(g.name)}'s disk" data-goblin-id="${this.escapeAttr(g.id)}">
@@ -724,11 +726,102 @@ class VideoLibrary {
                             <button class="mb-btn mb-btn-sm mb-btn-primary" title="Make the picked video this Goblin's show until stopped" onclick="videoLibrary.boardControl('${this.escapeAttr(g.id)}', 'loop')"><i class="bi bi-arrow-repeat"></i></button>
                             <button class="mb-btn mb-btn-sm mb-btn-danger" title="Stop this Goblin" onclick="videoLibrary.boardControl('${this.escapeAttr(g.id)}', 'stop')"><i class="bi bi-stop-fill"></i></button>
                             <button class="mb-btn mb-btn-sm mb-btn-secondary" title="Put this Goblin back on its own loop" onclick="videoLibrary.boardControl('${this.escapeAttr(g.id)}', 'resume')"><i class="bi bi-skip-forward-fill"></i></button>
+                            ${g.show ? `<button class="mb-btn mb-btn-sm mb-btn-secondary" title="Put this Goblin back on its staged show: ${this.escapeAttr(g.show.name || '')}" onclick="videoLibrary.startShow('${this.escapeAttr(g.id)}')"><i class="bi bi-film"></i></button>` : ''}
                         </span>
                     </div>` : ''}
                 </div>
             </div>`;
         }).join('');
+    }
+
+    /**
+     * Where the screen is and how it reads (registry display hints; the reels were cut
+     * for these). Edited in place with the pencil, saved through PUT
+     * /goblin-management/api/goblin/:id/display.
+     */
+    renderDisplayHints(g) {
+        const d = g.display || {};
+        const rows = [
+            ['geo-alt', d.location],
+            ['window', d.placement],
+            ['phone-landscape', d.orientation ? `orientation: ${d.orientation}` : ''],
+            ['eye', d.readsFrom]
+        ].filter(r => r[1]);
+        const body = rows.length
+            ? rows.map(r => `<div><i class="bi bi-${r[0]}"></i> ${this.escapeHtml(r[1])}</div>`).join('')
+            : '<div class="mb-text-muted">Where this screen sits is not recorded yet.</div>';
+        return `<div class="vid-board-hints" style="font-size:0.8rem;margin:0.25rem 0 0.5rem;line-height:1.35">
+                    ${body}
+                    <button class="mb-btn mb-btn-sm mb-btn-secondary" style="margin-top:0.25rem" title="Edit where this screen sits and how it reads" onclick="videoLibrary.editDisplay('${this.escapeAttr(g.id)}')"><i class="bi bi-pencil"></i> Placement</button>
+                </div>`;
+    }
+
+    /** The staged show and what the keep-alive last did about this screen. */
+    renderShowState(g) {
+        const parts = [];
+        if (g.show) {
+            parts.push(`<div><i class="bi bi-film"></i> Show: ${this.escapeHtml(g.show.name || g.show.id)}${g.online ? (g.show.onScreen ? ' (on screen)' : ' (not on screen)') : ''}</div>`);
+        }
+        const ka = g.keepAlive || {};
+        if (ka.running) {
+            let line = 'Keep-alive watching';
+            if (ka.needsAttention) line = `Keep-alive stood down: ${ka.needsAttention}`;
+            else if (ka.hold) line = `Keep-alive holding after a stop until ${new Date(ka.hold.until).toLocaleTimeString()}`;
+            else if (ka.busy) line = `Busy: ${ka.busy}`;
+            else if (ka.lastDecision && ka.lastDecision.reason) line = `Keep-alive: ${ka.lastDecision.reason}`;
+            parts.push(`<div><i class="bi bi-heart-pulse"></i> ${this.escapeHtml(line)}</div>`);
+            if (ka.lastAction) {
+                const when = ka.lastAction.at ? new Date(ka.lastAction.at).toLocaleTimeString() : '';
+                parts.push(`<div class="mb-text-muted">Last action ${this.escapeHtml(when)}: ${this.escapeHtml(ka.lastAction.action)} ${ka.lastAction.ok ? 'proven' : `failed (${this.escapeHtml(ka.lastAction.error || '')})`}</div>`);
+            }
+        }
+        return parts.length ? `<div class="vid-board-show" style="font-size:0.8rem;margin:0.25rem 0">${parts.join('')}</div>` : '';
+    }
+
+    async editDisplay(goblinId) {
+        const g = this.board.find(x => x.id === goblinId);
+        if (!g) return;
+        const d = g.display || {};
+        const fields = [
+            ['location', 'Where is this screen? (location)'],
+            ['placement', 'What kind of spot? (placement)'],
+            ['orientation', 'Orientation: landscape, portrait-cw, portrait-ccw or unknown'],
+            ['readsFrom', 'From where is it seen? (readsFrom)']
+        ];
+        const hints = {};
+        for (const [key, label] of fields) {
+            const value = window.prompt(`${g.name}: ${label}`, d[key] || '');
+            if (value === null) return; // cancelled
+            hints[key] = value;
+        }
+        try {
+            const response = await fetch(`/goblin-management/api/goblin/${encodeURIComponent(goblinId)}/display`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(hints)
+            });
+            const data = await response.json();
+            if (!data.success) { this.showError(data.error || 'Could not save'); return; }
+            this.showSuccess(`Saved ${g.name}'s placement`);
+            this.loadBoard(false);
+        } catch (error) {
+            this.showError(`Could not save: ${error.message}`);
+        }
+    }
+
+    /** Back to the Goblin's staged show (copied first if the unit lacks it, then proven). */
+    async startShow(goblinId) {
+        const g = this.board.find(x => x.id === goblinId);
+        if (!g) return;
+        this.showSuccess(`Starting ${g.name}'s show…`);
+        try {
+            const response = await fetch(`/video-library/api/goblins/${encodeURIComponent(goblinId)}/show`, { method: 'POST' });
+            const data = await response.json();
+            const detail = (data.results && data.results[0]) || data;
+            if (data.success) this.showSuccess(`${g.name} is on its show (${data.playlistName || ''})`);
+            else this.showError(`${g.name}: ${detail.error || data.error || 'failed'}`);
+        } catch (error) {
+            this.showError(`${g.name}: ${error.message}`);
+        }
+        this.loadBoard(false);
     }
 
     /** The per-card controls: one Goblin, the file its select shows. */
