@@ -9,6 +9,8 @@
       "fingerprints": {
         "ai-config/stt-config.json": "bb8838556f1cb2860e4a165b8d81ac4c50ca536af7f5f928ee9d952b5135630b",
         "ai-config/tts-config.json": "a538fe654aff407af54973cc602bac2bdd6909c00f9e07530912ec13d6060619",
+        "backups/poses.pre-castle-tuning-20261010.json": "66880cc3c50db59293c18270d4b36708bc9c4f8e639fc9f889ece8542a137478",
+        "backups/scenes.pre-castle-tuning-20261010.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
         "images/pumpkinhead.jpg": "c9cf20b72654d025bac081ed931aa2437311e92e00f6e49675cea01a36ff466b",
         "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "models/led_models.json": "9b0c760af34e711e4f0bf233926f3eab68ad653688ea24cc2860fc08ba00dff1",
@@ -18,13 +20,14 @@
         "models/webcam_models.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
         "movement-config.json": "9e03520ea87663d9d48446c635101ac60705b4e538e4971b429f11a11746360f",
         "parts.json": "52a5c4853a32969c027658641b580046d298298fcd14c2182aef086654ecc0b0",
-        "poses.json": "66880cc3c50db59293c18270d4b36708bc9c4f8e639fc9f889ece8542a137478",
-        "scenes.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "poses.json": "0d5f7475885fe568d007c9a660c0cfae191032632095f714041649d611dc4984",
+        "scenes.json": "9a821f737b4e5483ba525b2169e54c4cfb62e90f5d9e8bcc0b5e70563020d295",
         "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "servos.json": "1c9cf70286dd56b67639934f2a1e55628bac23f99608ef18161d041b98a9664f",
         "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "super-powers.json": "48f060d3b61f0ecbd5cadfdb5affdeb2a7be18351981395b6498009f92a9ea8a"
-      }
+      },
+      "refreshedAt": "2026-10-10T17:58:15.137Z"
     },
     {
       "characterId": 4,
@@ -35,18 +38,21 @@
       "fingerprints": {
         "ai-config/stt-config.json": "211d44f33a09cc072fedcd10b20fc1da41d46b8222a4711625e65e60c10178a8",
         "ai-config/tts-config.json": "a682de5368cb34406e28cb3e03450c26b7f05108fe61fa2b06c124c326e455c8",
+        "backups/poses.pre-castle-tuning-20261010.json": "7f5bb21f5f2d8deba0a6298af17c50560bbc32897e7a12fb2ccebc3d80000fd1",
+        "backups/scenes.pre-castle-tuning-20261010.json": "eba62e9df79d0cfe6d43d9fd3a155b8284b67f7925e73d6b75448a53493e5cd8",
         "characters.json": "ff5af55fbd546d8e8f8c505c71a89412730b10abf7dae8649e85adaad11271ef",
         "images/John_Hunyadi__Chronica_Hungarorum_.jpg": "d2925747cb996771581fb81c732d38a2669f97270f55f67145420637db176ec5",
         "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "movement-config.json": "fb8e724cca400b5f2470fc5dd92d3c6148e55cde3d420bad9b7182b99e23f2cd",
         "parts.json": "e03d8eaac96633911ab11fe60d6dddc2aa9a4b879e9df1dbd65b489e70c9098f",
-        "poses.json": "7f5bb21f5f2d8deba0a6298af17c50560bbc32897e7a12fb2ccebc3d80000fd1",
-        "scenes.json": "eba62e9df79d0cfe6d43d9fd3a155b8284b67f7925e73d6b75448a53493e5cd8",
+        "poses.json": "950eea067bb50177623cb3a3b3386007695f0946e72b0d985d0058672953d540",
+        "scenes.json": "e215ada748b3efd1644776f5485e671b213eba11e8c277aaf86349a22ad60c10",
         "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "servos.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
         "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "super-powers.json": "6e5024b70f97d9f256f667bd5d5d1753804c698e6f5b179e1b952af25b7321ec"
-      }
+      },
+      "refreshedAt": "2026-10-10T17:58:15.398Z"
     }
   ]
 }
