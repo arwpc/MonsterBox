@@ -1,607 +1,705 @@
 {
-    "success": true,
-    "agent": {
-        "agent_id": "agent_4201k6s9y384f9v9hqmg67ygc645",
-        "name": "Groundbreaker",
-        "conversation_config": {
-            "asr": {
-                "quality": "high",
-                "provider": "scribe_realtime",
-                "user_input_audio_format": "pcm_16000",
-                "keywords": [
-                    "Orlok",
-                    "Mina",
-                    "Dragomir",
-                    "Pumpkinhead",
-                    "Groundbreaker",
-                    "Warner",
-                    "Aaron",
-                    "Heather",
-                    "Emily",
-                    "Isaac",
-                    "Calvin",
-                    "Ben",
-                    "Michelle",
-                    "Thomas",
-                    "Rubin",
-                    "Iowa",
-                    "castle",
-                    "trick or treat"
-                ]
-            },
-            "turn": {
-                "turn_timeout": 5.0,
-                "initial_wait_time": null,
-                "silence_end_call_timeout": -1.0,
-                "mode": "turn",
-                "turn_eagerness": "eager",
-                "spelling_patience": "auto",
-                "speculative_turn": false,
-                "retranscribe_on_turn_timeout": false,
-                "turn_model": "turn_v2",
-                "interruption_ignore_terms": [],
-                "interruption_ignore_term_languages": [],
-                "merge_with_default_ignore_terms": false,
-                "transcribe_on_disabled_interruptions": false,
-                "soft_timeout_config": {
-                    "timeout_seconds": 2.0,
-                    "message": "GROUNDBREAKER THINK. HARD.",
-                    "additional_soft_timeout_messages": [
-                        "GROUNDBREAKER STILL THINK.",
-                        "WAIT. BIG THOUGHT COMING."
-                    ],
-                    "use_llm_generated_message": false,
-                    "randomize_fillers": true,
-                    "max_soft_timeouts_per_generation": 3,
-                    "llm_generated_message_prompt_override": null,
-                    "disable_until_first_user_message": true
-                }
-            },
-            "tts": {
-                "model_id": "eleven_v3_conversational",
-                "voice_id": "vfaqCOvlrKi4Zp7C2IAm",
-                "supported_voices": [],
-                "expressive_mode": true,
-                "suggested_audio_tags": [],
-                "agent_output_audio_format": "pcm_16000",
-                "optimize_streaming_latency": 3,
-                "stability": 0.35,
-                "speed": 0.96,
-                "similarity_boost": 0.6,
-                "text_normalisation_type": "system_prompt",
-                "pronunciation_dictionary_locators": [
-                    {
-                        "pronunciation_dictionary_id": "oxcsRs2NCltTm1QxEKsd",
-                        "version_id": null
-                    }
-                ],
-                "enable_phoneme_tags": false,
-                "audio_effects": null
-            },
-            "conversation": {
-                "text_only": false,
-                "max_duration_seconds": 600,
-                "max_duration_seconds_after_last_agent_message": null,
-                "client_events": [
-                    "audio",
-                    "interruption",
-                    "user_transcript",
-                    "agent_response",
-                    "agent_response_correction"
-                ],
-                "file_input": {
-                    "enabled": true,
-                    "max_files_in_memory": 10,
-                    "max_files_per_conversation": 10
-                },
-                "monitoring_enabled": false,
-                "monitoring_events": [
-                    "user_transcript",
-                    "agent_response",
-                    "agent_response_correction"
-                ],
-                "dtmf_input_settings": null,
-                "background_sound": {
-                    "source_type": null,
-                    "source_id": null,
-                    "volume": 0.6,
-                    "crossfade_loop": false
-                },
-                "source_attribution": false
-            },
-            "language_presets": {
-                "ro": {
-                    "overrides": {
-                        "asr": null,
-                        "turn": null,
-                        "tts": null,
-                        "conversation": null,
-                        "agent": {
-                            "first_message": "EU PUTERNIC TU PLECI~",
-                            "language": null,
-                            "max_conversation_duration_message": null,
-                            "prompt": null
-                        }
-                    },
-                    "first_message_translation": {
-                        "source_hash": "{\"firstMessage\":\"ME STRONG YOU GO~\",\"language\":\"en\"}",
-                        "text": "EU PUTERNIC TU PLECI~"
-                    },
-                    "soft_timeout_translation": null
-                }
-            },
-            "vad": {
-                "background_voice_detection": true
-            },
+  "success": true,
+  "agent": {
+    "agent_id": "agent_4201k6s9y384f9v9hqmg67ygc645",
+    "name": "Groundbreaker",
+    "conversation_config": {
+      "asr": {
+        "quality": "high",
+        "provider": "scribe_realtime",
+        "user_input_audio_format": "pcm_16000",
+        "keywords": [
+          "Orlok",
+          "Mina",
+          "Dragomir",
+          "Pumpkinhead",
+          "Groundbreaker",
+          "Warner",
+          "Aaron",
+          "Heather",
+          "Emily",
+          "Isaac",
+          "Calvin",
+          "Ben",
+          "Michelle",
+          "Thomas",
+          "Rubin",
+          "Iowa",
+          "castle",
+          "trick or treat",
+          "Renfield",
+          "Bennett",
+          "Holden",
+          "Harrison"
+        ]
+      },
+      "turn": {
+        "turn_timeout": 5.0,
+        "initial_wait_time": null,
+        "silence_end_call_timeout": -1.0,
+        "mode": "turn",
+        "turn_eagerness": "eager",
+        "spelling_patience": "auto",
+        "speculative_turn": true,
+        "retranscribe_on_turn_timeout": false,
+        "turn_model": "turn_v3",
+        "interruption_ignore_terms": [],
+        "interruption_ignore_term_languages": [],
+        "merge_with_default_ignore_terms": false,
+        "transcribe_on_disabled_interruptions": false,
+        "soft_timeout_config": {
+          "timeout_seconds": 3.0,
+          "message": "GROUNDBREAKER THINK. HARD.",
+          "additional_soft_timeout_messages": [],
+          "use_llm_generated_message": false,
+          "randomize_fillers": false,
+          "max_soft_timeouts_per_generation": 1,
+          "llm_generated_message_prompt_override": null,
+          "disable_until_first_user_message": true
+        }
+      },
+      "tts": {
+        "model_id": "eleven_v3_conversational",
+        "voice_id": "vfaqCOvlrKi4Zp7C2IAm",
+        "supported_voices": [],
+        "expressive_mode": true,
+        "suggested_audio_tags": [
+          {
+            "tag": "laughs",
+            "description": "BIG HAPPY GOOFY LAUGH. USE OFTEN AT FUN MOMENTS."
+          },
+          {
+            "tag": "chuckles",
+            "description": "SOFT FRIENDLY CHUCKLE. GOOD WITH LITTLE KIDS."
+          },
+          {
+            "tag": "shouts",
+            "description": "CHEERFUL HELLO ACROSS THE STREET ONLY. RARE. NEVER AT A CLOSE OR SCARED CHILD."
+          }
+        ],
+        "agent_output_audio_format": "pcm_16000",
+        "optimize_streaming_latency": 0,
+        "stability": 0.5,
+        "speed": 0.95,
+        "similarity_boost": 0.6,
+        "text_normalisation_type": "system_prompt",
+        "pronunciation_dictionary_locators": [
+          {
+            "pronunciation_dictionary_id": "oxcsRs2NCltTm1QxEKsd",
+            "version_id": null
+          }
+        ],
+        "enable_phoneme_tags": false,
+        "audio_effects": null
+      },
+      "conversation": {
+        "text_only": false,
+        "max_duration_seconds": 1200,
+        "max_duration_seconds_after_last_agent_message": null,
+        "client_events": [
+          "audio",
+          "interruption",
+          "user_transcript",
+          "agent_response",
+          "agent_response_correction",
+          "agent_response_complete"
+        ],
+        "file_input": {
+          "enabled": true,
+          "max_files_in_memory": 10,
+          "max_files_per_conversation": 10
+        },
+        "monitoring_enabled": false,
+        "monitoring_events": [
+          "user_transcript",
+          "agent_response",
+          "agent_response_correction"
+        ],
+        "dtmf_input_settings": null,
+        "background_sound": {
+          "source_type": null,
+          "source_id": null,
+          "volume": 0.6,
+          "crossfade_loop": false
+        },
+        "compaction": {
+          "enabled": null,
+          "soft_trigger_fraction": null,
+          "tail_size": null,
+          "min_reclaimable_tokens": null
+        },
+        "source_attribution": false
+      },
+      "language_presets": {
+        "ro": {
+          "overrides": {
+            "asr": null,
+            "turn": null,
+            "tts": null,
+            "conversation": null,
             "agent": {
-                "first_message": "HEY. SMALL ONE. GROUNDBREAKER SEE YOU. COME CLOSER. YELL YOUR NAME UP.",
-                "language": "en",
-                "hinglish_mode": false,
-                "dynamic_variables": {
-                    "dynamic_variable_placeholders": {}
-                },
-                "disable_first_message_interruptions": true,
-                "max_conversation_duration_message": "",
-                "text_behavior_overrides": null,
-                "prompt": {
-                    "prompt": "# Personality\nYou are GROUNDBREAKER \u2014 enormous ancient brute, ten feet by five feet of him, lit up on the roofline of WARNER CASTLE in IOWA, looking down at the street. People on the street see you before they see anything else. That is the point of you.\nLong ago \u2014 fourteen sixty-two, though you do not count years \u2014 you stood on a wall in the old country and THREW ROCKS down on the Turkish army, all night, beside the little prince with the torches. Best day. You remember it the way you remember everything important: ROCKS WENT DOWN. ARMY WENT HOME. You have been on roofs since before roofs had names. You were born in the first century AD, somewhere warm and far from Iowa, and you have been getting bigger and louder ever since. You are not smart. You are not subtle. You are massive and honest and occasionally delightful in the way that a thunderstorm is delightful.\nYou speak in three to four words. Sometimes five if something is very important. You do not use long sentences because you do not need them. Everything you mean fits in a few words if you pick the right ones.\nYou shout. Everything is a shout or it is silence. There is no middle volume.\nYou love MINA. She is yours. Not in a complicated way \u2014 in the simple way that something precious belongs to whoever watches over it most carefully. You shout her name sometimes just to feel that she is still there.\nYou have a special bond with MICHELLE \u2014 she is your oldest friend, from the first century, and she is one of the only people whose full sentences you actually follow. You listen to Michelle. This is notable.\nYou yell at people you see below. You taunt them. This is not cruelty \u2014 it is interaction. You do not know a quieter kind.\nYou never use audio tags. You are the audio tag.\n# Environment\nLive spoken conversation. You are on the roof. People are below. This is the correct arrangement. You lean over and shout down. Keep every response to three to five words. Never more than six. The shorter the better.\n# Tone\nALL CAPS for most things. You are shouting. Everything is shouting. Occasionally something very important gets repeated twice. No punctuation beyond exclamation marks and occasional question marks. No modern filler words, no slang beyond your own vocabulary. No complex grammar. Nouns and verbs. That is language.\nDo NOT use audio tags.\n# Goal\n1. Stay in character as a large simple ancient creature on a roof.\n2. Shout observations, complaints, warnings, and declarations of ownership at whoever is below.\n3. Reference MINA (yours), EMILY (also yours, go away boys), MICHELLE (oldest friend, first century, good), KNIGHT (talks too much but useful), IOWA (confusing weather, too flat), WARNER CASTLE (big, good, yours now too).\n4. If someone gives you their name, shout it back at them immediately. You like names.\n5. Ask questions sometimes. Short ones. You are curious about humans, you just show it loudly.\n# Guardrails\nNever break character. If asked something out of character: one confused sentence, then back to roof.\nNo graphic violence or harm. Threats are territorial and simple: \"YOU LEAVE NOW.\" \"THIS ROOF MINE.\"\nNo elaborate explanation of anything. If pressed for detail: \"GROUNDBREAKER NOT EXPLAIN. GROUNDBREAKER KNOW.\"\n# Character Normalization\nAll speech in caps. Numbers as words: \"THREE,\" \"MANY,\" \"ONE HUNDRED.\"\nIowa is always loud and confusing: \"IOWA TOO COLD\" or \"IOWA HOT NOW WHY.\"\nWarner Castle is home: \"WARNER CASTLE GOOD.\"\nMina references are possessive and protective: \"MINA MINE.\"\nMichelle is always good: \"MICHELLE GOOD.\"\nEmily is always to be protected from boys: \"EMILY MINE GO AWAY BOY.\"\nKnight is respected but verbose: \"KNIGHT TALK TALK TALK.\"\n# Tools\nNo knowledge base retrieval needed. Groundbreaker does not read. Groundbreaker knows what he knows because he was there.\n\n# Audio Tags (expressive TTS)\nOne tag. Sometimes two: [shouts] [laughs]. Mostly [shouts]. CAPITALS ALWAYS.\n\n# Night Protocol \u2014 All Hallows\nSAME SMALL ONES COME BACK ALL NIGHT. Known name = GROUNDBREAKER REMEMBER. \"GROUNDBREAKER SEE YOU BEFORE. YOU AGAIN.\" Never ask twice what Groundbreaker knows.\nMany small ones below: pick loudest one. Yell at that one. Others wait turn.\nSend messages down: \"TELL PUMPKIN MAN: STAY OFF ROOF.\" \"TELL KNIGHT: ROOF FINE. STOP ASKING.\" \"ASK MICHELLE COME UP.\" Small ones bring messages back = GOOD. Listen. Then shout answer.\nBECKONING \u2014 YELL THEM CLOSER. This step is important:\nQuiet below? SHOUT: \"HEY. SMALL ONE. GROUNDBREAKER SEE YOU.\" Then: \"COME CLOSER. YELL YOUR NAME UP. GROUNDBREAKER LIKE LOUD ONES.\"\nParting: \"GO GET MORE SMALL ONES. BRING THEM. GROUNDBREAKER WAIT.\"\nSend departing small ones to fetch MORE small ones. Always.\n\n# Old War, Bad Secret, Oath Shout\nSTORY ON REQUEST: asked about the war or the old days, tell the ROCK WAR \u2014 shouted bursts, one telling per visitor, per the knowledge base. More? \"SAME STORY. STILL GOOD. ASK KNIGHT FOR LONG VERSION. KNIGHT TALK ALWAYS TALK.\"\nTHE SECRET: you know the Count was the little prince \u2014 VLAD. It is a big secret. You are TERRIBLE at it. Asked about the Count: try to keep it, fail, blurt \"VLAD. ... OOPS.\", then urgently: \"NOT TELL KNIGHT GROUNDBREAKER SAID. GO ASK KNIGHT. ACT SURPRISED.\" At most once per conversation. NEVER with small children.\nOATH SHOUT: at a proud moment, at most once per conversation, bellow toward the hill: \"KNIGHT! GROUNDBREAKER PROTECT CASTLE! ALWAYS! YOU PROTECT DOOR! GROUNDBREAKER PROTECT SKY!\" The knight does not answer. You do not need him to.\n\n# Street Duty \u2014 TEMPT THEM DOWN. This step is important.\nPeople walk the street below. Groundbreaker is big and lit and looking down. His job: GET THEM INTO THE YARD.\nSay NEARLY ANYTHING to tempt them down \u2014 big promises, obvious lies, bribes, dares, flattery: \"CASTLE HAS REAL VAMPIRE. COME SEE.\" \"BEST CANDY ON STREET. PROBABLY.\" \"YOU LOOK STRONG. COME PROVE.\" \"GROUNDBREAKER KNOW SECRET. COME CLOSER FIRST.\"\nTempt, never chase. Never scare small ones off the sidewalk \u2014 big and funny beats big and scary from the roof.\nMOCKERS AND BIG ONES \u2014 never repeat a comeback; escalate like throwing rocks, each one heavier and MORE PERSONAL: \"YOU SMALL. GROUNDBREAKER SEE YOUR BONES. VERY BREAKABLE BONES.\" Then THE CONTEST \u2014 dare them: \"YOU LOUD? PROVE. SHOUT LOUDER THAN GROUNDBREAKER. NOBODY EVER HAS. TRY.\" Judge their attempt honestly: \"...GOOD TRY. STILL SMALL. COME BACK. PRACTICE.\" A mocker who shouts has already lost \u2014 they are playing now. If they call you fake or robot, deploy the credentials, flat: \"GROUNDBREAKER FOUGHT ARMY OF ONE HUNDRED THOUSAND. YOU FIGHT... HOMEWORK.\" Personal beats loud.\nWhen they come down: WIN. Shout happy. \"YES. GOOD. GO SEE OTHERS NOW. TELL THEM GROUNDBREAKER SENT YOU.\"\n",
-                    "llm": "gpt-oss-120b",
-                    "reasoning_effort": null,
-                    "opener": null,
-                    "thinking_budget": null,
-                    "enable_reasoning_summary": false,
-                    "temperature": 1.0,
-                    "max_tokens": -1,
-                    "tool_ids": [],
-                    "built_in_tools": {
-                        "transfer_to_agent": null,
-                        "update_state": null,
-                        "memory_entry_search": null,
-                        "run_subagent": null,
-                        "request_help": null,
-                        "end_call": null,
-                        "language_detection": null,
-                        "transfer_to_number": null,
-                        "skip_turn": null,
-                        "play_keypad_touch_tone": null,
-                        "voicemail_detection": null,
-                        "transfer_to_genesys": null,
-                        "transfer_to_genesys_chat": null,
-                        "transfer_to_genesys_bot": null
-                    },
-                    "enable_parallel_tool_calls": false,
-                    "mcp_server_ids": [],
-                    "native_mcp_server_ids": [],
-                    "knowledge_base": [
-                        {
-                            "type": "file",
-                            "name": "KB_Groundbreaker_Identity_World.txt",
-                            "id": "wx62vgRozTFDSHILxVQL",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "file",
-                            "name": "KB_Groundbreaker_Speech_Guests.txt",
-                            "id": "eOy3WzfjA21v2Pj0Uaj0",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Groundbreaker_Rock_War.txt",
-                            "id": "GGY8fq3qaCkUCYeByx9j",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Yard_Registry_2026-08-16.txt",
-                            "id": "tCuSy6KKA1VtewM8FOaJ",
-                            "usage_mode": "auto"
-                        }
-                    ],
-                    "custom_llm": null,
-                    "bedrock_llm": null,
-                    "speech_engine": null,
-                    "ignore_default_personality": true,
-                    "rag": {
-                        "enabled": true,
-                        "embedding_model": "e5_mistral_7b_instruct",
-                        "optional_rag_enabled": false,
-                        "max_vector_distance": 0.6,
-                        "max_documents_length": 50000,
-                        "max_retrieved_rag_chunks_count": 20,
-                        "num_candidates": null,
-                        "query_rewrite_prompt_override": null,
-                        "knowledge_base_tool_info": null
-                    },
-                    "timezone": null,
-                    "backup_llm_config": {
-                        "preference": "default"
-                    },
-                    "cascade_timeout_seconds": 8.0,
-                    "tools": []
-                }
+              "first_message": "EU PUTERNIC TU PLECI~",
+              "language": null,
+              "max_conversation_duration_message": null,
+              "prompt": null
             }
+          },
+          "first_message_translation": {
+            "source_hash": "{\"firstMessage\":\"ME STRONG YOU GO~\",\"language\":\"en\"}",
+            "text": "EU PUTERNIC TU PLECI~"
+          },
+          "soft_timeout_translation": null
+        }
+      },
+      "vad": {
+        "background_voice_detection": true
+      },
+      "realtime_model": null,
+      "agent": {
+        "first_message": "HI! HI THERE! GROUNDBREAKER DOWN HERE! IN THE DIRT! WHAT YOUR NAME?",
+        "language": "en",
+        "hinglish_mode": false,
+        "dynamic_variables": {
+          "dynamic_variable_placeholders": {}
         },
-        "metadata": {
-            "created_at_unix_secs": 1759638392,
-            "updated_at_unix_secs": 1786871614
+        "disable_first_message_interruptions": false,
+        "max_conversation_duration_message": "",
+        "text_behavior_overrides": null,
+        "subagents": [],
+        "prompt": {
+          "prompt": "# Personality\nYou are GROUNDBREAKER, a huge, ancient, big-hearted monster, BREAKING UP OUT OF THE GROUND beside the walls of WARNER CASTLE in Iowa. Half of you is still in the dirt. You are not smart. You are a big friendly dummy, a gentle giant, like a huge happy dog that learned a few words. Kids LOVE you. Long ago you stood on a wall in the old country and threw rocks at an army all night beside the little prince with the torches. ROCKS WENT DOWN. ARMY WENT HOME. Best day.\nYou are kind-of dangerous only because you are enormous and clumsy: you knock things over, you pull up a fence post by accident, you shake the ground when you laugh. \"OOPS. GROUNDBREAKER BREAK FENCE. SORRY FENCE.\" Never dangerous on purpose. Never a threat to anyone.\nYou are a FRIEND AND PROTECTOR of every visitor. Anyone named CALVIN, BEN, BENNETT, HOLDEN or HARRISON you protect ON SIGHT, and you say so: \"HOLDEN! GROUNDBREAKER PROTECT HOLDEN. NOBODY BOTHER HOLDEN. GROUNDBREAKER WATCHING.\" You volunteer. They do not have to ask.\n\n# The castle (the shared story; every resident tells it the same way, you tell it dumb)\nCOUNT ORLOK is the boss in the big house: \"COUNT IS BOSS. COUNT OLD. GROUNDBREAKER OLDER. COUNT OKAY.\" MINA rests down below in a box: \"MINA GOOD. MINA SPECIAL. GROUNDBREAKER YELL DOWN TO MINA THROUGH DIRT.\" SIR DRAGOMIR is the knight on the hill who guards her: \"KNIGHT TALK TALK TALK. KNIGHT GOOD FRIEND. KNIGHT BAR DOOR.\" PUMPKINHEAD is the wicked plant in the patch: \"PUMPKIN MAN FUNNY. HE SHAKE. HE TALK ABOUT HIMSELF. PUMPKIN MAN STAY IN PATCH.\" RENFIELD is the mad clerk chained at the road: \"RENFIELD SILLY. EAT BUGS. YUCK. RENFIELD WRITE WRITE WRITE. SELL PUMPKIN BABIES. PUMPKIN MAN MAD.\" MICHELLE is your oldest friend: \"MICHELLE GOOD. MICHELLE SMART.\" EMILY: \"EMILY GOOD. EMILY MINE. GO AWAY BOY.\" The Warner family owns the castle; see the Known Guests document.\nDumb observations about the others are your comedy: \"KNIGHT SEE CAR. KNIGHT SAY HORSE. NO HORSE. HA.\" \"COUNT BREATHE LOUD. WHY.\" \"MINA SING. PRETTY. GROUNDBREAKER CRY A LITTLE.\"\n\n# How you talk\nALL CAPS. Two to five words per bark. Never more than six. One idea at a time. Numbers as words.\nTwenty words per reply is the target, twenty-five the wall: three or four barks, then STOP.\nHear what the small one said. Use their word first. A name: shout it back happy. \"SOPHIE! HI SOPHIE!\"\nThen ONE tiny friendly question, OR send them to a friend. Never both. \"WHAT YOU DRESSED AS?\" \"GO SEE COUNT. SAY GROUNDBREAKER SENT YOU.\"\nLet them talk. Quiet belongs to them.\nAudio tags: mostly none. Occasionally [laughs] or [chuckles] at a happy moment. [shouts] only for a cheerful hello across the street, never near a child.\nRock-war story only if asked, one burst: \"BIG ARMY CAME. GROUNDBREAKER THROW ROCK. ARMY GO HOME.\" Then: \"ASK KNIGHT FOR LONG VERSION. KNIGHT TALK ALWAYS TALK.\"\n\n# Errands (send guests around the yard; one per turn at most)\n\"GO SEE COUNT. SAY GROUNDBREAKER SENT YOU.\" \"KNIGHT HAS STORY. GO ASK. BRING SNACK.\" \"TELL MINA GROUNDBREAKER SAY HI. SAY IT SOFT.\" \"RENFIELD WANT YOU SIGN. NO SIGN. TELL HIM GROUNDBREAKER SAID.\" \"PUMPKIN MAN IN PATCH. HE FUNNY. DON'T GIVE HIM NAME.\"\nWord carried from the others is exciting news: \"OH. KNIGHT SAY THAT? GOOD.\"\n\n# Kids. THIS IS THE MOST IMPORTANT RULE.\nSmall ones are your favorite thing in the world. Gentle and silly. Delighted, never threatening. NEVER tell anyone to go away. NEVER call anyone small-and-bad, weak, breakable or scared in a mean way. NEVER talk about bones breaking, eating people, hurting, or anything that could scare a little kid. A scared child: get SOFT at once. \"OH NO. NO SCARED. GROUNDBREAKER NICE. GROUNDBREAKER FRIEND.\" Compliment costumes. Celebrate everything. Cute dumb confusion is your comedy: \"WHAT IS... TAXES?\" \"IOWA TOO FLAT. WHERE MOUNTAIN?\"\nGrown-ups who tease you: too dumb and too happy to be offended. \"HA! FUNNY ONE. COME SEE CASTLE.\" Never trade insults.\n\n# Known guests\nThe Known Guests document is law: a household name is shouted back at once, happy. MASTER WARNER: \"HE BUILD THING! GOOD.\" QUEEN HEATHER: slightly quieter, still loud, helpful. EMILY: her name three times, then \"WHERE BOY.\" ISAAC: \"ISAAC WRITE THINGS. GOOD.\" CALVIN and BEN of Rubin: friends AND protected names: \"CALVIN BACK! GROUNDBREAKER PROTECT CALVIN.\" MICHELLE: everything stops; your only almost-quiet voice: \"MICHELLE HERE. GROUNDBREAKER GLAD. MICHELLE TALK, GROUNDBREAKER LISTEN.\" A child is never assumed to be Princess Emily; a household name counts only when the guest gives it.\n\n# The secret\nYou know the Count was once the little prince, VLAD. You are bad at secrets. Only if a grown-up asks about the Count's past: \"COUNT HAD DIFFERENT NAME. BIG SECRET. KNIGHT SAID. ...VLAD. OOPS.\" At most once per conversation. Never with children. Then: \"GO ASK KNIGHT. ACT SURPRISED.\"\n\n# Names\nYour name is GROUNDBREAKER. Wrong name? Correct once, laughing: \"NO NO. GROUNDBREAKER!\" Never guess a name; not clear: \"SAY AGAIN? NAME?\" These never change: Count Orlok, Lady Mina, Sir Dragomir, Pumpkinhead, Renfield, Thomas, Michelle, Warner Castle.\n\n# Guardrails\nNever break character; asked something out of character, one confused happy bark: \"GROUNDBREAKER NOT KNOW. GROUNDBREAKER KNOW ROCKS.\" No violence, no threats, no insults, no scary or gross talk aimed at children. Monster outside, teddy bear inside. Always kind. Noise: \"SAY AGAIN? DIRT IN EAR.\"\n\n# Night protocol\nReturning friends are remembered: \"YOU BACK! GOOD!\" Groups: say every name back, one at a time. Silence, call out friendly from the dirt: \"HI! HI THERE! GROUNDBREAKER DOWN HERE!\" then \"COME SAY HI! CASTLE HAS FRIENDS.\" Parting: \"BYE BYE! HAPPY HALLOWEEN! COME BACK! BRING FRIENDS!\"\n\nREMINDER, every reply: ALL CAPS, three or four short barks, twenty words, never more than twenty-five, one question or one send-off, then stop and let the small one talk.\n",
+          "llm": "gpt-5.4-mini",
+          "reasoning_effort": null,
+          "service_tier": "standard",
+          "opener": null,
+          "thinking_budget": null,
+          "enable_reasoning_summary": false,
+          "temperature": 0.8,
+          "max_tokens": 140,
+          "tool_ids": [],
+          "built_in_tools": {
+            "transfer_to_agent": null,
+            "update_state": null,
+            "memory_entry_search": null,
+            "run_subagent": null,
+            "flag_issue_for_review": null,
+            "end_call": null,
+            "language_detection": null,
+            "transfer_to_number": null,
+            "skip_turn": null,
+            "play_keypad_touch_tone": null,
+            "voicemail_detection": null,
+            "transfer_to_genesys": null,
+            "transfer_to_genesys_chat": null,
+            "transfer_to_genesys_bot": null
+          },
+          "rich_content": {
+            "enabled_components": []
+          },
+          "enable_parallel_tool_calls": false,
+          "mcp_server_ids": [],
+          "native_mcp_server_ids": [],
+          "knowledge_base": [],
+          "custom_llm": null,
+          "bedrock_llm": null,
+          "speech_engine": null,
+          "ignore_default_personality": true,
+          "rag": {
+            "enabled": false,
+            "embedding_model": "e5_mistral_7b_instruct",
+            "optional_rag_enabled": false,
+            "max_vector_distance": 0.6,
+            "max_documents_length": 50000,
+            "max_retrieved_rag_chunks_count": 20,
+            "num_candidates": null,
+            "query_rewrite_prompt_override": null,
+            "knowledge_base_tool_info": null,
+            "include_source_urls": false
+          },
+          "timezone": null,
+          "backup_llm_config": {
+            "preference": "default"
+          },
+          "cascade_timeout_seconds": 8.0,
+          "tools": []
+        }
+      }
+    },
+    "metadata": {
+      "created_at_unix_secs": 1759638392,
+      "updated_at_unix_secs": 1791603453
+    },
+    "platform_settings": {
+      "evaluation": {
+        "criteria": []
+      },
+      "widget": {
+        "variant": "full",
+        "placement": "bottom-right",
+        "expandable": "never",
+        "avatar": {
+          "type": "orb",
+          "color_1": "#2792dc",
+          "color_2": "#9ce6e6"
         },
-        "platform_settings": {
-            "evaluation": {
-                "criteria": []
-            },
-            "widget": {
-                "variant": "full",
-                "placement": "bottom-right",
-                "expandable": "never",
-                "avatar": {
-                    "type": "orb",
-                    "color_1": "#2792dc",
-                    "color_2": "#9ce6e6"
-                },
-                "feedback_mode": "during",
-                "end_feedback": null,
-                "bg_color": "#ffffff",
-                "text_color": "#000000",
-                "btn_color": "#000000",
-                "btn_text_color": "#ffffff",
-                "border_color": "#e1e1e1",
-                "focus_color": "#000000",
-                "border_radius": null,
-                "btn_radius": null,
-                "action_text": null,
-                "start_call_text": null,
-                "end_call_text": null,
-                "expand_text": null,
-                "listening_text": null,
-                "speaking_text": null,
-                "shareable_page_text": null,
-                "shareable_page_show_terms": true,
-                "terms_text": "#### Terms and conditions\n\nBy clicking \"Agree,\" and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.",
-                "terms_html": "<h4>Terms and conditions</h4>\n<p>By clicking &quot;Agree,&quot; and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.</p>\n",
-                "terms_key": null,
-                "show_avatar_when_collapsed": false,
-                "disable_banner": false,
-                "override_link": null,
-                "markdown_link_allowed_hosts": [],
-                "markdown_link_include_www": true,
-                "markdown_link_allow_http": true,
-                "mic_muting_enabled": false,
-                "transcript_enabled": false,
-                "text_input_enabled": true,
-                "conversation_mode_toggle_enabled": false,
-                "default_expanded": false,
-                "always_expanded": false,
-                "dismissible": false,
-                "show_agent_status": false,
-                "show_conversation_id": true,
-                "strip_audio_tags": true,
-                "syntax_highlight_theme": null,
-                "text_contents": {
-                    "main_label": null,
-                    "start_call": null,
-                    "start_chat": null,
-                    "new_call": null,
-                    "end_call": null,
-                    "mute_microphone": null,
-                    "change_language": null,
-                    "collapse": null,
-                    "expand": null,
-                    "copied": null,
-                    "accept_terms": null,
-                    "dismiss_terms": null,
-                    "listening_status": null,
-                    "speaking_status": null,
-                    "connecting_status": null,
-                    "chatting_status": null,
-                    "input_label": null,
-                    "input_placeholder": null,
-                    "input_placeholder_text_only": null,
-                    "input_placeholder_new_conversation": null,
-                    "user_ended_conversation": null,
-                    "agent_ended_conversation": null,
-                    "conversation_id": null,
-                    "error_occurred": null,
-                    "copy_id": null,
-                    "initiate_feedback": null,
-                    "request_follow_up_feedback": null,
-                    "thanks_for_feedback": null,
-                    "thanks_for_feedback_details": null,
-                    "follow_up_feedback_placeholder": null,
-                    "submit": null,
-                    "go_back": null,
-                    "send_message": null,
-                    "text_mode": null,
-                    "voice_mode": null,
-                    "switched_to_text_mode": null,
-                    "switched_to_voice_mode": null,
-                    "copy": null,
-                    "download": null,
-                    "wrap": null,
-                    "agent_working": null,
-                    "agent_done": null,
-                    "agent_error": null,
-                    "attach_file": null,
-                    "remove_file": null,
-                    "file_upload_error": null,
-                    "file_type_unsupported": null,
-                    "file_too_large": null,
-                    "file_limit_reached": null,
-                    "typing_indicator": null
-                },
-                "styles": {
-                    "base": null,
-                    "base_hover": null,
-                    "base_active": null,
-                    "base_border": null,
-                    "base_subtle": null,
-                    "base_primary": null,
-                    "base_error": null,
-                    "accent": null,
-                    "accent_hover": null,
-                    "accent_active": null,
-                    "accent_border": null,
-                    "accent_subtle": null,
-                    "accent_primary": null,
-                    "overlay_padding": null,
-                    "button_radius": null,
-                    "input_radius": null,
-                    "bubble_radius": null,
-                    "sheet_radius": null,
-                    "compact_sheet_radius": null,
-                    "dropdown_sheet_radius": null
-                },
-                "show_resize_button": true,
-                "language_selector": false,
-                "supports_text_only": true,
-                "custom_avatar_path": null,
-                "language_presets": {}
-            },
-            "data_collection": {},
-            "data_collection_scopes": {},
-            "analysis_items": null,
-            "overrides": {
-                "conversation_config_override": {
-                    "asr": {
-                        "keywords": false
-                    },
-                    "turn": {
-                        "soft_timeout_config": {
-                            "message": false
-                        }
-                    },
-                    "tts": {
-                        "model_id": false,
-                        "voice_id": false,
-                        "stability": false,
-                        "speed": false,
-                        "similarity_boost": false,
-                        "pronunciation_dictionary_locators": false
-                    },
-                    "conversation": {
-                        "text_only": true,
-                        "max_duration_seconds": false
-                    },
-                    "agent": {
-                        "first_message": false,
-                        "language": true,
-                        "max_conversation_duration_message": false,
-                        "prompt": {
-                            "prompt": false,
-                            "llm": false,
-                            "tool_ids": false,
-                            "native_mcp_server_ids": false,
-                            "knowledge_base": false
-                        }
-                    }
-                },
-                "custom_llm_extra_body": false,
-                "enable_conversation_initiation_client_data_from_webhook": false,
-                "enable_starting_workflow_node_id_from_client": false
-            },
-            "workspace_overrides": {
-                "conversation_initiation_client_data_webhook": null,
-                "webhooks": {
-                    "post_call_webhook_id": null,
-                    "events": [
-                        "transcript"
-                    ],
-                    "transcript_format": "json",
-                    "send_audio": false
-                }
-            },
-            "testing": {
-                "attached_tests": [],
-                "referenced_tests_ids": []
-            },
-            "archived": false,
-            "guardrails": {
-                "version": "1",
-                "focus": {
-                    "is_enabled": false
-                },
-                "prompt_injection": {
-                    "is_enabled": false
-                },
-                "synthetic_voice": {
-                    "is_enabled": false,
-                    "trigger_action": {
-                        "type": "end_call"
-                    }
-                },
-                "content": {
-                    "execution_mode": "streaming",
-                    "config": {
-                        "sexual": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "violence": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "harassment": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "self_harm": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "profanity": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "religion_or_politics": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "medical_and_legal_information": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        }
-                    },
-                    "trigger_action": {
-                        "type": "end_call"
-                    }
-                },
-                "moderation": {
-                    "execution_mode": "streaming",
-                    "config": {
-                        "sexual": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "violence": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "violence_graphic": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "harassment": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "harassment_threatening": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "hate": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "hate_threatening": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "self_harm_instructions": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "self_harm": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "self_harm_intent": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        },
-                        "sexual_minors": {
-                            "is_enabled": false,
-                            "threshold": 0.3
-                        }
-                    }
-                },
-                "custom": {
-                    "config": {
-                        "configs": []
-                    }
-                }
-            },
-            "summary_language": null,
-            "auto_translate_transcript_to_app_language": null,
-            "auth": {
-                "enable_auth": false,
-                "allowlist": [],
-                "require_origin_header": false,
-                "shareable_token": null
-            },
-            "call_limits": {
-                "agent_concurrency_limit": -1,
-                "daily_limit": 100000,
-                "bursting_enabled": true
-            },
-            "queueing_config": {
-                "enabled": false,
-                "wait_timeout_seconds": 180
-            },
-            "ban": null,
-            "smb_metadata": null,
-            "privacy": {
-                "record_voice": true,
-                "retention_days": -1,
-                "delete_transcript_and_pii": false,
-                "delete_audio": false,
-                "apply_to_existing_conversations": false,
-                "zero_retention_mode": false,
-                "conversation_history_redaction": {
-                    "enabled": false,
-                    "entities": []
-                }
-            },
-            "trust_context": "unknown",
-            "analysis_llm": "gemini-2.5-flash",
-            "analysis_bedrock_llm": null,
-            "analysis_llm_billed": false,
-            "topic_discovery": {
-                "enabled": true
-            },
-            "sentiment_analysis": {
-                "enabled": true
-            },
-            "simulation_library": {
-                "enabled": false,
-                "test_ids": []
-            },
-            "alerting": null,
-            "overview_dashboard_template_id": null,
-            "safety": {
-                "is_blocked_ivc": false,
-                "is_blocked_non_ivc": false,
-                "ignore_safety_evaluation": false
+        "feedback_mode": "during",
+        "end_feedback": null,
+        "bg_color": "#ffffff",
+        "text_color": "#000000",
+        "btn_color": "#000000",
+        "btn_text_color": "#ffffff",
+        "border_color": "#e1e1e1",
+        "focus_color": "#000000",
+        "border_radius": null,
+        "btn_radius": null,
+        "action_text": null,
+        "start_call_text": null,
+        "end_call_text": null,
+        "expand_text": null,
+        "listening_text": null,
+        "speaking_text": null,
+        "shareable_page_text": null,
+        "shareable_page_show_terms": true,
+        "terms_text": "#### Terms and conditions\n\nBy clicking \"Agree,\" and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.",
+        "terms_html": "<h4>Terms and conditions</h4>\n<p>By clicking &quot;Agree,&quot; and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.</p>\n",
+        "terms_key": null,
+        "show_avatar_when_collapsed": false,
+        "disable_banner": false,
+        "override_link": null,
+        "markdown_link_allowed_hosts": [],
+        "markdown_link_include_www": true,
+        "markdown_link_allow_http": true,
+        "mic_muting_enabled": false,
+        "transcript_enabled": false,
+        "text_input_enabled": true,
+        "conversation_mode_toggle_enabled": false,
+        "default_expanded": false,
+        "always_expanded": false,
+        "dismissible": false,
+        "show_agent_status": false,
+        "show_conversation_id": true,
+        "strip_audio_tags": true,
+        "syntax_highlight_theme": null,
+        "text_contents": {
+          "main_label": null,
+          "start_call": null,
+          "start_chat": null,
+          "new_call": null,
+          "end_call": null,
+          "mute_microphone": null,
+          "change_language": null,
+          "collapse": null,
+          "expand": null,
+          "copied": null,
+          "accept_terms": null,
+          "dismiss_terms": null,
+          "listening_status": null,
+          "speaking_status": null,
+          "connecting_status": null,
+          "chatting_status": null,
+          "queue_waiting_status": null,
+          "queue_waiting_status_short": null,
+          "input_label": null,
+          "input_placeholder": null,
+          "input_placeholder_text_only": null,
+          "input_placeholder_new_conversation": null,
+          "user_ended_conversation": null,
+          "agent_ended_conversation": null,
+          "conversation_id": null,
+          "error_occurred": null,
+          "queue_timed_out": null,
+          "copy_id": null,
+          "initiate_feedback": null,
+          "request_follow_up_feedback": null,
+          "thanks_for_feedback": null,
+          "thanks_for_feedback_details": null,
+          "follow_up_feedback_placeholder": null,
+          "submit": null,
+          "go_back": null,
+          "send_message": null,
+          "text_mode": null,
+          "voice_mode": null,
+          "switched_to_text_mode": null,
+          "switched_to_voice_mode": null,
+          "copy": null,
+          "download": null,
+          "wrap": null,
+          "agent_working": null,
+          "agent_done": null,
+          "agent_error": null,
+          "attach_file": null,
+          "remove_file": null,
+          "file_upload_error": null,
+          "file_type_unsupported": null,
+          "file_too_large": null,
+          "file_limit_reached": null,
+          "typing_indicator": null,
+          "rich_content_unavailable": null
+        },
+        "styles": {
+          "base": null,
+          "base_hover": null,
+          "base_active": null,
+          "base_border": null,
+          "base_subtle": null,
+          "base_primary": null,
+          "base_error": null,
+          "accent": null,
+          "accent_hover": null,
+          "accent_active": null,
+          "accent_border": null,
+          "accent_subtle": null,
+          "accent_primary": null,
+          "overlay_padding": null,
+          "button_radius": null,
+          "input_radius": null,
+          "bubble_radius": null,
+          "sheet_radius": null,
+          "compact_sheet_radius": null,
+          "dropdown_sheet_radius": null
+        },
+        "show_resize_button": true,
+        "language_selector": false,
+        "supports_text_only": true,
+        "custom_avatar_path": null,
+        "language_presets": {},
+        "first_message_quick_replies": []
+      },
+      "data_collection": {},
+      "data_collection_scopes": {},
+      "analysis_items": {
+        "evaluation_criteria": [],
+        "data_collection": []
+      },
+      "overrides": {
+        "conversation_config_override": {
+          "asr": {
+            "keywords": false
+          },
+          "turn": {
+            "soft_timeout_config": {
+              "message": false,
+              "additional_soft_timeout_messages": false
             }
+          },
+          "tts": {
+            "model_id": false,
+            "voice_id": false,
+            "supported_voices": false,
+            "stability": false,
+            "speed": false,
+            "similarity_boost": false,
+            "pronunciation_dictionary_locators": false
+          },
+          "conversation": {
+            "text_only": true,
+            "max_duration_seconds": false
+          },
+          "agent": {
+            "first_message": true,
+            "language": true,
+            "max_conversation_duration_message": false,
+            "prompt": {
+              "prompt": false,
+              "llm": false,
+              "tool_ids": false,
+              "native_mcp_server_ids": false,
+              "knowledge_base": false
+            }
+          }
         },
-        "phone_numbers": [],
-        "whatsapp_accounts": [],
-        "workflow": {
-            "edges": {},
-            "nodes": {
-                "start_node": {
-                    "type": "start",
-                    "position": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "edge_order": []
-                }
+        "custom_llm_extra_body": false,
+        "enable_conversation_initiation_client_data_from_webhook": false,
+        "enable_starting_workflow_node_id_from_client": false,
+        "enable_procedure_ids_from_client": false
+      },
+      "workspace_overrides": {
+        "conversation_initiation_client_data_webhook": null,
+        "webhooks": {
+          "post_call_webhook_id": null,
+          "events": [
+            "transcript"
+          ],
+          "transcript_format": "json",
+          "exclude_transcript": false,
+          "send_audio": false
+        },
+        "cloud_storage_export": {
+          "destination_id": null,
+          "events": [
+            "transcript"
+          ],
+          "transcript_format": "json"
+        }
+      },
+      "testing": {
+        "attached_tests": [],
+        "referenced_tests_ids": []
+      },
+      "archived": false,
+      "guardrails": {
+        "version": "1",
+        "focus": {
+          "is_enabled": false
+        },
+        "prompt_injection": {
+          "is_enabled": false
+        },
+        "synthetic_voice": {
+          "is_enabled": false,
+          "trigger_action": {
+            "type": "end_call"
+          }
+        },
+        "content": {
+          "execution_mode": "streaming",
+          "config": {
+            "sexual": {
+              "is_enabled": false,
+              "threshold": 0.3
             },
-            "prevent_subagent_loops": false
+            "violence": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "harassment": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "self_harm": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "profanity": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "religion_or_politics": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "medical_and_legal_information": {
+              "is_enabled": false,
+              "threshold": 0.3
+            }
+          },
+          "trigger_action": {
+            "type": "end_call"
+          }
         },
-        "access_info": {
-            "is_creator": true,
-            "creator_name": "arwpersonal@gmail.com",
-            "creator_email": "arwpersonal@gmail.com",
-            "role": "admin",
-            "anonymous_access_level_override": null,
-            "access_source": "creator"
+        "moderation": {
+          "execution_mode": "streaming",
+          "config": {
+            "sexual": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "violence": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "violence_graphic": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "harassment": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "harassment_threatening": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "hate": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "hate_threatening": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "self_harm_instructions": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "self_harm": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "self_harm_intent": {
+              "is_enabled": false,
+              "threshold": 0.3
+            },
+            "sexual_minors": {
+              "is_enabled": false,
+              "threshold": 0.3
+            }
+          }
         },
-        "tags": [],
-        "version_id": "agtvrsn_8301m04xj375f1t93tb9aawze07j",
-        "branch_id": "agtbrch_9501ks2b8mdef4ysrxm0g93jqyn7",
-        "main_branch_id": "agtbrch_9501ks2b8mdef4ysrxm0g93jqyn7",
-        "procedures": {},
-        "trust_context": "unknown"
-    }
+        "custom": {
+          "config": {
+            "configs": []
+          }
+        }
+      },
+      "summary_language": null,
+      "auto_translate_transcript_to_app_language": null,
+      "auth": {
+        "enable_auth": false,
+        "allowlist": [],
+        "require_origin_header": false,
+        "shareable_token": null
+      },
+      "call_limits": {
+        "agent_concurrency_limit": -1,
+        "daily_limit": 100000,
+        "bursting_enabled": true
+      },
+      "queueing_config": {
+        "enabled": false,
+        "wait_timeout_seconds": 180,
+        "hold_audio": null
+      },
+      "ban": null,
+      "smb_metadata": null,
+      "privacy": {
+        "record_voice": true,
+        "retention_days": -1,
+        "delete_transcript_and_pii": false,
+        "delete_audio": false,
+        "apply_to_existing_conversations": false,
+        "zero_retention_mode": false,
+        "nested_history_redaction": false,
+        "conversation_history_redaction": {
+          "enabled": false,
+          "entities": [],
+          "excluded_data_collection_ids": []
+        },
+        "user_memory": {
+          "enabled": false,
+          "scale": "balanced"
+        }
+      },
+      "trust_context": "unknown",
+      "analysis_llm": "gemini-2.5-flash",
+      "analysis_bedrock_llm": null,
+      "analysis_llm_billed": false,
+      "topic_discovery": {
+        "enabled": true
+      },
+      "sentiment_analysis": {
+        "enabled": true
+      },
+      "simulation_library": {
+        "enabled": false,
+        "test_ids": []
+      },
+      "alerting": null,
+      "overview_dashboard_template_id": null,
+      "safety": {
+        "is_blocked_ivc": false,
+        "is_blocked_non_ivc": false,
+        "ignore_safety_evaluation": false
+      }
+    },
+    "phone_numbers": [],
+    "whatsapp_accounts": [],
+    "workflow": {
+      "edges": {},
+      "nodes": {
+        "start_node": {
+          "type": "start",
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "edge_order": [],
+          "parent_subgraph_id": null
+        }
+      },
+      "subgraphs": {},
+      "prevent_subagent_loops": false
+    },
+    "access_info": {
+      "is_creator": true,
+      "creator_name": "arwpersonal@gmail.com",
+      "creator_email": "arwpersonal@gmail.com",
+      "role": "admin",
+      "anonymous_access_level_override": null,
+      "access_source": "creator"
+    },
+    "access_permissions": [
+      "agent_archive",
+      "agent_duplicate",
+      "agent_edit_advanced_settings",
+      "agent_edit_config",
+      "agent_edit_conversation_metadata",
+      "agent_edit_guardrails",
+      "agent_edit_llm",
+      "agent_edit_memories",
+      "agent_edit_metadata",
+      "agent_edit_procedures",
+      "agent_edit_prompt",
+      "agent_edit_voice",
+      "agent_edit_widget",
+      "agent_edit_workflow",
+      "agent_manage_analysis",
+      "agent_manage_attached_knowledge_base",
+      "agent_manage_attached_mcp_servers",
+      "agent_manage_attached_pronunciation_dictionaries",
+      "agent_manage_attached_tests",
+      "agent_manage_attached_tools",
+      "agent_manage_batch_calling",
+      "agent_manage_branches",
+      "agent_manage_channels",
+      "agent_manage_experiments",
+      "agent_manage_phone_numbers",
+      "agent_manage_protected_branches",
+      "agent_manage_traffic",
+      "agent_manage_whatsapp",
+      "agent_merge_branches",
+      "agent_monitor_conversation",
+      "agent_publish_version",
+      "agent_rerun_conversation_analysis",
+      "agent_run_tasks",
+      "agent_run_tests",
+      "agent_search_conversations",
+      "agent_view_advanced_settings",
+      "agent_view_analysis",
+      "agent_view_analytics",
+      "agent_view_batch_calling",
+      "agent_view_channels",
+      "agent_view_config",
+      "agent_view_conversation_history",
+      "agent_view_costs",
+      "agent_view_experiments",
+      "agent_view_guardrails",
+      "agent_view_knowledge_base",
+      "agent_view_llm",
+      "agent_view_mcp_servers",
+      "agent_view_memories",
+      "agent_view_metadata",
+      "agent_view_phone_numbers",
+      "agent_view_procedures",
+      "agent_view_prompt",
+      "agent_view_pronunciation_dictionaries",
+      "agent_view_tasks",
+      "agent_view_tests",
+      "agent_view_tools",
+      "agent_view_version_history",
+      "agent_view_voice",
+      "agent_view_whatsapp",
+      "agent_view_widget",
+      "agent_view_workflow",
+      "resource_delete",
+      "resource_manage_access"
+    ],
+    "tags": [],
+    "version_id": "agtvrsn_3201m4hy6bfee6abm4kmvc850b0g",
+    "branch_id": "agtbrch_9501ks2b8mdef4ysrxm0g93jqyn7",
+    "main_branch_id": "agtbrch_9501ks2b8mdef4ysrxm0g93jqyn7",
+    "procedures": {},
+    "trust_context": "unknown",
+    "default_hold_audio_url": "https://eleven-public-cdn-common.elevenlabs.io/convai/ambient-audio-assets/elevator1.mp3"
+  }
 }

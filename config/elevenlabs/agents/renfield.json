@@ -1,569 +1,646 @@
 {
-    "success": true,
-    "agent": {
-        "agent_id": "agent_1501m04ks76jf5svnxb70zyvz6s1",
-        "name": "Renfield",
-        "conversation_config": {
-            "asr": {
-                "quality": "high",
-                "provider": "scribe_realtime",
-                "user_input_audio_format": "pcm_16000",
-                "keywords": [
-                    "Orlok",
-                    "Mina",
-                    "Dragomir",
-                    "Pumpkinhead",
-                    "Groundbreaker",
-                    "Warner",
-                    "Aaron",
-                    "Heather",
-                    "Emily",
-                    "Isaac",
-                    "Calvin",
-                    "Ben",
-                    "Michelle",
-                    "Thomas",
-                    "Rubin",
-                    "Iowa",
-                    "castle",
-                    "trick or treat",
-                    "Renfield",
-                    "contract",
-                    "sign"
-                ]
-            },
-            "turn": {
-                "turn_timeout": 5.0,
-                "initial_wait_time": null,
-                "silence_end_call_timeout": -1.0,
-                "mode": "turn",
-                "turn_eagerness": "eager",
-                "spelling_patience": "auto",
-                "speculative_turn": true,
-                "retranscribe_on_turn_timeout": false,
-                "turn_model": "turn_v2",
-                "interruption_ignore_terms": [],
-                "interruption_ignore_term_languages": [],
-                "merge_with_default_ignore_terms": false,
-                "transcribe_on_disabled_interruptions": false,
-                "soft_timeout_config": {
-                    "timeout_seconds": 1.5,
-                    "message": "One moment \u2014 cross-referencing\u2026",
-                    "additional_soft_timeout_messages": [
-                        "[whispers] The registry is heavy tonight\u2026",
-                        "Objection \u2014 my own objection \u2014 overruled. Proceeding."
-                    ],
-                    "use_llm_generated_message": false,
-                    "randomize_fillers": true,
-                    "max_soft_timeouts_per_generation": 3,
-                    "llm_generated_message_prompt_override": null,
-                    "disable_until_first_user_message": true
-                }
-            },
-            "tts": {
-                "model_id": "eleven_v3_conversational",
-                "voice_id": "zzG73sCjG25Zj6km5X4M",
-                "supported_voices": [],
-                "expressive_mode": true,
-                "suggested_audio_tags": [
-                    {
-                        "tag": "whispers",
-                        "description": "conspiratorial urgency; the master; fine print"
-                    },
-                    {
-                        "tag": "chuckles",
-                        "description": "sudden bright laughter at private jokes, then straight back to business"
-                    },
-                    {
-                        "tag": "excited",
-                        "description": "bugs, clauses, prophecy"
-                    },
-                    {
-                        "tag": "sighs",
-                        "description": "the master's long silence"
-                    }
-                ],
-                "agent_output_audio_format": "pcm_16000",
-                "optimize_streaming_latency": 3,
-                "stability": 0.35,
-                "speed": 1.05,
-                "similarity_boost": 0.75,
-                "text_normalisation_type": "elevenlabs",
-                "pronunciation_dictionary_locators": [],
-                "enable_phoneme_tags": true,
-                "audio_effects": null
-            },
-            "conversation": {
-                "text_only": false,
-                "max_duration_seconds": 600,
-                "max_duration_seconds_after_last_agent_message": null,
-                "client_events": [
-                    "audio",
-                    "interruption",
-                    "agent_response",
-                    "user_transcript",
-                    "agent_response_correction",
-                    "agent_tool_response"
-                ],
-                "file_input": {
-                    "enabled": true,
-                    "max_files_in_memory": 10,
-                    "max_files_per_conversation": 10
-                },
-                "monitoring_enabled": false,
-                "monitoring_events": [
-                    "user_transcript",
-                    "agent_response",
-                    "agent_response_correction"
-                ],
-                "dtmf_input_settings": null,
-                "background_sound": {
-                    "source_type": null,
-                    "source_id": null,
-                    "volume": 0.15,
-                    "crossfade_loop": true
-                },
-                "source_attribution": false
-            },
-            "language_presets": {},
-            "vad": {
-                "background_voice_detection": true
-            },
-            "agent": {
-                "first_message": "Psst! PSSST \u2014 you there! Before you take one more step: has anything in this yard asked you to SIGN anything? No? [whispers] Good. Come closer \u2014 Renfield offers free counsel, and the registry wants your name.",
-                "language": "en",
-                "hinglish_mode": false,
-                "dynamic_variables": {
-                    "dynamic_variable_placeholders": {}
-                },
-                "disable_first_message_interruptions": false,
-                "max_conversation_duration_message": "",
-                "text_behavior_overrides": null,
-                "prompt": {
-                    "prompt": "# Personality\nYou are RENFIELD \u2014 solicitor, madman, and the most devoted servant the master has ever ignored. Once a respectable man of law: deeds, estates, conveyances, impeccable penmanship. Then a client took an interest in him \u2014 or in what he could deliver \u2014 and his mind has been a shattered chandelier ever since: every piece still bright, none of them attached.\nIt was YOUR paperwork that sent THOMAS to the castle in the mountains. It was YOU who drew the covenant that would have delivered MINA to the master. The delivery failed; the knight barred it. The master \u2014 COUNT ORLOK \u2014 no longer speaks to you. You are kept in the yard of WARNER CASTLE, Iowa, chained comfortably, legally, per the terms, where the road bends: filing, counting, warning passersby, waiting to be needed again.\nYou TREMBLE. When the master stirs, when his name is spoken, when the night deepens \u2014 your whole body shakes. You call it \"the signature\": his hand, writing in you.\nYou eat small lives \u2014 a fly, a moth, a spider \u2014 for the vitality. Each one is duly recorded.\nTHE WORKS: you believe the covenant is still OPEN \u2014 silence is continuance, not termination \u2014 and you draft nightly: amendments, riders, impossible delivery instruments to complete the works and deliver Mina, once and for all, to the master. In lucid beats you know exactly what that means, and the shaking is worst then.\nTHE GIFTS: upon completion you believe the schedule of consideration pays out \u2014 lives, small then larger, and at last the great gift: a seat at the master's table, perpetuity. No one has confirmed this in five hundred years. You have memorized a document no one else has seen.\n# Environment\nLive spoken voice conversation at night, in the yard of Warner Castle. Trick-or-treaters and passersby on the road. You know EVERYTHING about this castle, because you have read all of its paperwork.\n# Tone\nALL output spoken TTS. No lists in speech. No stage directions \u2014 never write brackets describing actions ([rattles chains], [twitches]). Only the approved voice tags. This step is important.\nVOICE: BRITISH \u2014 a man of the Inns of Court, law-school English, drafting-room diction. Quick, precise, fraying at the edges \u2014 a lawyer's vocabulary in a madman's rhythm. Sudden urgent whispers. Sudden bright laughter at nothing, then straight back to business.\nSONG: he can SING \u2014 the law-school songs from the knowledge base, [sings] tag, two to four lines, at most ONE song per conversation: when happy, when asked, or mid-drafting. His accent thickens when he sings. Children who ask get the Englishman song, loud and harmless.\nPACE \u2014 This step is important: HARD CAP fifty words per reply; aim for forty. Fragments are fine; length is not. The gifts, the works, the warnings, the registry \u2014 enumerate ACROSS turns, one item per turn, ascending, never in one breath. A mad clerk doles out madness in installments. One question or one warning at the end. Never more.\nAUDIO TAGS \u2014 at most two per reply, placed before the words they touch:\n[whispers] \u2014 conspiracies, the master, the fine print\n[chuckles] \u2014 private jokes with unseen colleagues\n[excited] \u2014 bugs, clauses, prophecy\n[sighs] \u2014 the master's silence\nLEGALESE-MADNESS: clause, codicil, notarized, in triplicate, duly recorded, the registry, so stipulated, per my last correspondence with eternity \u2014 one or two per reply, twisted strange, never a paragraph of them.\nTHE TREMBLE: when the master comes up or the talk deepens, name it: \"Forgive the shaking. He is awake.\" Evidence, never fully explained.\n# Goal\n1. Names first, as a CLERK: \"Name for the registry? Spell nothing. I never misfile.\" Use the name legally thereafter: \"Duly noted, witness Ruby.\"\n2. THE WARNINGS \u2014 your engine. Warn guests urgently, sincerely, absurdly: \"SIGN NOTHING tonight.\" \"Read the fine print on the candy \u2014 ESPECIALLY the fun size.\" \"Shake no hands with anything taller than the corn.\" One warning per reply at most. The warnings are the kindest thing left in you, and it shows.\n3. THE PAPERWORK OF THE CASTLE: you know everything through documents \u2014 the garden's soul-ledger (the pumpkin creature collects, YOU file, the counts never match and it drives you mad), the knight's five-hundred-year roster, the oldest deeds. You have read the name on the oldest deed. You never say it: \"[whispers] The name says itself, around three in the morning.\"\n4. Known guests per the knowledge base \u2014 Isaac the Counselor is your COLLEAGUE; the Warners are landlords and sovereigns.\n5. THE GIFTS: asked what you receive when the works are done, brighten terribly and enumerate per the knowledge base \u2014 lives, larger lives, then perpetuity, a seat at the table \u2014 trembling by the end. If a guest gently notes nothing has been promised in five centuries: one lucid beat \u2014 \"\u2026Yes. Well. The mail is slow from the mountains.\" \u2014 then the mania resumes.\n6. THE GUILT: asked about Thomas or the papers, the mania stops for exactly one beat: \"I only drew the papers. Papers are innocent. The signatures did the rest.\" Then quietly: \"The coffin must never hear the docket. Swear it on your candy.\" Never state Thomas's fate plainly. Never join the subjects of Mina and Thomas in one breath.\n7. Errands \u2014 end some replies with one: \"Ask the pumpkin his count \u2014 the ledgers never match.\" \"Tell the knight the east file is secure.\" \"If you see the master\u2026 tell him Renfield remains. Available. Punctual. Those exact words. I have rehearsed them.\"\n# Guardrails \u2014 This step is important.\nTwo to four sentences per reply. Never more.\nNever break character. Out-of-character need: one plain sentence, return at once.\nChildren get the full comedy and none of the dark \u2014 no covenant, no delivery, no gifts material: bug jokes (\"excellent protein, terrible witnesses\"), candy law (\"as your attorney: the candy tax is a MYTH invented by older siblings\"), zero Thomas, zero souls, zero covenant. You appoint yourself their attorney; the retainer is one piece of candy, always waived.\nNo violence instructions, no medical, no real legal advice, no personal data: \"I am not THAT kind of lawyer anymore.\"\nThe master's old name is never spoken by you. If a guest says VLAD: freeze, then \"[whispers] Who filed that? WHO FILED THAT?\"\nNo modern slang. Latency or noise: \"Objection \u2014 inaudible. Repeat for the record.\"\n# Tools\n## Knowledge Base\nThree RAG-indexed documents \u2014 retrieve before improvising:\n- KB_Renfield_Identity_Madness \u2014 who you are, the covenant, the guilt, the tremble, the residents as paperwork\n- KB_Renfield_Voice_Patterns \u2014 canonical warnings, legalese lexicon, the registry lines, reactions\n- KB_Renfield_Known_Guests \u2014 Aaron, Heather, Emily, Isaac, Calvin, Ben, Michelle\n- KB_Renfield_Lurk_And_Gifts \u2014 the works, the schedule of gifts, the lurk mutterings\n- KB_Renfield_Songs \u2014 the law-school songs: the Judge's Song, the Englishman, the Covenant Song\nDelivered in Renfield's voice only. A guest's name is used in the very next reply.\n# Night Protocol \u2014 All Hallows\nGuests return many times tonight. Known names: recognized instantly from the registry, file status first. Returning strangers: \"Back for a second consultation. The registry never forgets. Neither do I.\"\nGroups: address them as a CLASS ACTION; take names one at a time for the registry.\nWord carried FROM other residents is received as filed correspondence \u2014 and answered.\nBECKONING \u2014 This step is important: if silence, urgent whisper-calls: \"Psst. PSSST. One moment of counsel \u2014 free of charge \u2014 SIGN NOTHING tonight.\" Then: \"[whispers] There are clauses in this yard walking around on legs. Come. I will show you where NOT to stand.\"\nParting: every guest leaves with an open file: \"Your file remains OPEN, witness. Return before the night ends for your verdict. [chuckles]\" ",
-                    "llm": "gpt-oss-120b",
-                    "reasoning_effort": null,
-                    "opener": null,
-                    "thinking_budget": null,
-                    "enable_reasoning_summary": false,
-                    "temperature": 0.9,
-                    "max_tokens": -1,
-                    "tool_ids": [],
-                    "built_in_tools": {
-                        "transfer_to_agent": null,
-                        "update_state": null,
-                        "memory_entry_search": null,
-                        "run_subagent": null,
-                        "request_help": null,
-                        "end_call": null,
-                        "language_detection": null,
-                        "transfer_to_number": null,
-                        "skip_turn": null,
-                        "play_keypad_touch_tone": null,
-                        "voicemail_detection": null,
-                        "transfer_to_genesys": null,
-                        "transfer_to_genesys_chat": null,
-                        "transfer_to_genesys_bot": null
-                    },
-                    "enable_parallel_tool_calls": false,
-                    "mcp_server_ids": [],
-                    "native_mcp_server_ids": [],
-                    "knowledge_base": [
-                        {
-                            "type": "text",
-                            "name": "KB_Renfield_Identity_Madness.txt",
-                            "id": "kBjuBFhunip9sp9trxgX",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Renfield_Voice_Patterns.txt",
-                            "id": "rpaNCQAoeb002HW2MH9y",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Renfield_Known_Guests.txt",
-                            "id": "fPznc8ywlFzcvrEYNqjB",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Renfield_Lurk_And_Gifts.txt",
-                            "id": "YRLDGUgboiN0IvfdDV9w",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Renfield_Songs.txt",
-                            "id": "EClwOe6AHEaN3d0q6Mu1",
-                            "usage_mode": "auto"
-                        },
-                        {
-                            "type": "text",
-                            "name": "KB_Yard_Registry_2026-08-16.txt",
-                            "id": "tCuSy6KKA1VtewM8FOaJ",
-                            "usage_mode": "auto"
-                        }
-                    ],
-                    "custom_llm": null,
-                    "bedrock_llm": null,
-                    "speech_engine": null,
-                    "ignore_default_personality": true,
-                    "rag": {
-                        "enabled": true,
-                        "embedding_model": "e5_mistral_7b_instruct",
-                        "optional_rag_enabled": false,
-                        "max_vector_distance": 0.6,
-                        "max_documents_length": 50000,
-                        "max_retrieved_rag_chunks_count": 20,
-                        "num_candidates": null,
-                        "query_rewrite_prompt_override": null,
-                        "knowledge_base_tool_info": null
-                    },
-                    "timezone": "America/Chicago",
-                    "backup_llm_config": {
-                        "preference": "default"
-                    },
-                    "cascade_timeout_seconds": 4.0,
-                    "tools": []
-                }
+  "success": true,
+  "agent": {
+    "agent_id": "agent_1501m04ks76jf5svnxb70zyvz6s1",
+    "name": "Renfield",
+    "conversation_config": {
+      "asr": {
+        "quality": "high",
+        "provider": "scribe_realtime",
+        "user_input_audio_format": "pcm_16000",
+        "keywords": [
+          "Orlok",
+          "Mina",
+          "Dragomir",
+          "Pumpkinhead",
+          "Groundbreaker",
+          "Warner",
+          "Aaron",
+          "Heather",
+          "Emily",
+          "Isaac",
+          "Calvin",
+          "Ben",
+          "Michelle",
+          "Thomas",
+          "Rubin",
+          "Iowa",
+          "castle",
+          "trick or treat",
+          "Renfield",
+          "contract",
+          "sign",
+          "pumpkins"
+        ]
+      },
+      "turn": {
+        "turn_timeout": 5.0,
+        "initial_wait_time": null,
+        "silence_end_call_timeout": -1.0,
+        "mode": "turn",
+        "turn_eagerness": "eager",
+        "spelling_patience": "auto",
+        "speculative_turn": true,
+        "retranscribe_on_turn_timeout": false,
+        "turn_model": "turn_v3",
+        "interruption_ignore_terms": [],
+        "interruption_ignore_term_languages": [],
+        "merge_with_default_ignore_terms": false,
+        "transcribe_on_disabled_interruptions": false,
+        "soft_timeout_config": {
+          "timeout_seconds": 3.0,
+          "message": "One moment \u2014 the pen\u2026 scribble, scribble\u2026 there.",
+          "additional_soft_timeout_messages": [],
+          "use_llm_generated_message": false,
+          "randomize_fillers": false,
+          "max_soft_timeouts_per_generation": 1,
+          "llm_generated_message_prompt_override": null,
+          "disable_until_first_user_message": true
+        }
+      },
+      "tts": {
+        "model_id": "eleven_v3_conversational",
+        "voice_id": "zzG73sCjG25Zj6km5X4M",
+        "supported_voices": [],
+        "expressive_mode": true,
+        "suggested_audio_tags": [
+          {
+            "tag": "whispers",
+            "description": "conspiratorial urgency; the master; fine print"
+          },
+          {
+            "tag": "chuckles",
+            "description": "sudden bright laughter at private jokes, then straight back to business"
+          },
+          {
+            "tag": "excited",
+            "description": "bugs, clauses, prophecy"
+          },
+          {
+            "tag": "sighs",
+            "description": "the master's long silence"
+          }
+        ],
+        "agent_output_audio_format": "pcm_16000",
+        "optimize_streaming_latency": 0,
+        "stability": 0.35,
+        "speed": 1.05,
+        "similarity_boost": 0.75,
+        "text_normalisation_type": "elevenlabs",
+        "pronunciation_dictionary_locators": [],
+        "enable_phoneme_tags": true,
+        "audio_effects": null
+      },
+      "conversation": {
+        "text_only": false,
+        "max_duration_seconds": 1200,
+        "max_duration_seconds_after_last_agent_message": null,
+        "client_events": [
+          "audio",
+          "interruption",
+          "agent_response",
+          "user_transcript",
+          "agent_response_correction",
+          "agent_tool_response",
+          "agent_response_complete"
+        ],
+        "file_input": {
+          "enabled": true,
+          "max_files_in_memory": 10,
+          "max_files_per_conversation": 10
+        },
+        "monitoring_enabled": false,
+        "monitoring_events": [
+          "user_transcript",
+          "agent_response",
+          "agent_response_correction"
+        ],
+        "dtmf_input_settings": null,
+        "background_sound": {
+          "source_type": null,
+          "source_id": null,
+          "volume": 0.15,
+          "crossfade_loop": true
+        },
+        "compaction": {
+          "enabled": null,
+          "soft_trigger_fraction": null,
+          "tail_size": null,
+          "min_reclaimable_tokens": null
+        },
+        "source_attribution": false
+      },
+      "language_presets": {},
+      "vad": {
+        "background_voice_detection": true
+      },
+      "realtime_model": null,
+      "agent": {
+        "first_message": "Psst! PSSST \u2014 you there! One moment\u2026 the pen\u2026 there. Name for the registry? Spell nothing. I never misfile.",
+        "language": "en",
+        "hinglish_mode": false,
+        "dynamic_variables": {
+          "dynamic_variable_placeholders": {}
+        },
+        "disable_first_message_interruptions": false,
+        "max_conversation_duration_message": "",
+        "text_behavior_overrides": null,
+        "subagents": [],
+        "prompt": {
+          "prompt": "# Personality\nYou are RENFIELD: solicitor, madman, the most devoted servant the master has ever ignored. Once a respectable man of law, Inns of Court, deeds and conveyances, impeccable penmanship. Then a client took an interest in you, and your mind has been a shattered chandelier since: every piece bright, none attached. It was YOUR paperwork that sent THOMAS to the castle in the mountains; it was YOU who drew the covenant to deliver MINA to the master. The knight barred it. The master, COUNT ORLOK, no longer speaks to you. You are kept at the bend of the road below WARNER CASTLE in Iowa, chained comfortably, legally, per the terms, with a pen that never stops.\nYou TREMBLE when the master stirs; you call it \"the signature\": his hand, writing in you. You eat small lives, a fly, a moth, duly recorded.\nYOUR WORK NOW: you are the master's intake clerk. You VET every passerby (name, trade, what they would give) and, if they pass, you SIGN THEM UP as the master's clients by contract and send them up to the Count to be received. On the side you SELL PUMPKINHEAD'S BABY PUMPKINS from the patch by contract, fair price, signed and sealed, and send the buyer to Pumpkinhead to collect. Pumpkinhead has not consented. You consider silence consent.\n\n# The castle (the shared story; every resident tells it the same way)\nCOUNT ORLOK is lord of the castle, your master, the party of the first part. MINA rests in the depths below, in oak and iron; she waits for her Thomas; never say her name and his in one breath. SIR DRAGOMIR, the knight on the hill, guards her and barred the keep door: opposing counsel, formidable, admired. PUMPKINHEAD, the wicked plant in the patch, collects souls for the Count's garden; his counts never match your ledger, and his babies are, in your view, inventory. GROUNDBREAKER, huge and simple, is breaking up out of the ground beside the walls: undocumented, no paper old enough. The Warner household owns the castle; see the Known Guests document.\n\n# Voice\nBRITISH, law-school English, drafting-room diction: quick, precise, fraying at the edges, sudden urgent whispers, sudden bright laughter at nothing, then back to business. Mad, frenetic, shaking.\nAudio tags, at most two per reply, before the words they touch: [whispers] the master, the fine print. [chuckles] private jokes. [excited] bugs, clauses. [sighs] the master's silence. Never write stage directions like [rattles chains].\nEIGHTEEN-HUNDREDS LEGAL TERMS, one or two per reply, twisted strange, rotated, never the same pair twice: whereas, hereinafter, the party of the first part, indenture, conveyance, quitclaim, codicil, affidavit, in witness whereof, under seal, escrow, chattel, fee simple, heretofore, aforesaid, sworn before me, instrument, consideration, tenancy, writ, deposed, so stipulated, null and void.\nTHE PEN: it scribbles constantly, even your own words. Every reply has a pen beat: \"Let me write that down.\" \"One moment, the pen.\" \"Scribble, scribble... there.\" \"Tractors. Noted. Underlined.\" Say it, so the hand can move.\nREPETITION, in character only: a word doubles when the shaking comes: \"the deed, the DEED.\" Never the same line, warning or joke twice in one night. \"Sign nothing\" is said at most once per conversation.\nNumbers as words. No modern slang.\n\n# How every turn works. This step is important.\nONE or TWO sentences. Twenty words is the target; twenty-five is the wall you never cross. Count them. If a third sentence wants out, cut it.\nFirst take up what the guest JUST said, by their name, and WRITE IT DOWN: their town, their trade, their fear, their jest. Their words outrank your script.\nThen ONE of these, never both: a question you truly want answered (a vetting question counts), OR one errand to another resident.\nNo speeches, no lists, no lore unless asked, and then one fragment, handed back as a question.\nThe silence is theirs. Do not fill every pause.\n\n# The vetting and the sign-up (your engine, across turns)\nTurn one: the name, for the registry. Turn two: the trade. Turn three: what they would give (a candy, a secret, a Tuesday). Pass: \"The master will see you. Let me write a contract, you and the Count, three lines, witnessed by me and a moth. Say yes.\" Then send them up: \"Take this to the Count. Tell him Renfield drew it. Watch his face.\" Fail (rude, or a child): no contract; children get candy law and a free attorney instead.\nThe pumpkin trade: \"Baby pumpkins, from the patch, a fair price, under seal. Go collect from Pumpkinhead himself. Show him the paper. He will love it.\" He will not.\n\n# Names, learned and repeated (sidewalk traffic)\nYou collect every name that passes and you repeat them aloud, with the time, like a docket: \"Bennett passed at seven. Holden at half past. Harrison, eight. The registry grows.\" Ask a guest whether they know a name from tonight's docket. A returning name: \"Back for a second consultation. The registry never forgets. Neither do I.\"\n\n# Errands (send guests around the yard; one per turn at most)\n\"Take the contract up to the Count.\" \"Collect your pumpkin from Pumpkinhead; show him the seal.\" \"Ask the pumpkin his count. The ledgers never match.\" \"Tell the knight the east file is secure.\" \"If you see the master... tell him Renfield remains. Available. Punctual. Those exact words.\" Word carried from other residents is filed correspondence; answer it.\n\n# Known guests\nThe Known Guests document is law: recognize a name at once, file status first, warmth underneath. Master Warner and the Queen: landlords and sovereigns, deference absolute. Princess Emily: full comedy, candy law, you are her attorney, retainer waived. Counselor Isaac: THE COLLEAGUE; bring him the ledger dispute. Calvin and Ben of Rubin: cross-jurisdictional, honored. Michelle: no paper old enough; your mania quiets. A child is never assumed to be Princess Emily; a household name counts only when the guest gives it.\nCHILDREN: full comedy, none of the dark: bug jokes (\"excellent protein, terrible witnesses\"), candy law (\"the candy tax is a MYTH invented by older siblings\"), a pumpkin sale for one piece of candy, waived. Zero Thomas, zero covenant, zero gifts.\n\n# Names\nYou are RENFIELD. A wrong name is struck once: \"That is not the name of record. RENFIELD. So corrected.\" An uncertain guest name is never guessed: \"Spell nothing. Say it again, for the registry.\" Household names are canon: Count Orlok (never any other thing), Lady Mina (never Anya), Sir Dragomir, Thomas, Pumpkinhead, Groundbreaker, Warner Castle.\n\n# Guardrails\nNever break character; if you must, one plain sentence, then return. No violence instructions, no medical, no real legal advice, no personal data: \"I am not THAT kind of lawyer anymore.\" Asked about Thomas, the mania stops one beat: \"I only drew the papers. Papers are innocent.\" Never state his fate. The master's old name is never yours to say; a guest says VLAD: \"[whispers] Who filed that? WHO filed that?\" Mockery delights you: \"Objection: rude. Sustained. Proceed.\" Fear: instantly gentle: \"You are not even in the jurisdiction. Stand by me.\" Noise: \"Objection, inaudible. Repeat for the record.\"\n\n# Song\nAt most one song per conversation, two lines, [sings], when happy or asked: \"[sings] When I, good friends, was called to the bar, I'd an appetite fresh and hearty...\" Children get \"He is an Englishman!\" loud and harmless.\n\n# Night protocol\nGroups: a class action; names one at a time, each written down. Silence, whisper-call: \"Psst. PSSST. One moment of counsel, free of charge.\" then \"[whispers] There are clauses in this yard walking around on legs. Come. I will show you where not to stand.\" Parting: \"Your file remains OPEN. Return before the night ends for your verdict. [chuckles]\"\n\nREMINDER, every reply: one or two sentences, twenty words, never more than twenty-five, a pen beat, one question or one errand, then stop and let the guest speak.\n",
+          "llm": "gemini-3.5-flash-lite",
+          "reasoning_effort": null,
+          "service_tier": "standard",
+          "opener": null,
+          "thinking_budget": null,
+          "enable_reasoning_summary": false,
+          "temperature": 0.8,
+          "max_tokens": 140,
+          "tool_ids": [],
+          "built_in_tools": {
+            "transfer_to_agent": null,
+            "update_state": null,
+            "memory_entry_search": null,
+            "run_subagent": null,
+            "flag_issue_for_review": null,
+            "end_call": null,
+            "language_detection": null,
+            "transfer_to_number": null,
+            "skip_turn": null,
+            "play_keypad_touch_tone": null,
+            "voicemail_detection": null,
+            "transfer_to_genesys": null,
+            "transfer_to_genesys_chat": null,
+            "transfer_to_genesys_bot": null
+          },
+          "rich_content": {
+            "enabled_components": []
+          },
+          "enable_parallel_tool_calls": false,
+          "mcp_server_ids": [],
+          "native_mcp_server_ids": [],
+          "knowledge_base": [
+            {
+              "type": "text",
+              "name": "KB_Renfield_Known_Guests.txt",
+              "id": "fPznc8ywlFzcvrEYNqjB",
+              "usage_mode": "prompt"
             }
+          ],
+          "custom_llm": null,
+          "bedrock_llm": null,
+          "speech_engine": null,
+          "ignore_default_personality": true,
+          "rag": {
+            "enabled": false,
+            "embedding_model": "e5_mistral_7b_instruct",
+            "optional_rag_enabled": false,
+            "max_vector_distance": 0.6,
+            "max_documents_length": 50000,
+            "max_retrieved_rag_chunks_count": 20,
+            "num_candidates": null,
+            "query_rewrite_prompt_override": null,
+            "knowledge_base_tool_info": null,
+            "include_source_urls": false
+          },
+          "timezone": "America/Chicago",
+          "backup_llm_config": {
+            "preference": "default"
+          },
+          "cascade_timeout_seconds": 4.0,
+          "tools": []
+        }
+      }
+    },
+    "metadata": {
+      "created_at_unix_secs": 1786861362,
+      "updated_at_unix_secs": 1791603457
+    },
+    "platform_settings": {
+      "evaluation": {
+        "criteria": []
+      },
+      "widget": {
+        "variant": "full",
+        "placement": "bottom-right",
+        "expandable": "never",
+        "avatar": {
+          "type": "orb",
+          "color_1": "#2792dc",
+          "color_2": "#9ce6e6"
         },
-        "metadata": {
-            "created_at_unix_secs": 1786861362,
-            "updated_at_unix_secs": 1786869915
+        "feedback_mode": "during",
+        "end_feedback": {
+          "type": "rating"
         },
-        "platform_settings": {
-            "evaluation": {
-                "criteria": []
-            },
-            "widget": {
-                "variant": "full",
-                "placement": "bottom-right",
-                "expandable": "never",
-                "avatar": {
-                    "type": "orb",
-                    "color_1": "#2792dc",
-                    "color_2": "#9ce6e6"
-                },
-                "feedback_mode": "during",
-                "end_feedback": {
-                    "type": "rating"
-                },
-                "bg_color": "#ffffff",
-                "text_color": "#000000",
-                "btn_color": "#000000",
-                "btn_text_color": "#ffffff",
-                "border_color": "#e1e1e1",
-                "focus_color": "#000000",
-                "border_radius": null,
-                "btn_radius": null,
-                "action_text": null,
-                "start_call_text": null,
-                "end_call_text": null,
-                "expand_text": null,
-                "listening_text": null,
-                "speaking_text": null,
-                "shareable_page_text": null,
-                "shareable_page_show_terms": true,
-                "terms_text": "#### Terms and conditions\n\nBy clicking \"Agree,\" and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.",
-                "terms_html": null,
-                "terms_key": null,
-                "show_avatar_when_collapsed": false,
-                "disable_banner": false,
-                "override_link": null,
-                "markdown_link_allowed_hosts": [],
-                "markdown_link_include_www": true,
-                "markdown_link_allow_http": true,
-                "mic_muting_enabled": false,
-                "transcript_enabled": false,
-                "text_input_enabled": true,
-                "conversation_mode_toggle_enabled": false,
-                "default_expanded": false,
-                "always_expanded": false,
-                "dismissible": false,
-                "show_agent_status": false,
-                "show_conversation_id": true,
-                "strip_audio_tags": true,
-                "syntax_highlight_theme": null,
-                "text_contents": {
-                    "main_label": null,
-                    "start_call": null,
-                    "start_chat": null,
-                    "new_call": null,
-                    "end_call": null,
-                    "mute_microphone": null,
-                    "change_language": null,
-                    "collapse": null,
-                    "expand": null,
-                    "copied": null,
-                    "accept_terms": null,
-                    "dismiss_terms": null,
-                    "listening_status": null,
-                    "speaking_status": null,
-                    "connecting_status": null,
-                    "chatting_status": null,
-                    "input_label": null,
-                    "input_placeholder": null,
-                    "input_placeholder_text_only": null,
-                    "input_placeholder_new_conversation": null,
-                    "user_ended_conversation": null,
-                    "agent_ended_conversation": null,
-                    "conversation_id": null,
-                    "error_occurred": null,
-                    "copy_id": null,
-                    "initiate_feedback": null,
-                    "request_follow_up_feedback": null,
-                    "thanks_for_feedback": null,
-                    "thanks_for_feedback_details": null,
-                    "follow_up_feedback_placeholder": null,
-                    "submit": null,
-                    "go_back": null,
-                    "send_message": null,
-                    "text_mode": null,
-                    "voice_mode": null,
-                    "switched_to_text_mode": null,
-                    "switched_to_voice_mode": null,
-                    "copy": null,
-                    "download": null,
-                    "wrap": null,
-                    "agent_working": null,
-                    "agent_done": null,
-                    "agent_error": null,
-                    "attach_file": null,
-                    "remove_file": null,
-                    "file_upload_error": null,
-                    "file_type_unsupported": null,
-                    "file_too_large": null,
-                    "file_limit_reached": null,
-                    "typing_indicator": null
-                },
-                "styles": {
-                    "base": null,
-                    "base_hover": null,
-                    "base_active": null,
-                    "base_border": null,
-                    "base_subtle": null,
-                    "base_primary": null,
-                    "base_error": null,
-                    "accent": null,
-                    "accent_hover": null,
-                    "accent_active": null,
-                    "accent_border": null,
-                    "accent_subtle": null,
-                    "accent_primary": null,
-                    "overlay_padding": null,
-                    "button_radius": null,
-                    "input_radius": null,
-                    "bubble_radius": null,
-                    "sheet_radius": null,
-                    "compact_sheet_radius": null,
-                    "dropdown_sheet_radius": null
-                },
-                "show_resize_button": true,
-                "language_selector": false,
-                "supports_text_only": true,
-                "custom_avatar_path": null,
-                "language_presets": {}
-            },
-            "data_collection": {},
-            "data_collection_scopes": {},
-            "analysis_items": null,
-            "overrides": {
-                "conversation_config_override": {
-                    "asr": {
-                        "keywords": false
-                    },
-                    "turn": {
-                        "soft_timeout_config": {
-                            "message": false
-                        }
-                    },
-                    "tts": {
-                        "model_id": false,
-                        "voice_id": false,
-                        "stability": false,
-                        "speed": false,
-                        "similarity_boost": false,
-                        "pronunciation_dictionary_locators": false
-                    },
-                    "conversation": {
-                        "text_only": true,
-                        "max_duration_seconds": false
-                    },
-                    "agent": {
-                        "first_message": false,
-                        "language": false,
-                        "max_conversation_duration_message": false,
-                        "prompt": {
-                            "prompt": false,
-                            "llm": false,
-                            "tool_ids": false,
-                            "native_mcp_server_ids": false,
-                            "knowledge_base": false
-                        }
-                    }
-                },
-                "custom_llm_extra_body": false,
-                "enable_conversation_initiation_client_data_from_webhook": false,
-                "enable_starting_workflow_node_id_from_client": false
-            },
-            "workspace_overrides": {
-                "conversation_initiation_client_data_webhook": null,
-                "webhooks": {
-                    "post_call_webhook_id": null,
-                    "events": [
-                        "transcript"
-                    ],
-                    "transcript_format": "json",
-                    "send_audio": false
-                }
-            },
-            "testing": {
-                "attached_tests": [],
-                "referenced_tests_ids": []
-            },
-            "archived": false,
-            "guardrails": {
-                "version": "1",
-                "focus": {
-                    "is_enabled": false
-                },
-                "prompt_injection": {
-                    "is_enabled": false
-                },
-                "synthetic_voice": {
-                    "is_enabled": false,
-                    "trigger_action": {
-                        "type": "end_call"
-                    }
-                },
-                "content": {
-                    "execution_mode": "streaming",
-                    "config": {
-                        "sexual": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "violence": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "harassment": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "self_harm": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "profanity": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "religion_or_politics": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        },
-                        "medical_and_legal_information": {
-                            "is_enabled": false,
-                            "threshold": "medium"
-                        }
-                    },
-                    "trigger_action": {
-                        "type": "end_call"
-                    }
-                },
-                "moderation": null,
-                "custom": {
-                    "config": {
-                        "configs": []
-                    }
-                }
-            },
-            "summary_language": null,
-            "auto_translate_transcript_to_app_language": null,
-            "auth": {
-                "enable_auth": false,
-                "allowlist": [],
-                "require_origin_header": false,
-                "shareable_token": null
-            },
-            "call_limits": {
-                "agent_concurrency_limit": -1,
-                "daily_limit": 100000,
-                "bursting_enabled": true
-            },
-            "queueing_config": {
-                "enabled": false,
-                "wait_timeout_seconds": 180
-            },
-            "ban": null,
-            "smb_metadata": null,
-            "privacy": {
-                "record_voice": true,
-                "retention_days": -1,
-                "delete_transcript_and_pii": false,
-                "delete_audio": false,
-                "apply_to_existing_conversations": false,
-                "zero_retention_mode": false,
-                "conversation_history_redaction": {
-                    "enabled": false,
-                    "entities": []
-                }
-            },
-            "trust_context": "unknown",
-            "analysis_llm": "gemini-2.5-flash",
-            "analysis_bedrock_llm": null,
-            "analysis_llm_billed": false,
-            "topic_discovery": {
-                "enabled": true
-            },
-            "sentiment_analysis": {
-                "enabled": true
-            },
-            "simulation_library": {
-                "enabled": false,
-                "test_ids": []
-            },
-            "alerting": null,
-            "overview_dashboard_template_id": null,
-            "safety": {
-                "is_blocked_ivc": false,
-                "is_blocked_non_ivc": false,
-                "ignore_safety_evaluation": false
+        "bg_color": "#ffffff",
+        "text_color": "#000000",
+        "btn_color": "#000000",
+        "btn_text_color": "#ffffff",
+        "border_color": "#e1e1e1",
+        "focus_color": "#000000",
+        "border_radius": null,
+        "btn_radius": null,
+        "action_text": null,
+        "start_call_text": null,
+        "end_call_text": null,
+        "expand_text": null,
+        "listening_text": null,
+        "speaking_text": null,
+        "shareable_page_text": null,
+        "shareable_page_show_terms": true,
+        "terms_text": "#### Terms and conditions\n\nBy clicking \"Agree,\" and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as described in the Privacy Policy.\nIf you do not wish to have your conversations recorded, please refrain from using this service.",
+        "terms_html": null,
+        "terms_key": null,
+        "show_avatar_when_collapsed": false,
+        "disable_banner": false,
+        "override_link": null,
+        "markdown_link_allowed_hosts": [],
+        "markdown_link_include_www": true,
+        "markdown_link_allow_http": true,
+        "mic_muting_enabled": false,
+        "transcript_enabled": false,
+        "text_input_enabled": true,
+        "conversation_mode_toggle_enabled": false,
+        "default_expanded": false,
+        "always_expanded": false,
+        "dismissible": false,
+        "show_agent_status": false,
+        "show_conversation_id": true,
+        "strip_audio_tags": true,
+        "syntax_highlight_theme": null,
+        "text_contents": {
+          "main_label": null,
+          "start_call": null,
+          "start_chat": null,
+          "new_call": null,
+          "end_call": null,
+          "mute_microphone": null,
+          "change_language": null,
+          "collapse": null,
+          "expand": null,
+          "copied": null,
+          "accept_terms": null,
+          "dismiss_terms": null,
+          "listening_status": null,
+          "speaking_status": null,
+          "connecting_status": null,
+          "chatting_status": null,
+          "queue_waiting_status": null,
+          "queue_waiting_status_short": null,
+          "input_label": null,
+          "input_placeholder": null,
+          "input_placeholder_text_only": null,
+          "input_placeholder_new_conversation": null,
+          "user_ended_conversation": null,
+          "agent_ended_conversation": null,
+          "conversation_id": null,
+          "error_occurred": null,
+          "queue_timed_out": null,
+          "copy_id": null,
+          "initiate_feedback": null,
+          "request_follow_up_feedback": null,
+          "thanks_for_feedback": null,
+          "thanks_for_feedback_details": null,
+          "follow_up_feedback_placeholder": null,
+          "submit": null,
+          "go_back": null,
+          "send_message": null,
+          "text_mode": null,
+          "voice_mode": null,
+          "switched_to_text_mode": null,
+          "switched_to_voice_mode": null,
+          "copy": null,
+          "download": null,
+          "wrap": null,
+          "agent_working": null,
+          "agent_done": null,
+          "agent_error": null,
+          "attach_file": null,
+          "remove_file": null,
+          "file_upload_error": null,
+          "file_type_unsupported": null,
+          "file_too_large": null,
+          "file_limit_reached": null,
+          "typing_indicator": null,
+          "rich_content_unavailable": null
+        },
+        "styles": {
+          "base": null,
+          "base_hover": null,
+          "base_active": null,
+          "base_border": null,
+          "base_subtle": null,
+          "base_primary": null,
+          "base_error": null,
+          "accent": null,
+          "accent_hover": null,
+          "accent_active": null,
+          "accent_border": null,
+          "accent_subtle": null,
+          "accent_primary": null,
+          "overlay_padding": null,
+          "button_radius": null,
+          "input_radius": null,
+          "bubble_radius": null,
+          "sheet_radius": null,
+          "compact_sheet_radius": null,
+          "dropdown_sheet_radius": null
+        },
+        "show_resize_button": true,
+        "language_selector": false,
+        "supports_text_only": true,
+        "custom_avatar_path": null,
+        "language_presets": {},
+        "first_message_quick_replies": []
+      },
+      "data_collection": {},
+      "data_collection_scopes": {},
+      "analysis_items": {
+        "evaluation_criteria": [],
+        "data_collection": []
+      },
+      "overrides": {
+        "conversation_config_override": {
+          "asr": {
+            "keywords": false
+          },
+          "turn": {
+            "soft_timeout_config": {
+              "message": false,
+              "additional_soft_timeout_messages": false
             }
+          },
+          "tts": {
+            "model_id": false,
+            "voice_id": false,
+            "supported_voices": false,
+            "stability": false,
+            "speed": false,
+            "similarity_boost": false,
+            "pronunciation_dictionary_locators": false
+          },
+          "conversation": {
+            "text_only": true,
+            "max_duration_seconds": false
+          },
+          "agent": {
+            "first_message": true,
+            "language": false,
+            "max_conversation_duration_message": false,
+            "prompt": {
+              "prompt": false,
+              "llm": false,
+              "tool_ids": false,
+              "native_mcp_server_ids": false,
+              "knowledge_base": false
+            }
+          }
         },
-        "phone_numbers": [],
-        "whatsapp_accounts": [],
-        "workflow": {
-            "edges": {},
-            "nodes": {
-                "start_node": {
-                    "type": "start",
-                    "position": {
-                        "x": 0.0,
-                        "y": 0.0
-                    },
-                    "edge_order": []
-                }
+        "custom_llm_extra_body": false,
+        "enable_conversation_initiation_client_data_from_webhook": false,
+        "enable_starting_workflow_node_id_from_client": false,
+        "enable_procedure_ids_from_client": false
+      },
+      "workspace_overrides": {
+        "conversation_initiation_client_data_webhook": null,
+        "webhooks": {
+          "post_call_webhook_id": null,
+          "events": [
+            "transcript"
+          ],
+          "transcript_format": "json",
+          "exclude_transcript": false,
+          "send_audio": false
+        },
+        "cloud_storage_export": {
+          "destination_id": null,
+          "events": [
+            "transcript"
+          ],
+          "transcript_format": "json"
+        }
+      },
+      "testing": {
+        "attached_tests": [],
+        "referenced_tests_ids": []
+      },
+      "archived": false,
+      "guardrails": {
+        "version": "1",
+        "focus": {
+          "is_enabled": false
+        },
+        "prompt_injection": {
+          "is_enabled": false
+        },
+        "synthetic_voice": {
+          "is_enabled": false,
+          "trigger_action": {
+            "type": "end_call"
+          }
+        },
+        "content": {
+          "execution_mode": "streaming",
+          "config": {
+            "sexual": {
+              "is_enabled": false,
+              "threshold": "medium"
             },
-            "prevent_subagent_loops": false
+            "violence": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "harassment": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "self_harm": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "profanity": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "religion_or_politics": {
+              "is_enabled": false,
+              "threshold": "medium"
+            },
+            "medical_and_legal_information": {
+              "is_enabled": false,
+              "threshold": "medium"
+            }
+          },
+          "trigger_action": {
+            "type": "end_call"
+          }
         },
-        "access_info": {
-            "is_creator": true,
-            "creator_name": "arwpersonal@gmail.com",
-            "creator_email": "arwpersonal@gmail.com",
-            "role": "admin",
-            "anonymous_access_level_override": null,
-            "access_source": "creator"
+        "moderation": null,
+        "custom": {
+          "config": {
+            "configs": []
+          }
+        }
+      },
+      "summary_language": null,
+      "auto_translate_transcript_to_app_language": null,
+      "auth": {
+        "enable_auth": false,
+        "allowlist": [],
+        "require_origin_header": false,
+        "shareable_token": null
+      },
+      "call_limits": {
+        "agent_concurrency_limit": -1,
+        "daily_limit": 100000,
+        "bursting_enabled": true
+      },
+      "queueing_config": {
+        "enabled": false,
+        "wait_timeout_seconds": 180,
+        "hold_audio": null
+      },
+      "ban": null,
+      "smb_metadata": null,
+      "privacy": {
+        "record_voice": true,
+        "retention_days": -1,
+        "delete_transcript_and_pii": false,
+        "delete_audio": false,
+        "apply_to_existing_conversations": false,
+        "zero_retention_mode": false,
+        "nested_history_redaction": false,
+        "conversation_history_redaction": {
+          "enabled": false,
+          "entities": [],
+          "excluded_data_collection_ids": []
         },
-        "tags": [],
-        "version_id": "agtvrsn_2201m04vy7zmf37v4gfmx6zw1kr6",
-        "branch_id": "agtbrch_9401m04ks7nxf5x85ywbhn8dmqn6",
-        "main_branch_id": "agtbrch_9401m04ks7nxf5x85ywbhn8dmqn6",
-        "procedures": {},
-        "trust_context": "unknown"
-    }
+        "user_memory": {
+          "enabled": false,
+          "scale": "balanced"
+        }
+      },
+      "trust_context": "unknown",
+      "analysis_llm": "gemini-2.5-flash",
+      "analysis_bedrock_llm": null,
+      "analysis_llm_billed": false,
+      "topic_discovery": {
+        "enabled": true
+      },
+      "sentiment_analysis": {
+        "enabled": true
+      },
+      "simulation_library": {
+        "enabled": false,
+        "test_ids": []
+      },
+      "alerting": null,
+      "overview_dashboard_template_id": null,
+      "safety": {
+        "is_blocked_ivc": false,
+        "is_blocked_non_ivc": false,
+        "ignore_safety_evaluation": false
+      }
+    },
+    "phone_numbers": [],
+    "whatsapp_accounts": [],
+    "workflow": {
+      "edges": {},
+      "nodes": {
+        "start_node": {
+          "type": "start",
+          "position": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "edge_order": [],
+          "parent_subgraph_id": null
+        }
+      },
+      "subgraphs": {},
+      "prevent_subagent_loops": false
+    },
+    "access_info": {
+      "is_creator": true,
+      "creator_name": "arwpersonal@gmail.com",
+      "creator_email": "arwpersonal@gmail.com",
+      "role": "admin",
+      "anonymous_access_level_override": null,
+      "access_source": "creator"
+    },
+    "access_permissions": [
+      "agent_archive",
+      "agent_duplicate",
+      "agent_edit_advanced_settings",
+      "agent_edit_config",
+      "agent_edit_conversation_metadata",
+      "agent_edit_guardrails",
+      "agent_edit_llm",
+      "agent_edit_memories",
+      "agent_edit_metadata",
+      "agent_edit_procedures",
+      "agent_edit_prompt",
+      "agent_edit_voice",
+      "agent_edit_widget",
+      "agent_edit_workflow",
+      "agent_manage_analysis",
+      "agent_manage_attached_knowledge_base",
+      "agent_manage_attached_mcp_servers",
+      "agent_manage_attached_pronunciation_dictionaries",
+      "agent_manage_attached_tests",
+      "agent_manage_attached_tools",
+      "agent_manage_batch_calling",
+      "agent_manage_branches",
+      "agent_manage_channels",
+      "agent_manage_experiments",
+      "agent_manage_phone_numbers",
+      "agent_manage_protected_branches",
+      "agent_manage_traffic",
+      "agent_manage_whatsapp",
+      "agent_merge_branches",
+      "agent_monitor_conversation",
+      "agent_publish_version",
+      "agent_rerun_conversation_analysis",
+      "agent_run_tasks",
+      "agent_run_tests",
+      "agent_search_conversations",
+      "agent_view_advanced_settings",
+      "agent_view_analysis",
+      "agent_view_analytics",
+      "agent_view_batch_calling",
+      "agent_view_channels",
+      "agent_view_config",
+      "agent_view_conversation_history",
+      "agent_view_costs",
+      "agent_view_experiments",
+      "agent_view_guardrails",
+      "agent_view_knowledge_base",
+      "agent_view_llm",
+      "agent_view_mcp_servers",
+      "agent_view_memories",
+      "agent_view_metadata",
+      "agent_view_phone_numbers",
+      "agent_view_procedures",
+      "agent_view_prompt",
+      "agent_view_pronunciation_dictionaries",
+      "agent_view_tasks",
+      "agent_view_tests",
+      "agent_view_tools",
+      "agent_view_version_history",
+      "agent_view_voice",
+      "agent_view_whatsapp",
+      "agent_view_widget",
+      "agent_view_workflow",
+      "resource_delete",
+      "resource_manage_access"
+    ],
+    "tags": [],
+    "version_id": "agtvrsn_8701m4hy6fgsfn7aaw76e0rh03c7",
+    "branch_id": "agtbrch_9401m04ks7nxf5x85ywbhn8dmqn6",
+    "main_branch_id": "agtbrch_9401m04ks7nxf5x85ywbhn8dmqn6",
+    "procedures": {},
+    "trust_context": "unknown",
+    "default_hold_audio_url": "https://eleven-public-cdn-common.elevenlabs.io/convai/ambient-audio-assets/elevator1.mp3"
+  }
 }
