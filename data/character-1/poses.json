@@ -3,11 +3,237 @@
   "poses": [
     {
       "id": 1,
-      "name": "Body Sway (left)",
+      "name": "Home",
+      "category": "scene",
+      "description": "Settle: a soft 0.3 s nudge at speed 20, then still (a motor at rest has no position to hold).",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 20,
+            "duration": 300
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Idle: Stalks Stir",
       "category": "idle",
+      "description": "The stalks stir in a breeze nobody else feels.",
       "tags": [
         "idle"
       ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 22,
+            "duration": 500
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z",
+      "weight": 14,
+      "holdVariance": 4000
+    },
+    {
+      "id": 3,
+      "name": "Idle: Stalks Stir Back",
+      "category": "idle",
+      "description": "The stalks sway back the other way.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "reverse",
+            "speed": 22,
+            "duration": 500
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z",
+      "weight": 14,
+      "holdVariance": 4000
+    },
+    {
+      "id": 4,
+      "name": "Idle: A Crack",
+      "category": "idle",
+      "description": "A quick dry crack of the vine.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 34,
+            "duration": 300
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z",
+      "weight": 8,
+      "holdVariance": 5000
+    },
+    {
+      "id": 5,
+      "name": "Idle: A Snap",
+      "category": "idle",
+      "description": "A sharp snap, the other way.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "reverse",
+            "speed": 36,
+            "duration": 350
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z",
+      "weight": 8,
+      "holdVariance": 5000
+    },
+    {
+      "id": 6,
+      "name": "Idle: The Long Creak",
+      "category": "idle",
+      "description": "A slow creak as the husk turns to watch.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 18,
+            "duration": 800
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z",
+      "weight": 10,
+      "holdVariance": 6000
+    },
+    {
+      "id": 7,
+      "name": "Idle: Root Settles",
+      "category": "idle",
+      "description": "The root settles back into the dirt.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "reverse",
+            "speed": 18,
+            "duration": 700
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z",
+      "weight": 10,
+      "holdVariance": 6000
+    },
+    {
+      "id": 8,
+      "name": "Idle: Leaning In",
+      "category": "idle",
+      "description": "Leans in toward a sound on the road.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "reverse",
+            "speed": 28,
+            "duration": 600
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z",
+      "weight": 8,
+      "holdVariance": 4500
+    },
+    {
+      "id": 9,
+      "name": "Idle: Shiver",
+      "category": "idle",
+      "description": "A brittle little shiver, like frost on the husk.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 30,
+            "duration": 400
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z",
+      "weight": 8,
+      "holdVariance": 4500
+    },
+    {
+      "id": 10,
+      "name": "Pounce",
+      "category": "scene",
+      "description": "The CAPITALS land: the hardest lunge the rig allows.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
       "parts": [
         {
           "partId": 1,
@@ -15,69 +241,81 @@
           "target": {
             "direction": "forward",
             "speed": 40,
-            "duration": 1200
+            "duration": 800
           }
         }
       ],
-      "created": "2026-09-13T23:05:24.157Z",
-      "modified": "2026-09-21T00:08:21.646Z"
+      "created": "2026-10-10T17:00:00.000Z"
     },
     {
-      "id": 2,
-      "name": "Body Sway (right)",
-      "category": "idle",
+      "id": 11,
+      "name": "Withdraw",
+      "category": "scene",
+      "description": "Pulls back after the pounce.",
       "tags": [
-        "idle"
+        "scene"
       ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
       "parts": [
         {
           "partId": 1,
           "type": "motor",
           "target": {
-            "direction": "backward",
-            "speed": 40,
-            "duration": 1200
+            "direction": "reverse",
+            "speed": 32,
+            "duration": 600
           }
         }
       ],
-      "created": "2026-09-13T23:05:24.296Z",
-      "modified": "2026-09-21T00:08:21.707Z"
+      "created": "2026-10-10T17:00:00.000Z"
+    },
+    {
+      "id": 12,
+      "name": "Count Pulse",
+      "category": "scene",
+      "description": "One counted soul: a single firm pulse.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 35,
+            "duration": 500
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z"
+    },
+    {
+      "id": 13,
+      "name": "Count Pulse Back",
+      "category": "scene",
+      "description": "The next counted soul, the other way.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "reverse",
+            "speed": 35,
+            "duration": 500
+          }
+        }
+      ],
+      "created": "2026-10-10T17:00:00.000Z"
     }
   ],
-  "templates": {
-    "elbow": {
-      "description": "Elbow bend presets",
-      "options": [
-        {
-          "name": "Straight",
-          "angleDeg": 0
-        },
-        {
-          "name": "Half Bend",
-          "angleDeg": 45
-        },
-        {
-          "name": "Full Bend",
-          "angleDeg": 90
-        }
-      ]
-    },
-    "head": {
-      "description": "Head motions",
-      "options": [
-        {
-          "name": "Stop",
-          "action": "stop"
-        },
-        {
-          "name": "Wiggle",
-          "action": "random"
-        },
-        {
-          "name": "Rotate 360",
-          "action": "rotate_360"
-        }
-      ]
-    }
-  }
+  "templates": {}
 }

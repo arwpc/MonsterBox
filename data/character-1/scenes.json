@@ -1,1 +1,1149 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "PumpkinHead: The Stalks Stir",
+    "description": "Lurk (~35 s, silent): the stalks stir one way and back, a long creak as the husk turns to watch the road, a dry crack, and the root settles.",
+    "steps": [
+      {
+        "type": "pose",
+        "poseId": 2
+      },
+      {
+        "type": "wait",
+        "duration": 3500
+      },
+      {
+        "type": "pose",
+        "poseId": 3
+      },
+      {
+        "type": "wait",
+        "duration": 4000
+      },
+      {
+        "type": "pose",
+        "poseId": 6
+      },
+      {
+        "type": "wait",
+        "duration": 5000
+      },
+      {
+        "type": "pose",
+        "poseId": 4
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "pose",
+        "poseId": 5
+      },
+      {
+        "type": "wait",
+        "duration": 6000
+      },
+      {
+        "type": "pose",
+        "poseId": 8
+      },
+      {
+        "type": "wait",
+        "duration": 3000
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      },
+      {
+        "type": "wait",
+        "duration": 4000
+      },
+      {
+        "type": "pose",
+        "poseId": 7
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "name": "PumpkinHead: Crack and Snap",
+    "description": "Lurk (~42 s, silent): stillness, then a crack, a snap, a shiver of frost; a slow lean toward the road; three quick counting twitches; the root settles back.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 3000
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 34,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 1800
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 36,
+        "duration": 350
+      },
+      {
+        "type": "wait",
+        "duration": 5000
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      },
+      {
+        "type": "wait",
+        "duration": 700
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      },
+      {
+        "type": "wait",
+        "duration": 4000
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 25,
+        "duration": 700
+      },
+      {
+        "type": "wait",
+        "duration": 6000
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 25,
+        "duration": 700
+      },
+      {
+        "type": "wait",
+        "duration": 4000
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 30,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 30,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 30,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 5000
+      },
+      {
+        "type": "pose",
+        "poseId": 7
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "name": "PumpkinHead: Who Stalks the Patch",
+    "description": "Wake (~9 s): the body jolts forward and back, then one line in third person that asks the guest to speak.",
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 38,
+        "duration": 500
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 38,
+        "duration": 450
+      },
+      {
+        "type": "sayThis",
+        "text": "Snap! Who stalks through Pumpkinhead's patch? ...Speak, little ember. Pumpkinhead is listening."
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "name": "PumpkinHead: The Patch Counts Its Souls",
+    "description": "Story (~85 s): under a howling wind he counts the souls that walk past the husks, one pulse per soul; a soul-seeking wraith drifts across the big window (Goblin 2); the Count answers that the quota is never met; he counts the guest, who is not ripe yet.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "PumpkinHead",
+        "maxMs": 127966,
+        "reason": "pumpkinhead-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "scary-howling-wind-sound-effect",
+        "volume": 35,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "pose",
+        "poseId": 6
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 7
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "sayThis",
+        "text": "Shhh... the patch is counting. Every soul that walks past the husks... Pumpkinhead counts it."
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 12
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "sayThis",
+        "text": "One for the Count's garden. One for the frost. One for the pyre... and one for PUMPKINHEAD.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 35,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 3305
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 35,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 2114
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 35,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 5423
+      },
+      {
+        "type": "pose",
+        "poseId": 10
+      },
+      {
+        "type": "pose",
+        "poseId": 11
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Pha Wraith Soulseeker Win H.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "fleet-say",
+        "node": "Orlok",
+        "text": "[Romanian accent] [breathes] Count well, pumpkin-thing. Your Lord counts too... and the quota is never met."
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 4
+      },
+      {
+        "type": "sayThis",
+        "text": "The Lord counts. Pumpkinhead counts better. The quota stays hungry... and so do the stalks."
+      },
+      {
+        "type": "wait",
+        "duration": 700
+      },
+      {
+        "type": "pose",
+        "poseId": 5
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 8
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "sayThis",
+        "text": "Stand still, little ember... Pumpkinhead is counting YOU now. ...Not ripe yet. Not yet."
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "PumpkinHead"
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "PumpkinHead",
+        "reason": "pumpkinhead-scene"
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "name": "PumpkinHead: The Stalks Remember",
+    "description": "Story (~85 s): the stalks remember every boot and frost; the night Groundbreaker threw rocks at an army (he answers, delighted); the knight who barred the keep (a skull rolls on the floor of the roof window, Goblin 3); Sir Dragomir sneers 'a vine with ambitions'; the pumpkin laughs that the knight is afraid of him.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "PumpkinHead",
+        "maxMs": 138348,
+        "reason": "pumpkinhead-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "spooky-horror-ambience",
+        "volume": 35,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "pose",
+        "poseId": 2
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "pose",
+        "poseId": 3
+      },
+      {
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "sayThis",
+        "text": "The stalks remember everything... every boot, every frost, every blackened root. Crack.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 11049
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 34,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 497
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 7
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "They remember the night the digging one threw rocks at an army. Pumpkinhead remembers the throw..."
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "audio",
+        "audioId": "castle-thunder-sound-effect",
+        "volume": 55,
+        "jawSync": false
+      },
+      {
+        "type": "fleet-say",
+        "node": "Groundbreaker",
+        "text": "[chuckles] PUMPKIN MAN REMEMBER! GROUNDBREAKER REMEMBER TOO. BIG ROCK. OOPS."
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 3",
+        "videoId": "Skullfloor.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "sayThis",
+        "text": "They remember the knight who barred the keep. His bar is brittle. His steel is ash. Snap.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 8953
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 38,
+        "duration": 350
+      },
+      {
+        "type": "wait",
+        "duration": 200
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "fleet-say",
+        "node": "Sir Dragomir",
+        "text": "[Romanian accent] A vine with ambitions. Walk wide of the patch, traveller... and do not give it your name."
+      },
+      {
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "audio",
+        "audioId": "creepy-evil-laughter-sound-effect",
+        "volume": 50,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 10
+      },
+      {
+        "type": "pose",
+        "poseId": 11
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "sayThis",
+        "text": "...The knight is afraid of a pumpkin. The stalks remember THAT too. Tell him Pumpkinhead said so."
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 6
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "PumpkinHead"
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "PumpkinHead",
+        "reason": "pumpkinhead-scene"
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "name": "PumpkinHead: The Missing Babies",
+    "description": "Story (~95 s): a burning pumpkin in the roof window (Goblin 3); he counts his babies, eleven of seventeen; six sold down the road under seal; Renfield answers in legal language (no refunds); Pumpkinhead did not SIGN; he smells the clerk's paper on the guest's hands.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "PumpkinHead",
+        "maxMs": 133666,
+        "reason": "pumpkinhead-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "scary-eerie-and-dramatic-background-sound",
+        "volume": 35,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 3",
+        "videoId": "Firepumpkin.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 6
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "sayThis",
+        "text": "Pumpkinhead counts his babies every night. Snap... snap... snap... ELEVEN. There were seventeen.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 5588
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 30,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 684
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 30,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 684
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 30,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 684
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 30,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 3267
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 7
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "Six babies, gone down the road. Sold. Under seal. By a clerk with a shaking pen."
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "audio",
+        "audioId": "old-wardrobe-door-squeaking-sound",
+        "volume": 55,
+        "jawSync": false
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "fleet-say",
+        "node": "Renfield",
+        "text": "[excited] A lawful conveyance, by quitclaim and under seal! Six pumpkins, duly sold... scribble, scribble... no refunds, so stipulated."
+      },
+      {
+        "type": "wait",
+        "duration": 700
+      },
+      {
+        "type": "pose",
+        "poseId": 5
+      },
+      {
+        "type": "pose",
+        "poseId": 4
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "sayThis",
+        "text": "Pumpkinhead did not sign. Pumpkinhead does not SIGN. The stalks have long roots, clerk... and longer memories.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 5579
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 40,
+        "duration": 800
+      },
+      {
+        "type": "wait",
+        "duration": 6277
+      },
+      {
+        "type": "pose",
+        "poseId": 11
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "audio",
+        "audioId": "rake-jumpscare-sound-effect",
+        "volume": 55,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 8
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "sayThis",
+        "text": "...Did the clerk sell one to YOU, little ember? Pumpkinhead smells the paper on your hands. Snap.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2916
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 36,
+        "duration": 350
+      },
+      {
+        "type": "wait",
+        "duration": 5333
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 36,
+        "duration": 350
+      },
+      {
+        "type": "wait",
+        "duration": 200
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "PumpkinHead"
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "PumpkinHead",
+        "reason": "pumpkinhead-scene"
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 7,
+    "name": "PumpkinHead: Go Ask the Clerk",
+    "description": "Send-off (~30 s): he leans toward the road and sends the guest to the bend to ask Renfield where his babies went (watch the pen shake), or up to the Count to ask why he lets Pumpkinhead grow; the stalks watch them leave.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "PumpkinHead",
+        "maxMs": 59698,
+        "reason": "pumpkinhead-scene"
+      },
+      {
+        "type": "pose",
+        "poseId": 4
+      },
+      {
+        "type": "sayThis",
+        "text": "Enough. Pumpkinhead has an errand for you, little ember."
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 8
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "sayThis",
+        "text": "Go to the bend in the road. Ask the mad clerk where Pumpkinhead's babies went. Watch his pen shake."
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "pose",
+        "poseId": 13
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "Or climb to the Count, and ask why he lets Pumpkinhead grow... Go. The stalks are watching you leave."
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "audio",
+        "audioId": "old-wardrobe-door-squeaking-sound",
+        "volume": 50,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 2
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "pose",
+        "poseId": 3
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "PumpkinHead",
+        "reason": "pumpkinhead-scene"
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 8,
+    "name": "PumpkinHead: Counting the Patch",
+    "description": "Fleet event 1 (the Lighting of the Castle, ~28 s): he counts the souls in his patch, one 0.5 s pulse at speed 35 on each count, and warns Renfield that the stalks know who took his babies. Ends at Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "Pumpkinhead counts his patch. Snap. One soul. Crack. Two. The stalks are counting too.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 4706
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 35,
+        "duration": 500
+      },
+      {
+        "type": "wait",
+        "duration": 1581
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 35,
+        "duration": 500
+      },
+      {
+        "type": "wait",
+        "duration": 3540
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "[laughs] Three more than yesterday. Two fewer than Pumpkinhead planted. Renfield... the stalks know who took them.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 35,
+        "duration": 500
+      },
+      {
+        "type": "wait",
+        "duration": 11699
+      },
+      {
+        "type": "wait",
+        "duration": 3974
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 9,
+    "name": "PumpkinHead: Not For Sale",
+    "description": "Fleet event 2 (the Count's orders, ~28 s): ordered to deliver fifty pumpkins, he protests that his babies are not for sale (a 0.8 s burst at speed 40 on 'Snap') and promises fifty cracks through the Count's windows (another burst on 'remember'). Ends at Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "Pumpkinhead's babies are not for sale! Snap. Renfield already sold six. Six! The stalks are counting, Count.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 4299
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 40,
+        "duration": 800
+      },
+      {
+        "type": "wait",
+        "duration": 6277
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "sayThis",
+        "text": "Fifty? Pumpkinhead will deliver fifty... cracks. Through your windows. The stalks remember, Count. The stalks always remember.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 10313
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 40,
+        "duration": 800
+      },
+      {
+        "type": "wait",
+        "duration": 4573
+      },
+      {
+        "type": "wait",
+        "duration": 338
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  },
+  {
+    "id": 10,
+    "name": "PumpkinHead: The Patch's Verse",
+    "description": "Fleet event 3 (the song, ~18 s): his verse of 'One Night, One Castle', a 0.4 s pulse at speed 35 on 'Snap', on 'crack' and on 'six'. Ends at Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "[sings] Snap go the stalks and crack goes the vine, Pumpkinhead's babies are his, not thine! Renfield sold six... the stalks keep score.",
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 35,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1890
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "reverse",
+        "speed": 35,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 7169
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 35,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 2489
+      },
+      {
+        "type": "wait",
+        "duration": 4752
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T17:00:00.000Z",
+    "updated": "2026-10-10T17:00:00.000Z"
+  }
+]
