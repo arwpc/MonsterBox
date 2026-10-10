@@ -1,206 +1,2973 @@
 [
   {
     "id": 1,
-    "characterId": 6,
+    "name": "Renfield: The Docket Never Sleeps",
+    "description": "Lurk, silent (~40 s): he keeps the docket of the road alone, jotting, striking out, dotting, a signature flourish and two shivers of delight.",
     "steps": [
       {
-        "type": "sayThis",
-        "text": "…whereas the party of the first part is NOCTURNAL… [chuckles] strike that — he'll love it. Keep it in.",
-        "concurrent": false
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "wait",
+        "duration": 800
       },
       {
         "type": "servo",
         "partId": "7",
-        "angle": 120,
-        "duration": 350,
-        "concurrent": false
+        "angle": 70,
+        "duration": 150
       },
       {
         "type": "servo",
         "partId": "7",
-        "angle": 60,
-        "duration": 350,
-        "concurrent": false
+        "angle": 110,
+        "duration": 150
       },
       {
         "type": "servo",
         "partId": "7",
-        "angle": 120,
-        "duration": 350,
-        "concurrent": false
+        "angle": 75,
+        "duration": 150
       },
       {
         "type": "servo",
         "partId": "7",
-        "angle": 60,
-        "duration": 350,
-        "concurrent": false
+        "angle": 115,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 105,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
       },
       {
         "type": "motor",
         "partId": "1",
         "direction": "forward",
         "speed": 55,
-        "duration": 1000,
-        "concurrent": true
+        "duration": 500
       },
       {
-        "type": "sayThis",
-        "text": "Moth. Eleven forty PM. Substantial. Entered. …The registry grows FAT tonight.",
-        "concurrent": false
-      }
-    ],
-    "name": "Lurk: Scribbling Transactions"
-  },
-  {
-    "id": 2,
-    "characterId": 6,
-    "steps": [
-      {
-        "type": "sayThis",
-        "text": "…and upon completion: one seat at the table. Perpetuity. Signed… [sighs] …unsigned. Pending.",
-        "concurrent": false
-      },
-      {
-        "type": "sayThis",
-        "text": "PENDING is not NO.",
-        "concurrent": false
-      }
-    ],
-    "name": "Lurk: The Gifts"
-  },
-  {
-    "id": 3,
-    "characterId": 6,
-    "steps": [
-      {
-        "type": "motor",
-        "partId": "1",
-        "direction": "forward",
-        "speed": 65,
-        "duration": 1400,
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "[chuckles] …seventeen souls, he says. SEVENTEEN. I have fifteen. The audit is coming, pumpkin. The audit is COMING.",
-        "concurrent": false
-      }
-    ],
-    "name": "Lurk: Giggle and Shake"
-  },
-  {
-    "id": 4,
-    "characterId": 6,
-    "steps": [
-      {
-        "type": "sayThis",
-        "text": "…dear master — per my last four hundred correspondences — I remain available. Punctual.",
-        "concurrent": false
+        "type": "wait",
+        "duration": 1800
       },
       {
         "type": "servo",
         "partId": "7",
-        "angle": 120,
-        "duration": 350,
-        "concurrent": false
+        "angle": 80,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 50,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 200
       },
       {
         "type": "servo",
         "partId": "7",
         "angle": 60,
-        "duration": 350,
-        "concurrent": false
+        "duration": 200
       },
       {
         "type": "servo",
         "partId": "7",
         "angle": 120,
-        "duration": 350,
-        "concurrent": false
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 200
+      },
+      {
+        "type": "pose",
+        "poseId": 8
+      },
+      {
+        "type": "wait",
+        "duration": 2200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 400
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 800,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 95,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 95,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "wait",
+        "duration": 1800
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "name": "Renfield: Notarizing the Moths",
+    "description": "Lurk, silent (~38 s): slow careful strokes, a frenzy of writing with a long tremble, three stamps in triplicate, counted taps, one more shudder.",
+    "steps": [
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1600
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 65,
+        "duration": 1200,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 125,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "wait",
+        "duration": 1800
+      },
+      {
+        "type": "pose",
+        "poseId": 12
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 12
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 12
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 450
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 450
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 450
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 450
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 450
+      },
+      {
+        "type": "pose",
+        "poseId": 6
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 45,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 135,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 50,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 250
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 700
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "name": "Renfield: Name for the Record",
+    "description": "Wake greeting (~10 s): a shiver and a scribble, then he begs the guest's name for the record and holds the pen up, waiting.",
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 70,
+        "duration": 600,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 150
+      },
+      {
+        "type": "sayThis",
+        "text": "[excited] A client! A CLIENT! Your name, if you please, for the record. Speak up, speak up... the pen is waiting.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "wait",
+        "duration": 4489
+      },
+      {
+        "type": "pose",
+        "poseId": 10
+      }
+    ],
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "name": "Renfield: The Vetting",
+    "description": "Story (~85 s): he vets a passer-by in three questions (name, trade, consideration), draws an indenture with the Count in triplicate, the Count answers from the hall, and the new client is sent up the hill.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Renfield",
+        "maxMs": 150000,
+        "reason": "renfield-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "10 - Creaking Gates",
+        "volume": 30,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "pose",
+        "poseId": 10
+      },
+      {
+        "type": "sayThis",
+        "text": "[excited] Whereas a traveller approaches the road! Question the first: your name. Let me write that down. Scribble, scribble... there.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 200
+      },
+      {
+        "type": "wait",
+        "duration": 5047
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 50,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "sayThis",
+        "text": "Question the second: your trade. Heretofore I have signed two bakers, a dentist and a moth. [chuckles] The moth drove a hard bargain.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 85,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 105,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 85,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 105,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 85,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 105,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 6001
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Pha Spinster Behaveorbedead Win H.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "sayThis",
+        "text": "Question the third, the consideration. What would you GIVE the Master? A Tuesday? A tooth? Your shadow, in fee simple?",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 65,
+        "duration": 800,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "wait",
+        "duration": 5449
+      },
+      {
+        "type": "pose",
+        "poseId": 15
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "sayThis",
+        "text": "So stipulated! An indenture with Count Orlok, in triplicate, witnessed by a moth. Sign here... and here... and HERE.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 300
       },
       {
         "type": "motor",
         "partId": "1",
         "direction": "forward",
         "speed": 70,
-        "duration": 1800,
+        "duration": 1000,
         "concurrent": true
       },
       {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 4947
+      },
+      {
+        "type": "pose",
+        "poseId": 12
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "pose",
+        "poseId": 12
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "pose",
+        "poseId": 12
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "fleet-say",
+        "node": "Orlok",
+        "text": "[Romanian accent] [breathes] Another name for your Lord, Renfield? Da. Send the client up the hill... slooowly."
+      },
+      {
+        "type": "pose",
+        "poseId": 14
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
         "type": "sayThis",
-        "text": "…And I shake, sometimes. So I know you are there.",
-        "concurrent": false
+        "text": "[whispers] He's pleased. He's PLEASED. Up the hill with you, client. Tell the Count Renfield drew it, and watch his face.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 150
+      },
+      {
+        "type": "wait",
+        "duration": 5603
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Renfield"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Renfield",
+        "reason": "renfield-scene"
       }
     ],
-    "name": "Lurk: Correspondence"
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
   },
   {
     "id": 5,
-    "name": "Lurk: Permit for a Bonfire",
+    "name": "Renfield: Pumpkins by Contract",
+    "description": "Story (~80 s): he sells a baby pumpkin from the patch by quitclaim and under seal, Pumpkinhead protests from the patch, the objection is overruled, the pumpkin burns in the roof window and the buyer is sent to collect.",
     "steps": [
       {
-        "type": "jaw-animation",
-        "action": "enable",
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Renfield",
+        "maxMs": 150000,
+        "reason": "renfield-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "haunting-music-box-melody",
+        "volume": 30,
+        "jawSync": false,
         "concurrent": true
       },
       {
-        "type": "sayThis",
-        "text": "Permit forty-one. One pumpkin. Ceremonial ignition. [chuckles] Approved.",
-        "concurrent": false
+        "type": "pose",
+        "poseId": 1
       },
       {
-        "type": "servo",
-        "partId": "7",
-        "angle": 120,
-        "duration": 350,
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "7",
-        "angle": 60,
-        "duration": 350,
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "7",
-        "angle": 120,
-        "duration": 350,
-        "concurrent": false
-      },
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-192-168-8-14",
-        "videoId": "Firepumpkin.mp4",
-        "loop": false,
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "Look — the window! Burning exactly as filed. The Master will be so pleased.",
-        "concurrent": false
+        "type": "wait",
+        "duration": 1000
       },
       {
         "type": "motor",
         "partId": "1",
         "direction": "forward",
-        "speed": 55,
-        "duration": 1000,
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "sayThis",
+        "text": "[chuckles] Pumpkins! Fine baby pumpkins, conveyed by quitclaim, fresh from the patch. Whereas the patch is... technically... not mine. Details.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 200
+      },
+      {
+        "type": "wait",
+        "duration": 6634
+      },
+      {
+        "type": "pose",
+        "poseId": 15
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "One pumpkin, under seal, to the party of the first part. That is you. Let me write that down... SOLD!",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 4608
+      },
+      {
+        "type": "pose",
+        "poseId": 12
+      },
+      {
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "fleet-say",
+        "node": "PumpkinHead",
+        "text": "Pumpkinhead heard that. Snap. The clerk sold ANOTHER baby. Pumpkinhead did not sign... and the stalks are counting, Renfield."
+      },
+      {
+        "type": "pose",
+        "poseId": 14
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Opposing counsel objects. Overruled! Null and void. Clause nine: pumpkins cannot sign. The pen, the PEN, quickly...",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 45,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 135,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 50,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 45,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 135,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 50,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 45,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 135,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 50,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 45,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 135,
+        "duration": 150
+      },
+      {
+        "type": "wait",
+        "duration": 6141
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 3",
+        "videoId": "Firepumpkin.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 16
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "Look, the roof window! Your pumpkin, ripening nicely. Collect it from Pumpkinhead himself, and show him the seal.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 3972
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "[sighs] He does not love the seal.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1194
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Renfield"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Renfield",
+        "reason": "renfield-scene"
+      }
+    ],
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "name": "Renfield: The Oldest Deed",
+    "description": "Story (~75 s): he opens the oldest deed in the registry, finds a name from 1462 he will not say, trembles, and the knight warns the guest off; the guest carries word to the knight.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Renfield",
+        "maxMs": 150000,
+        "reason": "renfield-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "whispers-of-the-haunted-sounds",
+        "volume": 35,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 85,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 95,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 85,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 95,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] The registry, the oldest drawer. A deed, heretofore unread, older than the castle stones. One moment, the pen.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 5384
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Pha Wraith Soulseeker Win H.mp4",
+        "waitMs": 0,
         "concurrent": true
       },
       {
         "type": "wait",
-        "duration": 4000,
-        "concurrent": false
+        "duration": 700
       },
       {
         "type": "sayThis",
-        "text": "[whispers] Stamp it, stamp it, stamp it.",
-        "concurrent": false
+        "text": "Fourteen sixty-two. Signed in a hand I know... a name I will NOT read aloud. Strike that from the record!",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 200
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 75,
+        "duration": 1200,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 100,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 200
+      },
+      {
+        "type": "wait",
+        "duration": 5833
+      },
+      {
+        "type": "audio",
+        "audioId": "suspenseful-violin-sound-effect",
+        "volume": 45,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 14
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "sayThis",
+        "text": "Per my last correspondence with eternity, some names are sworn before me and kept. Kept, kept. The ink still moves, you see.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 90,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 6178
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "fleet-say",
+        "node": "Sir Dragomir",
+        "text": "[Romanian accent] Sign nothing, traveller. Tell the clerk the knight said so."
+      },
+      {
+        "type": "pose",
+        "poseId": 6
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "sayThis",
+        "text": "[chuckles] Opposing counsel. Noted, noted. Tell the knight the east file is secure. And you saw nothing. Affidavit to follow.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "wait",
+        "duration": 5606
+      },
+      {
+        "type": "pose",
+        "poseId": 10
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Renfield"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Renfield",
+        "reason": "renfield-scene"
       }
     ],
-    "created": "2026-10-05T22:20:55.159Z"
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
+  },
+  {
+    "id": 7,
+    "name": "Renfield: Collect from Pumpkinhead",
+    "description": "Send-off (~35 s): he writes the guest a receipt in triplicate, points the pen down the road to the patch, Pumpkinhead counts his babies coldly, and the guest is sent on to collect.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Renfield",
+        "maxMs": 90000,
+        "reason": "renfield-scene"
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 70,
+        "duration": 600,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 200
+      },
+      {
+        "type": "sayThis",
+        "text": "[excited] Your receipt! Duly recorded, in triplicate, by order of the Master. Take it down the road and present it to Pumpkinhead himself.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 200
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 65,
+        "duration": 900,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 200
+      },
+      {
+        "type": "wait",
+        "duration": 5751
+      },
+      {
+        "type": "pose",
+        "poseId": 16
+      },
+      {
+        "type": "sayThis",
+        "text": "Should he snap, recite clause four: notwithstanding all objections, the pumpkin is yours. Should he still snap... run. Off you go!",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 200
+      },
+      {
+        "type": "wait",
+        "duration": 7268
+      },
+      {
+        "type": "fleet-say",
+        "node": "PumpkinHead",
+        "text": "Another paper from the clerk? Pumpkinhead counts... eleven babies left. Which one did the clerk sell YOU?"
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 75,
+        "duration": 1200,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Renfield",
+        "reason": "renfield-scene"
+      }
+    ],
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
+  },
+  {
+    "id": 8,
+    "name": "Renfield: The Covenant",
+    "description": "Fleet event 1 (ceremony, ~30 s): the pen scribbles before the first word and under every line; he reads the covenant of the night, shakes at the Count's name, begs the sidewalk to sign; three more strokes; Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 400
+      },
+      {
+        "type": "sayThis",
+        "text": "Whereas! The night is hereby convened. Witnesseth: the party of the first part, Count Orlok, holds this ground in perpetuity.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 250
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 600,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 4889
+      },
+      {
+        "type": "sayThis",
+        "text": "Let it be written. Let it be... [frantic] written! Sign here, sidewalk. Sign here!",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 3142
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 40,
+        "duration": 400
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 400
+      },
+      {
+        "type": "pose",
+        "poseId": 10
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
+  },
+  {
+    "id": 9,
+    "name": "Renfield: Everything Is Recorded",
+    "description": "Fleet event 2 (orders, ~32 s): the pen never stops, 300 ms strokes under every word; he records the knight's refusal, drafts the patch contract and shakes on 'signed'; Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "Recorded! \"The knight refused.\" Underlined twice. Heretofore and notwithstanding, the party of the second part is... a pumpkin.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 5011
+      },
+      {
+        "type": "sayThis",
+        "text": "[frantic] A contract for the patch, witnesseth, in perpetuity... signed, sealed... delivered! Master, it is DONE. Who else wants one?",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 300
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 70,
+        "duration": 800,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 50,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 50,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 140,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 50,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 4186
+      },
+      {
+        "type": "pose",
+        "poseId": 10
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 300
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
+  },
+  {
+    "id": 10,
+    "name": "Renfield: The Solicitor's Verse",
+    "description": "Fleet event 3 (song, ~18 s): the pen taps time, a 250 ms stroke about every 650 ms, through his verse; the shake lands on 'Count'; Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "[sings] Whereas, heretofore, and party of the first, I'll write your name, I'll write it worst! A contract for the Count tonight. Sign here! All right!",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 250
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 250
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 4278
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ],
+    "created": "2026-10-10T18:00:00.000Z",
+    "updated": "2026-10-10T18:00:00.000Z"
   }
 ]

@@ -1,5 +1,421 @@
 {
   "characterId": 6,
-  "poses": [],
+  "poses": [
+    {
+      "id": 1,
+      "name": "Home",
+      "category": "home",
+      "description": "Pen at rest over the ledger, nib centred (90).",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 90
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Idle: Quick Note",
+      "category": "idle",
+      "description": "A fast jot to the right.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 120
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z",
+      "weight": 14,
+      "holdVariance": 2500
+    },
+    {
+      "id": 3,
+      "name": "Idle: Cross It Out",
+      "category": "idle",
+      "description": "The nib swings back to strike a line out.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 55
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z",
+      "weight": 12,
+      "holdVariance": 2500
+    },
+    {
+      "id": 4,
+      "name": "Idle: Underline, Shuddering",
+      "category": "idle",
+      "description": "A long underline and a small shudder of excitement.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 135
+          }
+        },
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 55,
+            "duration": 450
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z",
+      "weight": 8,
+      "holdVariance": 3000
+    },
+    {
+      "id": 5,
+      "name": "Idle: Dot the I",
+      "category": "idle",
+      "description": "A short tap left of centre.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 75
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z",
+      "weight": 12,
+      "holdVariance": 2000
+    },
+    {
+      "id": 6,
+      "name": "Idle: The Tremor",
+      "category": "idle",
+      "description": "The hand shakes; the pen jumps with it.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 105
+          }
+        },
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 60,
+            "duration": 600
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z",
+      "weight": 6,
+      "holdVariance": 3500
+    },
+    {
+      "id": 7,
+      "name": "Idle: Margin Note",
+      "category": "idle",
+      "description": "Far left, a note in the margin.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 45
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z",
+      "weight": 10,
+      "holdVariance": 2500
+    },
+    {
+      "id": 8,
+      "name": "Idle: Signature Flourish",
+      "category": "idle",
+      "description": "A wide flourish to the right and a little shiver.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 140
+          }
+        },
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 50,
+            "duration": 500
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z",
+      "weight": 6,
+      "holdVariance": 3000
+    },
+    {
+      "id": 9,
+      "name": "Idle: Back to the Ledger",
+      "category": "idle",
+      "description": "The nib returns to the line, just off centre.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 95
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z",
+      "weight": 10,
+      "holdVariance": 2000
+    },
+    {
+      "id": 10,
+      "name": "Pen Raised: Whereas!",
+      "category": "scene",
+      "description": "Pen lifted high, about to pronounce.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 140
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z"
+    },
+    {
+      "id": 11,
+      "name": "Pen Down: Sign Here",
+      "category": "scene",
+      "description": "Pen thrust down at the dotted line.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 40
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z"
+    },
+    {
+      "id": 12,
+      "name": "The Seal",
+      "category": "scene",
+      "description": "Stamp: nib slammed down and the whole body jolts.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 40
+          }
+        },
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 70,
+            "duration": 600
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z"
+    },
+    {
+      "id": 13,
+      "name": "The Master Named",
+      "category": "scene",
+      "description": "The name of the Master: a full-body shake, pen trembling mid-stroke.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 100
+          }
+        },
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 70,
+            "duration": 1000
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z"
+    },
+    {
+      "id": 14,
+      "name": "The Great Tremble",
+      "category": "scene",
+      "description": "Overcome: the longest shake, pen thrown wide.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 60
+          }
+        },
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 80,
+            "duration": 1500
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z"
+    },
+    {
+      "id": 15,
+      "name": "Presenting the Paper",
+      "category": "scene",
+      "description": "Pen held out toward the guest.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 125
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z"
+    },
+    {
+      "id": 16,
+      "name": "Toward the Patch",
+      "category": "scene",
+      "description": "Pen pointed down the road toward Pumpkinhead's patch.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "linear",
+      "transitionDurationMs": 200,
+      "parts": [
+        {
+          "partId": 7,
+          "type": "servo",
+          "target": {
+            "angleDeg": 140
+          }
+        },
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 50,
+            "duration": 400
+          }
+        }
+      ],
+      "created": "2026-10-10T18:00:00.000Z"
+    }
+  ],
   "templates": {}
 }
