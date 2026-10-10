@@ -72,4 +72,8 @@ systemctl restart systemd-journald && echo "   journald: persistent, 48M cap, 8M
 say "7. HDMI mixer"
 if amixer -c 0 scontrols 2>/dev/null | grep -q "'PCM'"; then amixer -c 0 sset PCM 100% >/dev/null && alsactl store 2>/dev/null && echo "   card0 PCM -> $(amixer -c 0 sget PCM | grep -oE '\[[0-9]+%\]' | head -1) stored"; else echo "   card0 has no PCM control (vc4 HDMI is full scale)"; fi
 
+say "8. clock (America/Chicago + NTP)"
+timedatectl set-timezone "${MB_TIMEZONE:-America/Chicago}" 2>/dev/null; timedatectl set-ntp true 2>/dev/null
+echo "   $(timedatectl show -p Timezone -p NTP -p NTPSynchronized --value 2>/dev/null | tr '\n' ' ')$(date '+%F %T %Z')"
+
 say "done — reboot to apply the clock change: sudo reboot"

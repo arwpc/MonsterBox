@@ -142,6 +142,7 @@ Each character at `data/character-{id}/` contains:
 ### Multi-node (MonsterNet) / mDNS discovery
 - `npm run deploy:all` — deploy the current code to **every** animatronic in `config/animatronics.json` (parallel, `--dry-run` to preview). SSH creds from `MONSTERBOX_SSH_PASSWORD`.
 - `npm run check:discovery` — fleet who-sees-whom matrix (spots nodes up-but-not-discovered)
+- `npm run check:time` — fleet clock matrix (every Pi on America/Chicago, NTP on, synchronized, offset from this node); schedules, quiet hours and the half-hour fleet events are local time on every node. `apply-baseline.sh` and the Goblin provisioning scripts converge timezone + NTP.
 - `npm run advertise-node` — write this node's `_monsterbox._tcp` avahi service file (also done on server startup and by the deploy)
 - `npm run earcheck` — fleet ear-check (`scripts/fleet-audio/earcheck.mjs`). It shells into each node over key-based SSH; a node it cannot shell into is scored `OFFLINE — no ssh/shell reachability` even while that node is serving fine. Run real ear-checks from Orlok (the node holding fleet SSH trust) and confirm any `OFFLINE` with `curl -sk https://<peer>:3000/health` before believing a node is down.
 - `ssh remote@<ip>` lands in `/home/remote`, NOT the repo. Remote commands need absolute paths (`/home/remote/MonsterBox/...`) or a `cd` first — a bare `npm run …` over SSH fails in a way that reads like a missing script.

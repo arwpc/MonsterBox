@@ -50,6 +50,10 @@ systemctl disable lightdm.service display-manager.service >/dev/null 2>&1
 systemctl disable getty@tty1.service >/dev/null 2>&1
 echo "   default target: $(systemctl get-default); lightdm: $(systemctl is-enabled lightdm.service 2>/dev/null)"
 
+say "5b. clock (America/Chicago + NTP; show schedules are local time on every node)"
+timedatectl set-timezone "${MB_TIMEZONE:-America/Chicago}" 2>/dev/null; timedatectl set-ntp true 2>/dev/null
+echo "   $(timedatectl show -p Timezone -p NTP -p NTPSynchronized --value 2>/dev/null | tr '\n' ' ')$(date '+%F %T %Z')"
+
 say "6. OS hygiene (stabilize-goblin.sh)"
 [ -f "$D/stabilize-goblin.sh" ] && bash "$D/stabilize-goblin.sh"
 

@@ -212,6 +212,34 @@ else
   ok "secrets: /etc/monsterbox/env present"
 fi
 
+# 8. Clock. Schedules, quiet hours and the half-hour fleet events are written in local time and
+#    compared across nodes, so a node on UTC or with NTP off fires shows at the wrong hour and its
+#    logs cannot be lined up with the others (mission decision D8, 2026-10-09: every Pi on
+#    America/Chicago with systemd-timesyncd). Converges timezone and NTP; only reports sync state.
+TZ_WANT="${MB_TIMEZONE:-America/Chicago}"
+if [ -n "$P" ]; then
+  ok "clock: timezone/NTP check skipped under the test prefix"
+else
+  tz_now="$(timedatectl show -p Timezone --value 2>/dev/null || true)"
+  if [ "$tz_now" != "$TZ_WANT" ]; then
+    timedatectl set-timezone "$TZ_WANT" && changed "clock: timezone ${tz_now:-unset} -> $TZ_WANT"
+  else
+    ok "clock: timezone $TZ_WANT"
+  fi
+  ntp_now="$(timedatectl show -p NTP --value 2>/dev/null || true)"
+  if [ "$ntp_now" != "yes" ]; then
+    timedatectl set-ntp true && changed "clock: NTP enabled (was ${ntp_now:-unknown})"
+  else
+    ok "clock: NTP on"
+  fi
+  sync_now="$(timedatectl show -p NTPSynchronized --value 2>/dev/null || true)"
+  if [ "$sync_now" = "yes" ]; then
+    ok "clock: synchronized ($(date '+%F %T %Z'))"
+  else
+    printf '  [warn]    clock: NOT synchronized yet (NTPSynchronized=%s) - check the network and systemd-timesyncd\n' "${sync_now:-unknown}"
+  fi
+fi
+
 sys systemctl daemon-reload 2>/dev/null || true
 
 echo "== $HOST: $CHANGES change(s)"

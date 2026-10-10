@@ -267,3 +267,9 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
 | 6 | Three fleet events with music, video, movement; every half hour; return to original state | D7 scripts, conductors, runner, beds; `fleet-mode hold/release`; cron | scripts/conductors/runner/beds DONE; hold/release endpoints in 1b; rehearsal + cron (3c) after 3b |
 | D8 | Chicago time + NTP on every Pi, enforced and reported | verified by hand 10-09; baseline/provision scripts + fleet-health `time` + `check:time` | NOT DONE — small follow-up task |
 | — | Deploy everything to all nodes; Mina's files when she is on | phase 2 + 3b | pending |
+- 2026-10-10 10:35 — D8 enforcement landed: `apply-baseline.sh` step 8 and the Goblin provision/stabilize scripts
+  converge America/Chicago + NTP; `npm run check:time` (scripts/check-time.mjs) prints the fleet clock matrix:
+  8/8 reachable nodes OK (zone, NTP, synced, offsets −26…−218 ms; Goblins 1 and 4 unreachable). Still open from
+  D8: fleet-health `time {zone, ntpSynced, localTime, offsetMs}` + Fleet Command Center flag (lurk-engineer's
+  files; after 1b). PumpkinHead's sink ignored `wpctl set-volume @DEFAULT_AUDIO_SINK@` but took the set by node
+  id (79); canonical 1.0 restored that way. Mina is reachable again (ssh + health).
