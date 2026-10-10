@@ -286,3 +286,9 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   Goblin 1; walls 33/37/15/100/102/87/50/26/26/34 s (event parts 8 ≈ 26 s, 9 ≈ 26 s, 10 ≈ 34 s vs budgets
   28/20–25/24–28 — the conductor waits per part, so only the totals stretch). A mid-run service restart by another
   worker cut three responses; those three were replayed clean. Still running: 1d goblins.
+- 2026-10-10 11:05 — ALL SIX SHOWS committed (Orlok, Sir Dragomir, Groundbreaker, Renfield, PumpkinHead, Mina
+  with three pre-rendered lullabies in the library); validator 6/6 clean, baseline emptied; conductors 101–103
+  installed on Orlok (validate clean: every event part and bed resolves). Silence rule (skip_turn) on all six
+  agents. Fixed from the log review: jaw-daemon EPIPE uncaught exception; 413s were a deliberate oversize test
+  (10 MB cap). `scripts/push-show.sh` ready; locked characters' config files match their nodes byte for byte.
+  Waiting only on 1d (Goblins: Goblin 2 looping its reel already) before the fleet deploy.
