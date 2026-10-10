@@ -134,5 +134,73 @@
       }
     ],
     "name": "Lurk: Correspondence"
+  },
+  {
+    "id": 5,
+    "name": "Lurk: Permit for a Bonfire",
+    "steps": [
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Permit forty-one. One pumpkin. Ceremonial ignition. [chuckles] Approved.",
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 350,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 350,
+        "concurrent": false
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 350,
+        "concurrent": false
+      },
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-192-168-8-14",
+        "videoId": "Firepumpkin.mp4",
+        "loop": false,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Look — the window! Burning exactly as filed. The Master will be so pleased.",
+        "concurrent": false
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 1000,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 4000,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispers] Stamp it, stamp it, stamp it.",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-10-05T22:20:55.159Z"
   }
 ]

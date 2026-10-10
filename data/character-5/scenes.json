@@ -1,24 +1,150 @@
 [
   {
     "id": 1,
-    "name": "Groundbreaker Insult Loop",
+    "name": "Lurk: Hello Down There",
     "steps": [
       {
-        "type": "motor",
-        "partId": "1",
-        "speed": 100,
-        "duration": 2000,
+        "type": "jaw-animation",
+        "action": "enable",
         "concurrent": true
       },
       {
         "type": "sayThis",
-        "text": "You want some of this? I'll tear you apart and bury you in pieces!"
+        "text": "[laughs] HI! HI DOWN THERE! GROUNDBREAKER SEE YOU!",
+        "concurrent": false
       },
       {
         "type": "wait",
-        "duration": 30000
+        "duration": 3000,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "COME SAY HI! GROUNDBREAKER NICE!",
+        "concurrent": false
       }
     ],
-    "created": "2025-10-24T02:45:00.000Z"
+    "created": "2025-10-24T02:45:00.000Z",
+    "updated": "2026-10-05T22:20:54.523Z"
+  },
+  {
+    "id": 2,
+    "name": "Lurk: Skull Friend",
+    "steps": [
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "LOOK! LOOK AT TV!",
+        "concurrent": false
+      },
+      {
+        "type": "goblin-video",
+        "goblinId": "goblin-192-168-8-14",
+        "videoId": "Bigskull.mp4",
+        "loop": false,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "SKULL FRIEND! SKULL TALK! [laughs]",
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 5000,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "SKULL FUNNY. GROUNDBREAKER LIKE SKULL.",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-10-05T22:20:54.647Z"
+  },
+  {
+    "id": 3,
+    "name": "Lurk: Rock War",
+    "steps": [
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "LONG AGO. BIG WALL. ROCKS GO DOWN!",
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 1200,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "ARMY GO HOME! [laughs] BEST DAY.",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-10-05T22:20:54.793Z"
+  },
+  {
+    "id": 4,
+    "name": "Lurk: Costume Parade",
+    "steps": [
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "GOOD COSTUMES! VERY SCARY!",
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 1500,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "GROUNDBREAKER SCARED! ...NO. [laughs] GROUNDBREAKER HAPPY!",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-10-05T22:20:54.899Z"
+  },
+  {
+    "id": 5,
+    "name": "Lurk: Castle Friends",
+    "steps": [
+      {
+        "type": "jaw-animation",
+        "action": "enable",
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "COUNT IS BOSS. KNIGHT TALK TALK TALK.",
+        "concurrent": false
+      },
+      {
+        "type": "wait",
+        "duration": 1000,
+        "concurrent": false
+      },
+      {
+        "type": "sayThis",
+        "text": "PUMPKIN MAN SHAKE. RENFIELD EAT BUGS. YUCK! GO SAY HI!",
+        "concurrent": false
+      }
+    ],
+    "created": "2026-10-05T22:20:55.001Z"
   }
 ]

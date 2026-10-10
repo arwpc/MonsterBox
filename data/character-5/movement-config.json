@@ -1,20 +1,21 @@
 {
-  "characterPersonality": "heavy_slow",
   "idle": {
     "enabled": false,
-    "minHoldMs": 8000,
-    "maxHoldMs": 20000,
-    "transitionDurationMs": 4000,
-    "defaultEasing": "ease_in"
+    "minHoldMs": 3000,
+    "maxHoldMs": 8000,
+    "transitionDurationMs": 2000,
+    "defaultEasing": "ease_in_out",
+    "steppedTransitions": true,
+    "jitterDeg": 0,
+    "distanceWeighting": true
   },
   "microMovement": {
     "enabled": false,
-    "breathingAmplitudeDeg": 1,
-    "breathingPeriodMs": 7000,
-    "driftAmplitudeDeg": 0.5,
-    "driftPeriodMs": 10000,
-    "jitterAmplitudeDeg": 0,
-    "jitterIntervalMs": 0
+    "breathingAmplitudeDeg": 2,
+    "breathingPeriodMs": 4000,
+    "driftAmplitudeDeg": 1,
+    "driftPeriodMs": 7000
   },
+  "characterPersonality": "default",
   "servoTransitions": {}
 }

@@ -18,10 +18,11 @@
     "enabled": true,
     "config": {
       "maxDuration": 5000,
-      "controlBoard": "BTS7960"
+      "controlBoard": "BTS7960",
+      "modelId": "motor_jeep_wagoneer_wiper"
     },
     "controlBoard": "BTS7960",
-    "updated": "2025-10-17T19:23:33.217Z",
+    "updated": "2026-09-12T17:45:00.000Z",
     "modelId": "motor_jeep_wagoneer_wiper"
   },
   {
@@ -34,20 +35,22 @@
     "fps": 30,
     "description": "USB webcam for video capture",
     "created": "2025-10-14T00:00:00.000Z",
-    "enabled": true
+    "enabled": true,
+    "modelId": "default-uvc-1",
+    "updated": "2026-09-07T00:30:37.361Z"
   },
   {
     "id": "3",
     "characterId": 5,
     "name": "Groundbreaker Speaker",
     "type": "speaker",
+    "deviceName": "default",
+    "volume": 80,
     "description": "Audio output speaker",
-    "config": {
-      "audioDeviceId": "default",
-      "volume": 85
-    },
     "created": "2025-10-14T00:00:00.000Z",
-    "enabled": true
+    "enabled": true,
+    "modelId": "default_speaker",
+    "updated": "2026-09-07T00:30:45.495Z"
   },
   {
     "id": "4",
@@ -57,12 +60,13 @@
     "deviceIndex": 0,
     "sampleRate": 16000,
     "channels": 1,
-    "description": "Webcam microphone for audio input",
+    "description": "Mic input on the Unitek Y-247A USB audio adapter (the webcam that formerly carried the mic no longer enumerates)",
     "created": "2025-10-14T00:00:00.000Z",
     "enabled": true,
     "config": {
-      "deviceId": "alsa_input.usb-HHWei_Technology_Co.__Ltd._USB_Camera_HHW001-02.analog-stereo"
+      "deviceId": "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback"
     },
-    "updated": "2025-10-17T19:23:01.992Z"
+    "updated": "2026-09-22T23:30:00.000Z",
+    "modelId": "mic_generic_usb"
   }
 ]

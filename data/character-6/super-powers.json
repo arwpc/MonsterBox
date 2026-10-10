@@ -7,7 +7,7 @@
     "configs": [],
     "_why": "There is no jaw servo and no PCA9685 to drive one. Enabling this would start the jaw servo daemon and the audio-envelope pipeline against a servoPartId that cannot resolve, burning CPU on an RPi during speech for no motion. servoPartId is null rather than pointing at part 1 (the shake motor) because a motor is not a jaw and the daemon would try to claim a PWM channel that does not exist on this node.",
     "ledSync": {
-      "enabled": true,
+      "enabled": false,
       "partId": "5",
       "colorLow": [
         70,
@@ -59,7 +59,7 @@
     "triggers": {
       "agentGesture": true,
       "guestCommand": true,
-      "ambientDuringSpeech": false
+      "ambientDuringSpeech": true
     },
     "permissions": {
       "allowedRoles": [
