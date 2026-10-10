@@ -422,7 +422,8 @@ test.describe('AI Settings conversation, agent and lurk panels', () => {
         // Wake / Sleep follow the server's state, never a local guess.
         const awake = ls.state === 'awake' || ls.agentLive === true;
         await expect.poll(async () => page.locator('#lurkWakeBtn').isDisabled(), { timeout: 8000 }).toBe(awake);
-        expect(await page.locator('#lurkSleepBtn').isDisabled()).toBe(!awake);
+        // Exactly one of the two is offered, whatever the state is by now.
+        expect(await page.locator('#lurkSleepBtn').isDisabled()).toBe(!(await page.locator('#lurkWakeBtn').isDisabled()));
 
         // Save: the guard answers it; assert the payload.
         await page.fill('#lurkInactivitySec', '600');
@@ -433,12 +434,15 @@ test.describe('AI Settings conversation, agent and lurk panels', () => {
         expect(typeof saved.pirWake).toBe('boolean');
         expect(Array.isArray(saved.capabilityOptOut)).toBe(true);
 
-        // Whichever of Wake/Sleep is enabled posts to its endpoint (guard answers).
-        const btn = awake ? '#lurkSleepBtn' : '#lurkWakeBtn';
-        const endpoint = awake ? '/conversation/api/sleep' : '/conversation/api/wake';
+        // Whichever of Wake/Sleep is enabled NOW posts to its endpoint (guard answers).
+        // Read it off the page: a live node can fall asleep between the read above and
+        // this click (seen 2026-10-10: state 'awake' read, page already 'lurking').
+        const sleepEnabled = !(await page.locator('#lurkSleepBtn').isDisabled());
+        const btn = sleepEnabled ? '#lurkSleepBtn' : '#lurkWakeBtn';
+        const endpoint = sleepEnabled ? '/conversation/api/sleep' : '/conversation/api/wake';
         await page.click(btn);
         await expect.poll(() => hazards.filter(h => h.path.endsWith(endpoint)).length).toBe(1);
-        if (!awake) expect(hazards.find(h => h.path.endsWith(endpoint)).body).toMatchObject({ source: 'ai-settings', explicit: true });
+        if (!sleepEnabled) expect(hazards.find(h => h.path.endsWith(endpoint)).body).toMatchObject({ source: 'ai-settings', explicit: true });
     });
 
     test('renders for a second character through ?characterId', async ({ page }) => {

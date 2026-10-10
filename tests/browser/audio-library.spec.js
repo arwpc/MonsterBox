@@ -3,7 +3,7 @@
  * Validates all functionality on /audio-library page (table-based interface)
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation, ErrorTracker, getAllInteractiveElements } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';

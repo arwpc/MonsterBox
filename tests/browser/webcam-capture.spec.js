@@ -4,7 +4,7 @@
  * Uses mjpg-streamer snapshot endpoint (production capture path)
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import http from 'http';
 import fs from 'fs';
 

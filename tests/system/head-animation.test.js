@@ -1,3 +1,4 @@
+import { testableParts } from '../helpers/testableParts.mjs';
 import { expect } from 'chai';
 import request from 'supertest';
 import fs from 'fs/promises';
@@ -247,7 +248,8 @@ describe('Head Animation API', () => {
         .get(`/setup/head-animation/api/head-tracking/${CHARACTER_ID}`)
         .expect(200);
 
-      const servos = servosRes.body.availableServos || [];
+      // The sweep below MOVES the servo: never a broken/hazard part.
+      const servos = testableParts(CHARACTER_ID, servosRes.body.availableServos || []);
       if (servos.length === 0) {
         // Skip if no servos available (test environment without hardware)
         return;
@@ -330,8 +332,8 @@ describe('Head Animation API', () => {
         .get(`/setup/head-animation/api/head-tracking/${CHARACTER_ID}`)
         .expect(200);
 
-      // All servos for Orlok should have config info
-      const servos = res.body.availableServos || [];
+      // All servos of the selected character should carry config info
+      const servos = testableParts(CHARACTER_ID, res.body.availableServos || []);
       servos.forEach(servo => {
         expect(servo).to.have.property('config');
         // servoType should be present in config

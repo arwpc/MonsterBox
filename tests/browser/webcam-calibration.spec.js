@@ -4,7 +4,7 @@
  * Tests Controls, Edit, Model/Overrides, Safety, and Advanced tabs for webcam parts
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
@@ -380,6 +380,10 @@ test.describe('Webcam in Calibration Page', () => {
     await expect(saveBtn).toContainText('Save Tracking Settings');
   });
 
+  // :3100 is the live node, and this used to PUT 42/8/90 into its real webcam
+  // part and never put them back (the node's webcam part still carries them). The save is
+  // now answered in-page and its payload asserted; the reload half proves the page
+  // shows what the SERVER stores, whatever that is.
   test('should save and reload tracking settings', async () => {
     const webcamItem = page.locator('#deviceList .list-group-item').filter({ hasText: /webcam/i }).first();
     await webcamItem.click();
@@ -389,45 +393,42 @@ test.describe('Webcam in Calibration Page', () => {
     await advTab.click();
     await page.waitForTimeout(300);
 
-    // Set custom values via JS (sliders may be hidden until motion tracking enabled)
     await page.evaluate(() => {
       var t = document.getElementById('calMotionThreshold'); if (t) { t.value = '42'; t.dispatchEvent(new Event('input')); }
       var d = document.getElementById('calTrackingDeadzone'); if (d) { d.value = '8'; d.dispatchEvent(new Event('input')); }
       var r = document.getElementById('calHeadTrackingRange'); if (r) { r.value = '90'; r.dispatchEvent(new Event('input')); }
     });
 
-    // Listen for dialog (alert from showToast is not a dialog, so intercept the API)
-    const saveResponse = page.waitForResponse(resp =>
-      resp.url().includes('/api/parts/') && resp.request().method() === 'PUT'
-    );
-
-    // Click save
+    let saved = null;
+    await page.route(/\/api\/parts\/[^/?]+(\?|$)/, async (route) => {
+      if (route.request().method() !== 'PUT') return route.fallback();
+      saved = route.request().postDataJSON();
+      return route.fulfill({ json: { success: true, intercepted: true } });
+    });
     await page.locator('#calSaveAdvancedBtn').click();
-    const resp = await saveResponse;
-    const body = await resp.json();
-    expect(body.success).toBe(true);
+    await expect.poll(() => saved, { timeout: 5000 }).not.toBeNull();
+    const cfg = saved.config || saved;
+    expect(cfg.motionTracking.motionThreshold).toBe(42);
+    expect(cfg.motionTracking.trackingDeadzone).toBe(8);
+    expect(cfg.headTracking.rangeDeg).toBe(90);
+    await page.unroute(/\/api\/parts\/[^/?]+(\?|$)/);
 
-    // Reload page and verify values persisted
+    // Reload: the page must show what the server stores.
+    const id = await webcamItem.getAttribute('data-part-id').catch(() => null);
     await page.goto(BASE_URL + '/setup/calibration', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#deviceList', { state: 'attached', timeout: 10000 });
     await page.waitForTimeout(2000);
-
-    // Re-select webcam and go to Advanced tab
     const webcamItem2 = page.locator('#deviceList .list-group-item').filter({ hasText: /webcam/i }).first();
     await webcamItem2.click();
     await page.waitForTimeout(500);
-
-    const advTab2 = page.locator('button[data-bs-target="#tabAdvanced"]');
-    await advTab2.click();
+    await page.locator('button[data-bs-target="#tabAdvanced"]').click();
     await page.waitForTimeout(300);
-
-    // Check values were loaded from saved config
-    const threshVal = await page.locator('#calMotionThreshold').inputValue();
-    expect(threshVal).toBe('42');
-    const deadVal = await page.locator('#calTrackingDeadzone').inputValue();
-    expect(deadVal).toBe('8');
-    const rangeVal = await page.locator('#calHeadTrackingRange').inputValue();
-    expect(rangeVal).toBe('90');
+    const parts = await (await page.request.get(`${BASE_URL}/api/parts`)).json();
+    const list = Array.isArray(parts) ? parts : (parts.parts || []);
+    const webcam = list.find(p => (id ? String(p.id) === String(id) : p.type === 'webcam'));
+    const mt = (webcam && webcam.config && webcam.config.motionTracking) || {};
+    if (mt.motionThreshold != null) expect(await page.locator('#calMotionThreshold').inputValue()).toBe(String(mt.motionThreshold));
+    if (mt.trackingDeadzone != null) expect(await page.locator('#calTrackingDeadzone').inputValue()).toBe(String(mt.trackingDeadzone));
   });
 
   test('should show stream preview in Advanced tab', async () => {

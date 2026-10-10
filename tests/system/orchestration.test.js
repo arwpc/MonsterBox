@@ -13,6 +13,15 @@ import request from 'supertest';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3100';
 
+// FLEET FAN-OUT IS OPT-IN (2026-10-10). The :3100 listener is the LIVE node
+// (NODE_ENV=production, MB_TEST_MODE unset on the service), so MB_TEST_MODE on the
+// mocha client protects nothing: superpower/volume/transport/emergency-stop/say-all
+// really act on every reachable animatronic, and even this file's "restore" hook
+// fans this node's state out to every peer. Without MB_ALLOW_FLEET_FANOUT=1 only the
+// read-only and validation tests run, and the capture/restore hooks do nothing.
+const FANOUT = process.env.MB_ALLOW_FLEET_FANOUT === '1';
+const describeFanout = FANOUT ? describe : describe.skip;
+
 describe('Orchestration API (Fleet Command Center)', () => {
 
   // FLEET-WIDE SIDE EFFECTS: capture and restore the speaker mute for the WHOLE
@@ -46,6 +55,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
 
   before(async function () {
     this.timeout(20000);
+    if (!FANOUT) return;
     const res = await request(BASE_URL).get('/conversation/api/speaker-mute');
     originalMuted = !!(res.body && res.body.muted === true);
     // Same defect class as mute: the `orders` fan-out below persists
@@ -92,6 +102,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
     // explicit timeout the restore hook itself timed out and the fleet stayed muted,
     // which is exactly the failure this hook exists to prevent.
     this.timeout(60000);
+    if (!FANOUT) return;
     // This node first: fast, cannot fail on an unreachable peer, and it is the node
     // whose persisted flag survives into every later restart here.
     await request(BASE_URL)
@@ -202,7 +213,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
     });
   });
 
-  describe('POST/DELETE /api/orchestration/nodes/manual', () => {
+  describeFanout('POST/DELETE /api/orchestration/nodes/manual', () => {
     it('rejects a pin without id and ip (400)', async () => {
       const res = await request(BASE_URL).post('/api/orchestration/nodes/manual').send({ name: 'x' }).expect(400);
       expect(res.body).to.have.property('success', false);
@@ -253,7 +264,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
   });
 
   // ── Broadcast fan-out (success counts) ───────────────────────────
-  describe('POST /api/orchestration/broadcast/animatronics', () => {
+  describeFanout('POST /api/orchestration/broadcast/animatronics', () => {
     it('requires command field', async () => {
       const res = await request(BASE_URL).post('/api/orchestration/broadcast/animatronics').send({}).expect(400);
       expect(res.body).to.have.property('success', false);
@@ -271,7 +282,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
     });
   });
 
-  describe('POST /api/orchestration/broadcast/goblins', () => {
+  describeFanout('POST /api/orchestration/broadcast/goblins', () => {
     it('requires command field', async () => {
       const res = await request(BASE_URL).post('/api/orchestration/broadcast/goblins').send({}).expect(400);
       expect(res.body).to.have.property('success', false);
@@ -284,7 +295,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
     });
   });
 
-  describe('POST /api/orchestration/broadcast/all', () => {
+  describeFanout('POST /api/orchestration/broadcast/all', () => {
     it('broadcasts to both animatronics and goblins', async () => {
       const res = await request(BASE_URL).post('/api/orchestration/broadcast/all')
         .send({ command: 'health-check' }).expect(200);
@@ -294,7 +305,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
   });
 
   // ── Say All (test mode) ──────────────────────────────────────────
-  describe('POST /api/orchestration/say-all', () => {
+  describeFanout('POST /api/orchestration/say-all', () => {
     it('requires text field', async () => {
       const res = await request(BASE_URL).post('/api/orchestration/say-all').send({}).expect(400);
       expect(res.body.error).to.include('text');
@@ -307,7 +318,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
   });
 
   // ── Fleet superpowers ────────────────────────────────────────────
-  describe('POST /api/orchestration/superpower/:feature', () => {
+  describeFanout('POST /api/orchestration/superpower/:feature', () => {
     // These are FLEET FAN-OUTS: each POST reaches every reachable animatronic, not
     // just this node. `mute` maps to POST /conversation/api/speaker-mute, whose flag
     // is deliberately PERSISTED to data/speaker-state.json so a restart cannot
@@ -339,7 +350,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
   });
 
   // ── Transport + panic ────────────────────────────────────────────
-  describe('Fleet transport', () => {
+  describeFanout('Fleet transport', () => {
     it('POST /start-all-queue-loops returns total/successful/results', async () => {
       const res = await request(BASE_URL).post('/api/orchestration/start-all-queue-loops').expect(200);
       expect(res.body).to.have.property('total').that.is.a('number');
@@ -359,7 +370,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
   });
 
   // ── Master volume ────────────────────────────────────────────────
-  describe('PUT /api/orchestration/volume', () => {
+  describeFanout('PUT /api/orchestration/volume', () => {
     it('requires a volume value (400)', async () => {
       const res = await request(BASE_URL).put('/api/orchestration/volume').send({}).expect(400);
       expect(res.body).to.have.property('success', false);
@@ -376,7 +387,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
   });
 
   // ── Random Poses ─────────────────────────────────────────────────
-  describe('Random poses', () => {
+  describeFanout('Random poses', () => {
     it('POST /enable-random-poses accepts a broadcast', async () => {
       const res = await request(BASE_URL).post('/api/orchestration/enable-random-poses').send({ cooldownMs: 5000 }).expect(200);
       expect(res.body).to.have.property('results').that.is.an('array');
@@ -388,7 +399,7 @@ describe('Orchestration API (Fleet Command Center)', () => {
   });
 
   // ── Auto AI ──────────────────────────────────────────────────────
-  describe('Auto AI', () => {
+  describeFanout('Auto AI', () => {
     it('GET /auto-ai/status returns all statuses', async () => {
       const res = await request(BASE_URL).get('/api/orchestration/auto-ai/status').expect(200);
       expect(res.body).to.have.property('success', true);

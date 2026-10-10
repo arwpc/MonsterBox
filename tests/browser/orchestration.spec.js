@@ -3,7 +3,7 @@
  * Tests the multi-animatronic orchestration UI at /orchestration.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation, getAllInteractiveElements } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
@@ -44,7 +44,8 @@ test.describe('Fleet Command Center', () => {
     // this went red on a page that was working correctly; then `aiMotion` was added
     // and it went red again on a bare count. Name the set and report the stranger
     // by name, so the next addition fails with "aiMotion is not in the list", not "8".
-    const MASTER_TOGGLES = ['lurk', 'jaw', 'head', 'aiMotion', 'motion', 'idle', 'mute', 'orders'];
+    // v10.7.0: `ai` (fleet AI mode: wakes every node's lurk state machine) leads the row.
+    const MASTER_TOGGLES = ['ai', 'lurk', 'jaw', 'head', 'aiMotion', 'motion', 'mute', 'orders'];
     test('shows every superpower master toggle', async () => {
         for (const sp of MASTER_TOGGLES) {
             await expect(page.locator(`.fcc-sp[data-sp="${sp}"]`)).toBeVisible();
@@ -53,6 +54,20 @@ test.describe('Fleet Command Center', () => {
         const strangers = onPage.filter(sp => !MASTER_TOGGLES.includes(sp));
         expect(strangers, `superpower toggles not in MASTER_TOGGLES: ${strangers.join(', ')}`).toEqual([]);
         expect(onPage.length).toBe(MASTER_TOGGLES.length);
+    });
+
+    // The AI master posts the fleet superpower contract. The hazard guard in
+    // fixtures.js answers the fan-out, so no node in the castle actually wakes.
+    test('the AI master posts /superpower/ai with enabled and the target ids', async () => {
+        const btn = page.locator('.fcc-sp[data-sp="ai"]');
+        await expect(btn).toBeVisible();
+        const wasOn = await btn.evaluate(el => el.classList.contains('on'));
+        const reqPromise = page.waitForRequest(r => r.method() === 'POST' && /\/api\/orchestration\/superpower\/ai(\?|$)/.test(r.url()));
+        await btn.click();
+        const req = await reqPromise;
+        const body = req.postDataJSON();
+        expect(body.enabled).toBe(!wasOn);
+        expect(Array.isArray(body.ids) || body.ids === null || body.ids === undefined).toBe(true);
     });
 
     test('shows the transport + panic controls', async () => {

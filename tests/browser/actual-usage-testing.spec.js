@@ -11,7 +11,7 @@
  * form field, modal, and API interaction is validated.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 const BASE = process.env.BASE_URL || 'http://localhost:3000';
 const SLOW = 300; // ms between actions for visibility in headed mode
@@ -193,12 +193,32 @@ test.describe('1. Dashboard — All Panels', () => {
     await snap(page, '1.3-console-panel');
   });
 
-  test('1.4 Scenes deck', async ({ page }) => {
+  test('1.4 Scenes deck', async ({ page, hazards }) => {
     // v10: scenes are one-tap tiles on the deck, not an accordion panel
     const grid = await selectDeck(page, 'scenes');
+    const sceneCount = await grid.locator('.sc-tile-scenes').count();
+    console.log(`  Found ${sceneCount} scenes on the deck`);
 
-    // Loop all button
-    await safeClick(page, '#btnLoopAll', 'Loop all scenes');
+    // Loop All: the queue contract is { mode: 'loop_queue', scenes: [{ scene_id }] }.
+    // On the live :3100 node the hazard guard (fixtures.js) answers the start, so
+    // no real loop begins; what is proven is the payload the page sends.
+    if (sceneCount > 0) {
+      const startReq = page.waitForRequest(r => r.method() === 'POST' && /\/scenes\/api\/queue\/start-config(\?|$)/.test(r.url()),
+        { timeout: 10000 }).catch(() => null);
+      const clicked = await safeClick(page, '#btnLoopAll', 'Loop all scenes');
+      const req = await startReq;
+      if (clicked) expect(req, 'Loop All must POST /scenes/api/queue/start-config').not.toBeNull();
+      const body = req ? req.postDataJSON() : { mode: 'loop_queue', scenes: [{ scene_id: 'skipped' }] };
+      expect(body.mode).toBe('loop_queue');
+      expect(body.scenes.length).toBeGreaterThan(0);
+      for (const entry of body.scenes) {
+        expect(entry, 'Loop All must post scene_id').toHaveProperty('scene_id');
+        expect(entry).not.toHaveProperty('sceneId');
+      }
+      if (req) expect(hazards.some(h => h.path === '/scenes/api/queue/start-config' && h.action === 'intercepted')).toBe(true);
+    } else {
+      await safeClick(page, '#btnLoopAll', 'Loop all scenes');
+    }
     await page.waitForTimeout(500);
 
     // Stop loop button (may appear after loop starts)
@@ -211,12 +231,17 @@ test.describe('1. Dashboard — All Panels', () => {
       console.log('  Queue status badge visible');
     }
 
-    // Individual scene tiles — one tap fires the scene
-    const sceneCount = await grid.locator('.sc-tile-scenes').count();
-    console.log(`  Found ${sceneCount} scenes on the deck`);
+    // Individual scene tiles — one tap fires the scene. The guard rewrites the
+    // play to ?dryRun=1 (the play route only short-circuits on the query param).
     if (sceneCount > 0) {
-      // Play the first scene (the server runs it dryRun under MB_TEST_MODE)
+      const playRes = page.waitForResponse(r => /\/scenes\/api\/[^/]+\/play/.test(r.url()) && r.request().method() === 'POST',
+        { timeout: 60000 }).catch(() => null);
       await safeClick(page, '#scDeckGrid .sc-tile-scenes', 'Play first scene tile');
+      const res = await playRes;
+      if (res) {
+        expect(res.url()).toContain('dryRun=1');
+        expect((await res.json()).dryRun).toBe(true);
+      }
     }
 
     // Deck filter narrows the tiles

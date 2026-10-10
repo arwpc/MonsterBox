@@ -3,7 +3,7 @@
  * Validates VU meter visibility, mic detection, and audio configuration
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';

@@ -147,10 +147,18 @@ describe('Jaw Animation Super Power API', () => {
   describe('POST /api/jaw-animation/:characterId', () => {
     let jawServoId = null;
 
+    // The operator's tuned ACTIVE config, read before anything is saved and put
+    // back verbatim afterwards. The old after() wrote hardcoded 'speech' defaults
+    // over the node's custom tuning on every run (found 2026-10-10 by the
+    // live-data guard: sensitivity 3.3/custom -> 1.0/speech in super-powers.json,
+    // and in the service's jaw cache until restart).
+    let priorJawConfig = null;
+
     before(async () => {
       // Get the jaw servo ID for configuration
       const res = await request(BASE_URL)
         .get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`);
+      if (res.body && res.body.config) priorJawConfig = { ...res.body.config };
       const jawCandidate = res.body.availableServos.find(s => s.isJawCandidate && s.calibrated);
       if (jawCandidate) jawServoId = jawCandidate.id;
     });
@@ -237,23 +245,11 @@ describe('Jaw Animation Super Power API', () => {
     });
 
     after(async () => {
-      // Restore default config (including v2 fields)
-      if (jawServoId) {
+      // Put the operator's own active config back (not a default set).
+      if (jawServoId && priorJawConfig) {
         await request(BASE_URL)
           .post(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`)
-          .send({
-            enabled: true,
-            servoPartId: jawServoId,
-            sensitivity: 1.0,
-            smoothing: 0.6,
-            volumeThreshold: 0.02,
-            attackTime: 50,
-            releaseTime: 150,
-            useBandpassFilter: true,
-            useAGC: true,
-            quantizationLevels: 10,
-            preset: 'speech'
-          });
+          .send(priorJawConfig);
       }
     });
   });

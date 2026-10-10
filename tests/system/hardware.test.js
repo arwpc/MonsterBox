@@ -3,6 +3,7 @@
  * Validates hardware execution down to Python layer
  */
 
+import { testableParts } from '../helpers/testableParts.mjs';
 import { expect } from 'chai';
 import hardwareService from '../../services/hardwareService/index.js';
 import { readConfig } from '../../services/configService.js';
@@ -23,7 +24,11 @@ async function firstPartId(preferType) {
         const charId = cfg && cfg.selectedCharacter;
         const partsPath = path.resolve(__dirname, '../..', `data/character-${charId}`, 'parts.json');
         const parts = JSON.parse(fs.readFileSync(partsPath, 'utf8'));
-        const match = (preferType && parts.find(p => p.type === preferType)) || parts[0];
+        // Never a part listed broken in config/physical-faults.json or named in a
+        // scene-hazards rule: this drives REAL hardware (2026-10-10 it picked a
+        // broken elbow and the servo daemon logged REFUSED ch4).
+        const usable = testableParts(charId, parts);
+        const match = preferType ? usable.find(p => p.type === preferType) : usable[0];
         return match ? match.id : undefined;
     } catch (_) {
         return undefined;

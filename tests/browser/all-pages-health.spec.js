@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 /**
  * All-pages health check.
@@ -52,6 +52,10 @@ const IGNORE = [
   /ws:\/\//i,
   /wss:\/\//i,
   /mjpg|8090|stream/i,        // webcam stream not present in test env
+  // A peer whose camera service is down answers its wall snapshot with an honest
+  // 503 {code:'camera_unavailable'}; the <img> load failure is the browser's own
+  // log line, not an app error (seen 2026-10-10 on a peer with no camera running).
+  /webcam-snapshot.*503|503.*webcam-snapshot/i,
   /ERR_CONNECTION_REFUSED/i,
 ];
 

@@ -10,7 +10,7 @@
  * Run: npx playwright test tests/browser/control-bar-responsive.spec.js
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 // Every page that renders the shared layout. The conversation view deliberately
 // opts out because it carries its own richer operator bar.

@@ -4,7 +4,7 @@
  * via the Calibration page toggle button
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3200';
 const RELAY_PART_ID = '8';

@@ -3,7 +3,8 @@
  * Validates preset CRUD via API and UI elements on head-animation setup page
  */
 
-import { test, expect, request as apiRequest } from '@playwright/test';
+import { test, expect } from './fixtures.js';
+import { request as apiRequest } from '@playwright/test';
 import { testNavigation } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';

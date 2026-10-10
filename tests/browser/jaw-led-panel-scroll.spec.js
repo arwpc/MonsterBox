@@ -18,7 +18,7 @@
  * node on port 3100 (NODE_ENV=production, MB_TEST_MODE unset).
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 

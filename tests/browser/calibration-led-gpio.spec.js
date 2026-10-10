@@ -5,7 +5,8 @@
  * that live in the same part config.
  */
 
-import { test, expect, request } from '@playwright/test';
+import { test, expect } from './fixtures.js';
+import { request } from '@playwright/test';
 import { testNavigation } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';

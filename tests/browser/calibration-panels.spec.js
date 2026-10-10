@@ -4,7 +4,7 @@
  * and are hidden for non-movement parts (webcam, microphone, speaker, etc.)
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';

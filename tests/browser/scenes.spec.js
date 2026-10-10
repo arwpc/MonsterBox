@@ -3,7 +3,7 @@
  * Validates all functionality on /scenes (Animation Studio) page
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation, ErrorTracker, getAllInteractiveElements } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
@@ -172,6 +172,41 @@ test.describe('Animation Studio Page', () => {
         }
 
         await tracker.assertNoErrors();
+    });
+
+    // v10.7.0: the library is the node's own scene file (ten show scenes per
+    // character, plus any conductor scenes the node holds). Character-independent:
+    // the expected set is whatever GET /scenes/api/ returns for this node.
+    test('library lists exactly the scenes the API returns', async () => {
+        const api = await (await page.request.get(`${BASE_URL}/scenes/api/`)).json();
+        expect(api.success).toBe(true);
+        const apiIds = api.scenes.map(s => String(s.id)).sort();
+        await page.waitForSelector('#scenesSection', { timeout: 5000 });
+        await expect.poll(async () => page.locator('#scenesSection [data-scene-id]').count(), { timeout: 8000 })
+            .toBe(apiIds.length);
+        const shown = await page.locator('#scenesSection [data-scene-id]')
+            .evaluateAll(els => els.map(e => e.getAttribute('data-scene-id')));
+        expect(shown.map(String).sort()).toEqual(apiIds);
+    });
+
+    // :3100 is the live node. The hazard guard (fixtures.js) rewrites the Studio's
+    // play call to ?dryRun=1, so this proves the Play path end to end without the
+    // node moving or speaking.
+    test('Play from the Studio runs the scene dry on the live node', async () => {
+        const api = await (await page.request.get(`${BASE_URL}/scenes/api/`)).json();
+        const playable = api.scenes.filter(s => Array.isArray(s.steps) && s.steps.length > 0)
+            .sort((a, b) => a.steps.length - b.steps.length)[0];
+        test.skip(!playable, 'this node has no scenes with steps');
+        await page.locator(`#scenesSection [data-scene-id="${playable.id}"]`).first().click();
+        await expect(page.locator('#btnPlay')).toBeEnabled({ timeout: 5000 });
+        const resPromise = page.waitForResponse(r => /\/scenes\/api\/[^/]+\/play/.test(r.url()) && r.request().method() === 'POST',
+            { timeout: 60000 });
+        await page.locator('#btnPlay').click();
+        const res = await resPromise;
+        expect(res.url()).toContain('dryRun=1');
+        const j = await res.json();
+        expect(j.dryRun, 'the live node must have run the scene dry').toBe(true);
+        expect(j.success).toBe(true);
     });
 
     test('should redirect /setup/poses to Animation Studio', async () => {

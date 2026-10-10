@@ -66,3 +66,8 @@ sandboxStore('MB_CALIBRATION_FILE', 'data/calibration_profiles.json');
 sandboxStore('MB_ACTUATOR_POSITIONS_FILE', 'data/actuator-positions.json');
 
 console.log('Global test setup loaded: Environment variables configured.');
+
+// Root hooks: snapshot every live operator file before the run, prove it is
+// byte-identical after, restore + fail loudly otherwise, and heal what a killed
+// run left behind. See tests/helpers/liveDataGuard.mjs.
+export { mochaHooks } from './helpers/liveDataGuard.mjs';

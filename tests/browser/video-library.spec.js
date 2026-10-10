@@ -3,7 +3,7 @@
  * Validates the Goblin board, the Send panel and the library of uploads.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation, ErrorTracker, getAllInteractiveElements } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
@@ -53,7 +53,11 @@ test.describe('Video Control Page', () => {
         for (const g of online) {
             const card = page.locator(`#goblinBoard .vid-board-card[data-goblin-id="${g.id}"]`);
             expect(await card.locator('.vid-board-select option').count()).toBe((g.videos || []).length + 1);
-            expect(await card.locator('button').count()).toBe(4);
+            // The four controls by what they do (cards may carry more, e.g. the
+            // staged-show button added with the per-Goblin reels in v10.7.0).
+            for (const act of ['play', 'loop', 'stop', 'resume']) {
+                expect(await card.locator(`button[onclick*="'${act}')"]`).count(), `${g.id} ${act}`).toBe(1);
+            }
         }
         // The Send panel ticks every online Goblin by default and lists their files.
         expect(await page.locator('#sendGoblinList input:checked').count()).toBe(online.length);

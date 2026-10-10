@@ -14,6 +14,11 @@ const rootDir = path.resolve(__dirname, '..');
 
 const TEST_PATTERN = /\.test\.(js|ts)$/i;
 
+// Files that must never load under the unit run (= the gate's smoke step).
+// parts-alive MOVES the node's real hardware; it runs only by hand on a node
+// through `npm run test:hardware:parts`.
+const NEVER_IN_UNIT = new Set([path.join(rootDir, 'hardware', 'parts-alive.test.js')]);
+
 const requireFromEsm = createRequire(import.meta.url);
 
 async function importTests(dir) {
@@ -29,7 +34,7 @@ async function importTests(dir) {
                 continue;
             }
             await importTests(fullPath);
-        } else if (TEST_PATTERN.test(entry)) {
+        } else if (TEST_PATTERN.test(entry) && !NEVER_IN_UNIT.has(fullPath)) {
             try {
                 requireFromEsm(fullPath);
             } catch (error) {

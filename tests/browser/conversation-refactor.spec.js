@@ -5,7 +5,7 @@
  * Note: /conversation redirects to / — conversation IS the dashboard
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const TEST_TIMEOUT = 60000;
@@ -51,7 +51,7 @@ async function openDrawer(page, target) {
 test.describe('Conversation Control - Accordion Layout', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('networkidle').catch(() => {});
   });
 
   test('should render page with accordion and panel elements', async ({ page }) => {
@@ -133,7 +133,10 @@ test.describe('Conversation Control - Accordion Layout', () => {
   test('should reach Scenes from the one-tap deck', async ({ page }) => {
     const scenesTab = page.locator('.sc-tab[data-deck="scenes"]');
     await expect(scenesTab).toBeVisible();
-    await expect(scenesTab).toHaveClass(/active/); // scenes is the default deck
+    // The AI tab is the default deck (v10.6.0); one tap reaches Scenes.
+    await expect(page.locator('.sc-tab[data-deck="ai"]')).toHaveClass(/active/);
+    await scenesTab.click();
+    await expect(scenesTab).toHaveClass(/active/);
 
     const grid = page.locator('#scDeckGrid');
     await expect(grid).toBeVisible();
@@ -177,16 +180,17 @@ test.describe('Conversation Control - Accordion Layout', () => {
 test.describe('Conversation Control - Unified Input (Say This mode)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/conversation`);
-    await page.waitForLoadState('networkidle');
+    // The dashboard holds an EventSource and polls: networkidle may never come.
+    await page.waitForLoadState('networkidle').catch(() => {});
   });
 
   test('should send text via unified input in Say This mode', async ({ page }) => {
-    // Ensure AI toggle is OFF (Say This mode)
-    const aiToggle = page.locator('#chatAiOnToggle');
-    if (await aiToggle.isChecked()) {
-      await aiToggle.click();
-      await page.waitForTimeout(300);
-    }
+    // Say This is the unified input's own MODE (#chatModeToggle: Ask AI <-> Say
+    // This), independent of the AI switch. Put the input in Say This mode.
+    const modeToggle = page.locator('#chatModeToggle');
+    await expect(modeToggle).toBeVisible();
+    if (!/Say This/.test(await modeToggle.innerText())) await modeToggle.click();
+    await expect(modeToggle).toContainText('Say This');
 
     const input = page.locator('#chatInput');
     const button = page.locator('#chatSendBtn');
@@ -194,13 +198,14 @@ test.describe('Conversation Control - Unified Input (Say This mode)', () => {
     // Type test message
     await input.fill('Test message from Playwright');
 
-    // Click Send button
+    // Click Send button. The guard answers /conversation/api/say, so the node
+    // stays silent; what is proven is the request the page sends.
+    const sayReq = page.waitForRequest(r => r.method() === 'POST' && /\/conversation\/api\/say(\?|$)/.test(r.url()),
+      { timeout: 5000 }).catch(() => null);
     await button.click();
-
-    // Wait for response
-    await page.waitForTimeout(3000);
-
-    // Just verify no error was thrown
+    const req = await sayReq;
+    expect(req, 'Say This mode must POST /conversation/api/say').not.toBeNull();
+    expect(JSON.stringify(req.postDataJSON())).toContain('Test message from Playwright');
   });
 
   test('should handle empty text without crashing', async ({ page }) => {
@@ -216,7 +221,8 @@ test.describe('Conversation Control - Unified Input (Say This mode)', () => {
 test.describe('Conversation Control - Monster Features', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/conversation`);
-    await page.waitForLoadState('networkidle');
+    // The dashboard holds an EventSource and polls: networkidle may never come.
+    await page.waitForLoadState('networkidle').catch(() => {});
   });
 
   test('should toggle Jaw Animation', async ({ page }) => {
@@ -234,6 +240,11 @@ test.describe('Conversation Control - Monster Features', () => {
     // Should be opposite of initial
     const newChecked = await toggle.isChecked();
     expect(newChecked).toBe(!initialChecked);
+
+    // Put the node back: this is the LIVE jaw switch of the node under test.
+    await toggle.click();
+    await page.waitForTimeout(500);
+    expect(await toggle.isChecked()).toBe(initialChecked);
   });
 
   test('should toggle Head Tracking', async ({ page, request }) => {
@@ -267,6 +278,10 @@ test.describe('Conversation Control - Monster Features', () => {
     if (caps.headTracking) {
       // Capable character: the toggle must flip and stick
       expect(newChecked).toBe(!initialChecked);
+      // Put the node back (live head tracking of the node under test).
+      await toggle.click();
+      await page.waitForTimeout(500);
+      expect(await toggle.isChecked()).toBe(initialChecked);
     } else {
       // No pan servo: the toggle must not claim a capability the node lacks
       expect(newChecked).toBe(initialChecked);
@@ -277,7 +292,8 @@ test.describe('Conversation Control - Monster Features', () => {
 test.describe('Conversation Control - Chat Panel', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/conversation`);
-    await page.waitForLoadState('networkidle');
+    // The dashboard holds an EventSource and polls: networkidle may never come.
+    await page.waitForLoadState('networkidle').catch(() => {});
   });
 
   test('should have Chat panel inline (no modal)', async ({ page }) => {
@@ -292,24 +308,21 @@ test.describe('Conversation Control - Chat Panel', () => {
     await expect(modal).toHaveCount(0);
   });
 
-  test('should toggle AI On via Chat panel', async ({ page }) => {
+  // v10.7.0: AI mode is the SERVER's (lurk state machine). The switch reflects
+  // /conversation/api/ai-status and a click posts /conversation/api/ai-on; the
+  // hazard guard (fixtures.js) answers that post, so the node never wakes here.
+  test('AI switch reflects the server and posts ai-on with the wanted state', async ({ page, request, hazards }) => {
     const toggle = page.locator('#chatAiOnToggle');
+    const status = await (await request.get(`${BASE_URL}/conversation/api/ai-status`)).json();
+    expect(status.success).toBe(true);
+    const serverOn = !!status.enabled;
+    await expect.poll(async () => toggle.isChecked(), { timeout: 8000 }).toBe(serverOn);
 
-    // Initially off
-    await expect(toggle).not.toBeChecked();
-
-    // Try to turn on — in CI without AI services the handler may prevent state change
-    await toggle.click();
-    await page.waitForTimeout(500);
-
-    const isNowChecked = await toggle.isChecked();
-    if (isNowChecked) {
-      // Toggle succeeded — turn off
-      await toggle.click();
-    } else {
-      // Toggle was prevented (no AI service in CI) — just verify no crash
-      await expect(toggle).toBeAttached();
-    }
+    const reqPromise = page.waitForRequest(r => r.method() === 'POST' && /\/conversation\/api\/ai-on(\?|$)/.test(r.url()));
+    await toggle.click({ force: true });
+    const req = await reqPromise;
+    expect(req.postDataJSON()).toEqual({ enabled: !serverOn });
+    expect(hazards.some(h => h.path === '/conversation/api/ai-on' && h.action === 'intercepted')).toBe(true);
   });
 
   test('should have chat input with send button', async ({ page }) => {
@@ -329,7 +342,8 @@ test.describe('Conversation Control - Chat Panel', () => {
 test.describe('Conversation Control - Responsive Layout', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/conversation`);
-    await page.waitForLoadState('networkidle');
+    // The dashboard holds an EventSource and polls: networkidle may never come.
+    await page.waitForLoadState('networkidle').catch(() => {});
   });
 
   test('should adapt to mobile viewport', async ({ page }) => {
@@ -339,8 +353,12 @@ test.describe('Conversation Control - Responsive Layout', () => {
     // Drawer accordion is inherently responsive
     await expect(page.locator('#dashboardAccordion')).toBeVisible();
 
-    // Core operator surface stays reachable at phone width
+    // Core operator surface stays reachable at phone width (the deck grid
+    // shows once a non-AI tab is chosen; AI is the default deck).
     await expect(page.locator('#chatInput')).toBeVisible();
+    // DOM click: at phone width the fixed control bar (PANIC) overlaps the tab
+    // row, and a coordinate click would land on PANIC.
+    await page.locator('.sc-tab[data-deck="scenes"]').evaluate(el => el.click());
     await expect(page.locator('#scDeckGrid')).toBeVisible();
 
     // And the conversation log is still reachable via the drawer
@@ -361,7 +379,8 @@ test.describe('Conversation Control - Responsive Layout', () => {
 test.describe('Conversation Control - No Errors', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}/conversation`);
-    await page.waitForLoadState('networkidle');
+    // The dashboard holds an EventSource and polls: networkidle may never come.
+    await page.waitForLoadState('networkidle').catch(() => {});
   });
 
   test('should not have critical console errors on load', async ({ page }) => {
@@ -387,5 +406,53 @@ test.describe('Conversation Control - No Errors', () => {
 
     // Should have no critical console errors
     expect(criticalErrors.length).toBe(0);
+  });
+});
+
+// v10.7.0 server-driven contracts the dashboard reads (GET only: no state changes).
+test.describe('Conversation Control - server-driven lurk/AI contracts', () => {
+  test('GET /conversation/api/ai-status carries state, latency and conversationMode', async ({ request }) => {
+    const res = await request.get(`${BASE_URL}/conversation/api/ai-status`);
+    expect(res.ok()).toBe(true);
+    const j = await res.json();
+    expect(j.success).toBe(true);
+    expect(['off', 'lurking', 'awake']).toContain(j.state);
+    expect(typeof j.enabled).toBe('boolean');
+    expect(j).toHaveProperty('latency');
+    expect(j).toHaveProperty('conversationMode');
+    if (j.conversationMode) expect(['full', 'half']).toContain(j.conversationMode.mode);
+  });
+
+  test('GET /conversation/api/lurk-state is bound to the node\'s character', async ({ request }) => {
+    const res = await request.get(`${BASE_URL}/conversation/api/lurk-state`);
+    expect(res.ok()).toBe(true);
+    const j = await res.json();
+    expect(j.success).toBe(true);
+    expect(['off', 'lurking', 'awake']).toContain(j.state);
+    expect(typeof j.armed).toBe('boolean');
+    expect(j.characterId).toBeTruthy();
+    expect(j.prefs).toBeTruthy();
+  });
+
+  test('the Lurk switch mirrors lurk-state.armed and posts lurk-mode', async ({ page, request }) => {
+    await page.goto(`${BASE_URL}/`);
+    await page.waitForLoadState('networkidle').catch(() => {});
+    const st = await (await request.get(`${BASE_URL}/conversation/api/lurk-state`)).json();
+    const toggle = page.locator('#lurkToggle');
+    await expect.poll(async () => toggle.isChecked(), { timeout: 8000 }).toBe(!!st.armed);
+    const reqPromise = page.waitForRequest(r => r.method() === 'POST' && /\/conversation\/api\/lurk-mode(\?|$)/.test(r.url()));
+    await toggle.click({ force: true });
+    expect((await reqPromise).postDataJSON()).toEqual({ enabled: !st.armed });
+  });
+
+  test('callouts and lurk scenes read back as configured (off unless the operator turned them on)', async ({ request }) => {
+    for (const p of ['/conversation/api/callouts', '/conversation/api/lurk-scenes']) {
+      const res = await request.get(`${BASE_URL}${p}`);
+      if (res.status() === 404) continue; // older node
+      expect(res.ok(), p).toBe(true);
+      const j = await res.json();
+      expect(j.success, p).not.toBe(false);
+      expect(typeof (j.state && j.state.enabled), `${p} state.enabled`).toBe('boolean');
+    }
   });
 });

@@ -4,7 +4,11 @@
  */
 import { expect } from 'chai';
 import request from 'supertest';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3100';
 
 describe('Dashboard API — Deep Functional Tests', () => {
@@ -217,7 +221,10 @@ describe('Dashboard API — Deep Functional Tests', () => {
 
   // ── Say Panel / TTS ──────────────────────────────────────────────
   describe('Say Panel (TTS)', () => {
-    it('POST /conversation/api/say should accept text and speak', async () => {
+    it('POST /conversation/api/say should accept text and speak', async function () {
+      // :3100 is the live node: this really speaks. Never in quiet hours (23:00-08:00).
+      const hour = new Date().getHours();
+      if ((hour >= 23 || hour < 8) && process.env.MB_ALLOW_AUDIO !== '1') this.skip();
       const res = await request(BASE_URL)
         .post('/conversation/api/say')
         .send({ text: 'Test from system test' })
@@ -262,15 +269,42 @@ describe('Dashboard API — Deep Functional Tests', () => {
       }
     });
 
-    it('POST /scenes/api/reorder should accept ordered IDs', async () => {
+    // The node's scene file is the source of truth (ten show scenes per character
+    // since v10.7.0, plus any conductor scenes): read the expected ids from the
+    // character's own scenes.json, never hardcode them.
+    it('lists exactly the scenes in the node character\'s scenes.json', async function () {
+      const cfg = await request(BASE_URL).get('/api/config');
+      const charId = cfg.body && cfg.body.config && cfg.body.config.selectedCharacter;
+      const file = path.join(REPO_ROOT, 'data', `character-${charId}`, 'scenes.json');
+      if (!charId || !fs.existsSync(file) || !/localhost|127\.0\.0\.1/.test(BASE_URL)) this.skip();
+      const fromFile = JSON.parse(fs.readFileSync(file, 'utf8')).map(s => String(s.id)).sort();
+      const res = await request(BASE_URL).get('/scenes/api/').expect(200);
+      expect(res.body.scenes.map(s => String(s.id)).sort()).to.deep.equal(fromFile);
+    });
+
+    it('every listed step is a type the executor dispatches', async () => {
+      const { DISPATCHABLE_STEP_TYPES } = await import('../../services/scenes/sceneValidator.js');
+      const res = await request(BASE_URL).get('/scenes/api/').expect(200);
+      const bad = [];
+      for (const scene of res.body.scenes) {
+        for (const step of scene.steps || []) {
+          if (!DISPATCHABLE_STEP_TYPES.has(step.type)) bad.push(`${scene.id}:${step.type}`);
+        }
+      }
+      expect(bad, 'undispatchable step types').to.deep.equal([]);
+    });
+
+    // Reorder with the CURRENT order: proves the contract without changing the
+    // node's library. A config-locked character answers 423, which is correct.
+    it('POST /scenes/api/reorder accepts the current order (423 when locked)', async () => {
       const listRes = await request(BASE_URL).get('/scenes/api/');
       if (listRes.body.scenes.length > 1) {
         const ids = listRes.body.scenes.map(s => s.id);
-        const res = await request(BASE_URL)
-          .post('/scenes/api/reorder')
-          .send({ orderedIds: ids })
-          .expect(200);
-        expect(res.body).to.have.property('success', true);
+        const res = await request(BASE_URL).post('/scenes/api/reorder').send({ orderedIds: ids });
+        expect([200, 423], JSON.stringify(res.body)).to.include(res.status);
+        if (res.status === 200) expect(res.body).to.have.property('success', true);
+        const after = await request(BASE_URL).get('/scenes/api/');
+        expect(after.body.scenes.map(s => s.id)).to.deep.equal(ids);
       }
     });
 

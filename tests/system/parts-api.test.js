@@ -3,6 +3,7 @@
  * Tests /api/parts endpoints including type-aware test dispatch
  */
 
+import { testableParts } from '../helpers/testableParts.mjs';
 import { expect } from 'chai';
 import http from 'http';
 
@@ -132,6 +133,7 @@ describe('Parts API', function () {
             var listRes = await apiGet('/api/parts');
             var servos = listRes.body.parts.filter(function (p) { return p.type === 'servo'; });
             var servo = null;
+            servos = testableParts(characterId, servos);
             for (var i = 0; i < servos.length; i++) {
                 if (await safety.isTestSafePart(characterId, servos[i].id)) { servo = servos[i]; break; }
             }
@@ -158,6 +160,7 @@ describe('Parts API', function () {
             var listRes = await apiGet('/api/parts');
             var servos = listRes.body.parts.filter(function (p) { return p.type === 'servo'; });
             var servo = null;
+            servos = testableParts(characterId, servos);
             for (var i = 0; i < servos.length; i++) {
                 if (await safety.isTestSafePart(characterId, servos[i].id)) { servo = servos[i]; break; }
             }
@@ -172,8 +175,12 @@ describe('Parts API', function () {
         });
 
         it('rejects a servo test that names no angle at all', async function () {
+            // Never a broken or hazard part, even for a request that should be
+            // refused: a refusal that regresses into a move would drive it.
+            var cfg = await import('../../services/configService.js');
+            var characterId = (await cfg.readConfig()).selectedCharacter;
             var listRes = await apiGet('/api/parts');
-            var servo = listRes.body.parts.filter(function (p) { return p.type === 'servo'; })[0];
+            var servo = testableParts(characterId, listRes.body.parts.filter(function (p) { return p.type === 'servo'; }))[0];
             if (!servo) { this.skip(); return; }
 
             var res = await apiPost('/api/parts/' + servo.id + '/test', { action: 'moveToAngle' });

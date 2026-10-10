@@ -4,7 +4,7 @@
  * Note: /setup/parts was consolidated into /setup/calibration
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation, testButtonClick, ErrorTracker, getAllInteractiveElements } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';

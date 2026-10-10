@@ -3,7 +3,7 @@
  * Validates head tracking toggle, status badge, polling, and click-to-track on Dashboard
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
@@ -34,12 +34,20 @@ test.describe('Head Tracking Dashboard', () => {
         expect(title.toLowerCase()).toContain('track');
     });
 
-    test('should display status badge element (hidden by default)', async () => {
+    // v10.7.0: the lurk state machine runs head tracking from boot on a node with a
+    // webcam and a pan servo, so "hidden by default" no longer holds. The badge must
+    // agree with the server: hidden when tracking is off, shown when it is on.
+    test('status badge agrees with head-tracking-status', async () => {
         const badge = page.locator('#headTrackStatusBadge');
         await expect(badge).toBeAttached();
-        // Badge should have d-none class initially
-        const classes = await badge.getAttribute('class');
-        expect(classes).toContain('d-none');
+        const st = await (await page.request.get(`${BASE_URL}/conversation/api/head-tracking-status`)).json();
+        const enabled = !!(st && st.headTracking && st.headTracking.enabled);
+        if (enabled) {
+            await expect(badge).not.toHaveClass(/d-none/, { timeout: 10000 });
+            await expect(badge).toHaveText(/Active|Searching/);
+        } else {
+            await expect(badge).toHaveClass(/d-none/, { timeout: 10000 });
+        }
     });
 
     test('should display click-to-track countdown element', async () => {

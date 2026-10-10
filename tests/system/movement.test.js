@@ -4,14 +4,21 @@
  */
 import { expect } from 'chai';
 import request from 'supertest';
+import { isCharacterLocked } from '../helpers/lockAware.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3100';
 
 describe('Movement API', function () {
     this.timeout(10000);
 
-    // Use character 1 (default in test mode)
-    const testCharId = 1;
+    // The node's own character (was a hardcoded 1 — a LOCKED character, so the
+    // write tests answered 423 on every node). Resolved in before().
+    let testCharId = null;
+
+    before(async () => {
+        const res = await request(BASE_URL).get('/api/config');
+        testCharId = (res.body && res.body.config && res.body.config.selectedCharacter) || 1;
+    });
 
     describe('GET /api/movement/config/:characterId', () => {
         it('should return a config object with idle and microMovement sections', async () => {
@@ -40,7 +47,9 @@ describe('Movement API', function () {
     describe('PUT /api/movement/config/:characterId', () => {
         let originalConfig;
 
-        before(async () => {
+        before(async function () {
+            // A frozen character refuses config writes by design (HTTP 423).
+            if (isCharacterLocked(testCharId)) this.skip();
             const res = await request(BASE_URL)
                 .get(`/api/movement/config/${testCharId}`);
             originalConfig = res.body.config;

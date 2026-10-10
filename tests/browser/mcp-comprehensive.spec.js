@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 /**
  * Comprehensive MCP-style browser test — tests every page and interactive element
@@ -451,6 +451,8 @@ test.describe('Phase 1: Dashboard', () => {
     // v10: scenes render as one-tap tiles on the deck. (#scenesContainer still
     // exists but only as a hidden compat target for dashboard.js — counting it
     // would report items no operator can see.)
+    // The AI tab is the default deck (v10.6.0): choose Scenes first.
+    await page.locator('.sc-tab[data-deck="scenes"]').click();
     const grid = page.locator('#scDeckGrid');
     await expect(grid).toBeVisible();
     await expect

@@ -11,7 +11,7 @@
  * (Replaces old panel-sortable drag-and-drop tests)
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation, ErrorTracker } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
@@ -153,6 +153,10 @@ test.describe('Dashboard Accordion', () => {
         // instead of failing the test on it. Same pattern as actual-usage-testing.spec.js.
         await page.waitForLoadState('networkidle').catch(() => {});
 
+        // The AI tab is the default deck (v10.6.0); the grid shows once a
+        // scenes/poses/sounds tab is chosen.
+        await expect(page.locator('.sc-tab[data-deck="ai"]')).toHaveClass(/active/);
+        await page.locator('.sc-tab[data-deck="scenes"]').click();
         const grid = page.locator('#scDeckGrid');
         await expect(grid).toBeVisible();
 
@@ -175,7 +179,8 @@ test.describe('Dashboard Accordion', () => {
         const scenesTab = page.locator('.sc-tab[data-deck="scenes"]');
         const posesTab = page.locator('.sc-tab[data-deck="poses"]');
 
-        // Scenes is the default deck
+        // AI is the default deck (v10.6.0); choose Scenes first.
+        await scenesTab.click();
         await expect(scenesTab).toHaveClass(/active/);
         await expect(grid).toBeVisible();
 

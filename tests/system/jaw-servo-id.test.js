@@ -15,6 +15,7 @@
  * prior config in before() and restore it in after(). A suite that leaves a
  * character's jaw pointed at the wrong servo is worse than no suite.
  */
+import { testableParts } from '../helpers/testableParts.mjs';
 import { expect } from 'chai';
 import request from 'supertest';
 
@@ -34,7 +35,8 @@ describe('Jaw animation — servoPartId type tolerance', function () {
     const cfg = await request(BASE_URL).get(`/setup/jaw-animation/api/jaw-animation/${CHARACTER_ID}`);
     if (cfg.status === 200 && cfg.body) {
       priorConfig = cfg.body.jawAnimation || cfg.body.config || null;
-      servos = cfg.body.availableServos || cfg.body.servos || [];
+      // Only servos an automated test may name (never a broken/hazard part).
+      servos = testableParts(CHARACTER_ID, cfg.body.availableServos || cfg.body.servos || []);
     }
   });
 

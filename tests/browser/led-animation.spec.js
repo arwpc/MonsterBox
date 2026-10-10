@@ -7,7 +7,8 @@
  * REAL ring. Presence checks and the read-only config GET are safe.
  */
 
-import { test, expect, request } from '@playwright/test';
+import { test, expect } from './fixtures.js';
+import { request } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 

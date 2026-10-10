@@ -3,7 +3,8 @@
  * Validates /setup/jaw-animation page UI layout and controls
  */
 
-import { test, expect, request } from '@playwright/test';
+import { test, expect } from './fixtures.js';
+import { request } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 

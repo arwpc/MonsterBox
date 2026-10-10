@@ -75,13 +75,6 @@
     },
     {
       "pattern": "orlok-reference",
-      "file": "tests/system/head-animation.test.js",
-      "line": 333,
-      "snippet": "// All servos for Orlok should have config info",
-      "reason": "Head-animation test with character-specific expectation."
-    },
-    {
-      "pattern": "orlok-reference",
       "file": "tests/unit/movement.test.js",
       "line": 740,
       "snippet": "// Use character 3 (Orlok) which is most likely to have poses",

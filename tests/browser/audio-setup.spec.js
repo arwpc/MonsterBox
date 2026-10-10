@@ -3,7 +3,7 @@
  * Tests every control, button, panel, dropdown, toast, and API on /setup/audio
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { testNavigation, ErrorTracker, waitForPageReady } from './framework.js';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3200';
