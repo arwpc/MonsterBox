@@ -233,3 +233,11 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   endpoints, askAI single-play, audio steps to clip length; report `report-scene-infra.md`. Three event music beds
   generated (ElevenLabs Music API, 230/260/235 s) and loudness-normalized for the library. Scene authors for Orlok
   and Sir Dragomir launched 23:06 (two concurrent; conversation, lurk and goblin workers still running).
+- 2026-10-09 23:00 — phase 3a DONE (lead as fleet-event author): `docs/characters/FLEET-EVENTS.md` (three
+  scripts, every character's scenes 8/9/10 specified line-for-line), conductors `scripts/fleet-events/conductors/
+  {101,102,103}.json` + `install-conductors.mjs` (validated replace), runner `scripts/fleet-events/run-next.mjs`
+  (rotation, quiet hours, busy-node deferral, release-on-failure, Goblin read-back), beds in the audio library
+  (commit aab61105). Validate-only install shows only the expected gaps: peers' scenes 8–10 (authors running) and
+  the beds' library ids (registered by the rescan at the next restart). `brief-orlok-pitch.md` queued for the
+  conversation engineer after D1 (daylight audition). Pi load ≈ 8 with five workers; no more agents until a slot
+  frees. Still running: 1a conversation, 1b lurk, 1d goblins, scene authors Orlok + Sir Dragomir.
