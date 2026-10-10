@@ -730,6 +730,7 @@
         if (node.rssMb != null) bits.push(Math.round(node.rssMb) + 'MB');
         if (node.uptimeSec != null) bits.push('up ' + fmtUptime(node.uptimeSec));
         if (node.servoLatencyMs != null) bits.push(node.servoLatencyMs + 'ms');
+        if (node.time) bits.push(node.time.ok ? 'clock ok' + (node.time.offsetMs != null ? ' (' + node.time.offsetMs + ' ms)' : '') : '⚠ CLOCK ' + (node.time.problem || 'unknown'));
         if (node.cpuCount != null) bits.push(node.cpuCount + ' cpu');
         h.textContent = bits.join(' · ') || (node.ip || '');
       } else if (node.pending) {

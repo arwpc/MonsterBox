@@ -56,6 +56,7 @@ import scenesRoutes from './routes/scenes/index.js';
 import { pageRouter as scheduleWebRoutes, apiRouter as scheduleApiRoutes } from './routes/scheduleRoutes.js';
 import configApiRoutes from './routes/api/configRoutes.js';
 import { getHostnameCharacterId, updateSelectedCharacter } from './services/configService.js';
+import { getLocalClock } from './services/clockStatus.js';
 import videoLibraryRoutes from './routes/videoLibrary.js';
 import audioHealthMonitor from './services/AudioHealthMonitor.js';
 import elevenLabsWebSocketService from './services/elevenLabsWebSocketService.js';
@@ -342,11 +343,17 @@ try {
 // mount costs a disk stat per request). With zero handler work and zero
 // middleware ahead of it, /health's response time measures pure event-loop
 // queueing — the loop-health probe the perf runbooks curl in a tight loop.
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
     try {
-        res.status(200).json({ status: 'OK', version: pkg.version, time: new Date().toISOString() });
+        // epochMs + clock let a peer's fleet-health judge this node's clock (decision D8): zone, NTP, sync,
+        // and the offset from the asker. getLocalClock() is cached for a minute and never throws.
+        const clock = await getLocalClock();
+        res.status(200).json({
+            status: 'OK', version: pkg.version, time: new Date().toISOString(), epochMs: Date.now(),
+            clock: { zone: clock.zone, ntp: clock.ntp, synced: clock.synced }
+        });
     } catch (e) {
-        res.status(200).json({ status: 'OK' });
+        res.status(200).json({ status: 'OK', version: pkg.version, time: new Date().toISOString() });
     }
 });
 

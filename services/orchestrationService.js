@@ -5,6 +5,7 @@
  */
 
 import axios from 'axios';
+import { clockFromHealth } from './clockStatus.js';
 import https from 'https';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -925,9 +926,13 @@ class OrchestrationService {
             // asking for memory and telemetry made every card cost two round
             // trips to that node — and the page's refresh is paced by the slowest.
             const infoP = this.httpNode(node, { path: '/api/system/info', timeout: 5000 });
+            // The clock probe is timed: the peer stamps its clock in /health, and the midpoint of this
+            // request's round trip is what it is compared with (decision D8).
+            const clockSentAt = Date.now();
             const enrichP = Promise.allSettled([
                 this.httpNode(node, { path: '/api/resource/memory', timeout: 4000 }),
                 this.httpNode(node, { path: '/api/movement/telemetry', timeout: 4000 }),
+                this.httpNode(node, { path: '/health', timeout: 4000 }).then((h) => ({ health: h, receivedAt: Date.now() })),
             ]);
             try {
                 // /api/system/info carries version + uptime + cpu in one lightweight call.
@@ -960,7 +965,10 @@ class OrchestrationService {
                 }
             }
             // Best-effort enrichment; a node may lack a given endpoint on older builds.
-            const [mem, movement] = await enrichP;
+            const [mem, movement, clockProbe] = await enrichP;
+            if (clockProbe.status === 'fulfilled' && clockProbe.value?.health) {
+                card.time = clockFromHealth(clockProbe.value.health, clockSentAt, clockProbe.value.receivedAt);
+            }
             if (mem.status === 'fulfilled' && mem.value?.memory) {
                 card.rssMb = mem.value.memory.rssMB ?? null;
                 card.memLevel = mem.value.memory.level ?? null;
