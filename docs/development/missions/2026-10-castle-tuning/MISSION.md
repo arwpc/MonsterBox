@@ -292,3 +292,9 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   agents. Fixed from the log review: jaw-daemon EPIPE uncaught exception; 413s were a deliberate oversize test
   (10 MB cap). `scripts/push-show.sh` ready; locked characters' config files match their nodes byte for byte.
   Waiting only on 1d (Goblins: Goblin 2 looping its reel already) before the fleet deploy.
+- 2026-10-10 11:20 — phase 1d DONE (Goblins, commit 8a58c232): reels proven looping on Goblins 2 and 3, keep-alive
+  on Orlok acting with proof, resolver, manifests, Video Control board; Goblins 1 and 4 staged (need hands; Goblin
+  2 runs hot at 79.5 °C). GATE GREEN (the smoke step had been timing out at 60 s on a 1078-test suite; cap raised;
+  the one real failure was test residue the timeout had left in Orlok's live parts.json — synthetic parts
+  987655/987657 — removed). PHASE 2 ROLLOUT RUNNING (`/home/remote/mission-scratch/phase2.sh`): deploy →
+  health → symbol grep → push-show → lurk-state, nodes 1, 4, 5, 6, 2, then Orlok.
