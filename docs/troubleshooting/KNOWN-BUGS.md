@@ -2082,6 +2082,47 @@ Each item names the test that closes it. Acoustic items are UNPROVEN until an ea
   and Groundbreaker's own entries were landed in git in `1bbf0d67`, so those two casualties no
   longer disappear on the next deploy.
 
+### Opened from the 2026-10-10 fleet log review (after the castle-tuning rollout)
+
+Collector run on every node at 13:47 CDT (`node scripts/log-review.mjs` on Orlok, PumpkinHead, Sir Dragomir,
+Groundbreaker, Mina; Renfield through the fleet password). Everything below is triaged against that run.
+
+- 🟡 **PumpkinHead: three MCP units crash-loop and flood the journal** (`mcp-system-monitor.service`,
+  `mcp-grep.service`, `mcp-filesystem.service`, "Failed with result 'exit-code'" 2,455 times each this boot;
+  10,419 warning+ journal lines). Same class as `sematext-vector` on Orlok: SD wear and a noisy journal. Fix:
+  the operator disables and masks the three units on his node (`sudo systemctl disable --now mcp-system-monitor
+  mcp-grep mcp-filesystem && sudo systemctl mask ...`); proof is a boot with fewer than 100 warning lines.
+- 🟢 **PumpkinHead: one `listen EADDRINUSE 0.0.0.0:3000` fatal and one "Error loading goblins: Unexpected
+  non-whitespace character" during the 13:44 deploy restart**: the old process still held the port while the
+  new one started and `data/goblins.json` was mid-rsync. systemd's `Restart=always` recovered it; `/health`
+  answered 10.7.0 within seconds and the registry loads. Not a code defect; watch for recurrence outside deploys.
+- 🟡 **Sir Dragomir: PipeWire input xruns flood the journal** ("pw.node: (alsa_input...XVF3800...) graph xrun
+  not-triggered", 1,973 lines this boot). Capture still works (his STT sessions transcribe), so this is noise
+  from the array's input graph under load; proof of a fix is a boot without the xrun lines. Candidate: a larger
+  quantum for the input node in a WirePlumber rule (operator, OS-level).
+- 🟢 **Sir Dragomir: two STT sessions stopped on "Too many consecutive errors"**, both during the 11:31–12:50
+  LAN/internet outage (ElevenLabs unreachable). Expected; recovers with the network.
+- 🔴 **Groundbreaker: USB over-current, 107 events in dmesg this boot** ("usb usb2-port2/3/4: over-current
+  change"). His USB audio adapter and webcam hang off that rail; the 2026-08 note on Orlok's hub is the same
+  fault class. Audio still played today (mpg123 wrote the 3.68 MB event bed, exit 0) but a drop-out mid-show is
+  the risk. Operator: powered hub or fewer devices on the Pi's own ports.
+- 🟡 **Renfield: `sudo reboot` refused** ("Reboot failed: Error: Command failed: sudo reboot" after a "System
+  reboot requested" line). His new Pi 4B has not had `scripts/node-baseline/apply-baseline.sh` applied (no
+  sudoers rule, no drop-ins), and Orlok has no SSH key on it (ssh-copy-id is an operator action; the agent's
+  attempt was refused by the session permission layer). Until then every fleet SSH action to him needs the
+  fleet password, and the Fleet Command Center's reboot button fails.
+- 🟢 **Every peer: `voice-config ... drifted from committed canonical`** is a false positive of a stale node
+  git HEAD (PumpkinHead 826 commits behind, the others 66–70): the deploy rsyncs files, not git, so the
+  collector compares today's correct tts-config against an old commit. The values on disk ARE the canon
+  (e.g. Orlok stability 0.25, Renfield voice zzG73sCjG25Zj6km5X4M). Proof: `git -C /home/remote/MonsterBox
+  diff --stat HEAD` on the node lists the deployed files, not a writer. The real 0.5/0.5 flattening (two past
+  incidents) would show as `stability: 0.25 → 0.5`; none did.
+- 🟢 **`avahi-browse failed` on Dragomir, Groundbreaker, Renfield** (a handful per node, binary present): mDNS
+  browse timed out while the nodes were restarting; discovery fell back to `config/animatronics.json` as
+  designed and the registry shows all six online.
+- 🟢 **Orlok: "37 tracked CODE files modified"** at review time were the test engineer's uncommitted work in
+  progress; committed before the tag.
+
 ### Goblins (video displays) — opened from the 2026-09-25 gold-snapshot review
 
 **2026-10-10 status (castle tuning, `docs/development/missions/2026-10-castle-tuning/report-goblins.md`):**
