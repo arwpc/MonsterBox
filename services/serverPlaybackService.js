@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process';
+import { spawn as nodeSpawn, spawnSync } from 'child_process';
 import fs from 'fs/promises';
 import { readFileSync } from 'fs';
 import { writeJsonAtomic } from './atomicStore.js';
@@ -130,6 +130,41 @@ async function writeTempAudio(buffer, contentType) {
 // Canonical default volume for all playback paths (0-100)
 const DEFAULT_VOLUME = 100;
 
+// A drained stop ends the player's stdin and lets it play out what it already
+// holds. pw-play and mpg123 both exit on their own at EOF (measured on an XVF3800 node:
+// 2.0 s of PCM, exit 0 at 2096 ms), so this timer is only a safety net for a
+// player that hangs instead of exiting: it fires after the audio the player was
+// handed should have finished, plus slack, and never later than the cap.
+const DRAIN_SLACK_MS = 2500;
+const DRAIN_CAP_MS = 60000;
+
+/**
+ * Key of one persistent PCM player.
+ *
+ * `owner` separates players that share a character and a device. A browser
+ * test session and the headless agent used to share ONE pw-play per
+ * character, so when the browser tab closed (or changed speaker part, or was
+ * reaped) it killed the player the headless agent was speaking through: the
+ * character stopped mid-sentence because someone closed a laptop. Each session
+ * now owns its own player and can only ever stop that one.
+ *
+ * Legacy callers pass no owner and keep the historical key, so
+ * `stopPcmStream({ characterId })` without an owner still stops everything the
+ * character has, exactly as before.
+ */
+function pcmStreamKey(characterId, deviceId, owner) {
+  return 'pcm_' + String(characterId || 'default') + '_' + String(deviceId || 'default') + (owner ? '#' + owner : '');
+}
+
+function mp3StreamKey(characterId, owner) {
+  return String(characterId || 'default') + (owner ? '#' + owner : '');
+}
+
+function keyOwner(key) {
+  const i = key.indexOf('#');
+  return i === -1 ? null : key.slice(i + 1);
+}
+
 class ServerPlaybackService {
   constructor() {
     // Streaming players keyed by characterId
@@ -145,6 +180,17 @@ class ServerPlaybackService {
     this._pwplayAvailable = this._detectCmd('pw-play');
     // Probed on first use, not here: see _pwplayRawArgs().
     this._pwplayRaw = null;
+    // Persistent players are spawned through this so the stream bookkeeping can
+    // be unit-tested without a sound server.
+    this._spawn = nodeSpawn;
+    // Players that were asked to finish what they hold and exit. They are no
+    // longer in _pcmStreams/_streams (a new write must not land in a player that
+    // is closing), so explicit stops have to be able to find them here.
+    this._draining = new Set();
+    // Per character+owner write chains for callers that do not pass a device:
+    // device resolution is async, and two un-awaited writes must still reach the
+    // player in the order they were made.
+    this._pcmWriteChains = new Map();
   }
 
   /**
@@ -276,6 +322,24 @@ class ServerPlaybackService {
     return 'default';
   }
 
+  /**
+   * Resolve a character's (or speaker part's) output device ONCE, so a caller
+   * that streams many chunks can pass `deviceId` on every write.
+   *
+   * Without this every conversation chunk re-read app-config.json and parts.json
+   * from the SD card before it could be written (two disk reads and two JSON
+   * parses roughly four times a second), and, because those reads were async and
+   * the writes were not awaited, chunks could reach the player out of order.
+   */
+  async resolveSpeakerDevice(opts = {}) {
+    try {
+      return await this._resolveDeviceId(opts);
+    } catch (e) {
+      console.warn('⚠️ Could not resolve speaker device, using default:', e.message);
+      return 'default';
+    }
+  }
+
   _calcMpg123Scale(volume) {
     const vol = typeof volume === 'number' ? Math.max(0, Math.min(100, volume)) : DEFAULT_VOLUME;
     return Math.max(0, Math.min(32768, Math.round(32768 * (vol / 100))));
@@ -285,7 +349,7 @@ class ServerPlaybackService {
     if (!this._mpg123Available) {
       throw new Error('mpg123_not_available');
     }
-    const key = String(opts.characterId || 'default');
+    const key = mp3StreamKey(opts.characterId, opts.owner);
     const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
     // mpg123's -f scale is fixed at spawn time, so a warm stream physically cannot
     // honour a new volume. Reusing it unconditionally pinned every later playback
@@ -310,8 +374,6 @@ class ServerPlaybackService {
     const env = { ...process.env };
     if (deviceId && deviceId !== 'default') env.PULSE_SINK = deviceId;
 
-    const { spawn } = await import('child_process');
-
     // Use mpg123 to play MP3 stream directly (no conversion needed)
     const scale = wantScale;
     const mpg123Args = ['--quiet', '-o', 'pulse', '-f', String(scale), '-'];
@@ -319,12 +381,21 @@ class ServerPlaybackService {
     console.log(`🎵 Starting mpg123 audio stream for character ${key}: device=${deviceId}, volume=${volume}`);
 
     // Start mpg123 to play MP3 from stdin
-    const mpg123 = spawn('mpg123', mpg123Args, { env });
+    const mpg123 = this._spawn('mpg123', mpg123Args, { env });
+
+    // A missing binary is reported as an 'error' event on the child; with no
+    // listener Node rethrows it and takes the whole server down.
+    mpg123.on('error', (err) => {
+      console.error(`mpg123 spawn error for ${key}:`, err && err.message);
+      const cur = this._streams.get(key);
+      if (cur && cur.proc === mpg123) this._streams.delete(key);
+    });
 
     // Handle errors to prevent EPIPE crashes
     mpg123.stdin.on('error', (err) => {
       console.error(`mpg123 stdin error for ${key}:`, err.message);
-      this._streams.delete(key);
+      const cur = this._streams.get(key);
+      if (cur && cur.proc === mpg123) this._streams.delete(key);
     });
 
     mpg123.stderr.on('data', (data) => {
@@ -340,7 +411,8 @@ class ServerPlaybackService {
       if (cur && cur.proc === mpg123) this._streams.delete(key);
     });
 
-    rec = { proc: mpg123, deviceId, scale, contentType: 'audio/mpeg', writerBusy: false };
+    rec = { proc: mpg123, deviceId, scale, contentType: 'audio/mpeg', writerBusy: false,
+            owner: opts.owner || null, characterKey: String(opts.characterId || 'default'), playsUntilMs: 0 };
     this._streams.set(key, rec);
     return rec;
   }
@@ -367,6 +439,8 @@ class ServerPlaybackService {
     }
     const rec = await this._ensureMp3Stream(opts);
     console.log(`🔊 Writing ${buffer.length} bytes to mpg123 stream (device: ${rec.deviceId})`);
+    // ~128 kbps MP3; only used to bound how long a drained stop may take.
+    rec.playsUntilMs = Math.max(Date.now(), rec.playsUntilMs || 0) + (buffer.length * 8 / 128);
     return new Promise((resolve) => {
       const ok = rec.proc.stdin.write(buffer);
       const done = () => {
@@ -390,28 +464,17 @@ class ServerPlaybackService {
       };
       if (ok) return done();
       rec.proc.stdin.once('drain', done);
+      // A player that dies with data still queued never emits 'drain'; without
+      // this the caller's promise (and everything chained on it) hung forever.
+      rec.proc.once('exit', done);
     });
   }
 
   /**
-   * Ensure a persistent pw-play process for raw PCM16LE streaming (e.g. ElevenLabs ConvAI).
-   * Uses pw-play --format s16 --rate <sampleRate> --channels 1 --target <device> -
+   * Spawn one persistent pw-play for raw PCM16LE on stdin and register it.
+   * Synchronous on purpose: see _writePcmNow().
    */
-  async _ensurePcmStream(opts = {}) {
-    if (!this._pwplayAvailable) {
-      throw new Error('pw-play_not_available');
-    }
-    const deviceId = await this._resolveDeviceId(opts);
-    const key = 'pcm_' + String(opts.characterId || 'default') + '_' + deviceId;
-    let rec = this._pcmStreams.get(key);
-    if (rec && rec.proc && !rec.proc.killed) {
-      return rec;
-    }
-    const sampleRate = opts.sampleRate || 16000;
-    const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
-
-    const { spawn } = await import('child_process');
-
+  _spawnPcmPlayer(key, { characterId, deviceId, owner, sampleRate, volume }) {
     const pwArgs = [...this._pwplayRawArgs(),
                     '--format', 's16', '--rate', String(sampleRate), '--channels', '1',
                     '--volume', String(Math.max(0, Math.min(1, volume / 100)).toFixed(3))];
@@ -420,11 +483,31 @@ class ServerPlaybackService {
 
     console.log(`🔊 Starting pw-play PCM stream for ${key}: device=${deviceId}, rate=${sampleRate}, volume=${volume}`);
 
-    const pw = spawn('pw-play', pwArgs);
+    const pw = this._spawn('pw-play', pwArgs);
+    const rec = {
+      proc: pw, deviceId, sampleRate, contentType: 'audio/pcm',
+      owner: owner || null,
+      characterKey: String(characterId || 'default'),
+      spawnedAt: Date.now(),
+      // Modelled wall-clock time the audio handed to this player finishes.
+      playsUntilMs: 0,
+      bytesWritten: 0
+    };
+
+    pw.on('error', (err) => {
+      console.error(`pw-play(pcm) spawn error for ${key}:`, err && err.message);
+      const cur = this._pcmStreams.get(key);
+      if (cur && cur.proc === pw) this._pcmStreams.delete(key);
+    });
 
     pw.stdin.on('error', (err) => {
+      // EPIPE from a player WE stopped (an interruption kills it with audio
+      // still buffered) is expected; logging it as an error buried real faults
+      // in monsterbox.err (1,525 such lines in two nights of barge-ins).
+      if (rec.stoppedByUs && err && err.code === 'EPIPE') return;
       console.error(`pw-play(pcm) stdin error for ${key}:`, err.message);
-      this._pcmStreams.delete(key);
+      const cur = this._pcmStreams.get(key);
+      if (cur && cur.proc === pw) this._pcmStreams.delete(key);
     });
 
     pw.stderr.on('data', (data) => {
@@ -438,59 +521,223 @@ class ServerPlaybackService {
       if (cur && cur.proc === pw) this._pcmStreams.delete(key);
     });
 
-    rec = { proc: pw, deviceId, sampleRate, contentType: 'audio/pcm' };
     this._pcmStreams.set(key, rec);
     return rec;
+  }
+
+  _livePcmRecord(key) {
+    const rec = this._pcmStreams.get(key);
+    if (rec && rec.proc && !rec.proc.killed && rec.proc.exitCode == null && rec.proc.signalCode == null) return rec;
+    if (rec) this._pcmStreams.delete(key);
+    return null;
+  }
+
+  /**
+   * Ensure a persistent pw-play process for raw PCM16LE streaming (e.g. ElevenLabs ConvAI).
+   * Uses pw-play --format s16 --rate <sampleRate> --channels 1 --target <device> -
+   */
+  async _ensurePcmStream(opts = {}) {
+    if (!this._pwplayAvailable) {
+      throw new Error('pw-play_not_available');
+    }
+    const deviceId = await this._resolveDeviceId(opts);
+    const key = pcmStreamKey(opts.characterId, deviceId, opts.owner);
+    const rec = this._livePcmRecord(key);
+    if (rec) return rec;
+    return this._spawnPcmPlayer(key, {
+      characterId: opts.characterId, deviceId, owner: opts.owner,
+      sampleRate: opts.sampleRate || 16000,
+      volume: typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME
+    });
+  }
+
+  /**
+   * Hand one PCM buffer to its player NOW, synchronously up to stdin.write().
+   *
+   * Everything between the call and the write is synchronous (spawn included),
+   * so buffers reach the player in exactly the order this is called. The old
+   * path awaited device resolution (two disk reads) before every write, and
+   * the conversation did not await each write, so a chunk whose reads finished
+   * first could overtake the one before it.
+   */
+  _writePcmNow(buffer, opts, deviceId) {
+    const key = pcmStreamKey(opts.characterId, deviceId, opts.owner);
+    const sampleRate = opts.sampleRate || 16000;
+    const volume = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME;
+    let rec = this._livePcmRecord(key);
+    const coldStart = !rec;
+    if (!rec) {
+      rec = this._spawnPcmPlayer(key, { characterId: opts.characterId, deviceId, owner: opts.owner, sampleRate, volume });
+    }
+    const now = Date.now();
+    const durMs = (buffer.length / ((rec.sampleRate || sampleRate) * 2)) * 1000;
+    const startsAtMs = Math.max(now, rec.playsUntilMs || 0);
+    rec.playsUntilMs = startsAtMs + durMs;
+    rec.bytesWritten += buffer.length;
+    rec.lastWriteAt = now;
+
+    let ok = true;
+    try {
+      ok = rec.proc.stdin.write(buffer);
+    } catch (e) {
+      return Promise.resolve({ success: false, error: e.message, deviceId });
+    }
+    this._lastPlay = {
+      ts: now,
+      characterId: opts.characterId || null,
+      deviceId: rec.deviceId,
+      player: 'pw-play(pcm)',
+      contentType: 'audio/pcm',
+      streamed: buffer.length,
+      volume,
+      simulated: false,
+      kind: opts.kind || 'ai'
+    };
+    if ((opts.kind || 'ai').toLowerCase() === 'ai') {
+      this._lastAIPlay = { ...this._lastPlay };
+    }
+    const result = {
+      success: true, streamed: buffer.length, deviceId: rec.deviceId,
+      coldStart, spawnedAt: rec.spawnedAt, startsAtMs, playsUntilMs: rec.playsUntilMs,
+      owner: rec.owner
+    };
+    if (ok) return Promise.resolve(result);
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = () => { if (settled) return; settled = true; resolve(result); };
+      rec.proc.stdin.once('drain', done);
+      rec.proc.once('exit', done);
+    });
   }
 
   /**
    * Write raw PCM16LE audio to a persistent pw-play stream.
    * Used for real-time ConvAI audio where chunks arrive continuously.
+   *
+   * Pass `deviceId` (resolve it once with resolveSpeakerDevice()) to get the
+   * ordered, disk-free fast path. `owner` keeps one session's player separate
+   * from another's (see pcmStreamKey). Never throws; always returns a promise.
    */
-  async writePcmStream(buffer, opts = {}) {
-    if (!buffer || !buffer.length) return { success: false, error: 'empty_buffer' };
-    if (this._speakerMuted) return { success: true, muted: true };
-    if (!this._pwplayAvailable) {
-      return { success: false, error: 'pw-play_not_available' };
+  writePcmStream(buffer, opts = {}) {
+    try {
+      if (!buffer || !buffer.length) return Promise.resolve({ success: false, error: 'empty_buffer' });
+      if (this._speakerMuted) return Promise.resolve({ success: true, muted: true });
+      if (!this._pwplayAvailable) {
+        return Promise.resolve({ success: false, error: 'pw-play_not_available' });
+      }
+      if (opts.deviceId) return this._writePcmNow(buffer, opts, opts.deviceId);
+
+      // Legacy callers that leave device resolution to us: resolve
+      // asynchronously, but behind the previous write for the same
+      // character+owner so un-awaited writes still play in call order.
+      const chainKey = String(opts.characterId || 'default') + '#' + (opts.owner || '');
+      const prev = this._pcmWriteChains.get(chainKey) || Promise.resolve();
+      const next = prev.catch(() => {}).then(async () => {
+        const deviceId = await this._resolveDeviceId(opts);
+        if (this._speakerMuted) return { success: true, muted: true };
+        return this._writePcmNow(buffer, opts, deviceId);
+      });
+      this._pcmWriteChains.set(chainKey, next);
+      next.finally(() => {
+        if (this._pcmWriteChains.get(chainKey) === next) this._pcmWriteChains.delete(chainKey);
+      }).catch(() => {});
+      return next;
+    } catch (e) {
+      return Promise.resolve({ success: false, error: e.message });
     }
-    const rec = await this._ensurePcmStream(opts);
-    return new Promise((resolve) => {
-      const ok = rec.proc.stdin.write(buffer);
-      const done = () => {
-        this._lastPlay = {
-          ts: Date.now(),
-          characterId: opts.characterId || null,
-          deviceId: rec.deviceId,
-          player: 'pw-play(pcm)',
-          contentType: 'audio/pcm',
-          streamed: buffer.length,
-          volume: typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME,
-          simulated: false,
-          kind: opts.kind || 'ai'
-        };
-        if ((opts.kind || '').toLowerCase() === 'ai') {
-          this._lastAIPlay = { ...this._lastPlay };
-        }
-        resolve({ success: true, streamed: buffer.length, deviceId: rec.deviceId });
-      };
-      if (ok) return done();
-      rec.proc.stdin.once('drain', done);
-    });
   }
 
   /**
-   * Stop all persistent PCM streams for a character (any device).
+   * End a player's input and let it finish what it already holds, then exit.
+   * A conversation that ends (the agent switched off, a browser tab closed, a
+   * one-shot ask completed) must not cut the character off mid-sentence.
+   */
+  _drainRecord(rec, label) {
+    if (!rec || !rec.proc) return;
+    rec.draining = true;
+    this._draining.add(rec);
+    try { rec.proc.stdin.end(); } catch (_) { /* already closed */ }
+    const remaining = Math.max(0, (rec.playsUntilMs || 0) - Date.now());
+    const timer = setTimeout(() => {
+      if (rec.proc.exitCode == null && rec.proc.signalCode == null) {
+        console.warn(`⚠️ ${label} did not exit after draining: terminating`);
+        try { rec.proc.kill('SIGTERM'); } catch (_) { /* gone */ }
+      }
+      this._draining.delete(rec);
+    }, Math.min(DRAIN_CAP_MS, remaining + DRAIN_SLACK_MS));
+    if (timer.unref) timer.unref();
+    rec.proc.once('exit', () => { clearTimeout(timer); this._draining.delete(rec); });
+  }
+
+  /** Stop a player NOW: an interruption, a stop button, a panic. */
+  _killRecord(rec) {
+    if (!rec || !rec.proc) return;
+    rec.stoppedByUs = true;
+    try { rec.proc.stdin.end(); } catch (_) { }
+    try { rec.proc.kill('SIGTERM'); } catch (_) { }
+    if (rec.paplay) {
+      try { rec.paplay.stdin.end(); } catch (_) { }
+      try { rec.paplay.kill('SIGTERM'); } catch (_) { }
+    }
+    this._draining.delete(rec);
+  }
+
+  _ownerMatches(rec, key, owner) {
+    if (!owner) return true;
+    return (rec && rec.owner === owner) || keyOwner(key) === owner;
+  }
+
+  /**
+   * Stop persistent PCM streams for a character (any device).
+   *
+   * opts.owner  only that session's player (others keep playing)
+   * opts.drain  true = let the player finish what it holds (conversation ended);
+   *             default false = stop now (interruption / stop button), which is
+   *             also what every pre-existing caller gets.
    */
   async stopPcmStream(opts = {}) {
     const prefix = 'pcm_' + String(opts.characterId || 'default') + '_';
+    const owner = opts.owner || null;
     for (const [key, rec] of this._pcmStreams) {
-      if (key.startsWith(prefix)) {
-        try { rec.proc.stdin.end(); } catch (_) { }
-        try { rec.proc.kill('SIGTERM'); } catch (_) { }
-        this._pcmStreams.delete(key);
+      if (!key.startsWith(prefix) || !this._ownerMatches(rec, key, owner)) continue;
+      this._pcmStreams.delete(key);
+      if (opts.drain) this._drainRecord(rec, `pw-play(pcm) ${key}`);
+      else this._killRecord(rec);
+    }
+    if (!opts.drain) {
+      // An explicit stop must also silence players that were already draining.
+      const charKey = String(opts.characterId || 'default');
+      for (const rec of [...this._draining]) {
+        if (rec.contentType !== 'audio/pcm' || rec.characterKey !== charKey) continue;
+        if (owner && rec.owner !== owner) continue;
+        this._killRecord(rec);
       }
     }
     return { success: true };
+  }
+
+  /**
+   * Cut one session's speech off immediately, without touching any other
+   * player on the node. Used for interruptions: the guest (or the agent's turn
+   * model) has the floor, so what this session queued must go now, but
+   * background music, a scene's line or another session must not.
+   */
+  async interruptPlayback(opts = {}) {
+    return this.stopStream({ characterId: opts.characterId, owner: opts.owner, drain: false });
+  }
+
+  /** Modelled end of the audio handed to a character's players (0 if none). */
+  getPlaybackHorizon(opts = {}) {
+    const charKey = String(opts.characterId || 'default');
+    let until = 0;
+    const consider = (rec, key) => {
+      if (!rec || rec.characterKey !== charKey) return;
+      if (opts.owner && !this._ownerMatches(rec, key || '', opts.owner)) return;
+      until = Math.max(until, rec.playsUntilMs || 0);
+    };
+    for (const [key, rec] of this._pcmStreams) consider(rec, key);
+    for (const rec of this._draining) consider(rec, null);
+    return until;
   }
 
   /**
@@ -757,17 +1004,29 @@ class ServerPlaybackService {
     }
   }
 
+  /**
+   * Stop a character's persistent players (mpg123 and pw-play).
+   *
+   * Same options as stopPcmStream(): `owner` limits the stop to one session's
+   * players, `drain: true` lets them finish what they hold. Without options it
+   * stops everything the character has, immediately, the historical contract.
+   */
   async stopStream(opts = {}) {
-    const key = String(opts.characterId || 'default');
-    const rec = this._streams.get(key);
-    if (rec) {
-      try { rec.proc.stdin.end(); } catch (_) { }
-      try { rec.proc.kill('SIGTERM'); } catch (_) { }
-      if (rec.paplay) {
-        try { rec.paplay.stdin.end(); } catch (_) { }
-        try { rec.paplay.kill('SIGTERM'); } catch (_) { }
-      }
+    const charKey = String(opts.characterId || 'default');
+    const owner = opts.owner || null;
+    for (const [key, rec] of this._streams) {
+      const recChar = rec.characterKey || key.split('#')[0];
+      if (recChar !== charKey || !this._ownerMatches(rec, key, owner)) continue;
       this._streams.delete(key);
+      if (opts.drain) this._drainRecord(rec, `mpg123 ${key}`);
+      else this._killRecord(rec);
+    }
+    if (!opts.drain) {
+      for (const rec of [...this._draining]) {
+        if (rec.contentType !== 'audio/mpeg' || rec.characterKey !== charKey) continue;
+        if (owner && rec.owner !== owner) continue;
+        this._killRecord(rec);
+      }
     }
     // Also stop any PCM stream for this character
     try { await this.stopPcmStream(opts); } catch (_) { }
@@ -909,6 +1168,8 @@ class ServerPlaybackService {
         try { rec.proc.kill('SIGTERM'); } catch (_) { }
       }
       this._pcmStreams.clear();
+      // ...and anything still playing out its tail after a drained stop.
+      for (const rec of [...this._draining]) this._killRecord(rec);
       try {
         await runWrapper('speaker_cli.py', ['stop'], { enableLogging: false, timeoutMs: 5000 });
       } catch (_) { /* best-effort */ }

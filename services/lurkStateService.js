@@ -889,7 +889,14 @@ export class LurkStateMachine {
             const how = await this.deps.subscribeActivity((evt) => {
                 try {
                     const cid = evt && (evt.characterId != null ? evt.characterId : evt.character);
-                    this.noteActivity(cid, (evt && (evt.kind || evt.type)) || 'conversation');
+                    const kind = (evt && (evt.kind || evt.type)) || 'conversation';
+                    // A callout one-shot is the character talking to nobody; the agent re-engaging an
+                    // empty room off its turn-timeout "..." turns (prompted:false, 94 in one morning
+                    // session) is not a guest either. Only real guest speech and prompted replies
+                    // keep the node awake — otherwise an empty yard never sleeps.
+                    if (evt && evt.oneShot) return;
+                    if (kind === 'agent_speech' && evt && evt.prompted !== true) return;
+                    this.noteActivity(cid, kind);
                 } catch (_) { /* never break the conversation pipeline */ }
             });
             this._activitySource = how || 'speech-log';

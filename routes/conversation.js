@@ -1083,7 +1083,11 @@ router.get('/api/ai-status', async (req, res) => {
       state: st.state,
       sleepInMs: st.sleepInMs == null ? null : st.sleepInMs,
       characterId: characterId || null,
-      timestamp: st.since || null
+      timestamp: st.since || null,
+      conversationMode: typeof elevenLabsWebSocketService.getConversationMode === 'function'
+        ? elevenLabsWebSocketService.getConversationMode(characterId) : null,
+      latency: typeof elevenLabsWebSocketService.getTurnLatency === 'function'
+        ? elevenLabsWebSocketService.getTurnLatency(characterId) : null
     });
   } catch (e) {
     res.status(500).json({ success: false, error: e && e.message });

@@ -1,150 +1,629 @@
 [
   {
     "id": 1,
-    "name": "Lurk: Hello Down There",
+    "name": "Groundbreaker: Rumble Under the Wall",
+    "description": "Lurk (~30 s, ambience only): a long low rumble rolls under the castle wall, one thunder crack as the dirt shifts, then the rumble again. Something big is down there.",
     "steps": [
       {
-        "type": "jaw-animation",
-        "action": "enable",
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "[laughs] HI! HI DOWN THERE! GROUNDBREAKER SEE YOU!",
-        "concurrent": false
+        "type": "audio",
+        "audioId": "distant-vibrating-sound",
+        "volume": 60,
+        "jawSync": false
       },
       {
         "type": "wait",
-        "duration": 3000,
-        "concurrent": false
+        "duration": 2500
       },
       {
-        "type": "sayThis",
-        "text": "COME SAY HI! GROUNDBREAKER NICE!",
-        "concurrent": false
+        "type": "audio",
+        "audioId": "castle-thunder-sound-effect",
+        "volume": 55,
+        "jawSync": false
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "audio",
+        "audioId": "distant-vibrating-sound",
+        "volume": 50,
+        "jawSync": false
+      },
+      {
+        "type": "wait",
+        "duration": 1000
       }
     ],
-    "created": "2025-10-24T02:45:00.000Z",
-    "updated": "2026-10-05T22:20:54.523Z"
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
   },
   {
     "id": 2,
-    "name": "Lurk: Skull Friend",
+    "name": "Groundbreaker: Thunder in the Dirt",
+    "description": "Lurk (~38 s, ambience only): two thunder knocks from underground, each answered by a deep rumble, as if the giant rolled over in his sleep.",
     "steps": [
       {
-        "type": "jaw-animation",
-        "action": "enable",
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "LOOK! LOOK AT TV!",
-        "concurrent": false
-      },
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-192-168-8-14",
-        "videoId": "Bigskull.mp4",
-        "loop": false,
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "SKULL FRIEND! SKULL TALK! [laughs]",
-        "concurrent": false
+        "type": "audio",
+        "audioId": "castle-thunder-sound-effect",
+        "volume": 50,
+        "jawSync": false
       },
       {
         "type": "wait",
-        "duration": 5000,
-        "concurrent": false
+        "duration": 4000
       },
       {
-        "type": "sayThis",
-        "text": "SKULL FUNNY. GROUNDBREAKER LIKE SKULL.",
-        "concurrent": false
+        "type": "audio",
+        "audioId": "distant-vibrating-sound",
+        "volume": 55,
+        "jawSync": false
+      },
+      {
+        "type": "wait",
+        "duration": 3000
+      },
+      {
+        "type": "audio",
+        "audioId": "castle-thunder-sound-effect",
+        "volume": 60,
+        "jawSync": false
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "audio",
+        "audioId": "distant-vibrating-sound",
+        "volume": 45,
+        "jawSync": false
+      },
+      {
+        "type": "wait",
+        "duration": 800
       }
     ],
-    "created": "2026-10-05T22:20:54.647Z"
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
   },
   {
     "id": 3,
-    "name": "Lurk: Rock War",
+    "name": "Groundbreaker: Feet Up There",
+    "description": "Wake (~9 s): a thunder knock from below, then he hears the guest's footsteps through the dirt, asks their name and offers protection.",
     "steps": [
       {
-        "type": "jaw-animation",
-        "action": "enable",
+        "type": "audio",
+        "audioId": "castle-thunder-sound-effect",
+        "volume": 60,
+        "jawSync": false,
         "concurrent": true
       },
       {
-        "type": "sayThis",
-        "text": "LONG AGO. BIG WALL. ROCKS GO DOWN!",
-        "concurrent": false
-      },
-      {
         "type": "wait",
-        "duration": 1200,
-        "concurrent": false
+        "duration": 1200
       },
       {
         "type": "sayThis",
-        "text": "ARMY GO HOME! [laughs] BEST DAY.",
-        "concurrent": false
+        "text": "HEY! FEET UP THERE! GROUNDBREAKER HEAR YOU. WHAT YOUR NAME, FRIEND? GROUNDBREAKER PROTECT YOU."
       }
     ],
-    "created": "2026-10-05T22:20:54.793Z"
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
   },
   {
     "id": 4,
-    "name": "Lurk: Costume Parade",
+    "name": "Groundbreaker: Breaking Out",
+    "description": "Story (~70 s): storm bed; he heaves up through the dirt, his 'head' fills the big window (Bigskull on Goblin 2), he breaks a fence, gets mostly out, the Count tells him to dig quieter, he promises to be a big mouse.",
     "steps": [
       {
-        "type": "jaw-animation",
-        "action": "enable",
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Groundbreaker",
+        "maxMs": 143163,
+        "reason": "groundbreaker-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "04 - Windstorm & Thunder",
+        "volume": 35,
+        "jawSync": false,
         "concurrent": true
       },
       {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "audio",
+        "audioId": "distant-vibrating-sound",
+        "volume": 65,
+        "jawSync": false
+      },
+      {
         "type": "sayThis",
-        "text": "GOOD COSTUMES! VERY SCARY!",
-        "concurrent": false
+        "text": "[grunts] UNGH. DIRT IN NOSE. DIRT EVERYWHERE. GROUNDBREAKER COMING UP. ONE MORE PUSH..."
       },
       {
         "type": "wait",
-        "duration": 1500,
-        "concurrent": false
+        "duration": 800
+      },
+      {
+        "type": "audio",
+        "audioId": "castle-thunder-sound-effect",
+        "volume": 75,
+        "jawSync": false
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Bigskull.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2500
       },
       {
         "type": "sayThis",
-        "text": "GROUNDBREAKER SCARED! ...NO. [laughs] GROUNDBREAKER HAPPY!",
-        "concurrent": false
+        "text": "LOOK! BIG WINDOW! THAT GROUNDBREAKER HEAD. VERY HANDSOME. OOPS. BREAK FENCE. SORRY FENCE."
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "audio",
+        "audioId": "rake-jumpscare-sound-effect",
+        "volume": 60,
+        "jawSync": false
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "sayThis",
+        "text": "HEY COUNT! GROUNDBREAKER OUT! ...MOSTLY OUT. LEGS STILL IN GROUND. LEGS FINE."
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "fleet-say",
+        "node": "Orlok",
+        "text": "[Romanian accent] [labored breath] Groundbreaker... dig quieter. Liniște. Quiet. The whole castle shakes when you breathe."
+      },
+      {
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "sayThis",
+        "text": "[chuckles] COUNT SAY DIG QUIET. OKAY. GROUNDBREAKER QUIET LIKE MOUSE. BIG MOUSE. YOU STAY CLOSE, FRIEND."
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Groundbreaker"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Groundbreaker",
+        "reason": "groundbreaker-scene"
       }
     ],
-    "created": "2026-10-05T22:20:54.899Z"
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
   },
   {
     "id": 5,
-    "name": "Lurk: Castle Friends",
+    "name": "Groundbreaker: Calling the Neighbors",
+    "description": "Story (~95 s): with the dogs barking along, he hollers at the knight (a tin man), the pumpkin (a big orange head) and Renfield (the paper man), and each one answers him by fleet-say; a bone man crawls in the little window (Skellycrawler on Goblin 3).",
     "steps": [
       {
-        "type": "jaw-animation",
-        "action": "enable",
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Groundbreaker",
+        "maxMs": 158352,
+        "reason": "groundbreaker-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "05 - Rabid Dogs Barking",
+        "volume": 25,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "sayThis",
+        "text": "HEY KNIGHT! SHINY TIN MAN ON HILL! YOU STILL IN THERE? KNOCK KNOCK."
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "fleet-say",
+        "node": "Sir Dragomir",
+        "text": "[Romanian accent] I am a knight, not a kettle. Sir Dragomir, of the old covenant. Dig somewhere else, big one."
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "sayThis",
+        "text": "TIN MAN SAY KETTLE. GROUNDBREAKER LIKE KETTLE. HEY PUMPKIN MAN! BIG ORANGE HEAD! YOU GROW YET?"
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "fleet-say",
+        "node": "PumpkinHead",
+        "text": "Pumpkinhead does not GROW for you, digging one. Snap. Pumpkinhead remembers the throw..."
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 3",
+        "videoId": "Skellycrawler.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "sayThis",
+        "text": "LOOK! LITTLE WINDOW! BONE MAN CRAWLING. HE COPY GROUNDBREAKER. HI BONE MAN. NICE CRAWL."
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "sayThis",
+        "text": "HEY PAPER MAN AT ROAD! RENFIELD SELL PUMPKIN BABIES. PUMPKIN MAN MAD. SHHH. DON'T TELL."
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "fleet-say",
+        "node": "Renfield",
+        "text": "[excited] A lawful sale, under seal! Scribble, scribble... the giant, hereinafter the noisy party, is hereby asked to hush."
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "audio",
+        "audioId": "castle-thunder-sound-effect",
+        "volume": 60,
+        "jawSync": false
+      },
+      {
+        "type": "sayThis",
+        "text": "[laughs] EVERYBODY TALK TO GROUNDBREAKER! BEST NIGHT EVER. GO SAY HI TO PUMPKIN MAN. DON'T GIVE HIM NAME."
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Groundbreaker"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Groundbreaker",
+        "reason": "groundbreaker-scene"
+      }
+    ],
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "name": "Groundbreaker: Nobody Bother Holden",
+    "description": "Story (~85 s): he listens for Calvin, Ben, Bennett, Holden and Harrison and takes all five under his protection; he swats at bats (Batattack, Goblin 2), warns off the goop (Monstergoop, Goblin 3), befriends the sparky man (Stumblingelectricsman, Goblin 2); Mina whispers that his thunder helps.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Groundbreaker",
+        "maxMs": 160308,
+        "reason": "groundbreaker-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "dark-scary-ambience-sounds",
+        "volume": 35,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "sayThis",
+        "text": "SHHH. GROUNDBREAKER LISTEN. CALVIN HERE? BEN? BENNETT? HOLDEN? HARRISON? ANYBODY GOT GOOD NAME?"
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "sayThis",
+        "text": "THAT YOU, HOLDEN? MAYBE CALVIN? DON'T MATTER. GROUNDBREAKER PROTECT ALL FIVE. NOBODY BOTHER YOU."
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "audio",
+        "audioId": "rake-jumpscare-sound-effect",
+        "volume": 70,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Batattack.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "sayThis",
+        "text": "BATS! BAD BATS! SHOO, BATS! NOT YOU, FRIEND. JUST BATS. GROUNDBREAKER SWAT... OOPS. MISSED."
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 3",
+        "videoId": "Monstergoop.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1800
+      },
+      {
+        "type": "sayThis",
+        "text": "GOOP MONSTER IN LITTLE WINDOW. GROSS. GOOP STAY THERE. BEN AND HARRISON NOT FOR GOOP."
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Stumblingelectricsman.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "sayThis",
+        "text": "BIG WINDOW! SPARKY MAN STUMBLING. HE CLUMSY. LIKE GROUNDBREAKER. [laughs] HE OKAY. HE FRIEND."
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "fleet-say",
+        "node": "Mina",
+        "text": "[whispers] Tell the big one I hear his thunder... and it helps. The little ones are safe tonight."
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "audio",
+        "audioId": "distant-vibrating-sound",
+        "volume": 45,
+        "jawSync": false,
         "concurrent": true
       },
       {
         "type": "sayThis",
-        "text": "COUNT IS BOSS. KNIGHT TALK TALK TALK.",
-        "concurrent": false
+        "text": "LADY BELOW HEAR GROUNDBREAKER. GOOD. CALVIN, BEN, BENNETT, HOLDEN, HARRISON... EVERYBODY SAFE. GROUNDBREAKER WATCHING."
       },
       {
         "type": "wait",
-        "duration": 1000,
-        "concurrent": false
+        "duration": 2500
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Groundbreaker"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Groundbreaker",
+        "reason": "groundbreaker-scene"
+      }
+    ],
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
+  },
+  {
+    "id": 7,
+    "name": "Groundbreaker: Go See Somebody",
+    "description": "Send-off (~30 s): he cannot leave the ground but the guest has legs, so he sends them up the hill to the knight (bring a snack, the knight has not eaten in six hundred years) or to the Count; a huge skeleton waves from the big window and he stomps goodbye.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Groundbreaker",
+        "maxMs": 68680,
+        "reason": "groundbreaker-scene"
       },
       {
         "type": "sayThis",
-        "text": "PUMPKIN MAN SHAKE. RENFIELD EAT BUGS. YUCK! GO SAY HI!",
-        "concurrent": false
+        "text": "OKAY FRIEND. GROUNDBREAKER STUCK IN GROUND. YOU GOT LEGS. LUCKY."
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "sayThis",
+        "text": "GO UP HILL. KNIGHT HAS STORY. GO ASK. BRING SNACK. KNIGHT NO EAT SIX HUNDRED YEARS. HUNGRY."
+      },
+      {
+        "type": "wait",
+        "duration": 700
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Hugeskelly.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "sayThis",
+        "text": "OR GO SEE COUNT. SAY GROUNDBREAKER SENT YOU. HE LIKE THAT. HE PRETEND HE DON'T. [chuckles] BYE, FRIEND!"
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "audio",
+        "audioId": "castle-thunder-sound-effect",
+        "volume": 60,
+        "jawSync": false
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Groundbreaker",
+        "reason": "groundbreaker-scene"
       }
     ],
-    "created": "2026-10-05T22:20:55.001Z"
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
+  },
+  {
+    "id": 8,
+    "name": "Groundbreaker: Breaking Ground",
+    "description": "Fleet event 1 (the Lighting of the Castle, ~26 s): voice only; he breaks ground hollering at the household, then calls for Calvin, Ben, Bennett, Holden and Harrison and promises them a big, mostly safe friend. Ends at Home (no movable part).",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "[grunts] Ground's loose tonight! Groundbreaker's coming UP! Hey Pumpkinhead! Hey knight! Hey Count! Groundbreaker's HERE!"
+      },
+      {
+        "type": "wait",
+        "duration": 700
+      },
+      {
+        "type": "sayThis",
+        "text": "Anybody named Calvin out there? Or Ben? Bennett? Holden? Harrison? Groundbreaker's got you. Big friend. Mostly safe."
+      },
+      {
+        "type": "wait",
+        "duration": 100
+      }
+    ],
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
+  },
+  {
+    "id": 9,
+    "name": "Groundbreaker: QUIETLY",
+    "description": "Fleet event 2 (the Count's orders, ~30 s): voice only; told to guard the road quietly, he guards it LOUDLY, then wonders whether that was quiet and tells Calvin and Harrison they are safe. Ends at Home (no movable part).",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "GUARD THE ROAD! LOUDLY! Got it, boss! [shouting] EVERYBODY OFF THE ROAD! Groundbreaker's guarding it!"
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "sayThis",
+        "text": "[pause] ...Was that quiet? Groundbreaker did quiet. Hey Calvin, hey Harrison, you're safe now. Groundbreaker fixed it."
+      },
+      {
+        "type": "wait",
+        "duration": 6532
+      }
+    ],
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
+  },
+  {
+    "id": 10,
+    "name": "Groundbreaker: The Giant's Verse",
+    "description": "Fleet event 3 (the song, ~18 s): voice only, big and off-key; his verse of 'One Night, One Castle'. Ends at Home (no movable part).",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "[sings] Groundbreaker's coming up through the dirt, big dumb hug and nobody hurt! Calvin, Ben, Bennett, Holden, Harrison... Groundbreaker's got you, every one!"
+      },
+      {
+        "type": "wait",
+        "duration": 3611
+      }
+    ],
+    "created": "2026-10-10T16:00:00.000Z",
+    "updated": "2026-10-10T16:00:00.000Z"
   }
 ]

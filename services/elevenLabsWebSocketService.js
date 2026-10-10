@@ -128,6 +128,201 @@ export function isAnswerTurn(agentResponseEvent) {
     return !Array.isArray(ids) || ids.length > 0;
 }
 
+// ---------------------------------------------------------------------------
+// Duplex mode (mission D1)
+//
+// FULL duplex: the real microphone reaches the agent while the character
+// speaks, and the agent's own turn model decides when the guest has
+// interrupted (its `interruption` event). Only safe where the microphone
+// cancels the character's own voice in hardware: the ReSpeaker XVF3800 is one
+// USB device for both directions, so its DSP knows what is being played and
+// subtracts it. Decided from the microphone/speaker parts, never from a
+// character or a node.
+//
+// HALF duplex: no echo cancellation (a webcam mic, a bare USB adapter). The
+// character's own voice would come straight back as "guest speech", so the
+// agent keeps receiving silence while it speaks; an echo-aware local detector
+// is the only way a guest can cut in, and the mic reopens at most
+// HALF_DUPLEX_TAIL_MS after the speaker falls silent (it used to be 2.5 s, long
+// enough to swallow a guest answering the character's closing question).
+// ---------------------------------------------------------------------------
+export const HALF_DUPLEX_TAIL_MS = 400;
+
+const XVF3800_PATTERN = /xvf[\s_-]?3800/i;
+
+function _partStrings(part) {
+    if (!part) return '';
+    const cfg = part.config || {};
+    return [part.name, part.model, part.modelId, part.inputDevice, part.outputDevice,
+        cfg.deviceId, cfg.inputDevice, cfg.audioDeviceId, cfg.outputDevice, cfg.modelId, cfg.model]
+        .filter(v => typeof v === 'string').join(' ');
+}
+
+function _normaliseDuplex(value) {
+    const v = String(value == null ? '' : value).trim().toLowerCase();
+    if (v === 'full' || v === 'full-duplex' || v === 'duplex' || v === 'aec') return 'full';
+    if (v === 'half' || v === 'half-duplex' || v === 'simplex') return 'half';
+    return null;
+}
+
+/**
+ * Decide a session's duplex mode from the character's audio parts.
+ * Pure and exported for tests.
+ *
+ * Precedence: explicit override (env MB_CONVERSATION_DUPLEX, or `duplex` on the
+ * microphone part's config) > hardware detection. Detection says FULL only when
+ * the microphone is an XVF3800 AND the speaker is not explicitly some other
+ * device: the array cancels only what it plays itself, so an XVF3800 mic next
+ * to a separate USB speaker has no echo reference at all. A speaker of
+ * "default" (or none) is trusted to be the array, which is how several
+ * XVF3800 nodes are configured.
+ *
+ * @returns {{ mode: 'full'|'half', reason: string, source: 'override'|'detected' }}
+ */
+export function detectDuplexMode({ micPart = null, speakerPart = null, override = null } = {}) {
+    const forced = _normaliseDuplex(override);
+    if (forced) return { mode: forced, reason: `override=${override}`, source: 'override' };
+    const partForced = _normaliseDuplex(micPart && micPart.config && micPart.config.duplex);
+    if (partForced) return { mode: partForced, reason: `microphone part config.duplex=${micPart.config.duplex}`, source: 'override' };
+
+    const micText = _partStrings(micPart);
+    if (!micPart || !XVF3800_PATTERN.test(micText)) {
+        return { mode: 'half', reason: micPart ? `microphone "${micPart.name || micPart.id}" has no hardware echo cancellation` : 'no microphone part', source: 'detected' };
+    }
+    const spkCfg = (speakerPart && speakerPart.config) || {};
+    const spkDevice = spkCfg.audioDeviceId || spkCfg.deviceId || spkCfg.outputDevice || (speakerPart && speakerPart.outputDevice) || 'default';
+    if (spkDevice && spkDevice !== 'default' && !XVF3800_PATTERN.test(String(spkDevice))) {
+        return { mode: 'half', reason: `XVF3800 microphone but speaker is "${spkDevice}" (no echo reference)`, source: 'detected' };
+    }
+    return { mode: 'full', reason: `XVF3800 microphone, speaker=${spkDevice === 'default' ? 'default (assumed the array)' : 'array'}`, source: 'detected' };
+}
+
+// Echo-aware barge-in for half-duplex nodes. The old detector compared each
+// frame with the QUIETEST frame heard while the character spoke, so every
+// louder passage of the character's own voice looked like a guest talking
+// over it (self-interruptions, KNOWN-BUGS). This one predicts the echo from
+// what is being played right now: expected = coupling x playback level, where
+// coupling (mic RMS per unit of playback RMS) is learned from the frames
+// themselves. A guest must sit clearly above the PREDICTED echo.
+const ECHO_COUPLING_RISE = 0.3;
+const ECHO_COUPLING_FALL = 0.05;
+// Full duplex: while the character speaks, real mic audio reaches the agent only
+// when it clears the PREDICTED echo by this much. Hardware AEC is not perfect:
+// measured live on an XVF3800 node the residual was ~0.4 x the playback level,
+// enough for the agent to transcribe the character's own lines and interrupt
+// itself.
+const FULL_DUPLEX_ECHO_MARGIN = 3.0;
+const ECHO_MIN_PLAYBACK_RMS = 0.01;
+
+/**
+ * Pure and exported for tests.
+ * @param {object} state { coupling, bargeInFrames, speechStartedAt, learnFrames }
+ * @param {number} micRms     0..1 energy of the mic frame
+ * @param {number} playbackRms 0..1 energy of what the speaker played during that frame (+ reverb window)
+ * @param {number} now epoch ms
+ * @returns {{ bargeIn, run, threshold, expectedEcho, coupling, learnFrames }}
+ */
+export function echoAwareBargeIn(state, micRms, playbackRms, now) {
+    const s = state || {};
+    let coupling = Number.isFinite(s.coupling) ? s.coupling : null;
+    let learnFrames = s.learnFrames || 0;
+    const playing = playbackRms > ECHO_MIN_PLAYBACK_RMS;
+    const startedAt = s.speechStartedAt || 0;
+    const inGrace = !!startedAt && (now - startedAt) < BARGE_IN_GRACE_MS;
+
+    const expectedEcho = coupling != null ? coupling * playbackRms : 0;
+    const threshold = Math.max(BARGE_IN_RMS_FLOOR, expectedEcho * BARGE_IN_MARGIN);
+    const over = coupling != null && micRms > threshold;
+
+    // Learn coupling only from frames that look like echo: while playing, and
+    // never from a frame that is itself a candidate interruption. The first
+    // frames seed it with the MAX ratio seen (conservative: a guest is rarely
+    // talking over the first syllables, and over-estimating echo only makes
+    // the character harder to interrupt, never self-interrupting).
+    if (playing) {
+        const ratio = micRms / playbackRms;
+        if (coupling == null || learnFrames < 3) {
+            coupling = coupling == null ? ratio : Math.max(coupling, ratio);
+            learnFrames += 1;
+        } else if (!over) {
+            // Upper envelope, not a mean: rise fast, fall slowly. The echo
+            // ratio swings frame to frame (reverb tails, syllable onsets); a
+            // mean let ~1 frame in 3 of the character's own voice through the
+            // full-duplex gate on an XVF3800 array (self-transcripts, measured
+            // 2026-10-10, coupling ~0.4).
+            const a = ratio > coupling ? ECHO_COUPLING_RISE : ECHO_COUPLING_FALL;
+            coupling = coupling + a * (ratio - coupling);
+            learnFrames += 1;
+        }
+    }
+
+    const run = (over && !inGrace) ? (s.bargeInFrames || 0) + 1 : 0;
+    return {
+        bargeIn: run >= BARGE_IN_FRAMES,
+        run, threshold, expectedEcho, coupling, learnFrames
+    };
+}
+
+/**
+ * Audio of an interrupted response must never reach the speaker, even when it
+ * arrives after the interruption. ElevenLabs numbers events monotonically and
+ * the interruption carries the id the conversation resumes from; the official
+ * client plays only audio with event_id >= that id. Pure and exported.
+ */
+export function isInterruptedAudio(eventId, resumeFromEventId) {
+    if (resumeFromEventId == null || eventId == null) return false;
+    const e = Number(eventId), r = Number(resumeFromEventId);
+    if (!Number.isFinite(e) || !Number.isFinite(r)) return false;
+    return e < r;
+}
+
+/** Did the server refuse our empty first_message override? Pure and exported. */
+export function isFirstMessageOverrideRefusal(code, reason) {
+    return Number(code) === 1008 && /first_message/i.test(String(reason || ''));
+}
+
+/** Backoff for headless reconnects: 1 s, 2 s, 5 s, 10 s, then 30 s. Pure and exported. */
+export function reconnectDelayMs(attempt) {
+    const steps = [1000, 2000, 5000, 10000, 30000];
+    const i = Math.max(0, Math.min(steps.length - 1, (attempt | 0)));
+    return steps[i];
+}
+
+/**
+ * A transcript of pure punctuation ("...", "-") is the agent's ASR hearing
+ * room noise, not a guest. It must not count as guest activity (it would keep
+ * an empty yard "awake" forever). Pure and exported.
+ */
+export function isNoiseTranscript(text) {
+    return !/[A-Za-z0-9À-ɏ]/.test(String(text || ''));
+}
+
+/** p50/p90 of a numeric list (nulls ignored). Pure and exported. */
+export function percentiles(values) {
+    const v = (values || []).filter(x => Number.isFinite(x)).sort((a, b) => a - b);
+    if (!v.length) return { n: 0, p50: null, p90: null };
+    const pick = (q) => v[Math.min(v.length - 1, Math.floor(q * (v.length - 1) + 0.5))];
+    return { n: v.length, p50: pick(0.5), p90: pick(0.9) };
+}
+
+const TURN_HISTORY_MAX = 20;
+// A "speech end" older than this before the transcript is not this turn's.
+const SPEECH_END_MAX_AGE_MS = 15000;
+const AGENT_ACTIVITY_THROTTLE_MS = 2000;
+const BODY_STATE_MIN_INTERVAL_MS = 5000;
+// One-shot asks: the answer is complete once its audio has gone quiet this long
+// (unless the agent says so first with agent_response_complete).
+const ONE_SHOT_SETTLE_MS = 900;
+// A live-session ask waits at most this long for its reply to finish playing.
+const ASK_PLAYOUT_CAP_MS = 90000;
+// No answer audio at all by now: give up (the caller is answered with text).
+const ONE_SHOT_NO_ANSWER_MS = 30000;
+// Absolute ceiling for a one-shot, including playing the answer out.
+const ONE_SHOT_CEILING_MS = 120000;
+// First-message override refusals are remembered this long, then retried, so
+// the fast path comes back by itself once the agent allows the override.
+const FIRST_MESSAGE_REFUSAL_TTL_MS = 10 * 60 * 1000;
+
 // Set MB_WS_DEBUG=1 to dump per-message WebSocket payload previews. Default
 // silent: every conversation message otherwise lands in monsterbox.log and
 // wears the SD card.
@@ -173,20 +368,26 @@ function _floorFrameB64(byteLength) {
  * not say whether to tune end-of-turn detection, the LLM, or TTS. These four
  * deltas do.
  */
-function logTurnLatency(connection, sessionId) {
-    const t = connection && connection._turn;
-    if (!t || !t.firstAudioAtMs || t._logged) return;
-    t._logged = true;
-    const parts = [];
-    const from = t.speechEndMs || t.transcriptAtMs;
-    parts.push(`src=${t.source || 'speech'}`);
-    if (t.speechEndMs && t.transcriptAtMs) parts.push(`speech-end→transcript ${t.transcriptAtMs - t.speechEndMs}ms`);
-    if (t.transcriptAtMs && t.responseAtMs) parts.push(`transcript→LLM-text ${t.responseAtMs - t.transcriptAtMs}ms`);
-    if (t.transcriptAtMs) parts.push(`transcript→first-audio ${t.firstAudioAtMs - t.transcriptAtMs}ms`);
-    if (t.responseAtMs) parts.push(`LLM-text→first-audio ${t.firstAudioAtMs - t.responseAtMs}ms`);
-    else parts.push(`LLM-text→first-audio n/a (audio led text)`);
-    if (from) parts.push(`TOTAL-to-first-sound ${t.firstAudioAtMs - from}ms`);
-    console.log(`⏱️  [turn-latency] session=${sessionId} ${parts.join('  |  ')}`);
+export function turnMetrics(t) {
+    const d = (a, b) => (Number.isFinite(a) && Number.isFinite(b)) ? Math.round(b - a) : null;
+    const anchor = t.speechEndMs || t.transcriptAtMs;
+    return {
+        speechEndToTranscriptMs: d(t.speechEndMs, t.transcriptAtMs),
+        transcriptToFirstAudioMs: d(t.transcriptAtMs, t.firstAudioAtMs),
+        firstAudioToPlaybackMs: d(t.firstAudioAtMs, t.playbackStartAtMs),
+        speechEndToPlaybackMs: d(anchor, t.playbackStartAtMs),
+        replyMs: d(t.playbackStartAtMs, t.playbackEndAtMs)
+    };
+}
+
+/** One compact log line per turn. Pure and exported for tests. */
+export function formatTurnLine(t) {
+    const m = turnMetrics(t);
+    const f = (v) => (v == null ? '-' : `${v}ms`);
+    return `⏱️  [turn] char=${t.characterId} src=${t.source || 'speech'} mode=${t.mode || '?'} ` +
+        `speechEnd→transcript=${f(m.speechEndToTranscriptMs)} transcript→audio=${f(m.transcriptToFirstAudioMs)} ` +
+        `audio→play=${f(m.firstAudioToPlaybackMs)} TOTAL=${f(m.speechEndToPlaybackMs)} reply=${f(m.replyMs)} ` +
+        `interrupted=${t.interrupted ? 'yes' : 'no'}${t.muted ? ' muted' : ''}${t.coldStart ? ' cold-player' : ''}`;
 }
 
 // Minimal WAV encoder for PCM16LE mono (16kHz)
@@ -302,6 +503,38 @@ async function getAgentIdForCharacter(characterId) {
 }
 
 
+/**
+ * The character's microphone and speaker parts.
+ *
+ * parts.json lives in the selected character's own data directory, and several
+ * characters' parts carry `characterId: null` (some microphones do), so an
+ * exact characterId match is preferred but an unowned part in the same file is
+ * accepted. Matching on characterId alone silently resolved such a mic to
+ * "default".
+ */
+async function getAudioPartsForCharacter(characterId) {
+    try {
+        const partsFile = await resolvePartsPath();
+        const parts = JSON.parse(await fs.readFile(partsFile, 'utf8'));
+        if (!Array.isArray(parts)) return { mic: null, speaker: null };
+        const pick = (type) => {
+            const ofType = parts.filter(p => String(p.type).toLowerCase() === type);
+            return ofType.find(p => p.characterId != null && Number(p.characterId) === Number(characterId))
+                || ofType.find(p => p.characterId == null)
+                || null;
+        };
+        return { mic: pick('microphone'), speaker: pick('speaker') };
+    } catch (e) {
+        console.warn('⚠️ Could not read audio parts for character:', e.message);
+        return { mic: null, speaker: null };
+    }
+}
+
+// Capture-device resolution is deliberately left on its historical exact-match
+// rule: widening it would move an XVF3800 node's live capture from "default" to the
+// array's explicit source name, a separate change to the XVF3800 capture path
+// (see docs/hardware/RESPEAKER-XVF3800.md, Capture traps) that needs its own
+// FRAMES proof. Duplex detection uses getAudioPartsForCharacter() above.
 async function getMicrophoneDeviceForCharacter(characterId) {
     try {
         const partsFile = await resolvePartsPath();
@@ -340,6 +573,21 @@ class ElevenLabsWebSocketService extends EventEmitter {
         this.cleanupIntervalMs = 60000; // cleanup every minute
         this._cleanupTimer = null;
 
+        // characterId -> finished turns (newest last), for getTurnLatency().
+        this._turnHistory = new Map();
+        // characterId -> last agent_speech activity emit (throttle).
+        this._agentActivityAt = new Map();
+        // agentId -> time the server refused an empty first_message override.
+        this._firstMessageRefusedAt = new Map();
+        // characterId -> [{ start, end, rms }] of what the speaker is playing,
+        // for the half-duplex echo-aware barge-in.
+        this._playbackEnvelope = new Map();
+        // characterId -> { at, text } of the last body-state update sent.
+        this._bodyStateSent = new Map();
+        // Lets tests replace the network edge (signed URL + socket) and the jaw.
+        this._openAgentSocket = null;
+        this._jaw = jawAnimationService;
+
         console.log('🎤 ElevenLabsWebSocketService initialized with hardening');
     }
 
@@ -370,7 +618,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
             // browser lifetime. Reaping a live one on age would silently switch the
             // agent off; they are torn down deterministically by
             // setAgentEnabledForCharacter(id, false) instead.
-            if (connection.headless && connection.isActive) continue;
+            // A wanted headless session between reconnect attempts is inactive
+            // for a few seconds; reaping it then would end AI mode for good.
+            if (connection.headless && (connection.isActive || connection._wanted)) continue;
 
             // Remove sessions older than timeout OR inactive for 5 minutes
             const inactive = !connection.isActive && age > 300000;
@@ -413,7 +663,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
                 // Stop the streaming jaw driver's 50ms timer
                 if (connection.characterId != null) {
-                    try { jawAnimationService.stopPcmJawStream(connection.characterId); } catch (_) { /* noop */ }
+                    try { this._jaw.stopPcmJawStream(connection.characterId); } catch (_) { /* noop */ }
                     // Return the eyes to their resting look when the session ends.
                     import('./ledInteractionService.js').then(m => m.default.setInteractionState(connection.characterId, 'idle')).catch(() => {});
                 }
@@ -623,9 +873,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     // Override which speaker part to route audio through
                     connection.speakerPartId = message.speakerPartId || null;
                     console.log(`🔊 Speaker part set to ${connection.speakerPartId} for session ${sessionId}`);
-                    // Stop existing stream so next chunk creates one with the new device
+                    // Stop THIS session's player so the next chunk opens one on the
+                    // new device. Only its own: stopping the character's shared
+                    // player used to cut the headless agent off mid-sentence.
+                    connection._speakerDeviceId = null;
+                    connection._speakerDevicePromise = null;
                     if (connection.characterId != null) {
-                        try { serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { }
+                        try { serverPlaybackService.stopStream({ characterId: connection.characterId, owner: sessionId }); } catch (_) { }
                     }
                     break;
 
@@ -647,7 +901,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         const browserNow = Date.now();
                         const browserSuppressed = connection && connection.suppressMicUntilMs && (browserNow < connection.suppressMicUntilMs);
 
-                        // Forward to ElevenLabs ConvAI agent (skip during echo suppression)
+                        // Forward to ElevenLabs ConvAI agent (skip during echo suppression;
+                        // a browser mic has no hardware echo cancellation we can know of)
                         if (connection && !browserSuppressed && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                             connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: audio64 }));
                         }
@@ -687,9 +942,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
     /**
      * Start conversation with ElevenLabs agent using real-time WebSocket API
      */
-    async startConversation(sessionId, agentId) {
+    async startConversation(sessionId, agentId, opts = {}) {
         const connection = this.activeConnections.get(sessionId);
-        if (!connection) return;
+        if (!connection) return false;
 
         try {
             // If no agentId provided, try to resolve from character mapping (characters.json)
@@ -702,67 +957,89 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     }
                 } catch (_) { /* noop */ }
             }
-            console.log(`🚀 Starting real-time conversation with agent: ${agentId}`);
+            console.log(`🚀 Starting real-time conversation with agent: ${agentId}${opts.reconnect ? ' (reconnect)' : ''}`);
 
-            // Close any existing ElevenLabs connection
+            // Close any existing ElevenLabs connection. Forget it FIRST so its
+            // close handler knows it has been superseded and does nothing.
             if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
-                connection.elevenLabsWs.close();
+                const old = connection.elevenLabsWs;
+                connection._agentSocket = null;
                 connection.elevenLabsWs = null;
+                try { old.close(); } catch (_) { /* noop */ }
             }
 
-            // Get signed URL for ElevenLabs real-time WebSocket
-            const signedUrlResponse = await fetch(
-                `${this.config.baseUrl}/convai/conversation/get-signed-url?agent_id=${agentId}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'xi-api-key': this.config.apiKey,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
+            // A reconnect must not replay the walk-up greeting: ask for an empty
+            // first message (the agent then waits for the guest). Agents that do
+            // not allow the override refuse the whole conversation (close 1008),
+            // so a recent refusal is remembered and the greeting is filtered
+            // client-side instead (see _suppressGreeting).
+            const wantEmptyFirst = !!opts.reconnect && !this._firstMessageRefusedRecently(agentId);
+            const override = wantEmptyFirst ? { agent: { first_message: '' } } : {};
+            connection._suppressGreeting = !!opts.reconnect && !wantEmptyFirst;
+            connection._greetingVerdicts = new Map();
+            connection._greetingStaged = new Map();
+            connection._resumeFromEventId = null;
+            connection._sentEmptyFirstMessage = wantEmptyFirst;
 
-            if (!signedUrlResponse.ok) {
-                throw new Error(`Failed to get signed URL: HTTP ${signedUrlResponse.status}`);
-            }
-
-            const { signed_url } = await signedUrlResponse.json();
-            console.log(`🔗 Got signed URL for agent ${agentId}`);
-
-            // Connect to ElevenLabs real-time WebSocket
-            const elevenLabsWs = new WebSocket(signed_url);
+            const elevenLabsWs = await this._connectAgent(agentId);
+            connection._agentSocket = elevenLabsWs;
+            connection._connecting = true;
 
             elevenLabsWs.on('open', () => {
+                if (connection._agentSocket !== elevenLabsWs) return;
                 console.log(`⚡ Connected to ElevenLabs real-time agent: ${agentId}`);
                 connection.elevenLabsWs = elevenLabsWs;
                 connection.agentId = agentId;
+                connection._connecting = false;
+                connection._socketOpenedAt = Date.now();
                 // Mark as active but NOT ready for messages until conversation_initiation_metadata received
                 connection.isActive = true;
                 connection.conversationReady = false;
                 connection.pendingMessages = connection.pendingMessages || [];
 
-                // Send minimal conversation initiation — let the agent's own config handle everything
                 elevenLabsWs.send(JSON.stringify({
                     type: 'conversation_initiation_client_data',
-                    conversation_config_override: {}
+                    conversation_config_override: override
                 }));
             });
 
             elevenLabsWs.on('message', (data) => {
+                if (connection._agentSocket !== elevenLabsWs) return;
                 this.handleElevenLabsMessage(sessionId, data);
             });
 
             elevenLabsWs.on('close', (code, reason) => {
-                console.log(`🔌 ElevenLabs real-time connection closed for ${sessionId} (code=${code}, reason=${reason || 'none'})`);
+                const reasonText = String(reason || '');
+                // A socket we replaced (reconnect, restart) must not tear down
+                // the connection that now belongs to its successor.
+                if (connection._agentSocket !== elevenLabsWs) return;
+                console.log(`🔌 ElevenLabs real-time connection closed for ${sessionId} (code=${code}, reason=${reasonText || 'none'})`);
+                connection._agentSocket = null;
+                connection._connecting = false;
                 connection.elevenLabsWs = null;
                 connection.isActive = false;
                 connection.conversationReady = false;
+                this._finalizeTurn(connection, 'socket closed');
                 // Settle any question still waiting on this socket, or its HTTP
                 // caller would block until the full ask timeout for no reason.
                 try { this._abortPendingAsk(sessionId, `socket closed (code=${code})`); } catch (_) { /* noop */ }
-                // Stop persistent audio stream so mpg123 flushes remaining data and exits cleanly
+
+                const refused = isFirstMessageOverrideRefusal(code, reasonText);
+                if (refused) {
+                    this._firstMessageRefusedAt.set(String(agentId), Date.now());
+                    console.warn(`⚠️ Agent ${agentId} refused the empty first_message override: reconnecting without it; the greeting will be filtered client-side`);
+                }
+
+                // Let the character finish the sentence it was saying: a closed
+                // socket (max duration, network drop, AI off) is not an
+                // interruption. Only this session's own player is touched.
                 if (connection.characterId != null) {
-                    try { serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* noop */ }
+                    try { serverPlaybackService.stopStream({ characterId: connection.characterId, owner: sessionId, drain: true }); } catch (_) { /* noop */ }
+                }
+
+                if (this._shouldReconnect(sessionId)) {
+                    this._scheduleReconnect(sessionId, { immediate: refused, code, reason: reasonText });
+                    return;
                 }
                 this.sendToClient(sessionId, {
                     type: 'conversation_ended',
@@ -777,13 +1054,80 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     message: 'Real-time agent connection failed'
                 });
             });
+            return true;
 
         } catch (error) {
+            connection._connecting = false;
             console.error(`❌ Failed to start real-time conversation for ${sessionId}:`, error.message);
             this.sendToClient(sessionId, {
                 type: 'error',
                 message: 'Failed to connect to real-time agent: ' + error.message
             });
+            return false;
+        }
+    }
+
+    /**
+     * Signed URL + socket. One place, so tests can replace the network edge
+     * (`service._openAgentSocket = async (agentId) => fakeSocket`).
+     */
+    async _connectAgent(agentId) {
+        if (typeof this._openAgentSocket === 'function') return this._openAgentSocket(agentId);
+        const signedUrlResponse = await fetch(
+            `${this.config.baseUrl}/convai/conversation/get-signed-url?agent_id=${agentId}`,
+            { method: 'GET', headers: { 'xi-api-key': this.config.apiKey, 'Content-Type': 'application/json' } }
+        );
+        if (!signedUrlResponse.ok) {
+            throw new Error(`Failed to get signed URL: HTTP ${signedUrlResponse.status}`);
+        }
+        const { signed_url } = await signedUrlResponse.json();
+        console.log(`🔗 Got signed URL for agent ${agentId}`);
+        return new WebSocket(signed_url);
+    }
+
+    _firstMessageRefusedRecently(agentId) {
+        const at = this._firstMessageRefusedAt.get(String(agentId));
+        return !!(at && (Date.now() - at) < FIRST_MESSAGE_REFUSAL_TTL_MS);
+    }
+
+    /** Is this still the character's wanted headless session? */
+    _shouldReconnect(sessionId) {
+        const c = this.activeConnections.get(sessionId);
+        if (!c || !c.headless || !c._wanted) return false;
+        return this.headlessSessions.get(String(c.characterId)) === sessionId;
+    }
+
+    /**
+     * Reopen a headless session's agent socket after it closed underneath us
+     * (the agent's max call duration, a network drop, an idle close). The
+     * connection record, its microphone capture process and its player all
+     * survive; only the socket is new, and it opens without a greeting.
+     */
+    _scheduleReconnect(sessionId, info = {}) {
+        const c = this.activeConnections.get(sessionId);
+        if (!c) return;
+        if (c._reconnectTimer) return;
+        // A session that stayed up a minute earned a fresh backoff.
+        if (c._socketOpenedAt && (Date.now() - c._socketOpenedAt) > 60000) c._reconnectAttempt = 0;
+        const attempt = c._reconnectAttempt || 0;
+        const delay = info.immediate ? 250 : reconnectDelayMs(attempt);
+        c._reconnectAttempt = attempt + 1;
+        console.log(`🔁 [reconnect] character ${c.characterId} session ${sessionId}: attempt ${attempt + 1} in ${delay}ms (closed code=${info.code}${info.reason ? `, "${info.reason}"` : ''})`);
+        c._reconnectTimer = setTimeout(async () => {
+            c._reconnectTimer = null;
+            if (!this._shouldReconnect(sessionId)) return;
+            const ok = await this.startConversation(sessionId, c.agentId || null, { reconnect: true });
+            if (!ok && this._shouldReconnect(sessionId)) {
+                this._scheduleReconnect(sessionId, { code: 'connect-failed' });
+            }
+        }, delay);
+        if (c._reconnectTimer.unref) c._reconnectTimer.unref();
+    }
+
+    _cancelReconnect(connection) {
+        if (connection && connection._reconnectTimer) {
+            clearTimeout(connection._reconnectTimer);
+            connection._reconnectTimer = null;
         }
     }
 
@@ -871,6 +1215,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         connection.audioOutputFormat = 'pcm_16000';
                     }
 
+                    if (connection._reconnectAttempt) {
+                        console.log(`🔁 [reconnect] character ${connection.characterId} session ${sessionId} reconnected ` +
+                            `(${connection._sentEmptyFirstMessage ? 'empty first_message override' : 'greeting filtered client-side'})`);
+                    }
+                    // Resolve the speaker once for the session, before the first chunk.
+                    this._ensureSpeakerDevice(connection);
+
                     // NOW notify the client that conversation is ready
                     this.sendToClient(sessionId, {
                         type: 'conversation_started',
@@ -886,10 +1237,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     // Opening body context: tell the agent where its body
                     // already is, so "is your arm up?" works even when the arm
                     // was raised before this conversation began.
+                    // Sent on this socket only (a new conversation has no memory of
+                    // what earlier sockets were told).
                     if (connection.characterId != null) {
                         import('./bodyStateService.js').then(m => {
                             const summary = (m.default || m).summarize(connection.characterId);
-                            if (summary) this.sendContextualUpdate(connection.characterId, summary, 'body_state_summary');
+                            if (summary && connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
+                                connection.elevenLabsWs.send(JSON.stringify({ type: 'contextual_update', text: summary, context_id: 'body_state_summary' }));
+                                this._bodyStateSent.set(String(connection.characterId), { at: Date.now(), text: summary });
+                            }
                         }).catch(() => { /* optional */ });
                     }
 
@@ -904,192 +1260,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     break;
 
                 case 'audio':
-                    // Real-time audio chunk from ElevenLabs agent
-                    if (message.audio_event) {
-                        const audioData = message.audio_event.audio_base_64;
-                        // Extract text only if actually present in this chunk
-                        const responseText = message.audio_event?.agent_response ||
-                            message.audio_event?.text ||
-                            null;
-
-                        const c = this.activeConnections.get(sessionId);
-
-                        // Just barged in: ElevenLabs is still streaming the sentence we
-                        // cut off, and handing those chunks to writePcmStream would
-                        // respawn the player _bargeIn just killed — the interruption
-                        // would audibly un-do itself. Drop them for the discard window.
-                        if (c && c.discardAgentAudioUntilMs && Date.now() < c.discardAgentAudioUntilMs) {
-                            break;
-                        }
-
-                        // Audio counts as reply activity for a question asked on this
-                        // session — a filler line or a reply that is still streaming
-                        // must keep the caller waiting rather than settling early.
-                        if (c && c._pendingAsk && audioData) {
-                            c._pendingAsk.sawAudio = true;
-                            this._settlePendingAsk(sessionId);
-                        }
-
-                        // Track accumulated audio duration for accurate echo suppression
-                        if (c && audioData) {
-                            const audioBuffer = Buffer.from(audioData, 'base64');
-                            const fmt = c.audioOutputFormat || 'pcm_16000';
-
-                            // Detect the start of a NEW utterance. aiSpeaking is only
-                            // cleared on conversation_end/interruption, so relying on it
-                            // alone pinned speechStartedAt to the very first reply while
-                            // accumulatedAudioMs kept growing across every later turn:
-                            // the deadline below then resolved to a time in the PAST and
-                            // echo suppression silently stopped working after turn one.
-                            // Audio for one utterance arrives back-to-back, so a gap
-                            // means a new utterance.
-                            const nowMs = Date.now();
-                            // Only the first chunk of a NEW utterance closes the turn
-                            // clock. Audio still draining from the previous reply would
-                            // otherwise land microseconds after the transcript and
-                            // report an absurd sub-100ms turn.
-                            // The gap check alone identifies the first chunk of a new
-                            // reply. Requiring responseAtMs as well silently dropped
-                            // the whole measurement whenever audio arrived before the
-                            // agent_response text event — which is the normal ordering
-                            // for a text-injected question, so that path was never
-                            // being timed at all.
-                            if (c._turn && !c._turn.firstAudioAtMs
-                                && (!c.lastAudioChunkAt || (nowMs - c.lastAudioChunkAt) > 1200)) {
-                                c._turn.firstAudioAtMs = nowMs;
-                                logTurnLatency(c, sessionId);
-                            }
-                            const UTTERANCE_GAP_MS = 1200;
-                            if (!c.aiSpeaking || (c.lastAudioChunkAt && (nowMs - c.lastAudioChunkAt) > UTTERANCE_GAP_MS)) {
-                                // First chunk of a new utterance
-                                c.aiSpeaking = true;
-                                c.speechStartedAt = nowMs;
-                                c.accumulatedAudioMs = 0;
-                            }
-                            c.lastAudioChunkAt = nowMs;
-
-                            // Calculate chunk duration: PCM16LE mono = 2 bytes/sample
-                            let chunkMs;
-                            if (fmt.startsWith('pcm_')) {
-                                const sampleRate = parseInt(fmt.split('_')[1]) || 16000;
-                                chunkMs = (audioBuffer.length / (sampleRate * 2)) * 1000;
-                            } else {
-                                // MP3: estimate ~128kbps → duration_ms ≈ bytes * 8 / 128
-                                chunkMs = (audioBuffer.length * 8 / 128);
-                            }
-                            c.accumulatedAudioMs += chunkMs;
-
-                            // Model when the speaker will actually FALL SILENT, not when
-                            // the bytes arrived. ElevenLabs streams a reply far faster
-                            // than real time — a 10s reply can land in 3s — so a deadline
-                            // of "first-chunk arrival + total duration" expired while the
-                            // speaker was still talking, and the tail of the character's
-                            // own reply went back into the agent as guest speech.
-                            //
-                            // Chunks play serially, so the queue drains at
-                            // max(now, previous end) + this chunk's duration.
-                            c.playbackEndsAtMs = Math.max(c.playbackEndsAtMs || 0, nowMs) + chunkMs;
-
-                            // Suppress until the speaker is quiet, plus a tail for room
-                            // reverb and the capture pipeline's own buffering.
-                            // Never move the deadline EARLIER: a new utterance starting while
-                            // the previous one is still draining out of the speaker must not
-                            // shorten the window and let the tail of it back in as "user" speech.
-                            const TAIL_BUFFER_MS = 2500; // extra room reverb tolerance
-                            // Apply to EVERY session of this character, not just the
-                            // one that received the audio. There is one speaker and one
-                            // microphone per character, but there can be several sessions
-                            // (a browser client on the conversation page plus a headless
-                            // agent, or a one-shot ask socket). Suppressing only the
-                            // receiving session left the others' mic loops wide open
-                            // during playback, and they transcribed the character's own
-                            // reply back as guest speech ("Yes.", "...") — the spurious
-                            // follow-up turns seen in the logs.
-                            this._suppressMicUntil(c.characterId, c.playbackEndsAtMs + TAIL_BUFFER_MS);
-                        }
-
-                        // Play AI audio through server speakers if enabled
-                        try {
-                            if (c && audioData && c.audioPlaybackEnabled !== false) {
-                                const audioBuffer = Buffer.from(audioData, 'base64');
-                                const fmt = c.audioOutputFormat || 'pcm_16000';
-                                // Log first chunk for format debugging
-                                if (!c._audioChunkCount) {
-                                    c._audioChunkCount = 0;
-                                    console.log(`🔊 First audio chunk: ${audioBuffer.length} bytes, format="${fmt}", charId=${c.characterId}, playbackEnabled=${c.audioPlaybackEnabled}`);
-                                    // Check MP3 magic bytes (0xFF 0xFB/0xF3/0xF2 or ID3)
-                                    const hdr = audioBuffer.slice(0, 4);
-                                    const isMP3 = (hdr[0] === 0xFF && (hdr[1] & 0xE0) === 0xE0) || (hdr[0] === 0x49 && hdr[1] === 0x44 && hdr[2] === 0x33);
-                                    console.log(`🔊 Audio header bytes: [${hdr[0]?.toString(16)}, ${hdr[1]?.toString(16)}, ${hdr[2]?.toString(16)}, ${hdr[3]?.toString(16)}] isMP3=${isMP3}`);
-                                }
-                                c._audioChunkCount++;
-
-                                // Use persistent streaming for continuous real-time playback.
-                                // ElevenLabs ConvAI defaults to PCM16LE; use writePcmStream
-                                // for raw PCM or writeMp3Stream if agent outputs MP3.
-                                if (fmt.startsWith('pcm_')) {
-                                    const sampleRate = parseInt(fmt.split('_')[1]) || 16000;
-                                    serverPlaybackService.writePcmStream(audioBuffer, {
-                                        characterId: c.characterId,
-                                        speakerPartId: c.speakerPartId,
-                                        volume: 90,
-                                        sampleRate,
-                                        kind: 'ai'
-                                    }).catch(err => {
-                                        console.error(`❌ AI audio playback ERROR:`, err);
-                                    });
-
-                                    // Drive jaw from PCM audio amplitude (if jaw enabled).
-                                    // Feed the whole chunk to the streaming driver, which slices it
-                                    // into 50ms frames and paces them against playback. Previously
-                                    // this took ONE RMS over the entire chunk and issued a single
-                                    // servo move per network packet — 4-6 moves across a whole reply,
-                                    // which reads as a twitch, not lip sync.
-                                    try {
-                                        jawAnimationService.driveJawFromPcmStream(c.characterId, audioBuffer, sampleRate).catch(() => {});
-                                    } catch (_) { /* non-fatal */ }
-                                } else {
-                                    serverPlaybackService.writeMp3Stream(audioBuffer, {
-                                        characterId: c.characterId,
-                                        speakerPartId: c.speakerPartId,
-                                        volume: 90,
-                                        kind: 'ai'
-                                    }).catch(err => {
-                                        console.error(`❌ AI audio playback ERROR:`, err);
-                                    });
-                                }
-                            }
-                        } catch (e) { 
-                            console.error('❌ CRITICAL: Error playing AI audio:', e); 
-                        }
-
-                        // Send audio chunk to client (type 'audio_chunk' — NOT agent_response)
-                        // Only include text if this chunk actually contains a response
-                        const chunkMsg = {
-                            type: 'audio_chunk',
-                            audio: audioData,
-                            timestamp: Date.now(),
-                            realTime: true
-                        };
-                        if (responseText) {
-                            chunkMsg.text = responseText;
-                        }
-                        this.sendToClient(sessionId, chunkMsg);
-
-                        // Trigger a safe random pose ("sway") ONCE per agent turn
-                        // while it speaks, if AI Motion ambient is enabled. Audio
-                        // events carry no text, so key off the length captured from
-                        // the agent_response event; without this the trigger always
-                        // saw length 0 and never fired (ambient-during-speech was
-                        // dead on the realtime path). triggerDuringTTS still applies
-                        // its own 50% skip + cooldown, so ~half of turns sway.
-                        try {
-                            if (c && c.characterId != null && !c._ambientFiredThisTurn && (c._ambientTurnLen || 0) >= 50) {
-                                c._ambientFiredThisTurn = true;
-                                randomPoseService.triggerDuringTTS(c.characterId, c._ambientTurnLen);
-                            }
-                        } catch (_) { /* noop */ }
-                    }
+                    this._handleAgentAudio(sessionId, connection, message);
                     break;
 
                 case 'user_transcript':
@@ -1121,14 +1292,21 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             // LED ring; speaking then takes over during playback).
                             import('./ledInteractionService.js').then(m => m.default.setInteractionState(connection.characterId, 'thinking')).catch(() => {});
 
-                            // Start the turn clock at the guest's last voiced frame.
-                            connection._turn = {
-                                speechEndMs: connection._lastVoiceAtMs || null,
-                                transcriptAtMs: Date.now(),
-                                responseAtMs: null,
-                                firstAudioAtMs: null,
+                            // Guest speech is activity (keeps the character awake);
+                            // ASR noise ("...") is not.
+                            const noise = isNoiseTranscript(userText);
+                            if (!noise) this._emitActivity(connection, 'guest_speech', { text: userText });
+
+                            // Start the turn clock at the guest's last voiced frame,
+                            // if the mic heard one recently enough to be this turn's.
+                            const nowT = Date.now();
+                            const lastVoice = connection._lastVoiceAtMs || null;
+                            this._startTurn(connection, {
+                                source: noise ? 'noise' : 'speech',
+                                speechEndMs: (lastVoice && (nowT - lastVoice) < SPEECH_END_MAX_AGE_MS) ? lastVoice : null,
+                                transcriptAtMs: nowT,
                                 text: userText
-                            };
+                            });
 
                             // Send user transcript event to client (single event, no duplicates)
                             this.sendToClient(sessionId, {
@@ -1156,8 +1334,24 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         connection._turn.responseAtMs = Date.now();
                     }
 
+                    // Greeting filter after a reconnect whose empty-first-message
+                    // override was refused: classify the turn, then release or
+                    // drop the audio staged for it.
+                    if (connection._suppressGreeting) {
+                        const evt = message.agent_response_event;
+                        if (evt && evt.event_id !== undefined) {
+                            const answer = isAnswerTurn(evt);
+                            this._releaseGreetingStage(sessionId, connection, evt.event_id, answer);
+                            if (!answer) {
+                                console.log(`🔇 [reconnect] dropped replayed greeting: "${String(responseText).slice(0, 60)}"`);
+                                break;
+                            }
+                        }
+                    }
+
                     // Speech log: the character's own line, from the live agent.
                     if (responseText) {
+                        this._emitActivity(connection, 'agent_speech', { text: responseText, prompted: this._turnIsPrompted(connection._turn) });
                         recordSpeech(connection.characterId, {
                             speaker: 'character', source: 'agent', text: responseText
                         });
@@ -1219,7 +1413,20 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     // eyes stuck in the speaking crossfade, and it never dropped the
                     // queued agent audio — so the PCM writer could respawn the player
                     // that had just been killed.
-                    this._bargeIn(sessionId, message.interruption_event?.reason || 'agent');
+                    //
+                    // D1: the agent's turn model is the judge of interruptions.
+                    // Honour it for THIS session's player only, and refuse every
+                    // chunk of the interrupted response, including late ones.
+                    this._handleAgentInterruption(sessionId, connection, message.interruption_event || {});
+                    break;
+
+                case 'agent_response_complete':
+                    // The agent finished generating this response. Settle a live
+                    // ask now instead of waiting out the quiet timer.
+                    if (connection._pendingAsk && connection._pendingAsk.sawAudio) {
+                        connection._pendingAsk.complete = true;
+                        this._settlePendingAsk(sessionId);
+                    }
                     break;
 
                 case 'client_tool_call': {
@@ -1270,17 +1477,49 @@ class ElevenLabsWebSocketService extends EventEmitter {
         const p = c && c._pendingAsk;
         if (!p) return;
         clearTimeout(p.settleTimer);
+        // agent_response_complete (when the agent sends it) ends the wait for
+        // more fragments; a short quiet still lets the final chunk land.
+        const settleMs = p.complete ? 300 : ASK_SETTLE_MS;
         p.settleTimer = setTimeout(() => {
             const still = this.activeConnections.get(sessionId);
             if (!still || still._pendingAsk !== p) return;
             still._pendingAsk = null;
             clearTimeout(p.hardTimer);
-            p.resolve({
+            this._resolveAskAfterPlayout(sessionId, p, {
                 success: true,
                 response: p.responseText || 'Response received',
                 viaSession: sessionId
             });
-        }, ASK_SETTLE_MS);
+        }, settleMs);
+    }
+
+    /**
+     * Answer a live-session question only once its reply has finished PLAYING.
+     *
+     * The agent streams a reply far faster than real time, so "no new chunk for
+     * a moment" happens while the speaker still has seconds to go. Callers that
+     * chain on the answer (a scene's askAI step runs the next step right after)
+     * overlapped the character's own line. Waits on this session's player
+     * horizon and the modelled end of its audio (which also holds while the
+     * app-level mute is on, so scene timing does not change with mute), bounded
+     * by ASK_PLAYOUT_CAP_MS. An interruption empties both, so it answers at once.
+     */
+    async _resolveAskAfterPlayout(sessionId, p, result) {
+        if (p.waitForPlayback === false) { p.resolve(result); return; }
+        const capAt = Date.now() + ASK_PLAYOUT_CAP_MS;
+        try {
+            for (;;) {
+                const c = this.activeConnections.get(sessionId);
+                if (!c) break;
+                const horizon = Math.max(
+                    Number(serverPlaybackService.getPlaybackHorizon({ characterId: c.characterId, owner: sessionId })) || 0,
+                    Number(c.playbackEndsAtMs) || 0);
+                const left = horizon - Date.now();
+                if (left <= 0 || Date.now() >= capAt) break;
+                await new Promise(r => setTimeout(r, Math.min(200, Math.max(20, left))));
+            }
+        } catch (_) { /* answer regardless */ }
+        p.resolve({ ...result, playedOut: true });
     }
 
     /**
@@ -1306,19 +1545,23 @@ class ElevenLabsWebSocketService extends EventEmitter {
     /**
      * End conversation and close ElevenLabs WebSocket
      */
-    async endConversation(sessionId) {
+    async endConversation(sessionId, { drain = true } = {}) {
         const connection = this.activeConnections.get(sessionId);
         if (!connection) return;
 
-        // Stop persistent audio stream for this character
+        // Ending a conversation is not an interruption: this session's player
+        // finishes the sentence it holds, then exits. Other sessions' players
+        // (the headless agent, a scene line) are not touched.
         if (connection.characterId != null) {
-            try { await serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* best-effort */ }
+            try { await serverPlaybackService.stopStream({ characterId: connection.characterId, owner: sessionId, drain }); } catch (_) { /* best-effort */ }
         }
 
         // Close ElevenLabs WebSocket if active
         if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
             try {
                 console.log(`🔌 Closing ElevenLabs real-time connection for ${sessionId}`);
+                // Forget it first: its close handler must not reconnect or re-drain.
+                connection._agentSocket = null;
                 connection.elevenLabsWs.close();
             } catch (error) {
                 console.warn(`⚠️ Error closing ElevenLabs connection: ${error.message}`);
@@ -1404,7 +1647,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
      * @param {boolean} enabled
      * @returns {Promise<{success:boolean, enabled:boolean, sessionId?:string, agentId?:string, error?:string}>}
      */
-    async setAgentEnabledForCharacter(characterId, enabled) {
+    async setAgentEnabledForCharacter(characterId, enabled, opts = {}) {
         if (characterId == null) {
             return { success: false, enabled: false, error: 'No character selected' };
         }
@@ -1418,8 +1661,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
             }
             // Remove the mapping first so a concurrent toggle cannot re-enter.
             this.headlessSessions.delete(key);
-            await this._teardownHeadlessSession(sessionId);
-            console.log(`🛑 Headless agent session stopped for character ${key} (${sessionId})`);
+            // Default: let the current sentence finish. opts.immediate (panic,
+            // emergency stop): cut it now.
+            await this._teardownHeadlessSession(sessionId, { drain: !opts.immediate });
+            console.log(`🛑 Headless agent session stopped for character ${key} (${sessionId}${opts.immediate ? ', immediate' : ''})`);
             return { success: true, enabled: false, sessionId };
         }
 
@@ -1427,7 +1672,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
         const existingId = this.headlessSessions.get(key);
         if (existingId) {
             const existing = this.activeConnections.get(existingId);
-            if (existing && existing.isActive) {
+            if (existing && (existing.isActive || existing._reconnectTimer || existing._connecting)) {
                 console.log(`ℹ️ Headless agent already running for character ${key} (${existingId})`);
                 return { success: true, enabled: true, sessionId: existingId, agentId: existing.agentId, alreadyRunning: true };
             }
@@ -1448,6 +1693,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
         const connection = this._createConnectionRecord(sessionId, null);
         connection.characterId = Number(characterId);
         connection.headless = true;
+        // Wanted until AI mode is switched off: the socket is reopened (without
+        // a greeting) whenever ElevenLabs closes it underneath us.
+        connection._wanted = true;
         // The agent performs its own ASR; a parallel Scribe/batch STT stream would
         // only feed a browser client that does not exist here.
         connection.useRealtimeSTT = false;
@@ -1476,13 +1724,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
      * Fully tear down a headless session: mic loop, STT session, agent socket,
      * timers and the activeConnections entry. Safe to call repeatedly.
      */
-    async _teardownHeadlessSession(sessionId) {
+    async _teardownHeadlessSession(sessionId, { drain = true } = {}) {
+        const pre = this.activeConnections.get(sessionId);
+        if (pre) { pre._wanted = false; this._cancelReconnect(pre); }
         // Settle any in-flight question first so its caller is not left hanging
         // on a session we are about to delete.
         try { this._abortPendingAsk(sessionId, 'agent disabled'); } catch (_) { /* noop */ }
         try { this._stopServerMicLoop(sessionId, true); } catch (_) { /* noop */ }
         try { this._stopRealtimeSTTSession(sessionId); } catch (_) { /* noop */ }
-        try { await this.endConversation(sessionId); } catch (_) { /* noop */ }
+        try { await this.endConversation(sessionId, { drain }); } catch (_) { /* noop */ }
 
         const connection = this.activeConnections.get(sessionId);
         if (connection) {
@@ -1494,19 +1744,22 @@ class ElevenLabsWebSocketService extends EventEmitter {
             }
             // Drop buffered audio so the playback loop exits promptly.
             connection.audioBuffer = [];
-            if (connection.elevenLabsWs) {
+            const sock = connection.elevenLabsWs || connection._agentSocket;
+            connection._agentSocket = null;
+            if (sock) {
                 try {
-                    if (connection.elevenLabsWs.readyState === WebSocket.OPEN ||
-                        connection.elevenLabsWs.readyState === WebSocket.CONNECTING) {
-                        connection.elevenLabsWs.close();
+                    if (sock.readyState === WebSocket.OPEN || sock.readyState === WebSocket.CONNECTING) {
+                        sock.close();
                     }
                 } catch (_) { /* noop */ }
                 connection.elevenLabsWs = null;
             }
+            this._finalizeTurn(connection, 'session ended');
             if (connection.characterId != null) {
-                try { await serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* noop */ }
+                // AI off / sleep: let the current sentence finish (drained, own player only).
+                try { await serverPlaybackService.stopStream({ characterId: connection.characterId, owner: sessionId, drain }); } catch (_) { /* noop */ }
                 // Stop the streaming jaw driver, else its 50ms timer outlives the socket.
-                try { jawAnimationService.stopPcmJawStream(connection.characterId); } catch (_) { /* noop */ }
+                try { this._jaw.stopPcmJawStream(connection.characterId); } catch (_) { /* noop */ }
             }
         }
         this.activeConnections.delete(sessionId);
@@ -1520,7 +1773,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
         const sessionId = this.headlessSessions.get(String(characterId));
         if (!sessionId) return false;
         const c = this.activeConnections.get(sessionId);
-        return !!(c && c.isActive);
+        // Between reconnect attempts AI mode is still ON: the socket is being
+        // reopened. Reporting "off" here made pollers think the agent had died.
+        return !!(c && (c.isActive || (c._wanted && (c._reconnectTimer || c._connecting))));
     }
 
     /**
@@ -1759,6 +2014,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
         let sent = 0;
         for (const [, connection] of this.activeConnections) {
             if (Number(connection.characterId) !== Number(characterId)) continue;
+            // One-shot ask sockets live for one line; context sent there is
+            // billed as input tokens and never used.
+            if (connection.ephemeralAsk) continue;
             const ws = connection.elevenLabsWs;
             if (!ws || ws.readyState !== WebSocket.OPEN) continue;
             try {
@@ -1772,9 +2030,14 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 
     /**
-     * Bridge body-state changes into live conversations. Debounced ~500 ms per
-     * character so a multi-part pose lands as one update, not eight; each
-     * part/pose keeps its own context_id so stale state supersedes cleanly.
+     * Bridge body-state changes into live conversations.
+     *
+     * At most ONE contextual update per character per BODY_STATE_MIN_INTERVAL_MS,
+     * and only when its text changed. The old bridge sent one per part every
+     * ~0.5 s while the idle loop moved: one node's callout conversations carried
+     * ~106 empty agent entries each and billed 17.5k input tokens for a
+     * 25-token line. Changes that arrive inside the interval are merged into
+     * the next update, so the newest state is never lost, only batched.
      */
     _initBodyStateBridge() {
         if (this._bodyStateBridgeUp) return;
@@ -1782,34 +2045,53 @@ class ElevenLabsWebSocketService extends EventEmitter {
         this._bodyStatePending = new Map(); // characterId -> { timer, partIds:Set, pose:boolean }
         import('./bodyStateService.js').then(m => {
             const bodyState = m.default || m;
+            this._bodyStateModule = bodyState;
             bodyState.onChange(({ characterId, kind, partId }) => {
-                try {
-                    const key = String(characterId);
-                    let pending = this._bodyStatePending.get(key);
-                    if (!pending) {
-                        pending = { timer: null, partIds: new Set(), pose: false };
-                        this._bodyStatePending.set(key, pending);
-                    }
-                    if (kind === 'part' && partId != null) pending.partIds.add(partId);
-                    if (kind === 'pose') pending.pose = true;
-                    if (pending.timer) return;
-                    pending.timer = setTimeout(() => {
-                        this._bodyStatePending.delete(key);
-                        try {
-                            if (pending.pose) {
-                                const d = bodyState.describePose(characterId);
-                                if (d) this.sendContextualUpdate(characterId, d.text, d.contextId);
-                            }
-                            for (const pid of pending.partIds) {
-                                const d = bodyState.describeChange(characterId, pid);
-                                if (d) this.sendContextualUpdate(characterId, d.text, d.contextId);
-                            }
-                        } catch (_) { /* context is best-effort */ }
-                    }, 500);
-                } catch (_) { /* never break the motion path */ }
+                try { this._noteBodyStateChange(characterId, kind, partId); } catch (_) { /* never break the motion path */ }
             });
-            console.log('🧠 Body-state → contextual_update bridge armed');
+            console.log('🧠 Body-state → contextual_update bridge armed (≤1 update / 5 s / character, on change only)');
         }).catch(() => { /* body state unavailable — conversations work without it */ });
+    }
+
+    _noteBodyStateChange(characterId, kind, partId) {
+        const key = String(characterId);
+        let pending = this._bodyStatePending.get(key);
+        if (!pending) {
+            pending = { timer: null, partIds: new Set(), pose: false };
+            this._bodyStatePending.set(key, pending);
+        }
+        if (kind === 'part' && partId != null) pending.partIds.add(partId);
+        if (kind === 'pose') pending.pose = true;
+        if (pending.timer) return;
+        const last = this._bodyStateSent.get(key);
+        const wait = Math.max(500, last ? (last.at + BODY_STATE_MIN_INTERVAL_MS - Date.now()) : 500);
+        pending.timer = setTimeout(() => this._flushBodyState(characterId), wait);
+        if (pending.timer.unref) pending.timer.unref();
+    }
+
+    _flushBodyState(characterId) {
+        const key = String(characterId);
+        const pending = this._bodyStatePending.get(key);
+        this._bodyStatePending.delete(key);
+        const bodyState = this._bodyStateModule;
+        if (!pending || !bodyState) return;
+        try {
+            const sentences = [];
+            if (pending.pose) {
+                const d = bodyState.describePose(characterId);
+                if (d && d.text) sentences.push(d.text);
+            }
+            for (const pid of pending.partIds) {
+                const d = bodyState.describeChange(characterId, pid);
+                if (d && d.text) sentences.push(d.text);
+            }
+            const text = sentences.join(' ');
+            if (!text) return;
+            const last = this._bodyStateSent.get(key);
+            if (last && last.text === text) return; // nothing new to say
+            const sent = this.sendContextualUpdate(characterId, text, 'body_state_change');
+            if (sent > 0) this._bodyStateSent.set(key, { at: Date.now(), text });
+        } catch (_) { /* context is best-effort */ }
     }
 
     /**
@@ -1885,40 +2167,61 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             : Math.min(frameRms, connection._noiseFloor * 1.0008 + 0.00002);
                     }
 
-                    // While suppressed we are hearing the character itself. Learn how
-                    // loud this node sounds to its own microphone — that is the level
-                    // a guest has to beat to be talking OVER it — and watch for a
-                    // sustained frame above it. Same latch-low/creep-up shape as the
-                    // noise floor, so an AEC array and a bare USB mic both settle on
-                    // their own honest level with no per-character tuning.
-                    if (suppressed && BARGE_IN_ENABLED && connection.aiSpeaking) {
-                        connection._echoFloor = (connection._echoFloor == null)
-                            ? frameRms
-                            : Math.min(frameRms, connection._echoFloor * 1.0008 + 0.00002);
-
-                        const verdict = shouldBargeIn({
-                            echoFloor: connection._echoFloor,
-                            bargeInFrames: connection._bargeInFrames,
-                            speechStartedAt: connection.speechStartedAt
-                        }, frameRms, now);
-                        connection._bargeInFrames = verdict.run;
-
-                        if (verdict.bargeIn) {
-                            connection._bargeInFrames = 0;
-                            this._bargeIn(sessionId, 'guest');
-                        }
-                    } else if (!suppressed) {
-                        // Out of playback: forget the run and let the floor re-learn
-                        // on the next utterance, which may be at a different volume.
-                        connection._bargeInFrames = 0;
-                        connection._echoFloor = null;
-                    }
+                    const fullDuplex = connection.duplexMode === 'full';
                     const voiceThreshold = Math.max(
                         VOICE_ACTIVITY_RMS,
                         (connection._noiseFloor || 0) * VOICE_GATE_MARGIN
                     );
 
-                    if (!suppressed && frameRms > voiceThreshold) {
+                    // What the speaker played during this frame (plus a reverb
+                    // window): the basis of the echo prediction.
+                    const playbackRms = this._playbackLevel(connection.characterId, now - 250 - 300, now);
+                    const playing = playbackRms > ECHO_MIN_PLAYBACK_RMS;
+
+                    // Echo-aware state, shared by both modes: how loud the
+                    // character's own voice comes back per unit of playback level.
+                    let guestThreshold = voiceThreshold;
+                    if (playing) {
+                        const verdict = echoAwareBargeIn({
+                            coupling: connection._echoCoupling,
+                            learnFrames: connection._echoLearnFrames,
+                            bargeInFrames: connection._bargeInFrames,
+                            speechStartedAt: connection.speechStartedAt
+                        }, frameRms, playbackRms, now);
+                        connection._echoCoupling = verdict.coupling;
+                        connection._echoLearnFrames = verdict.learnFrames;
+                        connection._bargeInFrames = verdict.run;
+                        if (fullDuplex) {
+                            // Until the coupling is learned (first frames of a
+                            // reply, inside the grace window) nothing is trusted.
+                            guestThreshold = (verdict.learnFrames <= 3)
+                                ? Infinity
+                                : Math.max(voiceThreshold, BARGE_IN_RMS_FLOOR,
+                                    verdict.coupling * playbackRms * FULL_DUPLEX_ECHO_MARGIN);
+                        } else {
+                            guestThreshold = Math.max(voiceThreshold, verdict.threshold);
+                        }
+
+                        // HALF duplex only: the agent cannot hear the guest while
+                        // the character speaks, so a sustained frame clearly above
+                        // the predicted echo is the guest talking over it. FULL
+                        // duplex leaves the decision to the agent (its
+                        // 'interruption' event), which hears the real audio.
+                        if (!fullDuplex && BARGE_IN_ENABLED && suppressed && connection.aiSpeaking && verdict.bargeIn) {
+                            connection._bargeInFrames = 0;
+                            this._bargeIn(sessionId, 'guest', { scope: 'character' });
+                        }
+                    } else {
+                        connection._bargeInFrames = 0;
+                    }
+
+                    // Did the GUEST make this sound? In half duplex a suppressed
+                    // frame is the character by definition; otherwise a frame must
+                    // clear both the room gate and the predicted echo.
+                    const guestVoice = fullDuplex
+                        ? frameRms > guestThreshold
+                        : (!suppressed && frameRms > guestThreshold);
+                    if (guestVoice) {
                         connection._lastVoiceAtMs = now;
                     }
 
@@ -1930,9 +2233,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     // stream of room tone — and the idle micro-movement servos are
                     // right next to the microphone. The agent's ASR hallucinates
                     // short tokens on that ("Yes.", "..."), each of which becomes a
-                    // spurious guest turn the character then answers. Echo
-                    // suppression alone cannot catch these because they occur while
-                    // the character is silent, so no suppression window is armed.
+                    // spurious guest turn the character then answers.
                     const voiceGateOpen = !!(connection._lastVoiceAtMs &&
                         (now - connection._lastVoiceAtMs) < MIC_GATE_HANGOVER_MS);
 
@@ -1940,17 +2241,21 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     //    the turn-detection model runs on a continuous audio timeline,
                     //    and simply not sending frames leaves it unable to decide the
                     //    turn ended (measured: replies took 9-13s, or never came).
-                    //    So when the gate is closed we substitute synthetic room-floor
-                    //    audio instead of the real microphone. The agent keeps a
-                    //    continuous timeline, while room tone, servo whine and the
-                    //    character's own voice never reach its ASR to be hallucinated
-                    //    into spurious guest turns.
+                    //    So when the gate is closed we substitute digital silence.
+                    //
+                    //    HALF duplex: silence while the character speaks (suppressed).
+                    //    FULL duplex: suppression does not apply to the agent stream;
+                    //    the array has already removed the character's voice, so the
+                    //    guest is heard while the character talks, which is what
+                    //    lets the agent's own turn model interrupt it.
+                    // Full duplex while the speaker plays: this frame must be the
+                    // guest (no hangover, which would let the character's own
+                    // voice ride on a guest's last syllable).
+                    const blockedByEcho = fullDuplex ? (playing && !guestVoice) : !!suppressed;
+                    const sentReal = !blockedByEcho && (!MIC_VOICE_GATE_ENABLED || voiceGateOpen);
                     if (connection.elevenLabsWs &&
                         connection.elevenLabsWs.readyState === WebSocket.OPEN) {
-                        const gated = MIC_VOICE_GATE_ENABLED ? !voiceGateOpen : false;
-                        const payload = (!suppressed && !gated)
-                            ? raw.toString('base64')
-                            : _floorFrameB64(raw.length);
+                        const payload = sentReal ? raw.toString('base64') : _floorFrameB64(raw.length);
                         try {
                             connection.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: payload }));
                         } catch (_) { /* non-fatal */ }
@@ -2048,11 +2353,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
                         (loud && (!connection._dbgVoiceTs || (now - connection._dbgVoiceTs) >= 1000))) {
                         if (loud) connection._dbgVoiceTs = now;
                         connection._dbgWasSuppressed = suppressed;
-                        const sentReal = !suppressed && (!MIC_VOICE_GATE_ENABLED || voiceGateOpen);
-                        console.log(`🎤 [mic] session=${sessionId} rms=${frameRms.toFixed(3)} ` +
+                        console.log(`🎤 [mic] session=${sessionId} mode=${connection.duplexMode || '?'} rms=${frameRms.toFixed(3)} ` +
                             `floor=${(connection._noiseFloor || 0).toFixed(3)} gate=${voiceThreshold.toFixed(3)} ` +
                             `suppressed=${!!suppressed} forMs=${suppressed ? Math.round(connection.suppressMicUntilMs - now) : 0} ` +
-                            `sentReal=${sentReal}`);
+                            `play=${playbackRms.toFixed(3)} echoK=${connection._echoCoupling != null ? connection._echoCoupling.toFixed(2) : '-'} sentReal=${sentReal}`);
                     }
 
                     // 4) Periodic client breadcrumb with device and bytes captured (once per second)
@@ -2083,6 +2387,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
         }
         connection._lastDevId = deviceId;
         try { this.sendToClient(sessionId, { type: 'debug', originalType: 'server_mic_device', data: { deviceId } }); } catch (_) { }
+
+        // Duplex mode, decided once per session and logged so the operator can
+        // see which behaviour a node is running.
+        await this._resolveDuplexMode(connection);
 
         // Re-frame the continuous byte stream into steady 250ms frames (8000 bytes
         // at 16kHz mono PCM16) so every downstream consumer keeps the cadence it
@@ -2146,13 +2454,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
         const connection = this.activeConnections.get(sessionId);
         if (connection) {
-            // Stop persistent audio stream for this character
+            // A browser tab closing must never silence the headless agent: only
+            // this session's own player is touched, and it finishes its sentence.
             if (connection.characterId != null) {
-                try { serverPlaybackService.stopStream({ characterId: connection.characterId }); } catch (_) { /* noop */ }
+                try { serverPlaybackService.stopStream({ characterId: connection.characterId, owner: sessionId, drain: true }); } catch (_) { /* noop */ }
             }
             // Close ElevenLabs WebSocket if active
             if (connection.elevenLabsWs && connection.elevenLabsWs.readyState === WebSocket.OPEN) {
                 try {
+                    connection._agentSocket = null;
                     console.log(`🔌 Closing ElevenLabs connection for disconnected client ${sessionId}`);
                     connection.elevenLabsWs.close();
                 } catch (error) {
@@ -2193,9 +2503,444 @@ class ElevenLabsWebSocketService extends EventEmitter {
     getActiveSessions() {
         const sessions = [];
         for (const [id, c] of this.activeConnections) {
-            sessions.push({ sessionId: id, isActive: !!c.isActive, characterId: c.characterId });
+            sessions.push({
+                sessionId: id, isActive: !!c.isActive, characterId: c.characterId,
+                headless: !!c.headless, oneShot: !!c.ephemeralAsk,
+                duplexMode: c.duplexMode || null,
+                reconnecting: !!(c._reconnectTimer || (c._wanted && c._connecting)),
+                reconnects: c._reconnectCount || 0
+            });
         }
         return sessions;
+    }
+
+    // ------------------------------------------------------------------
+    // Activity (for the lurk/inactivity logic)
+    // ------------------------------------------------------------------
+
+    /**
+     * Subscribe to conversation activity: guest speech (a real user transcript,
+     * never ASR noise like "...") and agent speech. The handler receives
+     * `{ characterId, kind: 'guest_speech'|'agent_speech', sessionId, headless,
+     * oneShot, at, prompted?, text? }`. Agent speech is reported at most once
+     * per 2 s per character.
+     *
+     * `prompted` (agent speech only) is true when the line answers a real guest
+     * transcript, an ask or a one-shot question, and false when the agent is
+     * talking on its own: measured live on 2026-10-09, an agent left alone in
+     * an empty room re-engages every ~10-15 s off its turn-timeout "..." turns.
+     * Inactivity logic should count guest speech and prompted agent speech
+     * only, or an empty yard never goes back to sleep.
+     *
+     * Returns an unsubscribe function. Handlers cannot break the conversation:
+     * their exceptions are caught.
+     */
+    onActivity(handler) {
+        if (typeof handler !== 'function') return () => {};
+        const safe = (evt) => { try { handler(evt); } catch (e) { console.warn('⚠️ activity handler failed:', e && e.message); } };
+        this.on('activity', safe);
+        return () => this.off('activity', safe);
+    }
+
+    _turnIsPrompted(turn) {
+        return !!(turn && (turn.source === 'speech' || turn.source === 'ask-ai' || turn.source === 'one-shot'));
+    }
+
+    _emitActivity(connection, kind, extra = {}) {
+        if (!connection || connection.characterId == null) return;
+        const now = Date.now();
+        if (kind === 'agent_speech') {
+            const key = String(connection.characterId);
+            const last = this._agentActivityAt.get(key) || 0;
+            if (now - last < AGENT_ACTIVITY_THROTTLE_MS) return;
+            this._agentActivityAt.set(key, now);
+        }
+        const evt = {
+            characterId: connection.characterId, kind,
+            sessionId: connection.sessionId, headless: !!connection.headless,
+            oneShot: !!connection.ephemeralAsk, at: now
+        };
+        if (kind === 'agent_speech') evt.prompted = extra.prompted === true;
+        if (extra.text) evt.text = String(extra.text).slice(0, 200);
+        try { this.emit('activity', evt); } catch (e) { console.warn('⚠️ activity emit failed:', e && e.message); }
+    }
+
+    // ------------------------------------------------------------------
+    // Duplex mode
+    // ------------------------------------------------------------------
+
+    async _resolveDuplexMode(connection) {
+        if (!connection || connection.duplexMode) return connection && connection.duplexMode;
+        let decision;
+        try {
+            const parts = connection.characterId != null
+                ? await getAudioPartsForCharacter(connection.characterId)
+                : { mic: null, speaker: null };
+            decision = detectDuplexMode({
+                micPart: parts.mic, speakerPart: parts.speaker,
+                override: process.env.MB_CONVERSATION_DUPLEX || null
+            });
+        } catch (e) {
+            decision = { mode: 'half', reason: `detection failed (${e && e.message})`, source: 'detected' };
+        }
+        // A browser mic session's audio comes from the browser, whose echo
+        // cancellation we cannot see: half duplex.
+        if (connection.micSource === 'browser' && decision.source !== 'override') {
+            decision = { mode: 'half', reason: 'browser microphone', source: 'detected' };
+        }
+        connection.duplexMode = decision.mode;
+        connection.duplexReason = decision.reason;
+        console.log(`🎛️  [duplex] character ${connection.characterId} session ${connection.sessionId}: ` +
+            `${decision.mode.toUpperCase()} duplex (${decision.source}: ${decision.reason})` +
+            (decision.mode === 'full' ? ': real mic audio flows while speaking; the agent decides interruptions'
+                : `: mic suppressed while speaking, echo-aware barge-in ${BARGE_IN_ENABLED ? 'on' : 'OFF (MB_BARGE_IN=0)'}, tail ${HALF_DUPLEX_TAIL_MS}ms`));
+        return decision.mode;
+    }
+
+    /** Duplex mode of a character's live session(s), for status routes. */
+    getConversationMode(characterId) {
+        for (const [, c] of this.activeConnections) {
+            if (Number(c.characterId) === Number(characterId) && c.duplexMode && !c.ephemeralAsk) {
+                return { mode: c.duplexMode, reason: c.duplexReason, sessionId: c.sessionId };
+            }
+        }
+        return null;
+    }
+
+    // ------------------------------------------------------------------
+    // Playback (ordered, device resolved once, owner-keyed)
+    // ------------------------------------------------------------------
+
+    _ensureSpeakerDevice(connection) {
+        if (connection._speakerDeviceId) return Promise.resolve(connection._speakerDeviceId);
+        if (!connection._speakerDevicePromise) {
+            connection._speakerDevicePromise = serverPlaybackService.resolveSpeakerDevice({
+                characterId: connection.characterId,
+                speakerPartId: connection.speakerPartId
+            }).then((dev) => {
+                connection._speakerDeviceId = dev || 'default';
+                return connection._speakerDeviceId;
+            }).catch(() => {
+                connection._speakerDeviceId = 'default';
+                return 'default';
+            });
+        }
+        return connection._speakerDevicePromise;
+    }
+
+    /**
+     * Hand one PCM chunk to this session's own player, in arrival order.
+     * Until the device is known, chunks wait in a per-session queue that is
+     * flushed in order; afterwards each write is synchronous up to stdin.
+     */
+    _writeAgentPcm(connection, buffer, sampleRate, volume) {
+        const opts = {
+            characterId: connection.characterId, owner: connection.sessionId,
+            volume, sampleRate, kind: 'ai'
+        };
+        if (connection._speakerDeviceId) {
+            return serverPlaybackService.writePcmStream(buffer, { ...opts, deviceId: connection._speakerDeviceId });
+        }
+        if (!connection._pcmPreDevice) connection._pcmPreDevice = [];
+        return new Promise((resolve) => {
+            connection._pcmPreDevice.push({ buffer, resolve });
+            if (connection._pcmPreDevice.length > 1) return;
+            this._ensureSpeakerDevice(connection).then((dev) => {
+                const queued = connection._pcmPreDevice || [];
+                connection._pcmPreDevice = null;
+                for (const q of queued) {
+                    q.resolve(serverPlaybackService.writePcmStream(q.buffer, { ...opts, deviceId: dev }));
+                }
+            });
+        });
+    }
+
+    /** Remember what the speaker plays, for the echo prediction. */
+    _notePlayback(characterId, startMs, endMs, rms) {
+        if (characterId == null) return;
+        const key = String(characterId);
+        let env = this._playbackEnvelope.get(key);
+        if (!env) { env = []; this._playbackEnvelope.set(key, env); }
+        env.push({ start: startMs, end: endMs, rms });
+        const cutoff = Date.now() - 5000;
+        while (env.length && env[0].end < cutoff) env.shift();
+        if (env.length > 400) env.splice(0, env.length - 400);
+    }
+
+    _playbackLevel(characterId, fromMs, toMs) {
+        const env = characterId == null ? null : this._playbackEnvelope.get(String(characterId));
+        if (!env || !env.length) return 0;
+        let level = 0;
+        for (let i = env.length - 1; i >= 0; i--) {
+            const seg = env[i];
+            if (seg.end < fromMs) break;
+            if (seg.start <= toMs && seg.end >= fromMs && seg.rms > level) level = seg.rms;
+        }
+        return level;
+    }
+
+    _clearPlaybackEnvelope(characterId) {
+        if (characterId != null) this._playbackEnvelope.delete(String(characterId));
+    }
+
+    /**
+     * One agent audio event on a live (headless or browser) session.
+     */
+    _handleAgentAudio(sessionId, connection, message) {
+        const ev = message && message.audio_event;
+        if (!ev) return;
+        const c = connection;
+        const audioData = ev.audio_base_64;
+        const eid = ev.event_id;
+
+        // Audio of an interrupted response, however late it arrives, is dropped.
+        if (isInterruptedAudio(eid, c._resumeFromEventId)) return;
+        // Fallback for an interruption that named no event: a short time window.
+        if (c.discardAgentAudioUntilMs && Date.now() < c.discardAgentAudioUntilMs) return;
+
+        // A turn already classified as the replayed greeting stays dropped,
+        // including chunks that arrive after its agent_response (measured on
+        // the live XVF3800 node: ~1 s of greeting tail leaked when the filter stepped aside).
+        if (eid !== undefined && c._greetingVerdicts && c._greetingVerdicts.get(eid) === 'greeting') return;
+
+        // Reconnect without the empty-first-message override: hold audio until
+        // its turn is classified, so the replayed greeting can be dropped.
+        if (c._suppressGreeting && eid !== undefined && audioData) {
+            const verdict = c._greetingVerdicts.get(eid);
+            if (verdict === 'greeting') return;
+            if (verdict !== 'answer') {
+                if (!c._greetingStaged.has(eid)) c._greetingStaged.set(eid, []);
+                c._greetingStaged.get(eid).push(message);
+                return;
+            }
+        }
+        this._playAgentAudio(sessionId, c, message);
+    }
+
+    _releaseGreetingStage(sessionId, c, eid, isAnswer) {
+        c._greetingVerdicts.set(eid, isAnswer ? 'answer' : 'greeting');
+        const staged = c._greetingStaged.get(eid) || [];
+        c._greetingStaged.delete(eid);
+        // The filter's job is the one greeting at the start of a reconnected
+        // conversation; once any turn is classified it steps aside.
+        c._suppressGreeting = false;
+        if (isAnswer) for (const m of staged) this._playAgentAudio(sessionId, c, m);
+    }
+
+    _playAgentAudio(sessionId, c, message) {
+        const ev = message.audio_event;
+        const audioData = ev.audio_base_64;
+        const responseText = ev.agent_response || ev.text || null;
+        if (ev.event_id !== undefined) c._currentAudioEventId = ev.event_id;
+
+        // Audio counts as reply activity for a question asked on this
+        // session, a filler line or a reply that is still streaming
+        // must keep the caller waiting rather than settling early.
+        if (c._pendingAsk && audioData) {
+            c._pendingAsk.sawAudio = true;
+            this._settlePendingAsk(sessionId);
+        }
+
+        if (audioData) {
+            const audioBuffer = Buffer.from(audioData, 'base64');
+            const fmt = c.audioOutputFormat || 'pcm_16000';
+            const isPcm = fmt.startsWith('pcm_');
+            const sampleRate = isPcm ? (parseInt(fmt.split('_')[1]) || 16000) : 16000;
+            const nowMs = Date.now();
+            const UTTERANCE_GAP_MS = 1200;
+            const newUtterance = !c.aiSpeaking || (c.lastAudioChunkAt && (nowMs - c.lastAudioChunkAt) > UTTERANCE_GAP_MS);
+            if (newUtterance) {
+                c.aiSpeaking = true;
+                c.speechStartedAt = nowMs;
+                c.accumulatedAudioMs = 0;
+            }
+            c.lastAudioChunkAt = nowMs;
+
+            // Turn clock: the first chunk of a new utterance is the reply's first audio.
+            if (!c._turn || c._turn.firstAudioAtMs) {
+                if (newUtterance) {
+                    // A reply nobody asked for on this socket (a soft-timeout
+                    // filler, an agent-initiated line): still a turn worth timing.
+                    this._startTurn(c, { source: 'agent', transcriptAtMs: null });
+                }
+            }
+            const turn = c._turn;
+            const firstOfTurn = turn && !turn.firstAudioAtMs;
+            if (firstOfTurn) turn.firstAudioAtMs = nowMs;
+            this._emitActivity(c, 'agent_speech', { prompted: this._turnIsPrompted(turn) });
+
+            const chunkMs = isPcm ? (audioBuffer.length / (sampleRate * 2)) * 1000 : (audioBuffer.length * 8 / 128);
+            c.accumulatedAudioMs += chunkMs;
+
+            // Model when the speaker will actually FALL SILENT, not when the
+            // bytes arrived: ElevenLabs streams far faster than real time.
+            const startMs = Math.max(c.playbackEndsAtMs || 0, nowMs);
+            c.playbackEndsAtMs = startMs + chunkMs;
+
+            // Half-duplex echo suppression until the speaker is quiet plus a
+            // short tail (room reverb, capture buffering). Character-wide: one
+            // speaker, one microphone, possibly several sessions. In full
+            // duplex this window no longer gates the agent stream (see the mic
+            // loop); it still gates browser STT and tells the music supervisor
+            // the character is talking.
+            this._suppressMicUntil(c.characterId, c.playbackEndsAtMs + HALF_DUPLEX_TAIL_MS);
+
+            // Playback envelope for the echo prediction.
+            if (isPcm) {
+                let sum = 0;
+                const n = audioBuffer.length >> 1;
+                for (let k = 0; k < n; k++) { const smp = audioBuffer.readInt16LE(k * 2); sum += smp * smp; }
+                this._notePlayback(c.characterId, startMs, startMs + chunkMs, n ? Math.sqrt(sum / n) / 32768 : 0);
+            }
+
+            try {
+                if (c.audioPlaybackEnabled !== false) {
+                    if (!c._audioChunkCount) {
+                        c._audioChunkCount = 0;
+                        console.log(`🔊 First audio chunk: ${audioBuffer.length} bytes, format="${fmt}", charId=${c.characterId}, owner=${sessionId}`);
+                    }
+                    c._audioChunkCount++;
+                    let write;
+                    if (isPcm) {
+                        write = this._writeAgentPcm(c, audioBuffer, sampleRate, 90);
+                        // Jaw from the same PCM, paced by the streaming driver.
+                        try {
+                            this._jaw.driveJawFromPcmStream(c.characterId, audioBuffer, sampleRate).catch(() => {});
+                        } catch (_) { /* non-fatal */ }
+                    } else {
+                        write = serverPlaybackService.writeMp3Stream(audioBuffer, {
+                            characterId: c.characterId, owner: sessionId,
+                            speakerPartId: c.speakerPartId, volume: 90, kind: 'ai'
+                        });
+                    }
+                    Promise.resolve(write).then((r) => {
+                        if (!turn) return;
+                        if (r && r.muted) turn.muted = true;
+                        if (firstOfTurn) {
+                            turn.playbackStartAtMs = (r && Number.isFinite(r.startsAtMs)) ? r.startsAtMs : Date.now();
+                            if (r && r.coldStart) turn.coldStart = true;
+                        }
+                        const end = (r && Number.isFinite(r.playsUntilMs)) ? r.playsUntilMs : c.playbackEndsAtMs;
+                        if (!turn.interruptedAt) turn.playbackEndAtMs = Math.max(turn.playbackEndAtMs || 0, end);
+                        // Only for the turn this chunk belongs to: a late write
+                        // callback of the previous reply must not arm (and then
+                        // silently drop) the turn that has just started.
+                        if (c._turn === turn) this._armTurnFinalize(c);
+                    }).catch(err => {
+                        console.error(`❌ AI audio playback ERROR:`, err && err.message ? err.message : err);
+                    });
+                } else if (turn) {
+                    if (firstOfTurn) turn.playbackStartAtMs = nowMs;
+                    turn.playbackEndAtMs = c.playbackEndsAtMs;
+                    if (c._turn === turn) this._armTurnFinalize(c);
+                }
+            } catch (e) {
+                console.error('❌ CRITICAL: Error playing AI audio:', e);
+            }
+        }
+
+        // Send audio chunk to client (type 'audio_chunk', NOT agent_response)
+        const chunkMsg = { type: 'audio_chunk', audio: audioData, timestamp: Date.now(), realTime: true };
+        if (responseText) chunkMsg.text = responseText;
+        this.sendToClient(sessionId, chunkMsg);
+
+        // A safe random pose ("sway") ONCE per agent turn while it speaks, if
+        // AI Motion ambient is enabled (keys off the agent_response length).
+        try {
+            if (c.characterId != null && !c._ambientFiredThisTurn && (c._ambientTurnLen || 0) >= 50) {
+                c._ambientFiredThisTurn = true;
+                randomPoseService.triggerDuringTTS(c.characterId, c._ambientTurnLen);
+            }
+        } catch (_) { /* noop */ }
+    }
+
+    /**
+     * The agent decided the guest interrupted. Stop THIS session's player now
+     * (no drain), refuse every remaining chunk of the interrupted response, and
+     * reopen the mic. Nothing else on the node is touched.
+     */
+    _handleAgentInterruption(sessionId, connection, evt) {
+        if (evt && evt.event_id != null) connection._resumeFromEventId = evt.event_id;
+        if (connection._turn) connection._turn.interrupted = true;
+        this._bargeIn(sessionId, 'agent', { scope: 'session', hasEventId: evt && evt.event_id != null });
+    }
+
+    // ------------------------------------------------------------------
+    // Per-turn latency
+    // ------------------------------------------------------------------
+
+    _startTurn(connection, fields) {
+        this._finalizeTurn(connection, 'next turn');
+        connection._turn = {
+            characterId: connection.characterId,
+            sessionId: connection.sessionId,
+            mode: connection.ephemeralAsk ? 'one-shot' : (connection.duplexMode || null),
+            source: fields.source || 'speech',
+            speechEndMs: fields.speechEndMs || null,
+            transcriptAtMs: ('transcriptAtMs' in fields) ? fields.transcriptAtMs : Date.now(),
+            responseAtMs: null,
+            firstAudioAtMs: null,
+            playbackStartAtMs: null,
+            playbackEndAtMs: null,
+            interrupted: false,
+            text: fields.text ? String(fields.text).slice(0, 120) : null
+        };
+        return connection._turn;
+    }
+
+    _armTurnFinalize(connection) {
+        const t = connection._turn;
+        if (!t) return;
+        if (connection._turnTimer) clearTimeout(connection._turnTimer);
+        const wait = Math.max(300, (t.playbackEndAtMs || Date.now()) - Date.now() + 500);
+        connection._turnTimer = setTimeout(() => {
+            connection._turnTimer = null;
+            if (connection._turn === t && t.firstAudioAtMs) this._finalizeTurn(connection, 'played out');
+        }, wait);
+        if (connection._turnTimer.unref) connection._turnTimer.unref();
+    }
+
+    /** Close the current turn: log one line, keep it in memory. */
+    _finalizeTurn(connection, why) {
+        const t = connection && connection._turn;
+        if (!t) return null;
+        connection._turn = null;
+        if (connection._turnTimer) { clearTimeout(connection._turnTimer); connection._turnTimer = null; }
+        // A guest turn the agent never answered, or noise, is not a latency sample.
+        if (!t.firstAudioAtMs) return null;
+        t.endedBy = why;
+        t.metrics = turnMetrics(t);
+        const key = String(t.characterId);
+        let list = this._turnHistory.get(key);
+        if (!list) { list = []; this._turnHistory.set(key, list); }
+        list.push({ ...t, at: new Date(t.firstAudioAtMs).toISOString() });
+        while (list.length > TURN_HISTORY_MAX) list.shift();
+        console.log(formatTurnLine(t));
+        return t;
+    }
+
+    /**
+     * Recent turn latencies for a character (newest last) plus p50/p90, for a
+     * status route. In memory only; empty after a restart.
+     */
+    getTurnLatency(characterId) {
+        const list = this._turnHistory.get(String(characterId)) || [];
+        const turns = list.map(t => ({
+            at: t.at, source: t.source, mode: t.mode, interrupted: !!t.interrupted,
+            muted: !!t.muted, coldStart: !!t.coldStart, text: t.text, ...t.metrics
+        }));
+        const answered = turns.filter(t => t.source === 'speech' || t.source === 'ask-ai' || t.source === 'one-shot');
+        return {
+            characterId: Number(characterId),
+            count: turns.length,
+            summary: {
+                speechEndToPlaybackMs: percentiles(answered.map(t => t.speechEndToPlaybackMs)),
+                transcriptToFirstAudioMs: percentiles(answered.map(t => t.transcriptToFirstAudioMs)),
+                firstAudioToPlaybackMs: percentiles(turns.map(t => t.firstAudioToPlaybackMs)),
+                interrupted: turns.filter(t => t.interrupted).length
+            },
+            turns
+        };
     }
 
     /**
@@ -2210,7 +2955,8 @@ class ElevenLabsWebSocketService extends EventEmitter {
         if (!c || c.audioPlaying) return;
 
         c.audioPlaying = true;
-        c._streamPrimed = false;
+        let finished;
+        c._playbackDone = new Promise(r => { finished = r; });
         console.log(`🔊 Starting audio playback for session ${sessionId}, character ${c.characterId}`);
 
         // Light the eyes from the agent audio for any character with an LED ring
@@ -2226,87 +2972,82 @@ class ElevenLabsWebSocketService extends EventEmitter {
         } catch (_) { c._ledSpeak = null; }
 
         try {
+            // Resolve the speaker once for this socket: no disk reads per chunk.
+            await this._ensureSpeakerDevice(c);
             while ((Array.isArray(c.audioBuffer) && c.audioBuffer.length > 0) || c.isActive) {
-                // Wait for buffer to have chunks or timeout
                 if (!c.audioBuffer || c.audioBuffer.length === 0) {
                     await new Promise(resolve => setTimeout(resolve, 20));
-                    if ((!c.audioBuffer || c.audioBuffer.length === 0) && !c.isActive) break;
                     continue;
                 }
 
-                // Prime the stream with a few chunks to prevent underflow
-                if (!c._streamPrimed && c.audioBuffer.length < 3) {
-                    await new Promise(resolve => setTimeout(resolve, 20));
-                    continue;
-                }
-                c._streamPrimed = true;
-
-                // Collect multiple chunks for smoother playback (aggregate frames)
-                const chunksToPlay = [];
-                const maxChunks = 12; // larger aggregation reduces syscall overhead
-                while (c.audioBuffer.length > 0 && chunksToPlay.length < maxChunks) {
-                    chunksToPlay.push(c.audioBuffer.shift());
-                }
-                if (chunksToPlay.length === 0) continue;
-
+                // Take everything queued (bounded) in arrival order. No priming
+                // wait: the player buffers, and the agent streams faster than
+                // real time, so waiting for N chunks only delayed first sound
+                // (and a reply shorter than N chunks waited for the socket to close).
+                const chunksToPlay = c.audioBuffer.splice(0, 12);
                 // Decode each base64 chunk separately then concatenate raw buffers.
                 // Joining base64 strings corrupts data (padding '=' in the middle).
                 const audioBuffer = Buffer.concat(chunksToPlay.map(chunk => Buffer.from(chunk, 'base64')));
 
-                // Use PCM stream for raw audio (ConvAI default), MP3 stream otherwise
                 const fmt = c.audioOutputFormat || 'pcm_16000';
                 let result;
                 if (fmt.startsWith('pcm_')) {
                     const sampleRate = parseInt(fmt.split('_')[1]) || 16000;
+                    let sum = 0;
+                    const samples = audioBuffer.length >> 1;
+                    for (let k = 0; k < samples; k++) { const smp = audioBuffer.readInt16LE(k * 2); sum += smp * smp; }
+                    const rms = samples > 0 ? Math.sqrt(sum / samples) / 32768 : 0;
                     // Feed the eyes an amplitude for this PCM aggregate; the LED's
                     // own envelope (sensitivity/smoothing/attack/release) shapes it.
-                    if (c._ledSpeak) {
-                        let sum = 0;
-                        const samples = audioBuffer.length >> 1;
-                        for (let k = 0; k < samples; k++) { const s = audioBuffer.readInt16LE(k * 2); sum += s * s; }
-                        const rms = samples > 0 ? Math.sqrt(sum / samples) / 32768 : 0;
-                        c._ledSpeak.noteLevel(c.characterId, Math.min(1, rms * 4));
-                    }
+                    if (c._ledSpeak) c._ledSpeak.noteLevel(c.characterId, Math.min(1, rms * 4));
                     result = await serverPlaybackService.writePcmStream(audioBuffer, {
                         characterId: c.characterId,
+                        owner: sessionId,
+                        deviceId: c._speakerDeviceId,
                         volume: 100,
                         sampleRate,
                         kind: 'ai'
                     });
+                    // The jaw used to stay shut through every one-shot line
+                    // (callouts, scene askAI); drive it like the live path does.
+                    try { this._jaw.driveJawFromPcmStream(c.characterId, audioBuffer, sampleRate).catch(() => {}); } catch (_) { /* non-fatal */ }
+                    const durationMs = (audioBuffer.length / (sampleRate * 2)) * 1000;
+                    const startMs = (result && Number.isFinite(result.startsAtMs)) ? result.startsAtMs : Date.now();
+                    const endMs = (result && Number.isFinite(result.playsUntilMs)) ? result.playsUntilMs : startMs + durationMs;
+                    this._notePlayback(c.characterId, startMs, endMs, rms);
+                    c.playbackEndsAtMs = Math.max(c.playbackEndsAtMs || 0, endMs);
+                    // Character-wide: this audio comes out of the shared speaker.
+                    this._suppressMicUntil(c.characterId, endMs + HALF_DUPLEX_TAIL_MS);
+                    const t = c._turn;
+                    if (t) {
+                        if (!t.playbackStartAtMs) {
+                            t.playbackStartAtMs = startMs;
+                            if (result && result.coldStart) t.coldStart = true;
+                        }
+                        if (result && result.muted) t.muted = true;
+                        t.playbackEndAtMs = Math.max(t.playbackEndAtMs || 0, endMs);
+                    }
                 } else {
                     result = await serverPlaybackService.playBufferOnCharacterSpeaker(audioBuffer, {
                         characterId: c.characterId,
                         contentType: 'audio/mpeg',
                         volume: 100
                     });
-                }
-                if (!result.success) {
-                    console.error(`❌ Audio playback failed: ${result.error}`);
-                }
-
-                // Extend mic suppression: estimate audio duration from PCM buffer
-                // Character-wide, not per-session: this loop belongs to a one-shot
-                // ask socket, but the audio comes out of the shared speaker and any
-                // other session's mic loop would otherwise hear and transcribe it.
-                const chunkFmt = c.audioOutputFormat || 'pcm_16000';
-                if (chunkFmt.startsWith('pcm_')) {
-                    const sr = parseInt(chunkFmt.split('_')[1]) || 16000;
-                    const durationMs = (audioBuffer.length / (sr * 2)) * 1000;
-                    this._suppressMicUntil(c.characterId, Date.now() + durationMs + 1500);
-                } else {
                     this._suppressMicUntil(c.characterId, Date.now() + 3000);
+                }
+                if (result && !result.success) {
+                    console.error(`❌ Audio playback failed: ${result.error}`);
                 }
             }
         } catch (error) {
             console.error(`❌ Error in audio playback loop:`, error.message);
         } finally {
             c.audioPlaying = false;
-            console.log(`🔇 Audio playback stopped for session ${sessionId}`);
-            // Close jaw when audio stops
-            try { jawAnimationService.driveJawFromAmplitude(c.characterId, 0).catch(() => {}); } catch (_) {}
+            console.log(`🔇 Audio playback loop finished for session ${sessionId}`);
             // Settle the eyes back to their resting state.
             try { if (c._ledSpeak) c._ledSpeak.end(c.characterId).catch(() => {}); } catch (_) {}
             c._ledSpeak = null;
+            finished();
         }
     }
 
@@ -2373,30 +3114,60 @@ class ElevenLabsWebSocketService extends EventEmitter {
      * chunks are still arriving and the PCM writer would otherwise respawn the
      * player we are about to kill — the cut would visibly un-cut itself.
      */
-    _bargeIn(sessionId, reason = 'guest') {
+    _bargeIn(sessionId, reason = 'guest', opts = {}) {
         const connection = this.activeConnections.get(sessionId);
         const characterId = connection ? connection.characterId : null;
-
-        // 1. Refuse further agent audio for a moment, and drop what is queued.
-        const until = Date.now() + 1200;
-        for (const [, c] of this.activeConnections) {
-            if (characterId == null || Number(c.characterId) === Number(characterId)) {
-                c.discardAgentAudioUntilMs = until;
-                c.audioBuffer = [];
+        // 'session'   : the agent's interruption, only this session's player.
+        // 'character' : a local barge-in or an operator stop, every
+        //               conversation player of this character (never the node).
+        const scope = opts.scope || 'character';
+        const targets = [];
+        for (const [sid, c] of this.activeConnections) {
+            if (scope === 'session' ? sid === sessionId
+                : (characterId != null && Number(c.characterId) === Number(characterId)) || sid === sessionId) {
+                targets.push([sid, c]);
             }
         }
 
-        // 2. Kill audio already in the speaker (mpg123 + pw-play + speaker_cli stop).
+        // 1. Refuse the rest of the cut response. With an event id (the agent's
+        //    interruption) that is exact and lasts however late chunks arrive;
+        //    without one, refuse everything up to the response being played,
+        //    plus a short time window as a safety net.
+        for (const [, c] of targets) {
+            c.audioBuffer = [];
+            if (!opts.hasEventId) {
+                if (c._currentAudioEventId != null && Number.isFinite(Number(c._currentAudioEventId))) {
+                    c._resumeFromEventId = Math.max(Number(c._resumeFromEventId) || 0, Number(c._currentAudioEventId) + 1);
+                }
+                c.discardAgentAudioUntilMs = Date.now() + 1200;
+            }
+            if (c._turn) {
+                // Report what actually played, not the planned length.
+                const nowCut = Date.now();
+                c._turn.interrupted = true;
+                c._turn.interruptedAt = nowCut;
+                if (c._turn.playbackEndAtMs) c._turn.playbackEndAtMs = Math.min(c._turn.playbackEndAtMs, nowCut);
+            }
+            if (c._askOneShot) c._askOneShot.interrupted = true;
+        }
+
+        // 2. Stop the audio NOW (no drain). Owner-scoped: background music, a
+        //    scene line or another character's session keep playing.
         try {
-            if (characterId != null) serverPlaybackService.stopForCharacter(characterId);
-            else serverPlaybackService.stopAll();
+            if (characterId != null) {
+                if (scope === 'session') serverPlaybackService.interruptPlayback({ characterId, owner: sessionId });
+                else serverPlaybackService.stopStream({ characterId });
+            } else {
+                serverPlaybackService.stopAll();
+            }
         } catch (_) { /* best-effort */ }
+        if (characterId != null) this._clearPlaybackEnvelope(characterId);
 
         // 3. Stop the body. Without this the jaw keeps flapping to a dead speaker
         //    and the eyes stay in the audio-reactive speaking crossfade.
         (async () => {
             try {
-                const jaw = await import('./jawAnimationSuperPowerService.js');
+                const jaw = this._jaw;
                 if (characterId != null) {
                     try { jaw.stopPcmJawStream(characterId); } catch (_) { /* noop */ }
                     try { jaw.cancelJawDrive(characterId); } catch (_) { /* noop */ }
@@ -2412,14 +3183,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
             } catch (_) { /* LEDs optional */ }
         })();
 
-        // 4. Reopen the microphone to the agent immediately, so its own turn model
-        //    takes the turn normally from here.
+        // 4. Reopen the microphone (half duplex) so the guest is heard from here.
         this._clearMicSuppression(characterId);
 
-        console.log(`✋ Barge-in (${reason}) — character ${characterId} cut off, mic reopened`);
+        console.log(`✋ Barge-in (${reason}, scope=${scope}): character ${characterId} cut off, mic reopened`);
 
         // 5. Existing client message type; both browser clients already handle it.
-        this.sendToClient(sessionId, { type: 'interruption', reason });
+        for (const [sid] of targets) this.sendToClient(sid, { type: 'interruption', reason });
     }
 
     /**
@@ -2430,7 +3200,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
         let hit = false;
         for (const [sessionId, c] of this.activeConnections) {
             if (Number(c.characterId) === Number(characterId)) {
-                this._bargeIn(sessionId, reason);
+                this._bargeIn(sessionId, reason, { scope: 'character' });
                 hit = true;
                 break; // _bargeIn already fans out across this character's sessions
             }
@@ -2526,7 +3296,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
      * @throws {Error} with .beforeSend === true only if nothing was sent, so the
      *         caller may safely fall back without the agent hearing the question twice.
      */
-    async _askOnLiveSession(sessionId, text) {
+    async _askOnLiveSession(sessionId, text, opts = {}) {
         const connection = this.activeConnections.get(sessionId);
         if (!connection) {
             const e = new Error('Session disappeared'); e.beforeSend = true; throw e;
@@ -2551,7 +3321,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 sawAudio: false,
                 resolve: null,
                 settleTimer: null,
-                hardTimer: null
+                hardTimer: null,
+                capTimer: null,
+                waitForPlayback: opts.waitForPlayback !== false
             };
             const done = new Promise(res => { pending.resolve = res; });
             c._pendingAsk = pending;
@@ -2562,14 +3334,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
             // whatever the mic last heard — usually the tail of the PREVIOUS reply —
             // as this turn's speech-end, inventing several seconds of latency that
             // never happened.
-            c._turn = {
-                speechEndMs: null,
-                transcriptAtMs: Date.now(),
-                responseAtMs: null,
-                firstAudioAtMs: null,
-                source: 'ask-ai',
-                text
-            };
+            this._startTurn(c, { source: 'ask-ai', speechEndMs: null, transcriptAtMs: Date.now(), text });
 
             try {
                 c.elevenLabsWs.send(JSON.stringify({ type: 'user_message', text }));
@@ -2593,9 +3358,13 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 } catch (_) { /* non-fatal */ }
             }, 150);
 
-            // Hard ceiling so an HTTP caller can never hang on a silent agent.
+            // Ceiling for an agent that never answers, so an HTTP caller can
+            // never hang. Once the reply has started, the settle path answers
+            // after it has played instead: cutting the wait mid-line would let
+            // a scene's next step overlap it.
             pending.hardTimer = setTimeout(() => {
                 const still = this.activeConnections.get(sessionId);
+                if (pending.sawAudio && still && still._pendingAsk === pending) return;
                 if (still && still._pendingAsk === pending) still._pendingAsk = null;
                 pending.resolve({
                     success: true,
@@ -2604,10 +3373,22 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     timedOut: true
                 });
             }, ASK_REPLY_TIMEOUT_MS);
+            // Absolute bound, whatever the agent does.
+            pending.capTimer = setTimeout(() => {
+                const still = this.activeConnections.get(sessionId);
+                if (still && still._pendingAsk === pending) still._pendingAsk = null;
+                pending.resolve({
+                    success: true,
+                    response: pending.responseText || 'Response received',
+                    viaSession: sessionId,
+                    timedOut: true
+                });
+            }, ASK_REPLY_TIMEOUT_MS + ASK_PLAYOUT_CAP_MS);
 
             const result = await done;
             clearTimeout(pending.hardTimer);
             clearTimeout(pending.settleTimer);
+            clearTimeout(pending.capTimer);
             return result;
         } finally {
             release();
@@ -2621,16 +3402,24 @@ class ElevenLabsWebSocketService extends EventEmitter {
      * no repeated greeting, conversation memory preserved across turns) and only
      * opens a throwaway socket when nothing is running.
      *
+     * Contract (the scene executor's askAI step depends on both):
+     * - resolves only AFTER the reply audio has finished playing, on both paths,
+     *   so the next scene step never overlaps the line (live path: pass
+     *   `{ waitForPlayback: false }` to get the text as soon as it is complete);
+     * - `viaSession` is set only on the live path, whose handler already wrote the
+     *   line to the speech log; the one-shot path logs nothing (callers log).
+     *
      * @param {string} agentId - ElevenLabs agent ID
      * @param {string} text - Question text
      * @param {number} characterId - Character ID for audio playback
-     * @returns {Promise<{success: boolean, response: string}>}
+     * @param {{waitForPlayback?: boolean}} [opts]
+     * @returns {Promise<{success: boolean, response: string, viaSession?: string}>}
      */
-    async askAgentQuestion(agentId, text, characterId) {
+    async askAgentQuestion(agentId, text, characterId, opts = {}) {
         const liveSession = this._findLiveAgentSession(characterId);
         if (liveSession) {
             try {
-                const r = await this._askOnLiveSession(liveSession, text);
+                const r = await this._askOnLiveSession(liveSession, text, opts);
                 console.log(`⚡ Answered on live session ${liveSession} (no new socket)`);
                 return r;
             } catch (e) {
@@ -2647,38 +3436,108 @@ class ElevenLabsWebSocketService extends EventEmitter {
 
     /**
      * Fallback path: open a dedicated socket for one question. Only used when the
-     * character has no live agent session.
+     * character has no live agent session (callouts, scene askAI, ask-ai while
+     * AI mode is off).
+     *
+     * Asks for an empty first_message so the agent does not generate (and
+     * stream, and bill) a walk-up greeting that would only be thrown away; an
+     * agent that refuses the override is remembered and asked again without
+     * it, with the greeting filtered by turn. Ends when the ANSWER has finished
+     * playing, not on a 30 s timer.
      */
     async _askAgentQuestionEphemeral(agentId, text, characterId) {
+        const t0 = Date.now();
+        let emptyFirst = !this._firstMessageRefusedRecently(agentId);
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const outcome = await this._askOneShotOnce(agentId, text, characterId, { emptyFirst, t0 });
+            if (outcome.refusedOverride && emptyFirst) {
+                this._firstMessageRefusedAt.set(String(agentId), Date.now());
+                console.warn(`⚠️ Agent ${agentId} refused the empty first_message override: asking again with the greeting filtered`);
+                emptyFirst = false;
+                continue;
+            }
+            return outcome.result;
+        }
+        return { success: false, response: '', error: 'override refused twice' };
+    }
+
+    _askOneShotOnce(agentId, text, characterId, { emptyFirst, t0 }) {
         return new Promise(async (resolve, reject) => {
             let sessionId = null;
-            let responseText = '';
             let connection = null;
-
-            // A brand-new agent socket always opens with the agent's configured
-            // first_message — its walk-up greeting — as its own turn, BEFORE the
-            // reply to the question we just sent. The collector below used to
-            // concatenate every fragment, so the greeting was glued onto the front
-            // of every answer and the greeting audio played first. Guests heard the
-            // character re-introduce itself and ask "who are you?" on every turn,
-            // including turns where it had just used their name.
-            //
-            // ElevenLabs tags each agent turn: the greeting carries an EMPTY
-            // in_response_to_ids, a real reply carries the id of our user_message.
-            // Audio chunks carry the matching event_id but arrive before the turn
-            // is classified, so they are staged per event and only released once we
-            // know which turn they belong to.
+            let settled = false;
+            let responseText = '';           // every agent text fragment
+            let repliedText = '';            // text from turns that answer US
             const stagedAudio = new Map();   // event_id -> [base64 chunk]
             const eventVerdict = new Map();  // event_id -> 'greeting' | 'answer'
-            let repliedText = '';            // text from turns that answer US
+            const answerEvents = new Set();
+            let answerAudioSeen = false;
+            let answerComplete = false;
+            let settleTimer = null, noAnswerTimer = null, ceilingTimer = null;
+            let finishing = false;
+
+            const clearTimers = () => {
+                clearTimeout(settleTimer); clearTimeout(noAnswerTimer); clearTimeout(ceilingTimer);
+            };
+            const done = (value, isError) => {
+                if (settled) return;
+                settled = true;
+                clearTimers();
+                if (sessionId) this.activeConnections.delete(sessionId);
+                if (isError) reject(value); else resolve(value);
+            };
+            const queueAnswerAudio = (b64) => {
+                if (!connection._turn.firstAudioAtMs) connection._turn.firstAudioAtMs = Date.now();
+                connection.audioBuffer.push(b64);
+                answerAudioSeen = true;
+            };
             const releaseStaged = (eid) => {
                 const chunks = stagedAudio.get(eid);
                 stagedAudio.delete(eid);
-                if (chunks && chunks.length) connection.audioBuffer.push(...chunks);
+                if (chunks) for (const b64 of chunks) queueAnswerAudio(b64);
+            };
+            const armSettle = () => {
+                clearTimeout(settleTimer);
+                if (!answerAudioSeen) return;
+                settleTimer = setTimeout(() => finish('reply complete (quiet)'), answerComplete ? 150 : ONE_SHOT_SETTLE_MS);
+            };
+
+            // The answer is in: close the socket, let the player finish what it
+            // holds, then answer the caller. Never cuts the reply.
+            const finish = async (why) => {
+                if (finishing || settled) return;
+                finishing = true;
+                clearTimeout(settleTimer); clearTimeout(noAnswerTimer);
+                // Anything never classified still gets played rather than swallowed.
+                for (const eid of [...stagedAudio.keys()]) releaseStaged(eid);
+                const ws = connection.elevenLabsWs;
+                connection._closingByUs = true;
+                try { if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) ws.close(); } catch (_) { /* noop */ }
+                connection.isActive = false;
+                try { if (connection._playbackDone) await connection._playbackDone; } catch (_) { /* noop */ }
+                // Wait for the speaker to actually go quiet.
+                const ceilingAt = t0 + ONE_SHOT_CEILING_MS;
+                while (!settled) {
+                    const horizon = serverPlaybackService.getPlaybackHorizon({ characterId, owner: sessionId });
+                    if (horizon <= Date.now() || Date.now() >= ceilingAt) break;
+                    await new Promise(r => setTimeout(r, Math.min(200, Math.max(20, horizon - Date.now()))));
+                }
+                try {
+                    await serverPlaybackService.stopPcmStream({ characterId, owner: sessionId, drain: true });
+                } catch (err) {
+                    console.warn(`⚠️  could not drain PCM stream for character ${characterId}: ${err.message}`);
+                }
+                try { this._jaw.driveJawFromAmplitude(characterId, 0).catch(() => {}); } catch (_) { /* noop */ }
+                if (connection._turn) {
+                    connection._turn.source = 'one-shot';
+                    this._finalizeTurn(connection, why);
+                }
+                const finalText = repliedText || responseText;
+                console.log(`📝 One-shot reply finished (${why}) in ${Date.now() - t0}ms: "${String(finalText || '').slice(0, 100)}"`);
+                done({ success: true, response: finalText || 'Response received', oneShot: true, elapsedMs: Date.now() - t0, endedBy: why });
             };
 
             try {
-                // Create a temporary connection
                 sessionId = this.generateSessionId();
                 connection = {
                     sessionId,
@@ -2693,196 +3552,129 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     audioBuffer: [],
                     audioPlaying: false,
                     suppressMicUntilMs: 0,
+                    playbackEndsAtMs: 0,
                     // Marks this as a one-shot socket so _findLiveAgentSession
-                    // never routes a later question onto a connection that is
-                    // about to be torn down.
+                    // never routes a later question onto it, and so body-state
+                    // updates are never sent to it.
                     ephemeralAsk: true
                 };
-
+                connection._askOneShot = { interrupted: false };
                 this.activeConnections.set(sessionId, connection);
+                this._startTurn(connection, { source: 'one-shot', transcriptAtMs: null, text });
 
-                // Get signed URL for conversation
-                const signedUrlResponse = await fetch(
-                    `${this.config.baseUrl}/convai/conversation/get-signed-url?agent_id=${agentId}`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'xi-api-key': this.config.apiKey,
-                            'Content-Type': 'application/json'
-                        }
-                    }
-                );
-
-                if (!signedUrlResponse.ok) {
-                    throw new Error(`Failed to get signed URL: HTTP ${signedUrlResponse.status}`);
-                }
-
-                const { signed_url } = await signedUrlResponse.json();
-
-                // Connect to ElevenLabs WebSocket
-                const elevenLabsWs = new WebSocket(signed_url);
+                const elevenLabsWs = await this._connectAgent(agentId);
                 connection.elevenLabsWs = elevenLabsWs;
 
                 elevenLabsWs.on('open', () => {
-                    console.log(`🎯 Connected to agent ${agentId} for question`);
-                    // Send initialization
+                    console.log(`🎯 Connected to agent ${agentId} for question (${emptyFirst ? 'no greeting' : 'greeting filtered'}, ${Date.now() - t0}ms)`);
                     elevenLabsWs.send(JSON.stringify({
                         type: 'conversation_initiation_client_data',
-                        conversation_config_override: {}
+                        conversation_config_override: emptyFirst ? { agent: { first_message: '' } } : {}
                     }));
-                    
-                    // Start streaming audio playback
                     this._startAudioPlayback(sessionId);
                 });
 
-                elevenLabsWs.on('message', async (data) => {
+                elevenLabsWs.on('message', (data) => {
                     try {
                         const message = JSON.parse(data.toString());
-
-                        // Log all message types to understand structure
                         if (WS_DEBUG && message.type !== 'ping' && message.type !== 'audio') {
                             console.log(`🔍 WebSocket message type: ${message.type}`, JSON.stringify(message).substring(0, 200));
                         }
-
                         if (message.type === 'conversation_initiation_metadata') {
-                            // Send the question
-                            elevenLabsWs.send(JSON.stringify({
-                                type: 'user_message',
-                                text
-                            }));
+                            connection.audioOutputFormat = (message.conversation_initiation_metadata_event || {}).agent_output_audio_format || 'pcm_16000';
+                            elevenLabsWs.send(JSON.stringify({ type: 'user_message', text }));
+                            connection._turn.transcriptAtMs = Date.now();
                         } else if (message.type === 'audio' && message.audio_event) {
-                            if (message.audio_event.audio_base_64) {
+                            if (finishing) return;
+                            const b64 = message.audio_event.audio_base_64;
+                            if (b64) {
                                 const eid = message.audio_event.event_id;
                                 const verdict = eventVerdict.get(eid);
                                 if (verdict === 'answer') {
-                                    // Turn already cleared — stream it straight through.
-                                    connection.audioBuffer.push(message.audio_event.audio_base_64);
+                                    queueAnswerAudio(b64);
+                                    this._emitActivity(connection, 'agent_speech', { prompted: true });
+                                    armSettle();
                                 } else if (verdict === 'greeting') {
-                                    // Drop it: this is the walk-up greeting, not the answer.
+                                    // the walk-up greeting, not the answer
                                 } else {
                                     if (!stagedAudio.has(eid)) stagedAudio.set(eid, []);
-                                    stagedAudio.get(eid).push(message.audio_event.audio_base_64);
+                                    stagedAudio.get(eid).push(b64);
                                 }
                             }
-                            // Accumulate response text from audio events - check all possible fields
-                            const textFragment = message.audio_event.agent_response ||
-                                message.audio_event.agent_response_text ||
-                                message.audio_event.text ||
-                                message.audio_event.message ||
-                                message.agent_response ||
-                                message.text;
-                            if (textFragment) {
-                                responseText = responseText ? (responseText + ' ' + textFragment) : textFragment;
-                                console.log(`📝 Captured text fragment: "${textFragment}"`);
-                            }
-                        } else if (message.type === 'agent_response' || message.type === 'agent_response_event') {
-                            // Extract text from agent_response_event wrapper
+                        } else if (message.type === 'agent_response') {
                             const evt = message.agent_response_event;
-                            const textFragment = evt?.agent_response ||
-                                                message.agent_response || 
-                                                message.text || 
-                                                message.message;
-                            // A turn that answers us names the message it answers.
-                            // An unprompted turn (the greeting) has an empty list.
-                            // If the field is absent entirely — an agent or API
-                            // version that does not report it — treat the turn as
-                            // an answer so we can never fall silent.
+                            const fragment = (evt && evt.agent_response) || message.agent_response || message.text || '';
                             const isAnswer = isAnswerTurn(evt);
                             if (evt && evt.event_id !== undefined) {
                                 eventVerdict.set(evt.event_id, isAnswer ? 'answer' : 'greeting');
-                                if (isAnswer) releaseStaged(evt.event_id);
+                                if (isAnswer) { answerEvents.add(evt.event_id); releaseStaged(evt.event_id); armSettle(); }
                                 else stagedAudio.delete(evt.event_id);
                             }
-                            if (textFragment) {
-                                responseText = responseText ? (responseText + ' ' + textFragment) : textFragment;
+                            if (fragment) {
+                                if (!connection._turn.responseAtMs) connection._turn.responseAtMs = Date.now();
+                                responseText = responseText ? `${responseText} ${fragment}` : fragment;
                                 if (isAnswer) {
-                                    repliedText = repliedText ? (repliedText + ' ' + textFragment) : textFragment;
+                                    // Not logged here: one-shot callers log the line
+                                    // themselves (callouts as 'callout', the scene
+                                    // askAI step when viaSession is absent).
+                                    repliedText = repliedText ? `${repliedText} ${fragment}` : fragment;
                                 } else {
-                                    console.log(`🔇 Suppressed agent greeting (unprompted turn): "${String(textFragment).substring(0, 60)}..."`);
+                                    console.log(`🔇 Suppressed agent greeting (unprompted turn): "${String(fragment).substring(0, 60)}..."`);
                                 }
-                                console.log(`📝 Captured agent response: "${textFragment.substring(0, 100)}${textFragment.length > 100 ? '...' : ''}"`);
                             }
+                        } else if (message.type === 'agent_response_complete') {
+                            const eid = message.agent_response_complete_event && message.agent_response_complete_event.event_id;
+                            if (eid === undefined || answerEvents.has(eid)) { answerComplete = true; armSettle(); }
                         } else if (message.type === 'ping' && message.ping_event) {
-                            elevenLabsWs.send(JSON.stringify({
-                                type: 'pong',
-                                event_id: message.ping_event.event_id
-                            }));
+                            elevenLabsWs.send(JSON.stringify({ type: 'pong', event_id: message.ping_event.event_id }));
                         }
                     } catch (err) {
                         console.error('❌ Message parse error:', err);
                     }
                 });
 
-                elevenLabsWs.on('close', async () => {
-                    console.log(`🔌 Agent connection closed`);
-
-                    // Anything still unclassified never got its agent_response turn.
-                    // Releasing it keeps a quiet-but-working agent audible rather
-                    // than swallowing a reply we simply could not label.
-                    if (stagedAudio.size) {
-                        for (const eid of [...stagedAudio.keys()]) releaseStaged(eid);
-                        await new Promise(r => setTimeout(r, 400));
+                elevenLabsWs.on('close', (code, reason) => {
+                    const reasonText = String(reason || '');
+                    if (!connection._closingByUs) {
+                        console.log(`🔌 One-shot agent connection closed by server (code=${code}${reasonText ? `, "${reasonText}"` : ''})`);
                     }
-
-                    // Stop the streaming playback loop
-                    connection.isActive = false;
-
-                    // Give streaming a moment to finish any remaining chunks
-                    await new Promise(r => setTimeout(r, 1000));
-
-                    // Reap the PCM player. serverPlaybackService keeps ONE
-                    // persistent pw-play per character for ConvAI audio, and until
-                    // now stopPcmStream had exactly one caller — a manual
-                    // audio-stop route — so every one-shot question left a player
-                    // running forever with the sink open. They accumulated silently
-                    // and then a node simply stopped being able to speak:
-                    // generate-and-play returned playback_timeout and the ear-check
-                    // scored it SILENT while the speaker was perfectly fine.
-                    // Measured before this fix: one orphan per node aged 15-18
-                    // minutes, and one on the dev seat aged 1h52m.
-                    try {
-                        const sp = await import('./serverPlaybackService.js').then(m => m.default || m);
-                        await sp.stopPcmStream({ characterId });
-                    } catch (err) {
-                        console.warn(`⚠️  could not stop PCM stream for character ${characterId}: ${err.message}`);
+                    if (!finishing && !answerAudioSeen && isFirstMessageOverrideRefusal(code, reasonText)) {
+                        connection.isActive = false;
+                        done({ refusedOverride: true });
+                        return;
                     }
-
-                    // Prefer the turns that actually answered the question. Fall back
-                    // to the full transcript when nothing was ever labelled, so an
-                    // agent that does not report in_response_to_ids behaves exactly
-                    // as it did before.
-                    const finalText = repliedText || responseText;
-                    console.log(`📝 Final response text: "${finalText || 'Response received'}"`);
-                    this.activeConnections.delete(sessionId);
-                    resolve({ success: true, response: finalText || 'Response received' });
+                    if (!finishing) finish(`socket closed (code=${code})`);
                 });
 
                 elevenLabsWs.on('error', (error) => {
-                    console.error('❌ Agent WebSocket error:', error);
-                    this.activeConnections.delete(sessionId);
-                    reject(error);
+                    console.error('❌ Agent WebSocket error:', error && error.message ? error.message : error);
+                    if (!finishing && !answerAudioSeen) {
+                        connection.isActive = false;
+                        done(error, true);
+                    }
                 });
 
-                // Timeout after 30 seconds
-                setTimeout(() => {
-                    if (elevenLabsWs.readyState === WebSocket.OPEN) {
-                        elevenLabsWs.close();
-                    } else {
-                        // Socket never reached OPEN (stalled in CONNECTING). Force
-                        // teardown and settle so the HTTP request can't hang forever
-                        // and the session isn't leaked in activeConnections.
-                        try { elevenLabsWs.terminate(); } catch (_) {}
-                        connection.isActive = false;
-                        this.activeConnections.delete(sessionId);
-                        resolve({ success: true, response: responseText || 'Response received' });
+                // No answer audio at all by now: give up (never cuts a reply).
+                noAnswerTimer = setTimeout(() => {
+                    if (answerAudioSeen || finishing) return;
+                    if (elevenLabsWs.readyState === WebSocket.OPEN || elevenLabsWs.readyState === WebSocket.CONNECTING) {
+                        if (elevenLabsWs.readyState === WebSocket.CONNECTING) { try { elevenLabsWs.terminate(); } catch (_) { /* noop */ } }
                     }
-                }, 30000);
+                    finish('no answer audio within 30s');
+                }, ONE_SHOT_NO_ANSWER_MS);
+                // Absolute ceiling, including play-out.
+                ceilingTimer = setTimeout(async () => {
+                    if (settled) return;
+                    console.warn(`⚠️ One-shot ask hit the ${ONE_SHOT_CEILING_MS}ms ceiling: stopping`);
+                    try { await serverPlaybackService.stopPcmStream({ characterId, owner: sessionId }); } catch (_) { /* noop */ }
+                    connection.isActive = false;
+                    done({ success: true, response: repliedText || responseText || 'Response received', oneShot: true, endedBy: 'ceiling' });
+                }, ONE_SHOT_CEILING_MS + 2000);
 
             } catch (error) {
-                if (sessionId) this.activeConnections.delete(sessionId);
-                reject(error);
+                done(error, true);
             }
-        });
+        }).then((v) => (v && v.refusedOverride) ? v : { result: v });
     }
 }
 

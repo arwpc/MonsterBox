@@ -201,7 +201,7 @@ router.post('/', express.json(), async (req, res) => {
             const mod = await import('../../services/elevenLabsWebSocketService.js');
             const svc = mod.default || mod;
             if (typeof svc.setAgentEnabledForCharacter === 'function') {
-                await svc.setAgentEnabledForCharacter(characterId, false);
+                await svc.setAgentEnabledForCharacter(characterId, false, { immediate: true });
             }
             // Persist it, so ai_agent_state.json and /conversation/api/ai-status
             // cannot keep claiming the agent is live after a panic.
