@@ -1,206 +1,1371 @@
 [
   {
-    "id": 401,
-    "name": "Riddle of the Magic Box - The Clock",
+    "id": 1,
+    "name": "Sir Dragomir: The Long Watch",
+    "description": "Lurk (silent, ~40 s): a slow sweep of the road and the keep, the box lid breathing, a muttered oath.",
     "steps": [
       {
-        "type": "jaw-animation",
-        "action": "enable",
-        "concurrent": true
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Sir Dragomir",
+        "maxMs": 100000,
+        "reason": "dragomir-scene"
       },
       {
-        "type": "servo",
-        "partId": "1",
-        "angle": 406,
-        "duration": 900,
-        "concurrent": false
-      },
-      {
-        "type": "sayThis",
-        "text": "Halt, young traveller! I am Sir Dragomir, and this box at my side holds riddles older than your grandfather's grandfather.",
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "3",
-        "angle": 174,
-        "duration": 1200,
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "1",
-        "angle": 372,
-        "duration": 900,
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "Here is mine. I have a face, and I have two hands. But I have no arms, and I have no legs at all. What am I?",
-        "concurrent": false
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 1500
+        }
       },
       {
         "type": "wait",
-        "duration": 9000,
-        "concurrent": false
+        "duration": 1600
       },
       {
-        "type": "servo",
-        "partId": "3",
-        "angle": 20,
-        "duration": 1200,
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "1",
-        "angle": 406,
-        "duration": 900,
+        "type": "pose",
+        "poseId": 20,
+        "options": {
+          "transitionDurationMs": 4000
+        },
         "concurrent": true
       },
       {
-        "type": "sayThis",
-        "text": "Ahh, I see it in your eyes. You may have it! Take your answer to Mina, and tell her the old knight sent you. She keeps the truth of that one.",
-        "concurrent": false
+        "type": "wait",
+        "duration": 4200
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "pose",
+        "poseId": 4,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1700
+      },
+      {
+        "type": "pose",
+        "poseId": 23,
+        "options": {
+          "transitionDurationMs": 1200
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 19,
+        "options": {
+          "transitionDurationMs": 6000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 6200
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "pose",
+        "poseId": 8,
+        "options": {
+          "transitionDurationMs": 600
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "pose",
+        "poseId": 5,
+        "options": {
+          "transitionDurationMs": 500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 23,
+        "options": {
+          "transitionDurationMs": 700
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "pose",
+        "poseId": 9,
+        "options": {
+          "transitionDurationMs": 3500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 3700
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 3000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 3200
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Sir Dragomir",
+        "reason": "dragomir-scene"
       }
     ],
-    "created": "2026-09-21T22:30:52.688405Z",
-    "updated": "2026-09-21T22:30:52.688405Z"
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
   },
   {
-    "id": 402,
-    "name": "Riddle of the Magic Box - The Piano",
+    "id": 2,
+    "name": "Sir Dragomir: The Box Remembers",
+    "description": "Lurk (silent, ~35 s): the magic box stirs, peeks and is shut again; he glances left and right as if he heard it.",
     "steps": [
       {
-        "type": "jaw-animation",
-        "action": "enable",
-        "concurrent": true
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Sir Dragomir",
+        "maxMs": 90000,
+        "reason": "dragomir-scene"
       },
       {
-        "type": "servo",
-        "partId": "1",
-        "angle": 406,
-        "duration": 900,
-        "concurrent": false
-      },
-      {
-        "type": "sayThis",
-        "text": "You came back! Brave of you. The box has been rattling all night with another one.",
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "3",
-        "angle": 174,
-        "duration": 1200,
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "1",
-        "angle": 372,
-        "duration": 900,
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "Listen close. I have many keys, but I open no doors. Turn me as you like, no lock will ever budge. What am I?",
-        "concurrent": false
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 1500
+        }
       },
       {
         "type": "wait",
-        "duration": 9000,
-        "concurrent": false
+        "duration": 1600
       },
       {
-        "type": "servo",
-        "partId": "3",
-        "angle": 20,
-        "duration": 1200,
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "1",
-        "angle": 406,
-        "duration": 900,
+        "type": "pose",
+        "poseId": 6,
+        "options": {
+          "transitionDurationMs": 1500
+        },
         "concurrent": true
       },
       {
-        "type": "sayThis",
-        "text": "Hah! Do not tell me. Carry that answer to Orlok. He is old, and he is terrible, but he is fair, and he will tell you true.",
-        "concurrent": false
+        "type": "wait",
+        "duration": 1700
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 10,
+        "options": {
+          "transitionDurationMs": 2500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2700
+      },
+      {
+        "type": "pose",
+        "poseId": 17,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 5,
+        "options": {
+          "transitionDurationMs": 400
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 17,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 15,
+        "options": {
+          "transitionDurationMs": 2000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2200
+      },
+      {
+        "type": "pose",
+        "poseId": 22,
+        "options": {
+          "transitionDurationMs": 3000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 3200
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "pose",
+        "poseId": 16,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 250
+      },
+      {
+        "type": "pose",
+        "poseId": 17,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "pose",
+        "poseId": 12,
+        "options": {
+          "transitionDurationMs": 2500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2700
+      },
+      {
+        "type": "pose",
+        "poseId": 4,
+        "options": {
+          "transitionDurationMs": 1200
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1400
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 2000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2200
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Sir Dragomir",
+        "reason": "dragomir-scene"
       }
     ],
-    "created": "2026-09-21T22:30:52.688405Z",
-    "updated": "2026-09-21T22:30:52.688405Z"
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
   },
   {
-    "id": 403,
-    "name": "Riddle of the Magic Box - The Candle",
+    "id": 3,
+    "name": "Sir Dragomir: Who Goes There",
+    "description": "Wake greeting (~9 s): the box snaps open and the jaw clacks, then he challenges the visitor and asks for a name.",
     "steps": [
       {
-        "type": "jaw-animation",
-        "action": "enable",
+        "type": "pose",
+        "poseId": 13,
         "concurrent": true
-      },
-      {
-        "type": "servo",
-        "partId": "1",
-        "angle": 406,
-        "duration": 900,
-        "concurrent": false
-      },
-      {
-        "type": "sayThis",
-        "text": "One last riddle, small traveller, and it is the finest of the three. Come closer, the box does not bite. Much.",
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "3",
-        "angle": 174,
-        "duration": 1200,
-        "concurrent": false
-      },
-      {
-        "type": "servo",
-        "partId": "1",
-        "angle": 372,
-        "duration": 900,
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "The taller I stand, the shorter I grow. I give you my light, and I fade away giving it. What am I?",
-        "concurrent": false
       },
       {
         "type": "wait",
-        "duration": 9000,
-        "concurrent": false
+        "duration": 250
       },
       {
-        "type": "servo",
-        "partId": "3",
-        "angle": 20,
-        "duration": 1200,
-        "concurrent": false
+        "type": "pose",
+        "poseId": 16,
+        "concurrent": true
       },
       {
-        "type": "servo",
-        "partId": "1",
-        "angle": 406,
-        "duration": 900,
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 17,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 250
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] Stai! Who climbs the knight's hill? Speak your name, traveller, and speak it plainly."
+      },
+      {
+        "type": "pose",
+        "poseId": 23,
+        "options": {
+          "transitionDurationMs": 600
+        }
+      }
+    ],
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "name": "Sir Dragomir: The Horseless Carriages",
+    "description": "Story (~75 s): he watches the road, mistakes every car for a horseless carriage, shows the wraiths riding with them, and the Count teases him.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Sir Dragomir",
+        "maxMs": 150000,
+        "reason": "dragomir-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "scary-eerie-and-dramatic-background-sound",
+        "volume": 35,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 1500
+        }
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 20,
+        "options": {
+          "transitionDurationMs": 2500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2600
+      },
+      {
+        "type": "pose",
+        "poseId": 15,
+        "options": {
+          "transitionDurationMs": 800
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] There! Another carriage with no horse... eyes of fire, rolling past my hill as if it owned the night."
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "pose",
+        "poseId": 10,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1700
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [scoffs] In my day a carriage had the decency to be pulled. Who drives these? Ghosts? Merchants? Worse?"
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 12,
+        "options": {
+          "transitionDurationMs": 1200
+        },
+        "concurrent": true
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Pha Wraith Unholyhovering Win H.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 13,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1400
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] Look to the big window, traveller. Whatever rides inside those carriages does not stop here. Not while I stand."
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 11,
+        "options": {
+          "transitionDurationMs": 2000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2200
+      },
+      {
+        "type": "fleet-say",
+        "node": "Orlok",
+        "text": "[Romanian accent] [chuckles] Carriages, Dragomir? They are called cars. Bună seara, old friend."
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 16,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 17,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 18,
+        "options": {
+          "transitionDurationMs": 700
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] Cars. Bah. The Count grows soft. Carriage, I say. Go up and tell him the bar holds... and watch his face."
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 2000
+        }
+      },
+      {
+        "type": "wait",
+        "duration": 2100
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Sir Dragomir"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Sir Dragomir",
+        "reason": "dragomir-scene"
+      }
+    ],
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "name": "Sir Dragomir: Old Steel for the Lady Below",
+    "description": "Story (~70 s): ghostly music; he turns toward the keep, swears his old oath over the lady in the depths, a floating lady crosses the clearest screen, and Mina whispers back.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Sir Dragomir",
+        "maxMs": 140000,
+        "reason": "dragomir-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "12 - Ghostly Music",
+        "volume": 30,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 1500
+        }
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 19,
+        "options": {
+          "transitionDurationMs": 3000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 3200
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] Hush. Below this hill, in oak and iron, the lady sleeps. I barred the keep door with my own hand."
+      },
+      {
+        "type": "wait",
+        "duration": 700
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 1",
+        "videoId": "Floatinglady.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 15,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1700
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] Old steel, old oath. Every night I test the bar. Doamne ajută... it still holds."
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "pose",
+        "poseId": 12,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1600
+      },
+      {
+        "type": "fleet-say",
+        "node": "Mina",
+        "text": "[whispers] Tell Sir Dragomir the night was quiet."
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 19,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1600
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [softly] You heard her. The night is quiet. Go down to the wall, speak softly, and ask Lady Mina what she dreamed."
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 4,
+        "options": {
+          "transitionDurationMs": 1200
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1400
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 2500
+        }
+      },
+      {
+        "type": "wait",
+        "duration": 2600
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Sir Dragomir"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Sir Dragomir",
+        "reason": "dragomir-scene"
+      }
+    ],
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "name": "Sir Dragomir: The Riddle at the Wall",
+    "description": "Story (~90 s): dragging chains; a riddle with thinking time, then a fragment of the 1462 siege with the wraith army in the big window, a war cry, and Groundbreaker's answer.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Sir Dragomir",
+        "maxMs": 170000,
+        "reason": "dragomir-scene"
+      },
+      {
+        "type": "audio",
+        "audioId": "09 - Dragging Chains",
+        "volume": 35,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 1500
+        }
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 18,
+        "options": {
+          "transitionDurationMs": 800
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] A riddle, traveller. I stand without legs, I watch without eyes, and I fall only once. What am I?"
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 20,
+        "options": {
+          "transitionDurationMs": 3000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 3200
+      },
+      {
+        "type": "pose",
+        "poseId": 6,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1700
+      },
+      {
+        "type": "pose",
+        "poseId": 11,
+        "options": {
+          "transitionDurationMs": 3000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 3200
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "pose",
+        "poseId": 13,
         "concurrent": true
       },
       {
         "type": "sayThis",
-        "text": "A fine mind you have! Go now, and ask Mina or ask Orlok, whichever one you meet first. And tell them Sir Dragomir is still standing.",
-        "concurrent": false
+        "text": "[Romanian accent] A wall. Bine. I stood on one in fourteen sixty-two, beside a giant who threw rocks."
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Pha Wraith Riseofthewraiths Win H.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 3",
+        "videoId": "Bigskull.mp4",
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 10,
+        "options": {
+          "transitionDurationMs": 3000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1000
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] The army came up the valley like a sea of torches. We threw everything we had. We held."
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "pose",
+        "poseId": 12,
+        "options": {
+          "transitionDurationMs": 600
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 700
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [shouts] PENTRU ȚARĂ! For the country!"
+      },
+      {
+        "type": "pose",
+        "poseId": 16,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "pose",
+        "poseId": 17,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 400
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "fleet-say",
+        "node": "Groundbreaker",
+        "text": "ROCKS! GROUNDBREAKER THREW BIG ROCKS! KNIGHT REMEMBERS! GROUNDBREAKER REMEMBERS TOO!"
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "pose",
+        "poseId": 18,
+        "options": {
+          "transitionDurationMs": 800
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 900
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] Așa. The big one remembers. Go tell him his wall still stands, and bring him a snack."
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 600
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 2500
+        }
+      },
+      {
+        "type": "wait",
+        "duration": 2600
+      },
+      {
+        "type": "fleet-stop-audio",
+        "node": "Sir Dragomir"
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Sir Dragomir",
+        "reason": "dragomir-scene"
       }
     ],
-    "created": "2026-09-21T22:30:52.688405Z",
-    "updated": "2026-09-21T22:30:52.688405Z"
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
+  },
+  {
+    "id": 7,
+    "name": "Sir Dragomir: Go Up to the Count",
+    "description": "Send-off (~30 s): he points the guest up to Orlok, turns his head from the patch with contempt for Pumpkinhead, and offers Mina as the gentler road.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Sir Dragomir",
+        "maxMs": 90000,
+        "reason": "dragomir-scene"
+      },
+      {
+        "type": "pose",
+        "poseId": 11,
+        "options": {
+          "transitionDurationMs": 1800
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1900
+      },
+      {
+        "type": "pose",
+        "poseId": 15,
+        "options": {
+          "transitionDurationMs": 900
+        },
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] Enough of my hill. Go up to the Count. Tell him the bar holds, and watch his face."
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 10,
+        "options": {
+          "transitionDurationMs": 1800
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1900
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [scoffs] And that way lies the patch. A vine with ambitions. Walk wide of it. Do not give it your name."
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 19,
+        "options": {
+          "transitionDurationMs": 1800
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1900
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] Or go down to the wall and ask Lady Mina if the night is quiet. Softly. Noapte bună."
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 1800
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1900
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Sir Dragomir",
+        "reason": "dragomir-scene"
+      }
+    ],
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
+  },
+  {
+    "id": 8,
+    "name": "Sir Dragomir: The Watch Is Called",
+    "description": "Fleet event 1 (ceremony, ~28 s): head sweeps 372 to 406, box opens, he calls the watch, centres at 389, stands for the lady below and tells the carriages to keep rolling; box closes; Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "pose",
+        "poseId": 10,
+        "options": {
+          "transitionDurationMs": 600
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 700
+      },
+      {
+        "type": "pose",
+        "poseId": 11,
+        "options": {
+          "transitionDurationMs": 2000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2100
+      },
+      {
+        "type": "pose",
+        "poseId": 13,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Hear me, hill and road! The watch of Warner Castle is called. Who stands for the night?"
+      },
+      {
+        "type": "pose",
+        "poseId": 12,
+        "options": {
+          "transitionDurationMs": 1000
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1100
+      },
+      {
+        "type": "sayThis",
+        "text": "I stand. Old steel for the lady below. You in the carriages... keep rolling. Nothing to see but me."
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2573
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1600
+      }
+    ],
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
+  },
+  {
+    "id": 9,
+    "name": "Sir Dragomir: A Knight Does Not Duel a Vegetable",
+    "description": "Fleet event 2 (the Count's orders, ~26 s): he turns his head away from the castle on 'Nu' and refuses to fight Pumpkinhead; the box snaps open and shut on 'dirt'; head back to 389; Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "pose",
+        "poseId": 10,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Nu, my lord. A knight does not duel a vegetable. I guard the lady. Send Renfield; he enjoys dirt."
+      },
+      {
+        "type": "pose",
+        "poseId": 13,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 450
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "sayThis",
+        "text": "And tell the carriages to stop staring at me. [sighs] Sir Dragomir stands. Sir Dragomir stays."
+      },
+      {
+        "type": "pose",
+        "poseId": 12,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1600
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1600
+      }
+    ],
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
+  },
+  {
+    "id": 10,
+    "name": "Sir Dragomir: The Knight's Verse",
+    "description": "Fleet event 3 (the song, ~18 s): he sings his verse swaying gently 380/398; the box opens on 'deep' and closes on 'sleep'; Home.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "sayThis",
+        "text": "[sings] I am the knight upon the hill, the carriages go rolling still; I guard the lady in the deep, and never, ever sleep.",
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 21,
+        "options": {
+          "transitionDurationMs": 1200
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1250
+      },
+      {
+        "type": "pose",
+        "poseId": 22,
+        "options": {
+          "transitionDurationMs": 1200
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1250
+      },
+      {
+        "type": "pose",
+        "poseId": 21,
+        "options": {
+          "transitionDurationMs": 1200
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1250
+      },
+      {
+        "type": "pose",
+        "poseId": 22,
+        "options": {
+          "transitionDurationMs": 1200
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1250
+      },
+      {
+        "type": "wait",
+        "duration": 3840
+      },
+      {
+        "type": "pose",
+        "poseId": 13,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 3438
+      },
+      {
+        "type": "pose",
+        "poseId": 14,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 4022
+      },
+      {
+        "type": "pose",
+        "poseId": 1,
+        "options": {
+          "transitionDurationMs": 1500
+        },
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1600
+      }
+    ],
+    "created": "2026-10-10T15:00:00.000Z",
+    "updated": "2026-10-10T15:00:00.000Z"
   }
 ]

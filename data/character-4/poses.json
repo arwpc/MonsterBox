@@ -1,5 +1,628 @@
 {
   "characterId": 4,
-  "poses": [],
+  "poses": [
+    {
+      "id": 1,
+      "name": "Home",
+      "category": "home",
+      "description": "At his post: head centred on the road below, jaw shut, magic box shut.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 1500,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 389
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Idle: Watch the Road",
+      "category": "idle",
+      "description": "Eyes on the road where the carriages pass.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2500,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 381
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z",
+      "weight": 12,
+      "holdVariance": 3000
+    },
+    {
+      "id": 3,
+      "name": "Idle: Watch the Keep",
+      "category": "idle",
+      "description": "A look back toward the barred keep door.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2500,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 398
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z",
+      "weight": 12,
+      "holdVariance": 3000
+    },
+    {
+      "id": 4,
+      "name": "Idle: The Lid Breathes",
+      "category": "idle",
+      "description": "The magic box lid lifts a hair, as if something inside breathed.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 1800,
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 34
+          },
+          "jitterDeg": 4
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z",
+      "weight": 10,
+      "holdVariance": 2000
+    },
+    {
+      "id": 5,
+      "name": "Idle: Jaw a Crack",
+      "category": "idle",
+      "description": "Jaw parts a crack, an old soldier muttering.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 900,
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 140
+          },
+          "jitterDeg": 3
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z",
+      "weight": 10,
+      "holdVariance": 1500
+    },
+    {
+      "id": 6,
+      "name": "Idle: Peek in the Box",
+      "category": "idle",
+      "description": "The lid lifts to a peek; the jaw follows a little.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2000,
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 136
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 46
+          },
+          "jitterDeg": 4
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z",
+      "weight": 8,
+      "holdVariance": 2500
+    },
+    {
+      "id": 7,
+      "name": "Idle: Old Steel Settles",
+      "category": "idle",
+      "description": "Back to centre, everything shut and still.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2200,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 389
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z",
+      "weight": 14,
+      "holdVariance": 4000
+    },
+    {
+      "id": 8,
+      "name": "Idle: Muttered Oath",
+      "category": "idle",
+      "description": "A silent oath: jaw working, lid tapping.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 700,
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 145
+          },
+          "jitterDeg": 3
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 27
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z",
+      "weight": 7,
+      "holdVariance": 1200
+    },
+    {
+      "id": 9,
+      "name": "Idle: Glance at the Patch",
+      "category": "idle",
+      "description": "A cold sideways look at the pumpkin patch.",
+      "tags": [
+        "idle"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2000,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 376
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 133
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 24
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z",
+      "weight": 6,
+      "holdVariance": 2500
+    },
+    {
+      "id": 10,
+      "name": "Head: Away from the Castle",
+      "category": "expression",
+      "description": "Head turned full left, away from the castle (event 9 'Nu'; the patch).",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 1500,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 372
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 11,
+      "name": "Head: Toward the Castle",
+      "category": "expression",
+      "description": "Head turned full right, toward the castle and the Count.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2000,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 406
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 12,
+      "name": "Head: Centre",
+      "category": "expression",
+      "description": "Head centred.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 1000,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 389
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 13,
+      "name": "Magic Box: Open",
+      "category": "expression",
+      "description": "Lid fully open.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 0,
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 174
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 14,
+      "name": "Magic Box: Shut",
+      "category": "expression",
+      "description": "Lid shut.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 0,
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 15,
+      "name": "Magic Box: Ajar",
+      "category": "expression",
+      "description": "Lid half-raised, something offered.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 900,
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 80
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 16,
+      "name": "Jaw: Drop",
+      "category": "expression",
+      "description": "Silent jaw drop (shock, a war-cry gape). Never during speech.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 0,
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 165
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 17,
+      "name": "Jaw: Shut",
+      "category": "expression",
+      "description": "Jaw shut.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 0,
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 18,
+      "name": "The Challenge",
+      "category": "expression",
+      "description": "Squares up to the visitor: head centred, box half open.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 700,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 389
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 80
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 19,
+      "name": "Toward the Lady Below",
+      "category": "expression",
+      "description": "Head toward the wall below the keep where Lady Mina rests.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 1800,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 400
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 20,
+      "name": "Toward the Road",
+      "category": "expression",
+      "description": "Head toward the road and its carriages.",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 1800,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 378
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 21,
+      "name": "Sway Left",
+      "category": "expression",
+      "description": "Song sway, left (event 10).",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 1200,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 380
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 22,
+      "name": "Sway Right",
+      "category": "expression",
+      "description": "Song sway, right (event 10).",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 1200,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 398
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 23,
+      "name": "Rest: Box and Jaw",
+      "category": "expression",
+      "description": "Jaw and box home without touching the head (for use while tracking owns it).",
+      "tags": [
+        "scene"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 600,
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-10T15:00:00.000Z"
+    }
+  ],
   "templates": {}
 }

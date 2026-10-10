@@ -578,7 +578,7 @@ router.post('/replace', express.json({ limit: '10mb' }), async (req, res) => {
   }
 });
 
-router.post('/import', express.json(), async (req, res) => {
+router.post('/import', express.json({ limit: '10mb' }), async (req, res) => {
   try {
     const importData = req.body || {};
     const overwrite = req.body.overwrite === true || req.body.overwrite === 'true';

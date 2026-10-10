@@ -1,119 +1,77 @@
 [
   {
-    "id": 109,
-    "name": "A Blessing",
+    "id": 1,
+    "name": "Orlok: The Hand Remembers",
+    "description": "Lurk, silent (about 35 s): the Hand of Azura wakes in slow pulses while the right hand creeps out and gathers back. No head (the tracker owns it).",
     "steps": [
       {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "extend",
-        "speed": 75,
-        "duration": 10000,
-        "concurrent": false
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 600
       },
       {
-        "type": "jaw-animation",
-        "action": "enable",
-        "concurrent": true
+        "type": "wait",
+        "duration": 1800
       },
       {
-        "type": "sayThis",
-        "text": "Hello Polly!! Welcome to Warner Castle!!!",
-        "concurrent": false
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 400
       },
       {
-        "type": "linear-actuator",
-        "partId": "3",
-        "direction": "extend",
-        "speed": 75,
-        "duration": 5000,
-        "concurrent": false
-      },
-      {
-        "type": "sayThis",
-        "text": "Enjoy your stay",
-        "concurrent": false
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "retract",
-        "speed": 75,
-        "duration": 12000,
-        "concurrent": false
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "3",
-        "direction": "extend",
-        "speed": 75,
-        "duration": 5000,
-        "concurrent": false
-      },
-      {
-        "type": "askAI",
-        "question": "us who we are",
-        "concurrent": false
-      }
-    ],
-    "created": "2026-02-20T23:53:16.344Z",
-    "updated": "2026-02-21T00:00:45.885Z"
-  },
-  {
-    "id": 110,
-    "name": "Kiley's Jump",
-    "steps": [
-      {
-        "type": "audio",
-        "volume": 80,
-        "audioId": "04 - Windstorm & Thunder.mp3",
-        "concurrent": true
+        "type": "wait",
+        "duration": 1200
       },
       {
         "type": "linear-actuator",
         "partId": "1",
         "direction": "extend",
-        "speed": 75,
-        "duration": 10000,
-        "concurrent": false
+        "speed": 40,
+        "duration": 700
       },
       {
-        "type": "sayThis",
-        "text": "Kiley is the Koolest and Nugget is Queen Skribidi! ",
-        "concurrent": false
-      }
-    ],
-    "created": "2026-02-28T00:50:32.759Z",
-    "updated": "2026-02-28T00:51:46.259Z"
-  },
-  {
-    "id": 102,
-    "name": "Linear Actuator Test",
-    "steps": [
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2500
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 500
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 300
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
       {
         "type": "linear-actuator",
         "partId": "1",
         "direction": "extend",
-        "speed": 75,
-        "duration": 3000
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "3",
-        "direction": "extend",
-        "speed": 75,
-        "duration": 3000
-      }
-    ],
-    "created": "2026-01-06T22:38:49.729Z"
-  },
-  {
-    "id": 103,
-    "name": "Audio & Light Test",
-    "steps": [
-      {
-        "type": "audio",
-        "audioId": "07 - The Coffin.mp3"
+        "speed": 40,
+        "duration": 500
       },
       {
         "type": "light",
@@ -121,142 +79,914 @@
         "state": "on",
         "brightness": 100,
         "duration": 0
-      }
-    ],
-    "created": "2026-01-06T22:39:44.966Z"
-  },
-  {
-    "id": 104,
-    "name": "AI Voice Test - Say This & Ask AI",
-    "steps": [
-      {
-        "type": "sayThis",
-        "text": "Welcome to Warner Castle, mortal! I am Count Orlok, and tonight your soul belongs to me!"
       },
       {
-        "type": "askAI",
-        "question": "What is your favorite way to terrorize visitors on Halloween night?"
-      }
-    ],
-    "created": "2026-01-06T22:42:08.489Z"
-  },
-  {
-    "id": 107,
-    "name": "Left Arm & Goblin Video Test",
-    "steps": [
-      {
-        "type": "linear-actuator",
-        "partId": "2",
-        "direction": "extend",
-        "speed": 75,
-        "duration": 3000
-      },
-      {
-        "type": "goblin-video",
-        "goblinId": "goblin-192-168-8-14"
-      }
-    ],
-    "created": "2026-01-06T22:45:29.187Z"
-  },
-  {
-    "id": 108,
-    "name": "Pose Test",
-    "steps": [
-      {
-        "type": "pose",
-        "poseId": "1"
-      }
-    ],
-    "created": "2026-01-06T22:46:04.563Z"
-  },
-  {
-    "id": 111,
-    "name": "Arc 1",
-    "steps": [
-      {
-        "type": "audio",
-        "volume": 80,
-        "audioId": "04 - Windstorm & Thunder.mp3",
-        "concurrent": true
-      },
-      {
-        "type": "servo",
-        "partId": "15",
-        "angle": 90,
-        "duration": 1000,
-        "usePreset": true,
-        "concurrent": true,
-        "presetName": "__MAX__"
-      },
-      {
-        "type": "linear-actuator",
-        "partId": "1",
-        "direction": "extend",
-        "speed": 75,
-        "duration": 13000,
-        "concurrent": false
-      },
-      {
-        "type": "jaw-animation",
-        "action": "enable",
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "I am Orlok of the Carpathians - Ruler of Walechia. Feel my wrath, Turk!",
-        "concurrent": false
-      },
-      {
-        "type": "light",
-        "partId": "8",
-        "state": "on",
-        "brightness": 100,
-        "concurrent": false
-      },
-      {
-        "type": "light",
-        "partId": "8",
-        "state": "on",
-        "brightness": 100,
-        "concurrent": false
-      },
-      {
-        "type": "audio",
-        "volume": 80,
-        "audioId": "06 - Snarling Werewolves.mp3",
-        "concurrent": true
-      },
-      {
-        "type": "sayThis",
-        "text": "Release the wolves! Go my Pets, do your Worst!",
-        "concurrent": false
+        "type": "wait",
+        "duration": 5000
       },
       {
         "type": "linear-actuator",
         "partId": "1",
         "direction": "retract",
-        "speed": 75,
-        "duration": 13000,
-        "concurrent": true
+        "speed": 40,
+        "duration": 1500
       },
       {
         "type": "light",
         "partId": "8",
         "state": "off",
         "brightness": 100,
-        "concurrent": false
+        "duration": 0
       },
       {
-        "type": "servo",
-        "partId": "15",
-        "angle": 90,
-        "duration": 1000,
-        "usePreset": true,
-        "concurrent": true,
-        "presetName": "__MIN__"
+        "type": "wait",
+        "duration": 3000
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 900
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 40,
+        "duration": 600
       }
-    ],
-    "created": "2026-03-22T19:32:32.024Z",
-    "updated": "2026-03-22T19:37:51.642Z"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Orlok: Embers in the Hall",
+    "description": "Lurk, silent (about 40 s): a heartbeat of light, the hand testing the air twice, a long smouldering glow, then dark.",
+    "steps": [
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 350
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 2400
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 350
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 3000
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 35,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 35,
+        "duration": 600
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 35,
+        "duration": 900
+      },
+      {
+        "type": "wait",
+        "duration": 6000
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 35,
+        "duration": 1300
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 350
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 250
+      },
+      {
+        "type": "wait",
+        "duration": 4000
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 1600
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Orlok: Bună Seara",
+    "description": "Wake greeting (about 10 s): the lamp flares, the hand reaches toward the guest, and he asks for a name. Head left to the tracker.",
+    "steps": [
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 55,
+        "duration": 1200,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [breathes] Bună seara... good evening. Cooome closer. Numele tău? Tell your Lord your name."
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 55,
+        "duration": 1500
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Orlok: The Summons",
+    "description": "Story (about 90 s): the Count wakes his household one by one, the moon rises in the big window, the knight answers from the hill, and the guest is sent to Lady Mina.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Orlok",
+        "force": true,
+        "maxMs": 150000,
+        "reason": "orlok-story"
+      },
+      {
+        "type": "audio",
+        "audioId": "spooky-horror-ambience",
+        "volume": 40,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 31
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Moon.mp4",
+        "loop": false,
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [labored breath] Liniște... quiet. Lună, the moon, climbs my window. Now my household wakes."
+      },
+      {
+        "type": "pose",
+        "poseId": 20
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 800
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [breathes] Sir Dragomir! Your Lord calls the hill. Does the bar still hold?"
+      },
+      {
+        "type": "fleet-say",
+        "node": "Sir Dragomir",
+        "text": "[Romanian accent] It holds, my lord. Stai, carriages! The watch stands.",
+        "wait": true
+      },
+      {
+        "type": "pose",
+        "poseId": 24
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [breathes] And the big one in the ground... dig quieter, frate. Brother, the dead are trying to sleep."
+      },
+      {
+        "type": "pose",
+        "poseId": 21
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [labored breath] Below us, in oak and iron, the lady dreams. Încet... slowly. Do not wake her."
+      },
+      {
+        "type": "wait",
+        "duration": 2500
+      },
+      {
+        "type": "pose",
+        "poseId": 32
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [breathes] Go down to the wall, prietene. Ask Mina if she dreamed of you. Your Lord... will know."
+      },
+      {
+        "type": "pose",
+        "poseId": 33
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 3000
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Orlok",
+        "reason": "orlok-story"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Orlok: The Eye of Orlok",
+    "description": "Story (about 100 s): the Count opens his Eye over the yard, catches Renfield's pen at the road, smells the pumpkin patch, and sends the guest to sign his name.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Orlok",
+        "force": true,
+        "maxMs": 160000,
+        "reason": "orlok-story"
+      },
+      {
+        "type": "audio",
+        "audioId": "scary-eerie-and-dramatic-background-sound",
+        "volume": 40,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "pose",
+        "poseId": 12
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 1",
+        "videoId": "Sauron.mp4",
+        "loop": false,
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [labored breath] My Eye never sleeps, copile. It sees the whole yard... every step, every breath."
+      },
+      {
+        "type": "pose",
+        "poseId": 25
+      },
+      {
+        "type": "pose",
+        "poseId": 26
+      },
+      {
+        "type": "pose",
+        "poseId": 27
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [breathes] There! The road. Something scratches... Renfield, and his peeen."
+      },
+      {
+        "type": "pose",
+        "poseId": 22
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Batattack.mp4",
+        "loop": false,
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "fleet-say",
+        "node": "Renfield",
+        "text": "[excited] Master! One moment, the pen... scribble, scribble. Another name for the registry!",
+        "wait": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [breathes] Da. Renfield writes names at the road. Give him yours... and tell him his Lord watches his pen."
+      },
+      {
+        "type": "pose",
+        "poseId": 23
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 600
+      },
+      {
+        "type": "wait",
+        "duration": 800
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 600
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [labored breath] And the patch... the pumpkin-thing counts souls for my garden. Tell him his Lord counts too."
+      },
+      {
+        "type": "pose",
+        "poseId": 30
+      },
+      {
+        "type": "audio",
+        "audioId": "castle-thunder-sound-effect",
+        "volume": 80,
+        "jawSync": false
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [whispers] Nothing moves in my yard that the Eye does not see. Nothing. Noapte bună."
+      },
+      {
+        "type": "pose",
+        "poseId": 33
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 4000
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Orlok",
+        "reason": "orlok-story"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Orlok: The Wall at Night",
+    "description": "Story (about 80 s): an old memory of a wall, fire and thrown rocks; Groundbreaker remembers too; the wraiths rise in the windows; the guest is sent to the knight for the rest.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Orlok",
+        "force": true,
+        "maxMs": 140000,
+        "reason": "orlok-story"
+      },
+      {
+        "type": "audio",
+        "audioId": "haunting-music-box-melody",
+        "volume": 38,
+        "jawSync": false,
+        "concurrent": true
+      },
+      {
+        "type": "wait",
+        "duration": 2000
+      },
+      {
+        "type": "pose",
+        "poseId": 13
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 2000
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [labored breath] Five hundred winters, and still I remember one wall. Foc... fire, on every stone."
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 2",
+        "videoId": "Pha Wraith Riseofthewraiths Win H.mp4",
+        "loop": false,
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "goblin-video",
+        "goblinName": "Goblin 3",
+        "videoId": "Firepumpkin.mp4",
+        "loop": false,
+        "waitMs": 0,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 24
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 50,
+        "duration": 1500
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [breathes] A giant stood beside me, throwing rocks at an army. Groundbreaker... you remember?"
+      },
+      {
+        "type": "fleet-say",
+        "node": "Groundbreaker",
+        "text": "WALL! ROCKS! BIG ROCKS! GROUNDBREAKER THROW GOOD. COUNT WAS LITTLE THEN. OOPS.",
+        "wait": true
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 50,
+        "duration": 1800
+      },
+      {
+        "type": "pose",
+        "poseId": 31
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [breathes] [slow] Hmm. Some memories are not for the yard, frate. Pământ... the earth keeps them."
+      },
+      {
+        "type": "pose",
+        "poseId": 20
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [labored breath] Sir Dragomir was at that wall. Ask him, if you are grown. Tell him his bar still holds."
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 3000
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Orlok",
+        "reason": "orlok-story"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Orlok: Down to the Depths",
+    "description": "Send-off (about 35 s): the Count turns toward the lady below and hands the guest to Mina, who answers from her coffin; then a nod to the road.",
+    "steps": [
+      {
+        "type": "fleet-mode",
+        "mode": "hold",
+        "node": "Orlok",
+        "force": true,
+        "maxMs": 90000,
+        "reason": "orlok-story"
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "pose",
+        "poseId": 21
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [breathes] Go, copile. Down to the wall, where the lady sleeps in oak and iron. Vino... she is waiting."
+      },
+      {
+        "type": "fleet-say",
+        "node": "Mina",
+        "text": "[whispers] I hear footsteps... is the sky clear tonight? Come closer. Softly.",
+        "wait": true
+      },
+      {
+        "type": "pose",
+        "poseId": 32
+      },
+      {
+        "type": "sayThis",
+        "text": "[Romanian accent] [labored breath] Ask Mina if she dreamed of you. Then pass the road... and sign nothing Renfield offers."
+      },
+      {
+        "type": "pose",
+        "poseId": 22
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 33
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      },
+      {
+        "type": "fleet-mode",
+        "mode": "release",
+        "node": "Orlok",
+        "reason": "orlok-story"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Orlok: Naming the Night",
+    "description": "Event 1 (The Lighting of the Castle) part, about 28 s: lamp latched on, head to centre, arm extends on the welcome, the night is named. Ends Home with the lamp still on (the conductor turns it off).",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "pose",
+        "poseId": 27
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 50,
+        "duration": 3000,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "Bun venit, copii. Bun venit, prieteni. Everything you hear tonight belongs to this house... and to me."
+      },
+      {
+        "type": "sayThis",
+        "text": "[deep voice] This night is named: Noaptea Castelului Warner. The Night of Warner Castle. Say it with me."
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 50,
+        "duration": 3300
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Orlok: The Muster",
+    "description": "Event 2 (The Count's Orders) part, about 22 s: lamp latched on, head sweeps far left, far right, centre while the arm extends, then the muster lines. Ends Home with the lamp on.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 50,
+        "duration": 2000,
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 25
+      },
+      {
+        "type": "pose",
+        "poseId": 26
+      },
+      {
+        "type": "pose",
+        "poseId": 27
+      },
+      {
+        "type": "sayThis",
+        "text": "[deep voice] Ascultați! Listen, all of you. The Count has orders, and the Count has... patience. Very little."
+      },
+      {
+        "type": "sayThis",
+        "text": "Answer when you are named. Not before. Not after. Da?"
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 50,
+        "duration": 2300
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "name": "Orlok: Count-In and Verse",
+    "description": "Event 3 (One Song for Warner Castle) part, about 28 s: the count-in, then his verse with the head swaying on the beat, the lamp blinking at line ends and the arm reaching on 'Dine'. Ends Home with the lamp on.",
+    "steps": [
+      {
+        "type": "wait",
+        "duration": 100
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[deep voice] One song. One castle. Everyone. Even you, Groundbreaker. Mina counts us in... one, two, three."
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "sayThis",
+        "text": "[sings] Five hundred winters in these bones, I keep a house of cold grey stones. The moon is mine, the dark is mine... bun venit. Dine.",
+        "concurrent": true
+      },
+      {
+        "type": "pose",
+        "poseId": 28
+      },
+      {
+        "type": "pose",
+        "poseId": 29
+      },
+      {
+        "type": "pose",
+        "poseId": 28
+      },
+      {
+        "type": "pose",
+        "poseId": 29
+      },
+      {
+        "type": "wait",
+        "duration": 5500
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "extend",
+        "speed": 50,
+        "duration": 2000
+      },
+      {
+        "type": "wait",
+        "duration": 1200
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "off",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "wait",
+        "duration": 300
+      },
+      {
+        "type": "light",
+        "partId": "8",
+        "state": "on",
+        "brightness": 100,
+        "duration": 0
+      },
+      {
+        "type": "linear-actuator",
+        "partId": "1",
+        "direction": "retract",
+        "speed": 50,
+        "duration": 2300
+      },
+      {
+        "type": "pose",
+        "poseId": 1
+      }
+    ]
   }
 ]
