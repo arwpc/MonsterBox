@@ -67,7 +67,7 @@ function record(state, entry) {
   state.history = [...(state.history || []), entry].slice(-40);
   state.lastRunAt = entry.at;
   state.lastStatus = entry.status;
-  if (entry.status === 'played' || entry.status === 'failed') state.lastSceneId = entry.sceneId;
+  if (entry.status === 'played' || entry.status === 'played-with-warnings' || entry.status === 'failed') state.lastSceneId = entry.sceneId;
   writeState(state);
 }
 
@@ -244,7 +244,11 @@ async function main() {
     try {
       const r = await axios.post(`${BASE}/scenes/api/${event.sceneId}/play${DRY ? '?dryRun=1' : ''}`, {}, { timeout: PLAY_TIMEOUT });
       const sum = summarize(r.data?.result);
-      outcome = { status: sum.success ? 'played' : 'failed', elapsedMs: Date.now() - started, ...sum.counts, failures: sum.failures };
+      // The conductor ran to its end (every fleet step is non-fatal, and a cast to an offline Goblin or a
+      // skipped busy node is a warning, not a lost show). 'failed' is reserved for a play request that did not
+      // run at all; step failures are counted and listed so the log still says what was missed.
+      const ranToEnd = r.data?.success !== false;
+      outcome = { status: ranToEnd ? (sum.counts.failed ? 'played-with-warnings' : 'played') : 'failed', elapsedMs: Date.now() - started, ...sum.counts, failures: sum.failures };
       log(`${outcome.status} in ${Math.round(outcome.elapsedMs / 1000)} s: ${sum.counts.ok} ok, ${sum.counts.skipped} skipped, ${sum.counts.failed} failed`);
       for (const f of sum.failures) warn('  step failed →', f);
     } catch (err) {
