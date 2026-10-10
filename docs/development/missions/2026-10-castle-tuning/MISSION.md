@@ -306,3 +306,13 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   used the fleet password through `MONSTERBOX_SSH_PASSWORD` (push-show gained that fallback). Daylight rehearsal of
   events 101/102/103 running now (`/home/remote/mission-scratch/rehearse.sh`). Test engineer (phase 4) running;
   UI engineer next; then docs, log review, memory, tag.
+- 2026-10-10 13:45 — Rehearsal 12:58–13:13: all three events played for real; every node released to lurking,
+  Goblins 2/3 back on their reels. Defects found and fixed (commits cb7a7c35, a903f8d2, 05c507fb, 751cabac,
+  6a5a8f2f): beds reported failed while playing (node play route blocked for the track; now background), the
+  host skipped its own part because its PIR-woken agent counted as a conversation (busy now = guest spoke
+  within 60 s; self never skipped; a guestless awake node sleeps for the show), library.json write race, two
+  casts Goblin 2 would not switch to, probe timeout 2.5 → 6 s, cast proof polls to 6 s, zero-duration clamp
+  no-op, D8 fleet-health `time` block + Fleet Command Center pill. Proof run of 101 at 13:32 (after the first
+  fixes): 22 ok; the remaining failures were Goblin 1 offline and the two timing items fixed in 6a5a8f2f.
+  Half-hour schedule armed (`*/30 17-22 * * *`, through /schedule). Phase 4 UI DONE (commit 90e5deeb); phase 5
+  docs DONE (dbe2fe13). Test engineer still running. Final peer deploy starting.
