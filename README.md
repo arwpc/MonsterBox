@@ -10,11 +10,55 @@ MonsterBox is a single-node animatronic control system for Raspberry Pi 4B with:
   multiple servos move **together** instead of glitching each other
 - A conversation-driven gesture engine (`services/gestureEngineService.js`) — composite,
   concurrent body motion while the character speaks
-- ElevenLabs AI integration for STT, Conversational AI, and TTS
-- Goblin video display subsystem for Pi 3B+/4B signage playback
+- ElevenLabs AI integration for STT, Conversational AI, and TTS, with full-duplex listening and
+  agent-decided interruptions on ReSpeaker XVF3800 nodes
+- One lurk state machine per node: every animatronic boots **lurking** (idle poses, head tracking
+  where it can, the PIR, Orlok's background music, no speech) and wakes into **AI mode** (every
+  capability its parts support) on PIR motion, a schedule `wake`, or AI on
+- Scenes that reach across the fleet (`fleet-scene`, `fleet-say`, `fleet-audio`, `fleet-mode`), a
+  scene/pose validator in the gate, and a TTS cache for scripted lines
+- Three orchestrated fleet events with original music beds, run every half hour in show hours
+- Goblin video display subsystem for Pi 3B+/4B signage playback: one looping reel per Goblin and a
+  keep-alive that puts a stopped or returning Goblin back on its show
 - GitHub Actions CI for automated testing on every commit
 
 This README provides an accurate quick-start and operational overview and links to detailed docs in /docs. The full historical README (~2,640 lines) is preserved in Git history.
+
+## What's New, October 2026: Warner Castle tuning
+
+The characters were slow to answer, lectured, would not be interrupted and cut off mid-sentence;
+lurk mode had grown two competing modes; the Goblins were dark. Release notes with the commits and
+measurements are in `CHANGELOG.md`; open items and their daylight tests in
+`docs/troubleshooting/KNOWN-BUGS.md`.
+
+- **Conversation.** Full-duplex listening on XVF3800 nodes (Orlok, PumpkinHead, Sir Dragomir,
+  Renfield) with an echo gate, so a guest who answers the closing question is heard; the agent
+  decides interruptions and only that session's player stops; half-duplex nodes (Mina,
+  Groundbreaker) keep an echo-aware barge-in with a 400 ms tail; auto-reconnect without replaying
+  the greeting; per-turn latency on `GET /conversation/api/ai-status`. One-shot asks reach first
+  audio in about 2 s (was 10 to 13 s).
+- **Six retuned agents.** `turn_v3` eager turn-taking, replies of one or two sentences (25 words at
+  most) that send guests to the other characters, an LLM picked per character by measurement, and
+  a silence rule so an empty yard is not answered forever. The shared story is in
+  `docs/characters/STORY-BIBLE.md`.
+- **Lurk and AI mode.** Every node boots lurking and never speaks until woken by PIR motion,
+  `POST /conversation/api/wake` (also the schedule's new `wake` action) or AI on. Awake is AI mode
+  with every capability the parts support; it returns to lurking after 5 minutes without activity
+  and never ends a conversation. Mute is runtime-only (every node boots unmuted). Callouts and lurk
+  scenes are off by default. Locked characters wake fully (the switches live in the runtime
+  overlay, never in `super-powers.json`).
+- **New shows.** Ten new scenes per character (silent lurk pieces, a wake greeting, story pieces
+  with music, Goblin casts and cross-node answers, and three fleet-event parts); every old scene and
+  pose deleted. Mina's show is her voice and the Burning Rose lamp, with three Romanian lullabies;
+  Groundbreaker's is voice only. `scripts/push-show.sh` carries a show to its node.
+- **Fleet events.** "The Lighting of the Castle", "The Count's Orders" and "One Song for Warner
+  Castle" (conductor scenes 101 to 103 on Orlok) rotate every half hour from 17:00 to 22:30, then
+  return the whole yard to lurking. Operations: `docs/shows/FLEET-EVENTS-OPERATIONS.md`.
+- **Goblins.** One pre-built reel per Goblin, looping as a single mpv; a keep-alive on Orlok
+  resumes a stopped reel and applies the staged show when a Goblin returns; scene casts by Goblin
+  name.
+- **Clocks.** Every Pi on America/Chicago with NTP, converged by the baseline scripts and reported
+  by `npm run check:time`.
 
 ## What's New — v10.5.1 (September 2026) — The fleet answers in milliseconds, not seconds
 
@@ -908,7 +952,20 @@ resume), and a **Send to Goblins** panel sends one video to every ticked Goblin 
 once, loop, stop, resume loops) with a result line per Goblin. Library uploads sit below; sending
 an upload copies it onto each Goblin first. Frames of the Goblins' files come from ffmpeg on the
 device, cached per node. Scenes reach a Goblin through the Animation Studio's goblin-video step,
-whose video list is read from the chosen Goblin's disk.
+whose video list is read from the chosen Goblin's disk. Each card also shows the Goblin's
+placement and orientation, its staged show and whether it is on screen, and the keep-alive's last
+decision, with a button that puts the Goblin back on its show.
+
+**Shows and the keep-alive.** Each Goblin has one pre-concatenated reel (built with
+`scripts/goblins/build-reels.mjs` from measured clip metrics) that plays as a one-file queue under a
+single `mpv --loop`: a showcase reel for Goblin 1 (and 4), bold silhouettes for Goblin 2's big
+window, a 9:16 centre strip for Goblin 3's roof window. The keep-alive runs on the node named in
+`data/goblin-keepalive.json` (Orlok): it resumes a stopped non-empty queue after a hold (10 min after
+a stop), applies the staged show when a Goblin returns or shows an empty queue, copies the reel
+first if the unit lacks it, and never restarts goblin.service or reboots a unit
+(`GET/POST /video-library/api/goblins/keepalive`). Put a Goblin back on its show with
+`POST /video-library/api/goblins/<id or name>/show`, resume its queue with `.../resume`, and
+resolve a name with `GET /video-library/api/goblins/resolve?name=Goblin%202`.
 
 **Video Format (Standardized):**
 - **Resolution**: 720p (1280x720) @ 30fps
@@ -962,17 +1019,18 @@ curl http://GOBLIN_IP:3001/health
 ```javascript
 {
   "type": "goblin-video",
-  "goblinId": "goblin-three",
+  "goblinName": "Goblin 3",
   "videoId": "fireball.mp4",
-  "returnToQueue": true
+  "waitMs": 8000
 }
 ```
+`goblinId` or `goblinName` is resolved by id, then name, then name with spaces ignored; a cast is
+play-once, so the Goblin returns to its reel.
 
-*Pre-configured Playlists:*
-- **Spinster**: Character videos for Spinster animatronic
-- **Fire**: Fire-themed videos (541-560 series)
-- **Poltergeist**: Character videos for Poltergeist animatronic
-- **Test**: Sample videos for testing playback
+*Playlists:* `data/goblin-playlists.json` holds one show playlist per Goblin (`show-goblin-1` to
+`show-goblin-4`); the old test playlists are archived in
+`data/goblin-playlists.archive-2026-10-09.json`. Per-Goblin clip manifests for the scene validator
+are in `data/goblin-manifests/`.
 
 **Deployment:**
 Goblin is deployed via "Facehugger" system in Goblin Management:
@@ -981,31 +1039,32 @@ Goblin is deployed via "Facehugger" system in Goblin Management:
 3. Install systemd service
 4. Start playback automatically
 
-**Current Status:**
-- ⏳ Goblin 1 (192.168.8.40) - Offline since 2026-09-26
-- ✅ Goblin 2 (192.168.8.106) - Operational
-- ✅ Goblin 3 (192.168.8.14) - Operational
-- ✅ Goblin 4 (192.168.8.244) - Operational, added 2026-09-27 with `scripts/goblin-os/provision-goblin.sh`
+**Current Status (2026-10-10):**
+- ⏳ Goblin 1 (192.168.8.40) - Off the network; showcase reel staged, the keep-alive applies it when it returns
+- ✅ Goblin 2 (192.168.8.106) - Looping its window reel (running hot, 79.5 °C: needs cooling)
+- ✅ Goblin 3 (192.168.8.14) - Looping its roof-strip reel (screen orientation not yet confirmed)
+- ⏳ Goblin 4 (192.168.8.244) - Off the network; showcase reel staged (provisioned 2026-09-27 with `scripts/goblin-os/provision-goblin.sh`)
 
 See: `goblin/`, `docs/integration/GOBLIN_VIDEO_INTEGRATION.md`
 
 ## Network and Roles (MonsterNet)
 
 Static IPs below are a **fallback**; nodes discover each other's live addresses over mDNS
-(`_monsterbox._tcp`). Status and version as observed at the end of the v9.2.0 session
-(2026-08-16) — re-check with `npm run check:discovery` and
-`curl -sk https://<node>:3000/health`.
+(`_monsterbox._tcp`). Status as observed at the end of the castle-tuning rollout (2026-10-10):
+all six nodes received the release's code and their new shows, and each read back `lurking`.
+Re-check with `npm run check:discovery`, `npm run check:time` and
+`curl -sk https://<node>:3000/health` (a `/health` version string is not proof of a deploy).
 
 **Animatronics:**
 
-| Character | ID | Address | Status (2026-08-16) | Version |
-|---|---|---|---|---|
-| PumpkinHead | 1 | 192.168.8.150 | 🔴 Offline all session — **unverified** | unknown |
-| Mina | 2 | 192.168.8.140 | 🟢 Online — AUDIBLE by ear (12.4 dB rise, 80% recall, canonical voice) | 9.2.0 |
-| Orlok | 3 | 192.168.8.120 | 🟢 Online, primary dev node — AUDIBLE (20.1 dB, 100% recall) | 9.2.0 |
-| Sir Dragomir | 4 | 192.168.8.130 | 🟢 Online — AUDIBLE (33.3 dB, canonical voice confirmed) | 9.2.0 |
-| Groundbreaker | 5 | 192.168.8.200 | 🔴 Offline all session — **unverified** | unknown |
-| Renfield | 6 | *(none — `ip: null` by design)* | 🔴 Never networked — **unverified** | n/a |
+| Character | ID | Address | Status (2026-10-10) |
+|---|---|---|---|
+| PumpkinHead | 1 | 192.168.8.150 | 🟢 Online, config-locked; wiper motor and eye rings (PSU marginal) |
+| Mina | 2 | 192.168.8.140 | 🟡 Online; servo rail and coffin actuator dead, show is voice + lamp |
+| Orlok | 3 | 192.168.8.120 | 🟢 Online, primary dev node, fleet-event host and Goblin keep-alive controller |
+| Sir Dragomir | 4 | 192.168.8.130 | 🟢 Online, config-locked; PIR dead (wakes by schedule, AI or fleet) |
+| Groundbreaker | 5 | 192.168.8.200 | 🟢 Online; motor dead, show is voice only |
+| Renfield | 6 | 192.168.8.249 | 🟢 Online (Pi 4B since 2026-09-27), unlocked; no SSH key trust from Orlok yet |
 
 Sir Dragomir carries 3 PCA9685 servos — head ch0 (continuous), jaw ch1, magic box ch3 —
 plus webcam, mic, speaker. (`parts.json` is the source of truth for channels; older docs
@@ -1014,10 +1073,10 @@ claiming jaw ch0 / magic box ch8 / head ch4 were wrong.) Groundbreaker's former
 ([KNOWN-BUGS](docs/troubleshooting/KNOWN-BUGS.md)).
 
 **Goblins (Video Display):**
-- Goblin 1: 192.168.8.40:3001 ⏳ Offline
-- Goblin 2: 192.168.8.106:3001 ✅ Operational
-- Goblin 3: 192.168.8.14:3001 ✅ Operational
-- Goblin 4: 192.168.8.244:3001 ✅ Operational
+- Goblin 1: 192.168.8.40:3001 ⏳ Off the network
+- Goblin 2: 192.168.8.106:3001 ✅ Looping its reel
+- Goblin 3: 192.168.8.14:3001 ✅ Looping its reel
+- Goblin 4: 192.168.8.244:3001 ⏳ Off the network
 
 SSH for RPi4B: see docs/security/remote-access.md
 
@@ -1041,7 +1100,7 @@ physical microphone not present in CI/dev containers. `npm audit` reports 0 vuln
 
 ```bash
 # Pre-deploy gate — runs automatically via .git/hooks/pre-push and in CI
-npm run gate                # schemas + resolver + independence + smoke + pact (~30s RPi4B)
+npm run gate                # schemas + scenes + resolver + independence + design-system + smoke + pact
 
 # Run all tests
 npm test
@@ -1066,8 +1125,18 @@ MB_USE_RUNNING_SERVER=1 BASE_URL=http://localhost:3100 \
 
 # Ratchets (also wrapped by `npm run gate`)
 npm run validate:schemas    # Per-character data files vs config/schemas/
+npm run validate:scenes     # Scenes/poses: parts, poses, audio, Goblin clips, fleet targets, hazard rules (config/scene-hazards.json)
 npm run audit:resolver      # No direct character-state reads outside services/characterContext.js
 npm run audit:independence  # No bias violations outside tests/baseline/character-independence-allowlist.json
+```
+
+```bash
+# Shows and fleet events
+node scripts/validate-scenes.mjs <charId|all>              # one character's show, with warnings
+node scripts/prerender-scene-tts.mjs <charId|all>          # warm the sayThis TTS cache
+curl -sk -X POST "https://localhost:3000/scenes/api/<id>/play?dryRun=1"   # resolve every step, move nothing
+node scripts/fleet-events/run-next.mjs --dry-run           # every fleet step resolves its node
+npm run check:time                                         # fleet clock matrix (zone, NTP, sync, offset)
 ```
 
 ### Testing philosophy
@@ -1107,6 +1176,10 @@ python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM); print('GPIO OK')"
 - [STT Tuning Guide](docs/setup/STT_TUNING_GUIDE.md) — Speech-to-text optimization
 
 ### Characters
+- [Story Bible](docs/characters/STORY-BIBLE.md): the castle's shared story, cross-references, per-character voice rules
+- [Fleet Events](docs/characters/FLEET-EVENTS.md): the three orchestrated shows, line for line
+- [Fleet Events Operations](docs/shows/FLEET-EVENTS-OPERATIONS.md): rotation, rehearsal, stopping, checks afterwards
+- [Character Config Locks](docs/development/CHARACTER-CONFIG-LOCKS.md): frozen characters and how a show is pushed to one
 - [Groundbreaker Setup](docs/characters/GROUNDBREAKER_SETUP_INSTRUCTIONS.md)
 - [PumpkinHead Parts](docs/characters/PUMPKINHEAD_COMPLETE_PARTS_LIST.md)
 

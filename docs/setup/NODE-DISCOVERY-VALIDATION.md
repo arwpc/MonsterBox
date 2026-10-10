@@ -76,6 +76,31 @@ curl -sk https://localhost:3000/api/orchestration/nodes | jq '.nodes[] | {name,i
       every discovered node — including one whose `config/animatronics.json` `ip` is now
       wrong/blank (discovery overrides it).
 
+## 6. Fleet clocks (`npm run check:time`)
+
+Schedules, quiet hours (23:00 to 08:00) and the half-hour fleet events are written in local time and compared
+across nodes, so every Pi, animatronic and Goblin alike, must run **America/Chicago** with NTP on and a
+synchronized clock. A node on UTC or with NTP off fires shows at the wrong hour.
+
+- **The baseline converges it.** `scripts/node-baseline/apply-baseline.sh` (step 8, run with sudo by the
+  operator) and the Goblin scripts `scripts/goblin-os/provision-goblin.sh` / `stabilize-goblin.sh` run
+  `timedatectl set-timezone America/Chicago` and `timedatectl set-ntp true` (override the zone with
+  `MB_TIMEZONE`). They report sync state; they cannot force a sync without a network.
+- **The check reports it.** From the dev seat:
+  ```bash
+  npm run check:time                # key-based ssh only
+  node scripts/check-time.mjs --json
+  # Goblins and any node without key trust need the fleet password, run as the service user:
+  sudo sh -c '. /etc/monsterbox/env; exec sudo -u remote env MONSTERBOX_SSH_PASSWORD="$MONSTERBOX_SSH_PASSWORD" node scripts/check-time.mjs'
+  ```
+- [ ] Every reachable node shows zone `America/Chicago`, `ntp yes`, `synced yes`, status `OK`. The exit code is 1
+      when a reachable node is on the wrong zone, has NTP off, is unsynchronized, or is more than 2000 ms
+      (`MAX_OFFSET_MS`) from the checking node. Unreachable nodes are listed, not counted as failures.
+- The offset is measured over ssh and includes part of the round trip: under heavy load (round trips of
+  seconds) read it as approximate and re-run when the fleet is quiet.
+- `UNREACHABLE (Permission denied)` means no key trust for that node (use the password form above), not a bad
+  clock. The checking node may not trust its own key either; check it locally with `timedatectl`.
+
 ## If discovery is empty or partial
 
 - **`avahiAvailable:false`** → avahi-daemon isn't running on that node

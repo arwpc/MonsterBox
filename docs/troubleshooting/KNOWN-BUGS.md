@@ -22,6 +22,14 @@
 > re-verify on each node before relying on it. Update this file as issues are fixed (strike
 > them through and note the version).
 
+> 🟢 **CURRENT STATE, 2026-10-10: castle-tuning mission rolled out to all six nodes.** Every node runs the
+> release's code (read the number from `package.json`) with its rebuilt show, boots into `lurking`, has callouts and
+> lurk scenes off, and its lurk rotation points at the silent pieces 1 and 2. Locks verified on PumpkinHead's and Sir
+> Dragomir's nodes. The conversation, lurk, Goblin and fleet-event fixes are struck through in *Recently Fixed →
+> 2026-10-10 castle-tuning mission*; what the mission left open, each with the daylight test that closes it, is
+> under *Cross-Cutting → Opened from the 2026-10-09/10 castle-tuning mission* and in the per-node sections. Evidence:
+> `docs/development/missions/2026-10-castle-tuning/report-*.md`.
+>
 > 🟢 **CURRENT STATE, 2026-09-04 — all six nodes serve 10.5.1 over HTTPS. Read the version
 > from `package.json`, not from any number written into this file.** PumpkinHead and
 > Groundbreaker's "5.5.0 / plain HTTP" era (2026-08-30 and earlier, described in the three
@@ -148,6 +156,12 @@ Legend: 🔴 blocking / broken · 🟡 reliability / intermittent · 🟢 mitiga
 ## Per-Animatronic Hardware
 
 ### Orlok — char 3 · `192.168.8.120` (primary dev box)
+🟡 **2026-10-10 (castle tuning): full duplex on his XVF3800 is live with a 3x echo gate; the FL-channel capture test,
+a human interruption test, and his playback pitch-shift audition are open** (see *Cross-Cutting → Opened from the
+2026-10-09/10 castle-tuning mission*). He hosts the fleet-event conductors (101 to 103) and the Goblin keep-alive.
+His ten new scenes were played for real on 2026-10-10 (all steps succeeded except casts to the offline Goblin 1).
+Still to do by eye: the yard directions in poses 20 to 24 are guesses, and the jaw (part 10) is uncalibrated.
+
 **No longer "fully operational."** The v9.0.0 hardware pass (2026-08-15) found a dead elbow
 servo (since operator-confirmed), a dead left-arm actuator, a part quarantined for
 contradictory wiring, and a part whose "calibration" turned out to be residue left by a unit
@@ -322,6 +336,14 @@ top). No new physical work has been done on parts 2/3/4/5.
   the elbow component of any pose to do nothing until the rail is fixed.
 
 ### Mina — char 2 · `192.168.8.140`
+🔴 **2026-10-09 22:40, operator: "no hardware works other than light - linear actuator does not".** Jaw (1), neck (2),
+eye (3) and the coffin door actuator (4) are listed in `config/physical-faults.json`, so autonomous code, the scene
+validator and her rebuilt show use only her voice and the Burning Rose lamp (part 5); the laser (10) is unverified.
+Her jaw animation must stay OFF on her node. Clear the entries when the servo rail and the actuator are repaired.
+Open from the mission: half duplex untested live (Cross-Cutting); her three Romanian lullabies
+(`mina-lullaby-drumul`, `-zori`, `-nani`) have never been heard. **Test:** daylight ear-check on her node: sung, soft,
+in tune; beds at 16 to 20 % under her whispers; lamp timing in event parts 9 and 10.
+
 🟢 **2026-09-25 — harness confirmed by the operator at the rig: jaw ch11 / neck ch7 / eye
 ch3 / LED ch15. Root-causes the ch8/ch11 "dead channel" findings below — the harness is
 not on those channels now (the jaw still answered on ch4 on 2026-08-19, so the re-pin to the
@@ -611,6 +633,13 @@ diagnostic below still applies.
   drive time.
 
 ### Sir Dragomir — char 4 · `192.168.8.130`
+🟡 **2026-10-10: his head-tracking window exceeds the scene hazard window on both sides.** Tracking runs centre 407,
+range 84, so it can drive the 900° neck across 365 to 449°, while `config/scene-hazards.json` allows scenes only
+372 to 406°. Scenes respect the hazard window; head tracking does not read it. Operator decision: narrow tracking to
+372 to 406 (centre 389, range 34) or opt out while lurking (`capabilityOptOut:["headTracking"]` via
+`POST /conversation/api/lurk-state/prefs`). Also not checked by eye: jaw 130 = shut, and which way is "toward the
+castle" (watch scene 8 once in daylight; swap poses 10/11 and 19/20 if he faces the wrong way).
+
 🟢 **2026-09-07 — on the drive-window code, all three servos proven through the app.** The operator
 had calibrated all three that day (head 349–900 of the 900° multi-turn, jaw 47–120, magic box 133–177),
 so his only software refusal was speech co-expression's "no configured safe window" (29 lines), which
@@ -714,6 +743,18 @@ emergency stop (see Security / Ops). It has been **restored**, but re-check any 
 superpowers after a suite run that predates the `httpNode` guard.
 
 ### PumpkinHead — char 1 · `192.168.8.150`
+🟡 **2026-10-10: he now boots into the lurk idle loop with motor sway**, the configuration class that reset him
+before (sway poses at 40 %, every show pulse at most 40 % and 0.3 to 0.8 s). His PSU is still marginal. If he resets
+or browns out while lurking: `POST /conversation/api/lurk-state/prefs {"capabilityOptOut":["idle"]}` on his node.
+**Test:** watch `throttled` and uptime through an hour of lurking plus one fleet event. The old
+`lurk-mode-state.json` self-sustaining reset trap described below no longer applies in that form: the file is no
+longer read, and his PIR (part 5) is listed broken, so the lurk machine never arms it and no PIR wake can fire at
+boot. The boot-time load is now the idle loop with motor sway, above.
+🟡 **His agent still occasionally emits audio tags against his no-tags rule** (`[excited]` in 2 of 9 confirmation
+turns, `report-personas.md`), and two event lines carry `[laughs]` and `[sings]` kept verbatim from the event
+script. eleven_v3 will perform them. **Test:** listen for them on his node in daylight; if they show up, one more
+prompt pass (and decide whether the event lines keep their tags).
+
 🔴 **2026-09-26 — DOWN: his power supply got WET and is COOKED, and the 12 V→5 V buck converter is
 dead and SHORTED — it kills any supply it is connected to** (operator report). Supersedes the ✅ line
 below until the replacement is built. Cut the buck out; never reconnect it, not even to test. The
@@ -1177,6 +1218,9 @@ scored it `SILENT`, and that "silence" was **never evidence about its speaker**.
 `/api/characters`) now return 200. Prior to that: 🔴 offline long-term, hardware state unknown.
 
 ### Groundbreaker — char 5 · `192.168.8.200`
+🟡 **2026-10-10: voice-only show (his motor is dead), half duplex untested live** (Cross-Cutting). No Home or idle
+poses until a part is repaired or added. Mix not heard: one daylight ear-check of scene 4 on his node.
+
 🟢 **2026-09-07 pass — software 100 %, motor still a hardware question.** OS baseline applied (avahi handed
 to the service user, journald cap, logrotate, Wi-Fi power-save off, drop-ins); he now runs at nice -5 and
 a fresh start writes only the deliberate SSH-password notice. **Speaker canon set to `sinkVolume 1.0`** in
@@ -1372,6 +1416,12 @@ verified. Still offline for the entire v9.2.0 session." Also the historical v9.2
 line above scoring Groundbreaker `OFFLINE — untestable, not passing` is now obsolete.
 
 ### Renfield — char 6 · `192.168.8.249` · Raspberry Pi 4B (since 2026-09-27)
+🟡 **2026-10-10: Orlok has no SSH key trust to his new Pi.** An `ssh-copy-id` from the agent session was refused by
+its permission layer, so his deploy and show push used the fleet password through `MONSTERBOX_SSH_PASSWORD`
+(`push-show.sh` gained that fallback, `1bd09408`). **Operator action:** from Orlok, `ssh-copy-id remote@192.168.8.249`;
+then `ssh -o BatchMode=yes remote@192.168.8.249 true` succeeds and `npm run check:time` reaches him. Also open:
+watch scenes 8, 9, 10 once against their budgets and check the pen direction by eye; his `movement-config.json` has
+`idle.enabled:false`, so his idle poses do not run until it is enabled.
 🟡 **2026-10-04 — operator restored power: separate clean supplies for the 12 V motor and the Pi.** `throttled=0x0`
 through every test below, no reboot under motor load. Per part, judged on independent evidence:
 - ✅ **ReSpeaker XVF3800 (parts 2, 3) — now enumerates** behind a powered VIA hub (`2109:3431`), card 2. It is a
@@ -1379,7 +1429,9 @@ through every test below, no reboot under motor load. Per part, judged on indepe
   `scripts/apply-audio-nosuspend.sh` re-run for the new sink. Speaker: Scribe read the sink monitor back verbatim and
   the operator heard him. Mic: PyAudio `microphone_cli.py` frames with avg RMS 0.14 — it transcribed the room's music.
   (The room music masked his voice at both mics, so the acoustic witness was inconclusive; the operator's ear stands in.)
-- 🟡 **Orlok had the same self-interruption (2026-10-04): 665 guest barge-ins in one day, 96% of "user" turns
+- 🟢 *Superseded 2026-10-10 for the XVF3800 nodes by full duplex with agent-decided interruptions and an echo gate
+  (`61a15133`); the `40-no-barge-in.conf` drop-in (`MB_BARGE_IN=0`) now affects only half-duplex local barge-in.*
+  🟡 **Orlok had the same self-interruption (2026-10-04): 665 guest barge-ins in one day, 96% of "user" turns
   were "..."; this is what "cut off mid sentence and slow to respond" meant.** His speaker and mic are the same XVF3800
   (sink 1.30, source 1.55). His own voice reached the mic at 0.3-0.67 RMS against a ~0.05 threshold. The
   pw-play EPIPE lines are the barge-in kill, not a separate fault. Fixed node-local with the same
@@ -1862,6 +1914,49 @@ needs, and only one holder can capture at a time.
 
 ## Cross-Cutting Software Bugs
 
+### Opened from the 2026-10-09/10 castle-tuning mission
+
+Each item names the test that closes it. Acoustic items are UNPROVEN until an ear-check or the operator confirms.
+
+- 🟡 **Full-duplex echo gate runs at a 3x margin; Orlok's XVF3800 channel test not yet done.** Full duplex let Orlok
+  hear his own lines (live 2026-10-10); the fix passes a frame to the agent while he speaks only if it clears the
+  learned echo coupling (0.39 to 0.53) x playback x 3.0 (`FULL_DUPLEX_ECHO_MARGIN`,
+  `services/elevenLabsWebSocketService.js`). Five minutes after the fix: 0 self barge-ins. The margin also makes quiet
+  guests harder to hear over him. Likely root cause: capture asks PipeWire for one channel, so the array's FL and FR
+  are downmixed; in one controlled run FR carried the echo (0.04 to 0.18 RMS) while FL stayed near its floor (about
+  0.010), so FL looks like the AEC-processed channel (suggestive, not proven). **Tests, in daylight:** (1) on an
+  XVF3800 capture two channels and keep FL only (`python_wrappers/microphone_cli.py` / `serverSTTListener.js`), and
+  prove it by FRAMES with the same phrase test in a quiet yard; only then lower the 3x margin toward the noise gate.
+  (2) A person interrupts Orlok: wake AI mode, ask a long question, speak over him from 1 to 2 m ("Wait, stop, what
+  is your name?"); expect `Barge-in (agent, scope=session)` within about 1 s and his answer; then stay silent through
+  three replies with no `Transcribed` line repeating his words and no barge-in (grep `Barge-in`, `Transcribed`,
+  `[turn]` in `/var/log/monsterbox.log`). Speaker-borne test audio cannot stand in for a guest (the array cancels what
+  it plays). Detail: `docs/development/missions/2026-10-castle-tuning/report-conversation.md`.
+- 🟡 **Half-duplex nodes untested live** (Mina's webcam mic, Groundbreaker's USB adapter). The echo-aware barge-in
+  and the 400 ms tail are unit-proven only. **Test:** wake AI mode on each, confirm the `[duplex] ... HALF` line in
+  `/var/log/monsterbox.log`, speak over a reply (local barge-in only if `MB_BARGE_IN` is not 0), then speak right
+  after he finishes and confirm he hears it within 400 ms. Also confirm the `[duplex]` line on every peer (detection
+  reads each node's own `parts.json`), and that body-state contextual updates arrive at least 5 s apart in the
+  ElevenLabs conversation history.
+- 🟡 **The remaining conversation latency is the agent's end-of-turn wait, not the client.** Live on Orlok (32 guest
+  turns, 2026-10-10): client share about 20 ms, total p50 1.5 s, p90 9.5 s; 94 turns were the agent answering "...".
+  The silence rule (`skip_turn`, `2dcd76b9`) shipped after that sample. **Test:** re-read `[turn]` lines and the
+  `latency` block of `GET /conversation/api/ai-status` after an evening of guests, and the agent's
+  `conversation_turn_metrics` in ElevenLabs.
+- 🟡 **Orlok's "deeper voice" is not achievable through ElevenLabs.** His voice measures F0 71 to 80 Hz; the
+  designed candidate measured higher, and `[deep voice]` moves nothing. The only lever is a node-side pitch shift on
+  the playback path (ffmpeg `rubberband`, -1 to -3 semitones raised the sub-150 Hz share 0.62 to 0.68), briefed in
+  `docs/development/missions/2026-10-castle-tuning/brief-orlok-pitch.md`. Not implemented. **Test:** daylight audition by ear of -1 / -2 / -3 semitones
+  on his speaker, with the added latency measured, before anyone decides.
+- 🟡 **First clean fleet-event rehearsal after the fixes still to run.** The 2026-10-10 daylight rehearsal of events
+  101, 102 and 103 returned every node to `lurking` with no hold and Goblins 2 and 3 to their reels, but each event
+  logged failures (beds timing out at 15 s while playing, casts to the offline Goblin 1, a clip Goblin 2 would not
+  switch to, Orlok answering the show while awake). Fixed in `cb7a7c35`, `a903f8d2`, `05c507fb`. **Test:**
+  `node scripts/fleet-events/run-next.mjs --event 101 --force` (then 102, 103), read `--status`, and check every node
+  per `docs/shows/FLEET-EVENTS-OPERATIONS.md`. Casts to Goblin 1 will keep failing until it is back.
+- ⚪ **D8 follow-up not built:** `fleet-health` does not yet report a per-node `time {zone, ntpSynced, localTime,
+  offsetMs}` block and the Fleet Command Center has no clock-drift flag. `npm run check:time` is the check meanwhile.
+
 - 🟡 **Two service-unit sources disagree, and every deploy silently picks the older one (found
   2026-09-27, Renfield rebuild; not changed).** `scripts/deploy-to-animatronic.sh:262` tests
   `[ ! -f \"$SERVICE_FILE\" ]` inside a double-quoted remote command, so `$SERVICE_FILE` expands on the
@@ -1989,6 +2084,23 @@ needs, and only one holder can capture at a time.
 
 ### Goblins (video displays) — opened from the 2026-09-25 gold-snapshot review
 
+**2026-10-10 status (castle tuning, `docs/development/missions/2026-10-castle-tuning/report-goblins.md`):**
+- 🔴 **Goblin 1 (.40) and Goblin 4 (.244) are off the network.** Their showcase reel is staged; within about a
+  minute of a unit answering, the keep-alive copies the 156 MB reel and starts it. **Needs hands:** power, PSU, SD,
+  Wi-Fi on each; afterwards `pgrep -c mpv` = 1 on the unit and the Video Control card shows the reel. Also say where
+  Goblin 4 stands so it can get a fitted reel.
+- 🟡 **Goblin 3's screen orientation is unknown.** Its reel is a 9:16 centre strip on a landscape frame. **Test:**
+  look at the roof window; if the TV is portrait-mounted, add `"transpose":"cw"` (or `"ccw"`) to its reel in
+  `/home/remote/goblin-reels/reel-plan.json`, rebuild with `node scripts/goblins/build-reels.mjs --plan
+  /home/remote/goblin-reels/reel-plan.json --only reel-goblin3-roof-strip.mp4`, and put it back on its show
+  (`POST /video-library/api/goblins/goblin3/show`). Record the orientation on its card.
+- 🟡 **Goblin 2 runs hot:** 79.5 °C, `throttled=0xa0008` at 10:31 on 2026-10-10 (soft temperature limit, ARM clock
+  capped). **Needs hands:** heatsink or fan; also check whether its TV negotiated 1080p (only Goblin 4 has the 720p
+  `GOBLIN_DRM_MODE` drop-in). Something also stopped Goblin 2's queue at about 23:00 on 2026-10-09 (cause not found);
+  the keep-alive resumed it.
+- ⚪ A cast to a Goblin whose queue is stopped does not return to the queue (device behaviour); the keep-alive covers
+  it after its hold.
+
 Context: the three Goblins (Pi 3B+ video nodes at `192.168.8.40` / `.106` / `.14`, port 3001,
 registry `data/goblins.json`) were declared "running and working perfectly" by the operator on
 2026-09-25 and snapshotted into `backups/goblins-gold-2026-09-25/` (see its README). The review
@@ -2096,7 +2208,12 @@ reports were not kept.
   or default sync instead of `display-resample` once audio is on. Expect ~50% CPU and ~15–20 °C
   cooler; then the overclock is no longer needed at all. Measure with `ps -o pcpu -C mpv`,
   `vcgencmd measure_temp`, `vcgencmd get_throttled`, and the mpv `--log-file` drop counters.
-- 🔴 **A stop that does not kill mpv puts the Goblin server into a one-per-second respawn storm
+- 🟢 **Mitigated 2026-10-10 (`8a58c232`), device fix still open.** Each Goblin now plays one reel as a one-file
+  queue under a single `mpv --loop`; the keep-alive stands down on a respawn storm and stops a start that cannot hold
+  the display; the orphan mpv on Goblin 3 (27.8 h old, 236 % CPU, left by the 42,680-respawn storm after a fleet
+  emergency stop) was killed and `pgrep -c mpv` = 1 on Goblins 2 and 3. `goblin/src` (`mpvController.stop()`,
+  `queueManager.playNext()` backoff) is unchanged, so the rule below still holds.
+  🔴 **A stop that does not kill mpv puts the Goblin server into a one-per-second respawn storm
   (seen on Goblin 2, 2026-09-26 01:57).** After a `goblin.service` restart the queue's mpv
   (looping `542 Jb Hd.mp4` at 234% CPU) survived `/stop-all`; the next clip's mpv could not take
   the DRM display, exited, and `onVideoEnd → playNext` respawned it every second (`playCount`
@@ -2171,7 +2288,9 @@ reports were not kept.
   Optional hardening for both: `systemctl --user mask pipewire.socket pipewire.service
   pipewire-pulse.socket pipewire-pulse.service wireplumber.service` so a login can never let
   PipeWire hold the HDMI card against mpv (it did not in tonight's proof, but it can).
-- 🟡 **Goblin Two boots with an EMPTY queue** (`queue.json` 81 bytes after the reboot) — nothing on
+- ✅ ~~**Goblin Two boots with an EMPTY queue**~~ **Covered 2026-10-10 (`8a58c232`):** the keep-alive applies the
+  staged show to a Goblin that shows an empty queue or returns from a restart, proven on Goblin 2 (two reads on the
+  reel, `pgrep -c mpv` = 1). *Original entry, Goblin Two boots with an empty queue:* (`queue.json` 81 bytes after the reboot) — nothing on
   its screen until something is sent. Its last operator queue (a single non-looping clip) did not
   survive. Set its show from Video Control (Loop) before the night.
 - 🟡 **The repo's `goblin/systemd/goblin.service` is not what runs, and would not start.** The
@@ -2191,7 +2310,9 @@ reports were not kept.
   `sudo systemctl disable --now monsterbox-goblin goblin-autoqueue goblin-hide-console` on
   `.40` and `monsterbox-goblin` on `.106`. Throttle flags at snapshot: One `0x50000`
   (under-voltage occurred), Two `0x80008` (soft temperature limit active), Three `0x0`.
-- 🟡 **`data/goblin-playlists.json` is 69 test artefacts.** Every playlist targets
+- ✅ ~~**`data/goblin-playlists.json` is 69 test artefacts.**~~ **Fixed 2026-10-10 (`8a58c232`):** archived to
+  `data/goblin-playlists.archive-2026-10-09.json`; the file now holds `show-goblin-1` to `show-goblin-4`. *Original
+  entry:* Every playlist targets
   `goblinId: "goblin-three"` — an id no registered Goblin has — with names like "Test Playlist"
   and "Deploy Test" written on 2025-10-21…11-01 by a browser spec against the live data file.
   The Playlists panel therefore shows nothing usable for a real Goblin. The snapshot preserved
@@ -2713,12 +2834,15 @@ carries `headTracking.enabled: true` and **nothing re-arms it at boot**, while e
 answers from the Map. So the disk claims ON, the runtime is OFF, and the UI shows whichever the code
 path happens to read.
 
-**OPEN — superpower: motion / PIR watcher has no persisted field at all.**
+~~**OPEN — superpower: motion / PIR watcher has no persisted field at all.**~~ **Fixed 2026-10-10 (`c246bd18`):**
+every node boots into `lurking`, which arms the PIR (after a 60 s grace) and starts the idle loop and head tracking
+where the parts allow; every restart logs `boot → LURKING (boot)`. *Original entry:*
 `services/lurkMotionWatcherService.js` has `start()`/`stop()` and no stored enabled state anywhere.
 A restart stops PIR polling silently — no error, no log line, and the dashboard toggle re-renders from
 nothing. The character simply stops noticing people.
 
-**OPEN — superpower: idle loop stops on shutdown and is never started again.** `let running = false`
+~~**OPEN — superpower: idle loop stops on shutdown and is never started again.**~~ **Fixed 2026-10-10
+(`c246bd18`):** the lurk boot path starts the idle loop. *Original entry:* `let running = false`
 in `services/movement/idleLoopService.js:55` is the whole state. `server.js:969` correctly calls
 `idleLoop.stop()` during shutdown; there is no matching start on boot and no persisted flag, so an
 animatronic left idling comes back inert after any restart or deploy.
@@ -2740,7 +2864,8 @@ the stale file is a standing trap for the next reader.
 master/system sink volume (held by PipeWire/ALSA state, not by MonsterBox, and it comes back); default
 sink and default source (likewise persisted outside the app); and the lurk-mode master flag (already
 written to disk and read back at boot). Each was suspected during the sweep and each survived a real
-restart.
+restart. *(2026-10-10: the lurk-mode flag and the persisted mute are both gone: `lurk-mode-state.json` is no longer read,
+every node boots into `lurking`, and mute is runtime-only, so every node boots unmuted.)*
 
 ### Opened from the 2026-08-18 v10 page sweep + adversarial review
 
@@ -3224,7 +3349,10 @@ each is scoped small enough to fix in a single wave.
   **+18 s of latency over 20 s** on both the raw and proxied paths, because
   MJPEG-over-TCP has no frame-dropping: it just queues. Anything that falls behind
   drifts unboundedly rather than skipping to live.
-- 🟡 **`askAgentQuestion` opens a brand-new agent WebSocket per question.**
+- ✅ ~~**`askAgentQuestion` opens a brand-new agent WebSocket per question.**~~ **Fixed in the castle-tuning
+  release (`61a15133`):** the one-shot still opens its own socket, but skips the greeting, has no priming wait, and
+  resolves when the reply has played. Measured live: socket open 0.6 to 1.0 s, question to first audio 2.0 to 2.4 s
+  (was 10 to 13 s). *Original entry:*
   `services/elevenLabsWebSocketService.js` — signed-URL fetch, handshake and
   `conversation_initiation` on every turn, with no conversation memory carried
   across. Measured end-of-speech to reply audio is **10-13 s**, and this is very
@@ -3420,6 +3548,39 @@ Plus one that was not flake at all:
 ---
 
 ## Recently Fixed (for reference)
+
+### 2026-10-10 castle-tuning mission (read the version from `package.json`, not from this prose)
+
+Evidence for each item is in `docs/development/missions/2026-10-castle-tuning/report-*.md` and the mission status log.
+
+- ~~**Callouts spoke to an empty yard**, and lurk scenes spoke regardless of state.~~ Off by default and gated on
+  `lurking` plus quiet hours (`c246bd18`); every node's callouts and lurk scenes were set off at rollout. Proof:
+  `tests/unit/lurk-state.test.js` gate tests; per-node runtime state set in phase 2.
+- ~~**One-shot asks took 10 to 13 s to first sound.**~~ 2.0 to 2.4 s question to first audio, no greeting
+  (`61a15133`). Proof: live one-shots on Orlok, 2026-10-09.
+- ~~**One-shot asks held for 30 s** (each callout line billed about 30 s of agent time).~~ They end 900 ms after the
+  answer's last chunk or 150 ms after `agent_response_complete`, then wait for playback (`61a15133`). Proof: resolved
+  at the modelled end of playback (11,616 ms for an 8.0 s reply; 7,099 ms for 4.4 s).
+- ~~**Players SIGTERMed by other sessions** (barge-ins and socket closes killed the shared player, the mid-sentence
+  cut-offs).~~ Owner-keyed players; interruptions stop only that session's player; stops drain (`61a15133`). Proof:
+  live interruption killed one owner's player while a second owner's kept playing.
+- ~~**Lurk never restored at boot.**~~ Every node boots into `lurking` (`c246bd18`). Proof: each restart logs
+  `boot → LURKING (boot) ... idle:on pir:on music:on`; all six nodes read `lurking` after the phase 2 rollout.
+- ~~**Lurk scenes reported a false "did not start".**~~ `queueStarted()` reads `running` (`c246bd18`).
+- ~~**Goblin respawn storm and an empty queue left Goblins dark.**~~ Reels as one `mpv --loop`, keep-alive, hardened
+  deploy (`8a58c232`). Proof: two reads on the reel and `pgrep -c mpv` = 1 on Goblins 2 and 3; keep-alive resumed
+  Goblin 2 unprompted and Goblin 3 after a deliberate stop. Device-side backoff still open (Goblins section).
+- ~~**Background music orphaned ffmpeg decoders** (30 orphans, 2.8 GB).~~ Stop-all and panic pause instead of
+  destroying the supervisor; `reapStragglers` kills a decoder that ignores SIGTERM (`c246bd18`). Proof: the reaper
+  fired three times on 2026-10-10, no orphans remain.
+- ~~**Fleet music beds blocked the caller for the track's length** (rehearsal reported every bed failed while it
+  played).~~ `background:true` on the node play route (`cb7a7c35`).
+- ~~**A show skipped its own host; "busy" meant any live agent; a guestless awake node answered the show.**~~
+  (`05c507fb`).
+- ~~**Audio library write race under concurrent plays.**~~ Unique temp file per write (`05c507fb`).
+- ~~**Jaw daemon uncaught EPIPE** when the servo daemon was dead.~~ (`344baa35`).
+- ~~**Gate smoke step timed out at 60 s** on the 1078-test unit suite, leaving test residue (synthetic parts 987655,
+  987657) in Orlok's live `parts.json`.~~ Cap raised, residue removed (`00748c96`).
 
 ### 2026-09-12 session (v10.5.1 — read the version from `package.json`, not from this prose)
 

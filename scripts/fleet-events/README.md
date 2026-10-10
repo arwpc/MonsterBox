@@ -28,11 +28,12 @@ node scripts/fleet-events/install-conductors.mjs  # (re)write scenes 101–103 i
 Add a `raw` schedule on `/schedule` (it lands in the managed crontab block) or add the line by hand:
 
 ```
-*/30 17-22 * * * cd /home/remote/MonsterBox && node scripts/fleet-events/run-next.mjs >> /var/log/monsterbox-fleet-events.log 2>&1
+*/30 17-22 * * * cd /home/remote/MonsterBox && (node scripts/fleet-events/run-next.mjs) >> /home/remote/yard-theater-logs/fleet-events.log 2>&1
 ```
 
 The quiet-hours check inside the runner is the real guard: a slot that falls inside quiet hours is refused and
-logged, so an operator can widen the cron window without waking the street.
+logged, so an operator can widen the cron window without waking the street. Operations (rehearse, stop, what to
+check afterwards): `docs/shows/FLEET-EVENTS-OPERATIONS.md`.
 
 ## Music beds
 

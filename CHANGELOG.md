@@ -2,6 +2,212 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [10.7.0] - 2026-10-10: Warner Castle tuning (conversation, lurk, six personas, new shows, Goblin reels, fleet events)
+
+The operator's brief (2026-10-09): the characters were slow to answer, lectured, would not be interrupted and cut
+off mid-sentence; lurk mode was too complicated; every character needed retuning; every scene and pose was to be
+rebuilt; the Goblins were to run video again; and three orchestrated fleet events were to run every half hour.
+The mission spine, decisions D1 to D8, and every worker report with its evidence are in
+`docs/development/missions/2026-10-castle-tuning/`. Acoustic claims below are marked where they are not yet
+proven by ear; open items and their daylight tests are in `docs/troubleshooting/KNOWN-BUGS.md`.
+
+### Added: conversation client (D1, `61a15133`)
+
+- **Full-duplex listening on ReSpeaker XVF3800 nodes** (Orlok, PumpkinHead, Sir Dragomir, Renfield). The duplex
+  mode is detected per session from the character's own mic and speaker parts (`detectDuplexMode`), overridable
+  with `MB_CONVERSATION_DUPLEX=full|half` or a mic part's `config.duplex`, and logged once per session
+  (`[duplex] character N session ...: FULL duplex ...`). Real mic audio now reaches the agent while the character
+  speaks, so a guest who answers the closing question is heard (the old client zeroed the mic for the whole reply
+  plus 2.5 s).
+- **Echo gate.** Live on 2026-10-10 full duplex let Orlok hear himself (his own lines came back as guest
+  transcripts). While the speaker plays, a frame reaches the agent only if it clears the learned echo coupling x
+  playback level x 3.0 (`FULL_DUPLEX_ECHO_MARGIN`). Five minutes after the fix: 0 self barge-ins. Small sample;
+  the daylight test with a human voice is the acceptance.
+- **Agent-decided interruptions.** The agent's `interruption` event stops only this session's own player
+  (`serverPlaybackService.interruptPlayback`, owner = session id) and drops late chunks of the interrupted
+  response by event id. Real guests interrupted Orlok acoustically on 2026-10-10 (8 interrupted turns).
+- **Half-duplex nodes** (Mina's webcam mic, Groundbreaker's USB adapter) keep suppression with an echo-aware
+  local barge-in (predicted from the playback envelope, not the quietest frame) and a 400 ms tail. Unit-proven
+  only; not yet tested live.
+- **Auto-reconnect** while AI mode is on (network drop 1006, max-duration close 1000, override refusal 1008) with
+  backoff 1, 2, 5, 10, then 30 s and no greeting replay; the mic capture and player survive a reconnect.
+- **Per-turn latency instrumentation.** One `[turn]` log line per turn (speech end to transcript, transcript to
+  first audio, audio to playback, total) and `latency` + `conversationMode` on `GET /conversation/api/ai-status`.
+  Live (32 real guest turns): client share about 20 ms; total p50 1.5 s, p90 9.5 s, the remainder being the
+  agent's end-of-turn wait.
+- **Ordered playback and clean stops.** Chunks are written in arrival order to one owner-keyed `pw-play` per
+  session, the speaker device is resolved once per session (no disk reads per chunk), stops drain the current
+  sentence unless they are interruptions, a browser tab can only stop its own player, and panic stops the agent
+  immediately (`setAgentEnabledForCharacter(id, false, {immediate:true})`). EPIPE from a deliberately stopped
+  player is no longer logged to `.err`.
+- **One-shot asks** (`askAgentQuestion`) skip the greeting and resolve when the reply has played, not at a 30 s
+  ceiling: socket open 0.6 to 1.0 s, question to first audio 2.0 to 2.4 s (was 10 to 13 s).
+- Body-state contextual updates are merged, sent only on change and at most once per 5 s per character.
+- Tests: `tests/unit/conversation-duplex.test.js`, `conversation-session.test.js`, `playback-owner-drain.test.js`.
+
+### Added: one lurk state machine per node (D3, `c246bd18`)
+
+- **`services/lurkStateService.js`.** Every node boots into **lurking**: idle-tagged poses, head tracking where a
+  webcam and pan servo exist, the PIR, and Orlok's background music. Nothing speaks while lurking.
+- **Awake = AI mode with every capability the parts support**: the agent first (PumpkinHead's stagger kept), then
+  jaw, LED sync, head tracking, AI motion and sway, follow orders and idle movement. Broken parts in
+  `config/physical-faults.json` are excluded. Capability switches live only in the character-lock runtime overlay,
+  so wake and sleep never write `super-powers.json` and locked characters wake fully.
+- **Wake sources:** PIR, `POST /conversation/api/wake`, the new schedule action `wake` (`/schedule`, "Wake (AI
+  mode)"), and `POST /conversation/api/ai-on`.
+- **Inactivity sleep** after 5 minutes (pref `inactivityTimeoutMs`) that never ends a conversation in progress;
+  a no-guest ceiling (15 min) and a re-wake cooldown so an agent answering room noise cannot keep an empty yard
+  awake.
+- **Mute is runtime-only**; every node boots unmuted.
+- **Callouts and lurk scenes are off by default** and, when enabled, gated on `lurking` and quiet hours.
+- **Fleet event hold and release** (`POST /conversation/api/lurk/event-hold` and `event-release`): a hold steps the
+  idle loop, head tracking, music, callouts, lurk scenes and PIR wakes aside, expires by itself (default 10 min),
+  and release restores what was running.
+- **Fleet `ai` key** on `POST /api/orchestration/superpower/:feature` and an AI button on the Fleet Command Center;
+  the emergency stop no longer persists a motion-off pref. Dashboard Lurk and AI toggles reflect the server only.
+- New routes: `GET /conversation/api/lurk-state`, `POST .../lurk-state/prefs`, `POST .../wake`, `POST .../sleep`.
+  The old lurk-mode and motion-sensor routes remain as compatibility shims. `lurk-mode-state.json` and
+  `motion-armed-state.json` are no longer used; machine state lives in `data/character-N/lurk-state.json`.
+- Tests: `tests/unit/lurk-state.test.js` (29), `tests/system/lurk-state.test.js`, music-gate tests.
+
+### Changed: six ElevenLabs agents retuned (D2, `c6af2951`, `2dcd76b9`)
+
+- All six agents: `turn_v3`, eager turn-taking, speculative turns, `turn_timeout` 5, one 3 s soft-timeout filler,
+  `interruption` and `agent_response_complete` client events, `max_tokens` 140, temperature 0.8, RAG off with the
+  lore folded into prompts (Known Guests kept in prompt mode), `max_duration_seconds` 1200, `first_message`
+  override allowed (so a reconnect passes an empty greeting).
+- Prompts rewritten to the brief: one or two sentences, 20 words target, 25 words wall, one question or one errand
+  per turn, the castle's shared story and cross-references (`docs/characters/STORY-BIBLE.md`).
+- LLM chosen per character by measurement: gemini-3.5-flash-lite for Orlok, Sir Dragomir and Renfield;
+  gpt-5.4-mini for Mina, PumpkinHead and Groundbreaker. LLM time to first token p50 0.44 to 0.49 s (was 0.65 to
+  0.95 s); words per turn 15 to 27 (was 31 to 53).
+- **Silence rule:** the `skip_turn` built-in tool plus a prompt rule, so an empty yard ("..." turns) is answered
+  at most twice, then silence (the lurk sleep depends on it).
+- Voices unchanged (PumpkinHead's voice and TTS settings explicitly untouched). Orlok's "deeper voice" is not
+  achievable through ElevenLabs; a node-side playback pitch shift is briefed for a daylight audition.
+- Snapshots refreshed in `config/elevenlabs/agents/`; previous state backed up under
+  `/home/remote/fleet-backups/elevenlabs-agents/`.
+
+### Added: scene infrastructure (`d4d861c5`)
+
+- **Fleet step types:** `fleet-scene` (run scene N on node X), `fleet-say` (a line in that node's own voice),
+  `fleet-audio` / `fleet-stop-audio` (the same library track on one or every node), `fleet-mode` (`hold` /
+  `release` over every node's lurk service). Nodes resolve through the live registry by id, character, name,
+  hostname or a unique fragment; `?dryRun=1` only resolves targets.
+- **Scene and pose validator** (`services/scenes/sceneValidator.js`, `npm run validate:scenes`, gate step 1b) with
+  data-driven hazard rules in `config/scene-hazards.json`; baseline `tests/baseline/scene-validator-baseline.json`
+  (now empty).
+- **TTS cache for `sayThis`** (`services/scenes/ttsCache.js`, `data/tts-cache/<char>/`, gitignored) and
+  `scripts/prerender-scene-tts.mjs <charId|all>` to warm it.
+- **Bulk replace endpoints** `POST /scenes/api/replace` and `POST /poses/api/replace` (validate, back up to
+  `data/character-N/backups/`, atomic write, `?validateOnly=1`; 423 on a locked character). Every other scene and
+  pose write route also answers 423 on a locked character.
+- **`askAI` speaks once** (the second TTS playback is gone); **`audio` steps run to the clip's length** instead of
+  being killed at 30 s (proven with a 124.8 s track).
+- Goblin casts by name (`goblinName`) with `waitMs`; queue start-config accepts `sceneId`; scene import accepts
+  10 MB bodies.
+
+### Added: six rebuilt shows (D4)
+
+- Every old scene and pose deleted (backups in each `data/character-N/backups/`). Each character has ten scenes:
+  silent lurk pieces (1, 2), a wake greeting (3), story pieces with music beds, Goblin casts and cross-node answers,
+  send-offs, and the three fleet-event parts (8, 9, 10).
+- Orlok 26 poses and Sir Dragomir 23 (`406dd3ae`); Renfield 16 (`4b3719de`); PumpkinHead 13, every motor pulse at
+  most 40 % and 0.3 to 0.8 s (`a90f457c`); Groundbreaker voice only, no poses (his motor is dead, `61a15133`);
+  Mina 10 poses on the Burning Rose lamp plus voice, with three pre-rendered Romanian lullabies in the audio library
+  (`mina-lullaby-drumul`, `mina-lullaby-zori`, `mina-lullaby-nani`, `909bd1db`). The lullabies have not yet been
+  heard by ear.
+- Validator 6/6 clean; every scene dry-runs clean. Orlok's ten scenes were played for real on his node.
+- **`scripts/push-show.sh <characterId> <ip>`** (`d75b19d5`, `1bd09408`): carries one character's poses, scenes
+  and TTS cache to his own node (scenes and poses are node-local and excluded from deploys), points the lurk
+  rotation at the silent pieces 1 and 2, refreshes the lock fingerprints for a locked character, restarts and
+  proves it; falls back to the fleet password (`sshpass -e`) on a node without key trust.
+
+### Added: Goblin reels and keep-alive (D5, `8a58c232`)
+
+- One pre-concatenated reel per Goblin, built from measured clip metrics (`scripts/goblins/clip-metrics.mjs`,
+  `build-reels.mjs`): a showcase reel for Goblin 1 (and 4), bold silhouettes for Goblin 2's big window, a 9:16
+  centre strip for Goblin 3's roof window. Each plays as a one-file queue under one `mpv --loop`. Proven looping on
+  Goblins 2 and 3 by two reads 8 to 13 s apart and `pgrep -c mpv` = 1; Goblins 1 and 4 are off the network with
+  their reel staged.
+- **Keep-alive** on the controller node (`data/goblin-keepalive.json`, `POST /video-library/api/goblins/keepalive`):
+  resumes a stopped non-empty queue after a hold, applies the staged show when a unit returns or shows an empty
+  queue (copying the reel first), never restarts goblin.service or reboots, at most one start per Goblin per minute,
+  stands down on a respawn storm. It acted twice on 2026-10-10 with proof.
+- **`resolveGoblin(nameOrId)`** for scene casts and every manager entry point
+  (`GET /video-library/api/goblins/resolve?name=...`); `POST /video-library/api/goblins/<id or name>/resume` and
+  `/show`.
+- Per-Goblin clip manifests (`data/goblin-manifests/`, `scripts/goblins/publish-manifests.mjs`), display hints in
+  `data/goblins.json`, a hardened playlist deploy that proves the start, and a Video Control board with one card
+  per Goblin (placement, staged show, keep-alive decision, a button to put it back on its show). The 69 junk
+  playlists are archived in `data/goblin-playlists.archive-2026-10-09.json`.
+
+### Added: three fleet events (D7, `f515f225`, `aab61105`, `c5877689`)
+
+- Conductor scenes on Orlok: 101 "The Lighting of the Castle", 102 "The Count's Orders", 103 "One Song for Warner
+  Castle" (scripts in `docs/characters/FLEET-EVENTS.md`, conductors in `scripts/fleet-events/conductors/`). Each
+  calls every character's event part on its own node, casts to the Goblins, and runs one shared bed on every node.
+- Three original instrumental beds generated with the ElevenLabs Music API and loudness-normalized to -18 LUFS:
+  `fleet-event-castle-vigil`, `fleet-event-counts-march`, `fleet-event-castle-waltz`.
+- **Half-hour runner** `scripts/fleet-events/run-next.mjs` (rotation 101, 102, 103; refuses in quiet hours; waits
+  for nodes in a guest conversation; releases every node on failure; reads back each Goblin) fired by the managed
+  crontab `*/30 17-22 * * *` (visible on `/schedule`). Operations guide: `docs/shows/FLEET-EVENTS-OPERATIONS.md`.
+- Daylight rehearsal of all three events on 2026-10-10: every node returned to `lurking` with no hold and Goblins 2
+  and 3 back on their reels; the failures found are fixed below. A clean rehearsal after those fixes is still to run.
+
+### Added: time sync (D8, `d42eb74e`)
+
+- `scripts/node-baseline/apply-baseline.sh` (step 8) and `scripts/goblin-os/provision-goblin.sh` /
+  `stabilize-goblin.sh` converge `America/Chicago` and NTP. **`npm run check:time`** prints the fleet clock matrix
+  (zone, NTP, synchronized, offset per node; exit 1 on a failing reachable node). Still open from D8: a `time`
+  block in `fleet-health` and a drift flag on the Fleet Command Center.
+
+### Fixed
+
+- **Callouts spoke to an empty yard** and lurk scenes spoke regardless of state: both are now off by default and
+  gated on `lurking` and quiet hours (`c246bd18`).
+- **One-shot asks took 10 to 13 s to first sound and held for 30 s**: now 2.0 to 2.4 s to first audio and resolved
+  at the end of playback (`61a15133`).
+- **Barge-ins and socket closes SIGTERMed the shared player** of other sessions: stops are scoped to the owner
+  (`61a15133`).
+- **Lurk was never restored at boot**: every node boots into `lurking` (`c246bd18`).
+- **Lurk scenes reported a false "did not start"**: `queueStarted()` reads `running` (`c246bd18`).
+- **Background music orphaned ffmpeg decoders** (30 orphans, 2.8 GB): stop-all and panic pause instead of
+  destroying the supervisor, and a reaper kills a decoder that ignores SIGTERM (`c246bd18`).
+- **Goblin 2 showed an empty queue and Goblin 3 had been stopped by an emergency stop**, with an orphan mpv left
+  from a respawn storm: reels, the keep-alive and the hardened deploy cover both (`8a58c232`). The device-side
+  respawn without backoff (`goblin/src`) is not changed; see KNOWN-BUGS.
+- **Fleet music beds blocked the caller for the length of the track**, so rehearsal reported every bed failed while
+  it was audibly playing: the node play route answers once playback starts when asked (`background:true`), and the
+  fleet-audio step and the orchestration play-audio fan-out ask for it (`cb7a7c35`).
+- **A show skipped its own host** and "busy" meant any live agent: a show never skips its host, and busy now means a
+  guest spoke in the last minute (`ai-status` `conversing` / `guestIdleMs`) (`05c507fb`).
+- **A guestless awake node answered the show's lines**: an event hold now puts such a node to sleep (`05c507fb`).
+- **The audio library's write raced** under concurrent plays: each write uses a unique temp file (`05c507fb`).
+- **The jaw daemon raised an uncaught EPIPE** when its servo daemon was dead: stdin error handler and writable guard
+  (`344baa35`).
+- **Gate smoke step timed out at 60 s** on the 1078-test unit suite; the cap was raised (`00748c96`).
+- **Test residue in live parts**: synthetic parts 987655 and 987657 removed from Orlok's `parts.json`; the deploy
+  excludes Goblin keep-alive and fleet-events runtime state (`00748c96`).
+- Conductors cast Skullfloor and Fearsafloat instead of two clips Goblin 2 would not switch to (`a903f8d2`).
+
+### Hardware status
+
+- **Mina:** her servo rail and coffin actuator are dead (operator 2026-10-09); jaw, neck, eye and coffin door are
+  listed in `config/physical-faults.json`, so autonomous code, the validator and her show use only her voice and the
+  Burning Rose lamp.
+
+### Locks
+
+- PumpkinHead and Sir Dragomir were unlocked deliberately for their rebuilt shows and re-fingerprinted
+  (`81ed159f`); lock fingerprints now ignore the node-local `backups/` directory (`e414b283`).
+
+### Tests
+
+- Unit suite 1078 tests at phase-1 close (new: conversation duplex/session/drain, lurk state, scene infra, scene
+  validator, Goblin resolver/keep-alive and playlist hardening). The phase-4 test rebuild around the new scenes and
+  the AI settings page update were in progress when this entry was written; their results are not recorded here.
+
 ## [Unreleased]
 
 - **Lurk scenes (2026-10-05): a character performs one scene from a rotation every few minutes while it waits

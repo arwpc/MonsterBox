@@ -22,9 +22,11 @@ A **configuration lock** freezes a finished character.
   poses, scenes, super-powers, servo/actuator calibration, movement config,
   gestures, scene queues and templates, `ai-config/` (TTS/STT), images — plus
   the character's entry in `data/characters.json`.
-- **Still writable:** runtime state (`lurk-mode-state.json`,
-  `motion-armed-state.json`, `ai_agent_state.json`, analytics, anything
-  matching `*-state.json`). **A locked character still runs** — he plays scenes,
+- **Still writable:** runtime state (`lurk-state.json`, `lurk-scenes-state.json`,
+  `callout-state.json`, `ai_agent_state.json`, analytics, anything matching
+  `*-state.json`). The lurk state machine keeps a wake's capability switches in
+  the lock's runtime overlay, never in `super-powers.json`, so a locked
+  character wakes into full AI mode. **A locked character still runs** — he plays scenes,
   talks, listens, and moves. He just cannot be reconfigured.
 - **Deploys leave him alone:** `scripts/deploy-to-animatronic.sh` excludes a
   locked character's whole `data/character-<id>/` directory. This matters
@@ -67,6 +69,11 @@ the lock was applied. It **reports** drift rather than failing: a node's own
 copy of a character legitimately differs from another node's repo, so this is
 evidence to read, not a gate.
 
+Fingerprints skip the character's `backups/` directory (`scripts/character-lock.mjs`,
+since the castle-tuning release). The replace endpoints and `push-show.sh` write
+dated copies of the old files there, and those copies differ per node by design,
+so including them made `verify` report drift on every node after a show push.
+
 ## Unlocking
 
 Unlocking is meant to be deliberate and visible: it edits a committed file, so
@@ -79,9 +86,39 @@ There is an escape hatch for one-off operator work —
 it permits. It exists so a locked character can be rescued without editing
 source; it is not a way to run a session.
 
+## Pushing a rebuilt show to a locked character
+
+Scenes and poses are node-local, and a deploy skips a locked character's whole
+data directory, so a new show reaches his node only through
+`scripts/push-show.sh <characterId> <ip>`. The script copies `poses.json`,
+`scenes.json` and his TTS cache directly (the lock refuses app writes, not file
+copies), points the lurk rotation at the silent pieces 1 and 2, restarts the
+service, and, when the character is locked on that node, runs
+`node scripts/character-lock.mjs refresh <id>` and `npm run lock:verify` there
+so the node's fingerprints match the files it now holds.
+
+The practice used for PumpkinHead and Sir Dragomir in the castle-tuning mission
+(2026-10-10), because the operator's brief directed changes to both:
+
+1. Treat it as a deliberate, recorded change: the brief or the operator names
+   the character; the mission log says so.
+2. Write the new files in the repo copy (the replace endpoints answer 423 for a
+   locked character; validate with `node scripts/validate-scenes.mjs <id>`).
+3. `node scripts/character-lock.mjs refresh <id>` in the repo and commit the new
+   fingerprints together with the files.
+4. `scripts/push-show.sh <id> <ip>` (it refreshes the node's lock), then
+   `npm run lock:verify` on the node and `curl -sk https://<ip>:3000/health`.
+
+The lock itself stays on throughout; nothing is unlocked for longer than the
+edit. If you do unlock (`node scripts/character-lock.mjs unlock <id>`), relock
+with `lock` once the push is proven, and commit both.
+
 ## Currently locked
 
 | Character | Locked | Reason |
 |-----------|--------|--------|
-| 1 — PumpkinHead | 2026-09-19 | Finished and verified at 100%; configuration frozen at operator direction. |
-| 6 — Renfield | 2026-09-20 | Finished and verified at 100%; configuration frozen at operator direction. |
+| 1, PumpkinHead | 2026-09-21 | Finished and verified at 100%; configuration frozen at operator direction. Fingerprints refreshed 2026-10-10 for his rebuilt show. |
+| 4, Sir Dragomir | 2026-09-22 | Finished and verified at 100%; configuration frozen at operator direction. Fingerprints refreshed 2026-10-10 for his rebuilt show. |
+
+Renfield (6) was locked on 2026-09-20 and is now **unlocked** (rebuilt on a new
+Pi, not finished). `npm run lock:status` is the authority; this table can lag.
