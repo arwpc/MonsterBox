@@ -273,3 +273,9 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   D8: fleet-health `time {zone, ntpSynced, localTime, offsetMs}` + Fleet Command Center flag (lurk-engineer's
   files; after 1b). PumpkinHead's sink ignored `wpctl set-volume @DEFAULT_AUDIO_SINK@` but took the set by node
   id (79); canonical 1.0 restored that way. Mina is reachable again (ssh + health).
+- 2026-10-10 10:45 — phase 1b DONE (lurk, commit c246bd18; report-lurk.md; unit suite 1077 passing); follow-orders
+  overlay hook applied by the lead; Orlok's disk jaw flag restored to true. Scene authors DONE for Orlok and Sir
+  Dragomir (commit 406dd3ae, reports saved); Renfield and Groundbreaker authors launched 10:37. Orlok's scene 3
+  played for real (lamp, arm, cached line, 15 s, clean logs); scenes 1,2,4–10 playing for real now in sequence.
+  Still running: 1a conversation, 1d goblins. Next: 1a/1d commits → gate → deploy all six → per-node runtime state
+  (callouts off, lurk scenes off; Dragomir lurk rotation → scenes 1,2) → push Orlok/Dragomir shows + lock refresh.
