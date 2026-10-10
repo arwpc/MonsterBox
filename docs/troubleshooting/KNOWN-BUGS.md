@@ -2087,11 +2087,12 @@ Each item names the test that closes it. Acoustic items are UNPROVEN until an ea
 Collector run on every node at 13:47 CDT (`node scripts/log-review.mjs` on Orlok, PumpkinHead, Sir Dragomir,
 Groundbreaker, Mina; Renfield through the fleet password). Everything below is triaged against that run.
 
-- 🟡 **PumpkinHead: three MCP units crash-loop and flood the journal** (`mcp-system-monitor.service`,
-  `mcp-grep.service`, `mcp-filesystem.service`, "Failed with result 'exit-code'" 2,455 times each this boot;
-  10,419 warning+ journal lines). Same class as `sematext-vector` on Orlok: SD wear and a noisy journal. Fix:
-  the operator disables and masks the three units on his node (`sudo systemctl disable --now mcp-system-monitor
-  mcp-grep mcp-filesystem && sudo systemctl mask ...`); proof is a boot with fewer than 100 warning lines.
+- ~~🟡 **PumpkinHead: three MCP units crash-loop and flood the journal**~~ **FIXED 2026-10-10 14:05** (operator
+  go-ahead). They were user-level units of the `remote` user (`~/.config/systemd/user/mcp-{filesystem,grep,
+  system-monitor}.service`, dated 2025-08-30, an MCP tool-server experiment) whose Python example servers no
+  longer exist on disk; `Restart=always` had restarted each 7,937 times this boot. Disabled and stopped with
+  `systemctl --user disable --now ...`; proof: inactive/disabled, no `mcp/` processes, no new journal lines in a
+  fresh window. Re-enable only by recreating `/home/remote/mcp/python-sdk`.
 - 🟢 **PumpkinHead: one `listen EADDRINUSE 0.0.0.0:3000` fatal and one "Error loading goblins: Unexpected
   non-whitespace character" during the 13:44 deploy restart**: the old process still held the port while the
   new one started and `data/goblins.json` was mid-rsync. systemd's `Restart=always` recovered it; `/health`
