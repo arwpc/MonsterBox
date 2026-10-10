@@ -2082,6 +2082,27 @@ Each item names the test that closes it. Acoustic items are UNPROVEN until an ea
   and Groundbreaker's own entries were landed in git in `1bbf0d67`, so those two casualties no
   longer disappear on the next deploy.
 
+### Mina's hardware: the 2026-10-09 "lamp only" finding is REVERSED (2026-10-10 16:20)
+
+The operator traced every line and confirmed working servos: PCA9685 on dedicated 5 V VCC, SDA GPIO2 (pin 3),
+SCL GPIO3 (pin 5); **jaw on channel 15, eyes on channel 11, neck on channel 7, eye laser (on/off power) on
+channel 3; coffin door on a Cytron MDD10A with PWM GPIO18 and DIR GPIO17.** Her physical-fault entries (parts
+1–4, added 2026-10-09 on the earlier "nothing works" report) are lifted; her `parts.json` on the node carries the
+traced channels and pins and is synced into the repo. Proof on her node (`npm run test:hardware:parts`, 16:15):
+jaw ch15, neck ch7, eye ch11 moved by PCA duty readback; laser ch3 and the Burning Rose by level readback; the
+coffin door by PWM pin 18 sampled high with DIR 17. Jaw animation is enabled on servo part 1 with the 28–84°
+window; a whispered line drove the jaw timeline (586 frames) on her node.
+
+- ~~🟡 **"I can't save settings on Mina"**~~ **FIXED 2026-10-10** (9d1ba917): two causes. The servo daemon
+  refused every move of a part listed broken (`REFUSED ch15 — part 1 (Jaw) is declared physically broken`), so
+  calibration moves failed; and the jaw settings save refused an uncalibrated servo outright ("Selected servo
+  must be calibrated before use"), against the ruling that uncalibrated servos are driven through the fallback
+  window, never refused. The save now keeps the configured window and answers with a calibration warning, on
+  every character.
+- 🟡 **Mina's servos are uncalibrated** (`servo_calibrations.json` empty after the operator's clear-all). Scenes
+  drive them through the fallback window; measured parks: jaw 28°, neck 140°, eye 89°. Calibrate on
+  `/setup/calibration` to let the validator check angles and to widen the show's moves.
+
 ### Opened from the 2026-10-10 fleet log review (after the castle-tuning rollout)
 
 Collector run on every node at 13:47 CDT (`node scripts/log-review.mjs` on Orlok, PumpkinHead, Sir Dragomir,
