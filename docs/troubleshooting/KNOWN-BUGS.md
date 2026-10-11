@@ -94,6 +94,15 @@
 > string is *not* proof the node runs that code (see the deploy-drift item below). Per-node
 > version claims in the sections below were corrected to 10.1.0 in the 2026-08-19 log review.
 
+> 📋 **Last log review: 2026-10-11 00:35 CDT (every-10-commits hook, from Mina during the overnight
+> hardware session).** Local collector on Mina: only PriorityManager arbitration lines (idle loop denied while
+> head tracking holds servo 2, expected under lurk) and a false-positive `"error": null` match. The hook's wider
+> sweep (447 lines since the previous marker) was all known: avahi service-file EACCES, process-priority EACCES,
+> `character 999` test ENOENTs, peer queue refusals from the top of the file. Fleet: every peer (Orlok, Sir
+> Dragomir, Renfield, PumpkinHead, Groundbreaker) answered nothing on `/health` at 23:35 CDT, so they are
+> **OFFLINE / UNVERIFIED** for this review, not assumed fine. Mina-specific findings of the night are in her
+> section (jaw servo, door motor side, laser power) and in *Recently Fixed* (daemon safety cache, calibration CRUD).
+> Previous review text follows for history:
 > 📋 **Last log review: 2026-08-30 21:44 CDT (session-start review, from Orlok).** Findings:
 > fleet-wide accidental mute (fixed), Orlok journald cap self-defeating (root-caused + fixed),
 > `sematext-vector` crash-loop (open, needs one manual command), the two storage nodes back
@@ -2131,6 +2140,8 @@ window; a whispered line drove the jaw timeline (586 frames) on her node.
   `/setup/calibration` to let the validator check angles and to widen the show's moves.
 
 ### Opened from the 2026-10-10 fleet log review (after the castle-tuning rollout)
+
+- ⚪ **Expected, not a fault (2026-10-11 log review):** `[PriorityManager] DENIED claim on servo N by "idle-loop" ... held by "head-tracking:N"` and the matching `RELEASE DENIED` lines are the servo arbitration working under lurk (head tracking owns the neck; the idle loop and speech co-expression yield). `scripts/log-review.mjs` counts them as error-ish because of the word DENIED; treat them as noise unless the holder never releases (a servo stuck for minutes with no tracking target).
 
 Collector run on every node at 13:47 CDT (`node scripts/log-review.mjs` on Orlok, PumpkinHead, Sir Dragomir,
 Groundbreaker, Mina; Renfield through the fleet password). Everything below is triaged against that run.
