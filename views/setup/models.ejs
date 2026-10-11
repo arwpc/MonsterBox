@@ -664,9 +664,12 @@
     status.textContent = 'Applying model ' + id + '...';
     var ok = 0, fail = 0;
     Promise.all(selected.map(function (pid) {
+      // TOP-LEVEL modelId: the calibration list, its "Needs Model" flag and the
+      // Model tab all read and write part.modelId, so a model stored under
+      // config never cleared the badge (calibration CRUD audit F6).
       return fetch('/api/parts/' + encodeURIComponent(pid), {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config: { modelId: id } })
+        body: JSON.stringify({ modelId: id })
       }).then(function (r) { return r.json(); })
         .then(function (r) { if (r && r.success) ok++; else fail++; })
         .catch(function () { fail++; });
@@ -699,9 +702,10 @@
               Object.keys(defaults).forEach(function (k) { merged[k] = defaults[k]; });
               Object.keys(cfg).forEach(function (k) { merged[k] = cfg[k]; });
               merged.modelId = id;
+              // Top-level modelId as well (F6), so the list and badge see it.
               return fetch('/api/parts/' + encodeURIComponent(pid), {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ config: merged })
+                body: JSON.stringify({ modelId: id, config: merged })
               }).then(function (r) { return r.json(); });
             });
         }));

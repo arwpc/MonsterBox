@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { readConfig } from '../services/configService.js';
+import { resolveCharacter } from '../services/characterContext.js';
 import hardwareService from '../services/hardwareService/index.js';
 import { relayMjpegLatest } from '../services/mjpegRelay.js';
 import { writeJsonAtomic, withFileLock } from '../services/atomicStore.js';
@@ -38,6 +39,31 @@ async function loadParts() {
     const filePath = await getPartsFilePath();
     const data = await fs.readFile(filePath, 'utf8');
     return JSON.parse(data);
+  } catch (_) {
+    return [];
+  }
+}
+
+// The Calibration page persists webcam controls for the part ON SCREEN, so the
+// character comes from the request (query > params > selected), not from the
+// node's selectedCharacter; the two differ on a fleet node serving another
+// character (calibration CRUD audit F8b). Falls back to the selected character's
+// file exactly like getPartsFilePath() when the request names none.
+async function getPartsFilePathFor(req) {
+  try {
+    const ctx = await resolveCharacter(req);
+    const charId = ctx && ctx.id;
+    if (charId != null && /^\d+$/.test(String(charId))) {
+      const charPath = path.resolve(__dirname, '..', `data/character-${charId}`, 'parts.json');
+      try { await fs.access(charPath); return charPath; } catch (_) { /* fall through */ }
+    }
+  } catch (_) { /* fall back to the selected character below */ }
+  return getPartsFilePath();
+}
+
+async function loadPartsFrom(filePath) {
+  try {
+    return JSON.parse(await fs.readFile(filePath, 'utf8'));
   } catch (_) {
     return [];
   }
@@ -238,7 +264,8 @@ export const setControls = async (req, res) => {
     if (!controls || typeof controls !== 'object') {
       return res.status(400).json({ success: false, error: 'controls object required' });
     }
-    const parts = await loadParts();
+    const filePath = await getPartsFilePathFor(req);
+    const parts = await loadPartsFrom(filePath);
     const idx = parts.findIndex(p => String(p.id) === String(id));
     if (idx === -1) return res.status(404).json({ success: false, error: 'Part not found' });
     const part = parts[idx];
@@ -274,12 +301,12 @@ export const setControls = async (req, res) => {
     // Persist to part config if requested (include nightMode flag for UI state)
     // Always persist when requested, even if hardware is unavailable — settings apply on next startup
     if (persist) {
-      const filePath = await getPartsFilePath();
       // Serialize the read-modify-write so a concurrent parts.json writer can't
       // clobber this update (lost-update race), and re-read inside the lock so the
       // merge lands on the latest on-disk state. Atomic write prevents torn files.
+      // filePath is the request's character (resolved above), not the node's.
       await withFileLock(filePath, async () => {
-        const fresh = await loadParts();
+        const fresh = await loadPartsFrom(filePath);
         const fidx = fresh.findIndex(p => String(p.id) === String(id));
         if (fidx !== -1) {
           const target = fresh[fidx];

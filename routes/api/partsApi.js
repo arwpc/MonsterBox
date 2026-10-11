@@ -444,9 +444,14 @@ router.put('/:id', express.json(), async (req, res) => {
             return res.status(400).json({ error: validation.error });
         }
 
-        const cfg = await configService.readConfig();
+        // Resolve the character like every sibling route (query > params > the
+        // selected character). Reading selectedCharacter here meant the Models
+        // page applying a model to one character's part 1 wrote part 1 of whichever
+        // character this node had selected (calibration CRUD audit F8a). The 423
+        // lock is still asserted by writeJsonAtomic below.
+        const ctx = await resolveCharacter(req);
         const appRoot = path.resolve(__dirname, '../..');
-        const charId = cfg && cfg.selectedCharacter;
+        const charId = ctx && ctx.id;
 
         let partsPath;
         if (charId) {

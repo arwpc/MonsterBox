@@ -21,8 +21,8 @@
   // Route every parts URL through here so a new call site cannot reintroduce
   // it. `suffix` is everything after /api/parts (e.g. '/12/markers').
   // ─────────────────────────────────────────────────────────────────────────
-  window.mbPartsUrl = function (suffix) {
-    var base = '/setup/calibration/api/parts' + (suffix || '');
+  // The character this page displays, or null when the page cannot tell.
+  window.mbCharId = function () {
     var cid = window.__MB_CHAR_ID || null;
     if (!cid) {
       try {
@@ -30,6 +30,17 @@
         if (label && label.dataset.charId) cid = label.dataset.charId;
       } catch (e) { /* fall through */ }
     }
+    return cid;
+  };
+  // '?characterId=N' (or '' when unknown) for non-parts URLs that persist into a
+  // character's parts.json, e.g. the webcam controls/set route (audit F8b).
+  window.mbCharQuery = function () {
+    var cid = window.mbCharId();
+    return cid ? '?characterId=' + encodeURIComponent(cid) : '';
+  };
+  window.mbPartsUrl = function (suffix) {
+    var base = '/setup/calibration/api/parts' + (suffix || '');
+    var cid = window.mbCharId();
     // No client-side answer: leave the URL bare and let the server resolve,
     // which is strictly better than guessing a character here.
     if (!cid) return base;
@@ -3659,7 +3670,7 @@
 
         function loadControlsFromModel() {
           // Build controls from model schema as fallback
-          var modelId = (part.config && part.config.modelId) || '';
+          var modelId = part.modelId || (part.config && part.config.modelId) || '';
           fetch('/setup/calibration/api/webcam/models')
             .then(function (r) { return r.json(); })
             .then(function (j) {
@@ -3697,7 +3708,7 @@
             var isNight = nightToggle.checked;
             if (st) st.textContent = isNight ? 'Applying Night Mode…' : 'Applying Day Mode…';
             // Fetch model presets
-            var modelId = (part.config && part.config.modelId) || '';
+            var modelId = part.modelId || (part.config && part.config.modelId) || '';
             fetch('/setup/calibration/api/webcam/models')
               .then(function (r) { return r.json(); })
               .then(function (j) {
@@ -3739,7 +3750,7 @@
                 }
                 // Send preset + nightMode to device
                 var controls = Object.assign({}, preset, { nightMode: isNight ? 1 : 0 });
-                fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/set', {
+                fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/set' + window.mbCharQuery(), {
                   method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
                 }).then(function (r) { return r.json(); }).then(function (res) {
                   if (res && res.success && res.hardwareApplied) {
@@ -3768,7 +3779,7 @@
         if (applyBtn) applyBtn.addEventListener('click', function () {
           if (st) st.textContent = 'Applying…';
           var controls = readControlsFromUI();
-          fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/set', {
+          fetch('/setup/calibration/api/webcam/parts/' + encodeURIComponent(part.id) + '/controls/set' + window.mbCharQuery(), {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ controls: controls, persist: true })
           }).then(function (r) { return r.json(); }).then(function (j) {
             if (j && j.success && j.hardwareApplied) { if (st) st.textContent = 'Applied & Saved'; }
@@ -3776,19 +3787,6 @@
             else { if (st) st.textContent = 'Failed: ' + (j && j.error || ''); }
             setTimeout(function () { if (st) st.textContent = ''; }, 2000);
           }).catch(function () { if (st) st.textContent = 'Failed'; });
-        });
-      } else if (part.type === 'head_tracking') {
-        el.innerHTML = '<div class="d-flex align-items-center flex-wrap gap-2">' +
-          '<button id="htGet" class="mb-btn mb-btn-primary mb-btn-lg" title="Read current head position"><i class="bi bi-bullseye"></i> Get Position</button>' +
-          '<pre id="htOut" class="ms-2 small"></pre>' +
-          '</div>';
-        el.querySelector('#htGet').addEventListener('click', function () {
-          fetch('/api/parts/' + encodeURIComponent(part.id) + '/test', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getPosition' })
-          }).then(function (r) { return r.json(); }).then(function (j) {
-            var out = document.getElementById('htOut');
-            if (out) out.textContent = JSON.stringify(j && j.testResult && j.testResult.details || j, null, 2);
-          }).catch(function () { });
         });
       } else if (part.type === 'motion_sensor') {
         el.innerHTML =
@@ -4215,7 +4213,13 @@
       webcam: { icon: '📹', description: 'video capture devices', requiresPin: false },
       microphone: { icon: '🎤', description: 'audio input devices', requiresPin: false },
       speaker: { icon: '🔊', description: 'audio output devices', requiresPin: false },
-      head_tracking: { icon: '👁️', description: 'head position tracking', requiresPin: false }
+      // The LED Animation page and the Edit tab both drive led_ring parts, but the
+      // modal could not create one (audit F14). Its data pin lives in
+      // config.gpioPin, never top-level pin (see tests/browser/calibration-led-gpio.spec.js).
+      led_ring: { icon: '🟢', description: 'addressable WS2812B ring / eyes', requiresPin: false }
+      // head_tracking is gone (audit F4): it is a super-power, not a part. The
+      // schema enum refuses the type, and the gate then blocked every commit on
+      // the node until the part was deleted.
     };
 
     // Initialize part type dropdown
@@ -4323,6 +4327,9 @@
           break;
         case 'speaker':
           html += generateSpeakerConfig();
+          break;
+        case 'led_ring':
+          html += generateLedRingConfig();
           break;
       }
 
@@ -4550,6 +4557,27 @@
             </div>
           </div>
         `;
+    }
+
+    function generateLedRingConfig() {
+      return `
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addLedGpioPin" class="form-label">Data Pin (GPIO)</label>
+                  <input type="number" class="mb-input" id="addLedGpioPin" name="ledGpioPin" title="BCM GPIO pin that clocks the pixel data" min="0" max="40" value="18">
+                  <div class="form-text">BCM pin. WS2812B needs a PWM-capable pin (18, 12, 13, 19).</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="addLedPixelCount" class="form-label">Pixel Count</label>
+                  <input type="number" class="mb-input" id="addLedPixelCount" name="ledPixelCount" title="Total pixels on the chain" min="1" max="300" value="16">
+                  <div class="form-text">Colours, ring split and speech sync are set on the LED Animation page.</div>
+                </div>
+              </div>
+            </div>
+          `;
     }
 
     // PCA9685 controller type change handler
@@ -4849,6 +4877,16 @@
             payload.maxDuration = 10000; // 10 second safety limit for motors
           }
           break;
+
+        case 'led_ring': {
+          // Geometry lives under config (no top-level pin): the LED daemon and the
+          // Edit tab's geometry card read config.gpioPin / config.pixelCount.
+          const ledGpio = parseInt(document.getElementById('addLedGpioPin')?.value, 10);
+          const ledPixels = parseInt(document.getElementById('addLedPixelCount')?.value, 10);
+          config.gpioPin = Number.isFinite(ledGpio) ? ledGpio : 18;
+          config.pixelCount = (Number.isFinite(ledPixels) && ledPixels > 0) ? ledPixels : 16;
+          break;
+        }
 
         case 'stepper':
           const stepPin = formData.get('stepPin');
@@ -5332,6 +5370,22 @@
       if (renPin !== null) updateData.renPin = renPin;
       if (lenPin !== null) updateData.lenPin = lenPin;
 
+      // Switching driver boards must CLEAR the other board's pins on disk. The
+      // server merge only removes a key on an explicit null, so sending nothing
+      // left MDD10A's directionPin/pwmPin beside the new BTS7960 pins, which
+      // raised false GPIO conflicts and re-rendered the wrong board (audit F2).
+      if (['motor', 'linear_actuator'].includes(type) && controlBoard) {
+        if (controlBoard === 'BTS7960') {
+          updateData.directionPin = null;
+          updateData.pwmPin = null;
+        } else {
+          updateData.rpwmPin = null;
+          updateData.lpwmPin = null;
+          updateData.renPin = null;
+          updateData.lenPin = null;
+        }
+      }
+
       console.log('Saving part changes for', selected.name, '(', selected.type, '):', updateData);
       console.log('Configuration extracted:', config);
 
@@ -5373,7 +5427,10 @@
       case 'servo':
         const servoType = document.getElementById('editServoType')?.value;
         const controllerType = document.getElementById('editControllerType')?.value;
-        const invertDirection = document.getElementById('editInvertDirection')?.checked;
+        // No invertDirection for a servo (audit F7): its inversion is a CALIBRATION
+        // fact (profile capability.invert, written by the Controls tab's Invert via
+        // POST /api/calibration/:id/set-invert). config.invertDirection is read only
+        // for motor / linear_actuator, whose Edit cards carry the control instead.
         const modelId = document.getElementById('editServoModel')?.value;
         const pca9685Address = document.getElementById('editPca9685Address')?.value;
         const pca9685Frequency = document.getElementById('editPca9685Frequency')?.value;
@@ -5381,7 +5438,6 @@
 
         if (servoType) config.servoType = servoType;
         if (controllerType) config.controllerType = controllerType;
-        if (invertDirection !== undefined) config.invertDirection = invertDirection;
         if (modelId) config.modelId = modelId;
 
         if (controllerType === 'pca9685') {
@@ -5396,17 +5452,26 @@
         }
         break;
 
-      case 'motor':
+      case 'motor': {
         const maxDuration = document.getElementById('editMaxDuration')?.value;
         if (maxDuration) config.maxDuration = parseInt(maxDuration);
+        // A <select>, so read .value: the old .checked read was undefined and the
+        // key was dropped (audit F7). The runtime reads config.invertDirection for
+        // motors and linear actuators (hardwareService's part normaliser).
+        const motorInvert = document.getElementById('editInvertDirection')?.value;
+        if (motorInvert === 'true' || motorInvert === 'false') config.invertDirection = (motorInvert === 'true');
         break;
+      }
 
-      case 'linear_actuator':
+      case 'linear_actuator': {
         const maxExtension = document.getElementById('editMaxExtension')?.value;
         const maxRetraction = document.getElementById('editMaxRetraction')?.value;
         if (maxExtension) config.maxExtension = parseInt(maxExtension);
         if (maxRetraction) config.maxRetraction = parseInt(maxRetraction);
+        const actInvert = document.getElementById('editInvertDirection')?.value;
+        if (actInvert === 'true' || actInvert === 'false') config.invertDirection = (actInvert === 'true');
         break;
+      }
 
       case 'stepper':
         const micro = document.getElementById('editMicrostepping')?.value;
@@ -5467,14 +5532,21 @@
         if (fps) config.fps = parseInt(fps);
         break;
 
-      case 'microphone':
+      case 'microphone': {
         const micDevice = document.getElementById('editMicDevice')?.value;
         const sampleRate = document.getElementById('editSampleRate')?.value;
         const gain = document.getElementById('editGain')?.value;
         if (micDevice) config.deviceId = micDevice;
         if (sampleRate) config.sampleRate = parseInt(sampleRate);
-        if (gain) config.gain = parseInt(gain);
+        // inputGainPercent (0-200) is the key the Controls-tab slider, the STT
+        // auto-tune and server.js's boot-time restore all use; the old config.gain
+        // was read by nothing (audit F9).
+        if (gain !== undefined && gain !== '') {
+          const pct = parseInt(gain, 10);
+          if (!isNaN(pct)) config.inputGainPercent = Math.max(0, Math.min(200, pct));
+        }
         break;
+      }
 
       case 'speaker':
         const speakerDevice = document.getElementById('editSpeakerDevice')?.value;
@@ -5639,10 +5711,7 @@
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Invert Direction</label>
-                  <select class="mb-select" id="editInvertDirection" title="Invert servo direction">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                  </select>
+                  <div class="form-text">Set on the Controls tab (Invert); it is recorded on the calibration profile, not here.</div>
                 </div>
               </div>
 
@@ -5744,6 +5813,14 @@
                   <input type="number" class="mb-input" id="editMaxDuration" title="Safety timeout in milliseconds" min="100" max="10000" value="5000">
                   <div class="form-text">Safety timeout</div>
                 </div>
+                <div class="col-md-4">
+                  <label class="form-label">Invert Direction</label>
+                  <select class="mb-select" id="editInvertDirection" title="Swap forward and reverse for reversed wiring polarity">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                  <div class="form-text">Swaps forward/reverse (wiring polarity)</div>
+                </div>
               </div>
             </div>
           </div>
@@ -5809,6 +5886,14 @@
                 <div class="col-md-3">
                   <label class="form-label">Max Retraction (ms)</label>
                   <input type="number" class="mb-input" id="editMaxRetraction" title="Maximum retraction time in milliseconds" min="1000" max="30000" value="15000">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Invert Direction</label>
+                  <select class="mb-select" id="editInvertDirection" title="Swap extend and retract for reversed wiring polarity">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                  <div class="form-text">Swaps extend/retract (wiring polarity)</div>
                 </div>
               </div>
             </div>
@@ -5988,9 +6073,9 @@
                   <div class="form-text">Audio sample rate (Hz)</div>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Gain</label>
-                  <input type="number" class="mb-input" id="editGain" title="Input gain percent" min="0" max="100" value="50">
-                  <div class="form-text">Input gain (%)</div>
+                  <label class="form-label">Input Gain (%)</label>
+                  <input type="number" class="mb-input" id="editGain" title="Input gain percent, 0-200, 100 = unity. Applied at boot and by the Controls-tab slider." min="0" max="200" value="100">
+                  <div class="form-text">0-200, 100 = unity. Same setting as the Controls-tab Gain slider (config.inputGainPercent).</div>
                 </div>
               </div>
             </div>
@@ -6073,7 +6158,6 @@
     const servoType = config.servoType || 'standard';
 
     const controllerType = config.controllerType || 'gpio';
-    const invertDirection = config.invertDirection || false;
     const modelId = part.modelId || config.modelId;
     const address = config.address || config.pca9685Address || 64;
     const frequency = config.frequency || config.pca9685Frequency || 50;
@@ -6088,9 +6172,6 @@
 
     const controllerEl = document.getElementById('editControllerType');
     if (controllerEl) controllerEl.value = controllerType;
-
-    const invertEl = document.getElementById('editInvertDirection');
-    if (invertEl) invertEl.value = String(invertDirection);
 
     const modelEl = document.getElementById('editServoModel');
     if (modelEl && modelId) modelEl.value = modelId;
@@ -6188,6 +6269,8 @@
       }
 
       var maxDurEl = document.getElementById('editMaxDuration'); if (maxDurEl) maxDurEl.value = maxDuration;
+      var motorInvEl = document.getElementById('editInvertDirection');
+      if (motorInvEl) motorInvEl.value = String(!!(config.invertDirection != null ? config.invertDirection : part.invertDirection));
     }, 100);
   }
 
@@ -6245,6 +6328,8 @@
 
     var maxExtEl = document.getElementById('editMaxExtension'); if (maxExtEl) maxExtEl.value = maxExtension;
     var maxRetEl = document.getElementById('editMaxRetraction'); if (maxRetEl) maxRetEl.value = maxRetraction;
+    var actInvEl = document.getElementById('editInvertDirection');
+    if (actInvEl) actInvEl.value = String(!!(config.invertDirection != null ? config.invertDirection : part.invertDirection));
   }
 
   function loadEditLedRingValues(part, config) {
@@ -6316,9 +6401,13 @@
   }
 
   function loadEditMicrophoneValues(part, config) {
-    const device = config.device || 'default';
+    // deviceId is what Save writes and what the capture layer reads. Mirroring
+    // 'default' into the field for a part whose deviceId is "hw:9,0" made the
+    // next Save write deviceId:"default" over it; leave it blank when unset.
+    const device = config.deviceId || config.device || '';
     const sampleRate = config.sampleRate || 44100;
-    const gain = config.gain || 50;
+    // inputGainPercent is the live key (audit F9); 100 = unity when none is saved.
+    const gain = (config.inputGainPercent != null) ? config.inputGainPercent : 100;
 
     const deviceEl = document.getElementById('editMicDevice');
     if (deviceEl) deviceEl.value = device;
@@ -6331,7 +6420,9 @@
   }
 
   function loadEditSpeakerValues(part, config) {
-    const device = config.device || 'default';
+    // audioDeviceId is what Save writes; mirroring 'default' into the field made
+    // the next Save overwrite a real sink id with "default" (same shape as F9).
+    const device = config.audioDeviceId || config.device || '';
     const volume = config.volume || 80;
     const bass = config.bass || 0;
     const treble = config.treble || 0;

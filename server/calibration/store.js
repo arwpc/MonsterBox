@@ -366,9 +366,12 @@ export class JsonCalibrationStore {
       const cid = await this._resolveCharacter(characterId);
       const all = await this.load();
       const scoped = cid != null ? scopedKey(cid, partId) : null;
-      // Prefer deleting the character-scoped entry; fall back to the legacy bare key.
-      const key = (scoped && all[scoped]) ? scoped : String(partId);
-      if (!all[key]) return false;
+      // Delete the character-scoped entry. The legacy bare key is shared by every
+      // character, so it is only a valid target for an explicitly unscoped call
+      // (cid == null): a scoped reset that finds no scoped profile must not erase
+      // another character's legacy profile (calibration CRUD audit F13).
+      const key = (scoped && all[scoped]) ? scoped : (cid == null ? String(partId) : null);
+      if (!key || !all[key]) return false;
       delete all[key];
       await this.save(all);
       return true;
@@ -388,8 +391,9 @@ export class JsonCalibrationStore {
       const removed = [];
       for (const partId of partIds) {
         const scoped = cid != null ? scopedKey(cid, partId) : null;
-        const key = (scoped && all[scoped]) ? scoped : String(partId);
-        if (!all[key]) continue;
+        // Same rule as delete(): the bare legacy key only for an unscoped call (F13).
+        const key = (scoped && all[scoped]) ? scoped : (cid == null ? String(partId) : null);
+        if (!key || !all[key]) continue;
         delete all[key];
         removed.push(partId);
       }

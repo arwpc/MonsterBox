@@ -316,6 +316,27 @@ const router = express.Router();
 const statusFor = (error) => Number(error && error.status) || 500;
 
 
+// The schema blesses alias spellings (`linear-actuator`, `continuous-servo`,
+// `continuous_servo`) but every consumer in this file exact-matches the canonical
+// one (`p.type === 'linear_actuator'`), so an alias part never flagged
+// needsCalibration, answered 404 on its type-calibration routes and rendered "No
+// specific configuration options" on the Edit tab (calibration CRUD audit F12).
+// Normalise in memory on read; the file itself is not rewritten here.
+function normalizePartType(part) {
+    if (!part || typeof part.type !== 'string') return part;
+    const canonical = part.type.trim().toLowerCase().replace(/-/g, '_');
+    if (canonical === 'continuous_servo') {
+        const config = Object.assign({}, part.config || {});
+        if (config.servoType == null) config.servoType = 'continuous';
+        return Object.assign({}, part, { type: 'servo', config });
+    }
+    return canonical === part.type ? part : Object.assign({}, part, { type: canonical });
+}
+
+function normalizePartTypes(parts) {
+    return Array.isArray(parts) ? parts.map(normalizePartType) : parts;
+}
+
 // Character-aware parts loading and saving functions
 // Always resolve from the global data root (not cfg.dataPath which is character-scoped)
 async function loadCharacterParts(characterId) {
@@ -337,7 +358,7 @@ async function loadCharacterParts(characterId) {
                 const raw = await fs.readFile(perCharPath, 'utf8');
                 const parts = JSON.parse(raw || '[]');
                 console.log(`✅ Loaded ${parts.length} parts from ${perCharPath} (characterId=${effectiveCharId})`);
-                return parts;
+                return normalizePartTypes(parts);
             } catch (e) {
                 // If per-character file missing, fall back to global parts.json
                 console.warn(`ℹ️ ${perCharPath} missing, falling back to global parts.json:`, e && e.message);
@@ -348,11 +369,11 @@ async function loadCharacterParts(characterId) {
         const raw = await fs.readFile(partsPath, 'utf8').catch(() => '[]');
         const parts = JSON.parse(raw || '[]');
         console.log(`✅ Loaded ${parts.length} parts from ${partsPath} (selectedCharacter=${cfg.selectedCharacter}, requestedCharacterId=${characterId || 'n/a'})`);
-        return parts;
+        return normalizePartTypes(parts);
     } catch (e) {
         if (e && (e.code === 'CHARACTER_CONFIG_LOCKED' || Number(e.status) === 423)) throw e;
         console.warn('loadCharacterParts fell back to controllers.loadParts():', e && e.message);
-        return await loadParts();
+        return normalizePartTypes(await loadParts());
     }
 }
 
@@ -485,9 +506,10 @@ router.get('/api/parts', async (req, res) => {
             }
         } catch (_) { /* ignore */ }
 
-        // Filter by type if specified
+        // Filter by type if specified (alias spellings normalised like the rows, F12)
         if (type) {
-            parts = parts.filter(part => part.type === type);
+            const wanted = String(type).trim().toLowerCase().replace(/-/g, '_');
+            parts = parts.filter(part => part.type === wanted);
         }
 
         // GPIO conflict detection among enabled parts within the current set
@@ -501,6 +523,14 @@ router.get('/api/parts', async (req, res) => {
                 if (p.stepPin != null) out.push(String(p.stepPin));
                 if (p.dirPin != null) out.push(String(p.dirPin));
                 if (p.enablePin != null) out.push(String(p.enablePin));
+                // BTS7960 pins (F2): without these a real RPWM/LPWM collision was
+                // never flagged while stale MDD10A pins raised false ones.
+                if (p.rpwmPin != null) out.push(String(p.rpwmPin));
+                if (p.lpwmPin != null) out.push(String(p.lpwmPin));
+                if (p.renPin != null) out.push(String(p.renPin));
+                if (p.lenPin != null) out.push(String(p.lenPin));
+                // An led_ring's data pin lives in config.gpioPin, not top-level pin.
+                if (p.type === 'led_ring' && p.config && p.config.gpioPin != null) out.push(String(p.config.gpioPin));
             }
             return out;
         }
@@ -535,12 +565,17 @@ router.get('/api/parts', async (req, res) => {
             const gpioPins = pinsFor(p);
             const gpioConflict = gpioPins.some(pin => (pinCounts[pin] || 0) > 1);
 
+            const cfg = p.config || {};
+            // F6: a model lands top-level via the Model tab and under config via
+            // the Edit tab; read both so "Needs Model" clears whichever wrote it.
+            const modelId = p.modelId || cfg.modelId || null;
+            const topOrConfig = (key) => (p[key] != null ? p[key] : (cfg[key] != null ? cfg[key] : null));
             return {
                 id: String(p.id),
                 name: p.name,
                 type: p.type,
-                modelId: p.modelId || null,
-                config: p.config || {},
+                modelId,
+                config: cfg,
                 enabled: !!p.enabled,
                 // Pin fields
                 pin: p.pin || null,
@@ -550,13 +585,24 @@ router.get('/api/parts', async (req, res) => {
                 stepPin: p.stepPin || null,
                 dirPin: p.dirPin || null,
                 enablePin: p.enablePin || null,
+                // Motor / linear-actuator driver fields (F3): the Edit tab is built
+                // from THIS row, and without them a BTS7960 part re-rendered as
+                // MDD10A with blank pins and the next Save silently retyped the driver.
+                controlBoard: topOrConfig('controlBoard'),
+                rpwmPin: p.rpwmPin != null ? p.rpwmPin : null,
+                lpwmPin: p.lpwmPin != null ? p.lpwmPin : null,
+                renPin: p.renPin != null ? p.renPin : null,
+                lenPin: p.lenPin != null ? p.lenPin : null,
+                maxExtension: topOrConfig('maxExtension'),
+                maxRetraction: topOrConfig('maxRetraction'),
+                maxDuration: topOrConfig('maxDuration'),
                 // Additional fields
                 description: p.description || '',
                 created: p.created,
                 updated: p.updated,
                 markers: p.markers || [],
                 // Flags for UI
-                needsModel: !p.modelId,
+                needsModel: !modelId,
                 needsCalibration: !!needsCalibration,
                 gpioConflict: !!gpioConflict
             };
@@ -576,6 +622,13 @@ router.post('/api/parts', express.json(), async (req, res) => {
         const payload = req.body || {};
         if (!payload.name || !payload.type) {
             return res.status(400).json({ success: false, error: 'name and type are required' });
+        }
+        // Same identity-key validation as PUT and the overrides route: create used
+        // to accept a servoType "bogus" and channel 99 that every other writer
+        // refuses (F5).
+        const validation = validatePartConfigPatch(payload.config);
+        if (!validation.ok) {
+            return res.status(400).json({ success: false, error: validation.error });
         }
 
         const ctx = await resolveCharacter(req);
@@ -603,9 +656,12 @@ router.post('/api/parts', express.json(), async (req, res) => {
         });
     } catch (error) {
         console.error('Error creating part:', error);
-        res.status(500).json({
+        // A refusal carries its own status: the character lock answers 423, not
+        // a server fault (F10) — same shape as the PUT and DELETE siblings.
+        res.status(statusFor(error)).json({
             success: false,
-            error: 'Failed to create part',
+            error: error.message || 'Failed to create part',
+            code: error.code,
             message: error.message
         });
     }
@@ -681,9 +737,30 @@ router.put('/api/parts/:id', express.json(), async (req, res) => {
             ? deepMerge(parts[partIndex].config || {}, updates.config)
             : (updates ? updates.config : undefined);
 
+        // One source of truth on disk for keys the runtime reads at TOP-LEVEL
+        // (F1, F6). The Add modal writes maxExtension/maxRetraction/maxDuration
+        // top-level and the Edit tab writes them under config; the hardware layer
+        // (hardwareService's linear_actuator/motor normaliser and the jog route
+        // below) reads top-level first, so an Edit-tab save changed the UI and not
+        // the actuator. Likewise the Edit tab's config.modelId never cleared "Needs
+        // Model" because the list reads top-level. Hoist, unless the caller sent
+        // the top-level key itself.
+        const hoisted = {};
+        if (mergedConfig && typeof mergedConfig === 'object' && !Array.isArray(mergedConfig)) {
+            for (const key of ['maxExtension', 'maxRetraction', 'maxDuration']) {
+                if (mergedConfig[key] != null && (!updates || updates[key] === undefined)) {
+                    hoisted[key] = mergedConfig[key];
+                }
+            }
+            if (updates && updates.config && updates.config.modelId != null && updates.modelId === undefined) {
+                hoisted.modelId = String(updates.config.modelId);
+            }
+        }
+
         parts[partIndex] = {
             ...parts[partIndex],
             ...updates,
+            ...hoisted,
             ...(mergedConfig !== undefined ? { config: mergedConfig } : {}),
             id, // Ensure ID doesn't change
             updated: new Date().toISOString()
@@ -815,6 +892,7 @@ const MODEL_FILE_BY_TYPE = {
     servo: 'servo_models.json',
     linear_actuator: 'linear_actuator_models.json',
     motor: 'motor_models.json',
+    stepper: 'motor_models.json', // steppers live in the motor registry (F11)
     led: 'led_models.json',
     led_ring: 'led_ring_models.json',
     light: 'light_models.json',
@@ -1107,15 +1185,18 @@ router.post('/api/linear_actuator/:id/jog', express.json(), async (req, res) => 
             });
         }
 
-        // Execute jog command
-        const controlBoard = part.controlBoard || 'MDD10A';
+        // Execute jog command. Limits: the Edit tab saved them under config while
+        // this read top-level only (F1) — the UI said 12000 and the hardware ran
+        // 15000. The PUT now hoists them; reading both covers parts saved before.
+        const partCfg = part.config || {};
+        const controlBoard = part.controlBoard || partCfg.controlBoard || 'MDD10A';
         const actuatorParams = {
             controlBoard: controlBoard,
             direction: direction,
             speed: speed,
             duration: duration,
-            maxExtension: part.maxExtension || 15000,
-            maxRetraction: part.maxRetraction || 15000
+            maxExtension: partCfg.maxExtension ?? part.maxExtension ?? 15000,
+            maxRetraction: partCfg.maxRetraction ?? part.maxRetraction ?? 15000
         };
 
         // Add pins based on control board type
@@ -1166,7 +1247,7 @@ router.post('/api/linear_actuator/:id/stop', express.json(), async (req, res) =>
         }
 
         // Execute stop command
-        const controlBoard = part.controlBoard || 'MDD10A';
+        const controlBoard = part.controlBoard || (part.config && part.config.controlBoard) || 'MDD10A';
         const stopParams = {
             controlBoard: controlBoard
         };
