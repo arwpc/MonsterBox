@@ -1,6 +1,38 @@
 # Mina — PCA9685 channel map
 
-## ✅ CURRENT, 2026-09-25 — operator-confirmed harness: jaw 11 / neck 7 / eye 3 / LED 15
+## CURRENT, 2026-10-11: operator rewire of 2026-10-10 20:35, measured overnight: neck 15 / eye 14 / jaw 10 / laser 11
+
+Every older map and window below this section is **historical**. Source: mission log 2026-10-11 00:00 entry
+(`docs/development/missions/2026-10-castle-tuning/MISSION.md`) and `docs/hardware/OPERATOR-TODO.md`. Measured on her
+node; witness was her ReSpeaker plus a spectral servo-whine detector (a servo move is a 5-7 kHz tone; a silent
+command is no travel), with chip readback after every command. Chip: PCA9685 at 0x40, 50 Hz.
+
+| Part (id) | Name | Channel / pins | Measured state |
+|---|---|---|---|
+| Neck (2) | Neck | PCA **ch15** | Travels freely only about **110-138** raw degrees (silent at 95 and 145-170, hunts at 140). Profile 2:2 = **110-136, center 123, no invert**. |
+| Eye (3) | Eye | PCA **ch14** | Free about **68-112** (short whines into stops near 66 and 114). Profile 2:3 = **70-110, center 89**. |
+| Jaw (1) | Jaw | PCA **ch10** | **Does not position-follow.** Whines only when a pulse train first appears after a release; ignores every width change while energized, through the API and through raw register writes. Uncalibrated, servo faulty. Registered in `config/physical-faults.json`; jaw animation disabled on her node; channel released. Needs a servo swap (hands-on proof in `OPERATOR-TODO.md`). |
+| Servo Channel Laser (10) | Laser | PCA **ch11** | Never seen lit. A PCA output pin cannot power a laser module: needs the relay the part already models (`relay_aceirmc_3v_1ch`) or a logic-level MOSFET/NPN. |
+| Coffin Door (4) | Coffin door | Cytron MDD10A, DIR **GPIO17** / PWM **GPIO18**, `invertDirection: true` (API extend = DIR high) | Pins toggle correctly (sampled on 2 s jogs at 100 %), motor silent both ways. Check MDD10A VIN, common ground, M1 vs M2. |
+| Burning Rose (5) | Lamp | GPIO16 | Works. |
+| PIR (9) | Motion sensor | GPIO26 | Works. |
+
+The neck and eye profiles are node-local (`data/calibration_profiles.json` on her node). The old neck window
+48-180 inverted with centre 132 (2026-08-23) is dead. Show poses were re-aimed into the measured windows (commit
+`626f13a3`: neck 122-160 to 112-136, park 140 to 123; eye 68-112 to 70-110; jaw dropped).
+
+**Not yet hardware-verified by eye:** all windows above were measured acoustically overnight with the operator
+asleep; none has been confirmed by the operator's eyes. The jaw swap, door motor and laser relay are open operator
+items.
+
+---
+
+## Historical: 2026-09-25 map (jaw 11 / neck 7 / eye 3 / LED 15) (SUPERSEDED 2026-10-11 by the section above)
+
+The "CURRENT" label below and the windows it mentions (neck 48-180 inverted, centre 132; jaw 28-84) are history
+and are no longer true.
+
+### 2026-09-25 operator-confirmed harness: jaw 11 / neck 7 / eye 3 / LED 15 (historical)
 
 **Operator confirmation, 2026-09-25 (Aaron, direct, at the rig): wiring confirmed on ALL
 parts.** Eye = PCA9685 ch3, Neck = ch7, Jaw = ch11. The eye LED/laser (part 10) is wired to

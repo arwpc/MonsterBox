@@ -336,7 +336,33 @@ top). No new physical work has been done on parts 2/3/4/5.
   the elbow component of any pose to do nothing until the rail is fixed.
 
 ### Mina — char 2 · `192.168.8.140`
-🔴 **2026-10-09 22:40, operator: "no hardware works other than light - linear actuator does not".** Jaw (1), neck (2),
+**2026-10-11 overnight findings (read first; they supersede the "servos dead" / "servo rail" / channel wording below
+where they differ):** channel map neck ch15 / eye ch14 / jaw ch10 / laser ch11, door DIR17/PWM18; neck and eye work
+(windows 110-136 and 70-110); the jaw servo, door motor side and laser power are hardware faults, entries below.
+Detail: `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`, `docs/hardware/OPERATOR-TODO.md`.
+
+- 🔴 **OPEN (hardware, operator action): Mina's jaw servo (part 1, ch10) does not position-follow.** It whines only
+  when a pulse train first appears after a release and ignores every width change while energized, through the API
+  and through raw register writes that bypass all software; the eye (ch14) and neck (ch15) on the same chip whine on
+  every move. Likely a dead feedback pot or a continuous-rotation unit. Registered in `config/physical-faults.json`
+  (poses drop it, the daemon refuses ch10); jaw animation disabled on her node; channel released. **Fix:** swap in a
+  standard MG90S and calibrate (steps in `docs/hardware/OPERATOR-TODO.md`), then remove the fault entry. **Test:**
+  servo-tester knob, or eye lead on ch10 then goto 30 and 90.
+- 🔴 **OPEN (hardware): Mina's coffin door motor side (part 4).** DIR GPIO17 / PWM GPIO18 toggle correctly on 2 s
+  jogs at 100 % both ways (sampled with `pinctrl`) but the motor is silent. Suspect MDD10A VIN, common ground
+  Pi to board, M1 vs M2. **Test:** the board's M1A/M1B test buttons first (splits motor side from signal side). Flip
+  `invertDirection` only after it moves and closes instead of opens.
+- 🔴 **OPEN (hardware): Mina's laser (part 10, ch11) cannot be lit by the PCA pin.** An output pin sources a few mA;
+  the module needs its own supply through the part's modelled relay (`relay_aceirmc_3v_1ch`) or a logic-level
+  MOSFET/NPN. Software already drives ch11 full-on/full-off.
+- 🟢 **FIXED in working tree (pending service restart; commit to follow): the servo daemon froze its safety data at
+  start.** `mb_safety._load_json` caches every JSON file for the life of the process, so the daemon's
+  physical-fault veto and channel map never refreshed (a fault registered at 23:02 was still driven at 23:10; old
+  "REFUSED ch15" lines came from a pre-rewire map). `python_wrappers/servo_daemon.py` now calls
+  `mb_safety.reset_cache()` before each 30 s refresh. **Takes effect on the next `monsterbox.service` restart on her
+  node; not yet verified live.**
+
+🔴 *(Partly superseded 2026-10-11: servos work; see the 2026-10-11 findings above.)* **2026-10-09 22:40, operator: "no hardware works other than light - linear actuator does not".** Jaw (1), neck (2),
 eye (3) and the coffin door actuator (4) are listed in `config/physical-faults.json`, so autonomous code, the scene
 validator and her rebuilt show use only her voice and the Burning Rose lamp (part 5); the laser (10) is unverified.
 Her jaw animation must stay OFF on her node. Clear the entries when the servo rail and the actuator are repaired.
@@ -344,7 +370,7 @@ Open from the mission: half duplex untested live (Cross-Cutting); her three Roma
 (`mina-lullaby-drumul`, `-zori`, `-nani`) have never been heard. **Test:** daylight ear-check on her node: sung, soft,
 in tune; beds at 16 to 20 % under her whispers; lamp timing in event parts 9 and 10.
 
-🟢 **2026-09-25 — harness confirmed by the operator at the rig: jaw ch11 / neck ch7 / eye
+🟢 *(Historical: channels superseded by the 2026-10-11 rewire, see above.)* **2026-09-25 — harness confirmed by the operator at the rig: jaw ch11 / neck ch7 / eye
 ch3 / LED ch15. Root-causes the ch8/ch11 "dead channel" findings below — the harness is
 not on those channels now (the jaw still answered on ch4 on 2026-08-19, so the re-pin to the
 2026-08-22 plan landed after that date while software kept driving 4/8/11/0); each channel is
@@ -2084,6 +2110,8 @@ Each item names the test that closes it. Acoustic items are UNPROVEN until an ea
 
 ### Mina's hardware: the 2026-10-09 "lamp only" finding is REVERSED (2026-10-10 16:20)
 
+*Channels in this entry (jaw 15, eye 11, neck 7, laser 3) were superseded by the operator's 2026-10-10 20:35 rewire and the 2026-10-11 findings at the top of the Mina section.*
+
 The operator traced every line and confirmed working servos: PCA9685 on dedicated 5 V VCC, SDA GPIO2 (pin 3),
 SCL GPIO3 (pin 5); **jaw on channel 15, eyes on channel 11, neck on channel 7, eye laser (on/off power) on
 channel 3; coffin door on a Cytron MDD10A with PWM GPIO18 and DIR GPIO17.** Her physical-fault entries (parts
@@ -2099,7 +2127,7 @@ window; a whispered line drove the jaw timeline (586 frames) on her node.
   must be calibrated before use"), against the ruling that uncalibrated servos are driven through the fallback
   window, never refused. The save now keeps the configured window and answers with a calibration warning, on
   every character.
-- 🟡 **Mina's servos are uncalibrated** (`servo_calibrations.json` empty after the operator's clear-all). Scenes
+- 🟡 **Mina's servos are uncalibrated** *(2026-10-11: neck 110-136 and eye 70-110 now calibrated; jaw faulty, see Mina section)* (`servo_calibrations.json` empty after the operator's clear-all). Scenes
   drive them through the fallback window; measured parks: jaw 28°, neck 140°, eye 89°. Calibrate on
   `/setup/calibration` to let the validator check angles and to widen the show's moves.
 

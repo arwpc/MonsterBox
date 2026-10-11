@@ -193,7 +193,17 @@ proven by ear; open items and their daylight tests are in `docs/troubleshooting/
 
 ### Hardware status
 
-- **Mina:** her servo rail and coffin actuator are dead (operator 2026-10-09); jaw, neck, eye and coffin door are
+- **Mina (2026-10-11 overnight):** show re-aimed into her measured windows (neck 122-160 to 112-136, park 140 to
+  123; eye 68-112 to 70-110; `626f13a3`) and the jaw servo registered in `config/physical-faults.json` (it does not
+  position-follow; poses drop it, jaw animation disabled on her node). Measured windows: neck ch15 about 110-138
+  (profile 110-136, centre 123, no invert), eye ch14 about 68-112 (profile 70-110, centre 89), both node-local.
+  Door motor side (MDD10A) and laser power (relay needed) are open hardware items. Measured acoustically, not yet
+  confirmed by the operator's eyes. Details: `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`.
+- **Servo daemon refreshed its safety data never** (`python_wrappers/servo_daemon.py`): `mb_safety` cached its JSON
+  files for the life of the process, freezing the physical-fault veto and channel map at daemon start. The daemon
+  now calls `mb_safety.reset_cache()` before each 30 s refresh. Takes effect on the next service restart; not yet
+  verified live.
+- **Mina (2026-10-09, superseded 2026-10-11 by the bullets above):** her servo rail and coffin actuator are dead (operator 2026-10-09); jaw, neck, eye and coffin door are
   listed in `config/physical-faults.json`, so autonomous code, the validator and her show use only her voice and the
   Burning Rose lamp.
 

@@ -14,7 +14,30 @@
 
 Mina is a coffin-themed vampire animatronic with a motorized door, jaw/neck/eye servos, eye laser, and prop lighting.
 
-## Hardware Parts
+## Hardware status (2026-10-11 overnight findings)
+
+Authoritative detail: `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md` (Current section) and
+`docs/hardware/OPERATOR-TODO.md`. Measured on her node with her ReSpeaker plus a spectral servo-whine detector and
+chip readback. The parts table, PCA9685 table, GPIO table, Super Powers and Poses sections below this one still carry
+the 2026-09-25 map and windows; they are **historical where they disagree with this section**.
+
+Channel map in force since the operator's 2026-10-10 20:35 rewire (PCA9685 0x40, 50 Hz): neck ch15, eye ch14, jaw
+ch10, laser ch11; coffin door Cytron MDD10A DIR GPIO17 / PWM GPIO18 (`invertDirection: true`, API extend = DIR high);
+Burning Rose lamp GPIO16; PIR GPIO26.
+
+| Part | Status | Detail |
+|---|---|---|
+| Neck (2, ch15) | Works | Free travel about 110-138 raw degrees (silent at 95 and 145-170, hunts at 140). Profile 2:2 = 110-136, centre 123, no invert. The old 48-180 inverted window (2026-08-23) is dead. |
+| Eye (3, ch14) | Works | Free about 68-112. Profile 2:3 = 70-110, centre 89. |
+| Burning Rose lamp (5), PIR (9), mic/speaker (ReSpeaker XVF3800) | Work | |
+| Jaw (1, ch10) | Does NOT work: servo fault | Does not position-follow (whines only when a pulse train first appears after a release; ignores width changes while energized, via API and raw register writes). Uncalibrated. In `config/physical-faults.json`; jaw animation disabled on her node. Needs a servo swap. |
+| Coffin door (4) | Does NOT move: motor side | DIR/PWM pins toggle correctly; motor silent on 2 s jogs at 100 % both ways. Suspect MDD10A VIN, common ground, M1 vs M2. |
+| Laser (10, ch11) | Does NOT light: power | A PCA output pin cannot power the module; needs the modelled relay (`relay_aceirmc_3v_1ch`) or a MOSFET. |
+
+Both calibration profiles are node-local (`data/calibration_profiles.json` on her node). Her poses were re-aimed into
+these windows (commit `626f13a3`). The windows were measured acoustically, not yet confirmed by the operator's eyes.
+
+## Hardware Parts (2026-09-25 map, historical channels)
 
 | ID | Name | Type | Details |
 |----|------|------|---------|
