@@ -22,7 +22,7 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 140
+            "angleDeg": 123
           }
         },
         {
@@ -129,7 +129,7 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 140
+            "angleDeg": 123
           }
         },
         {
@@ -158,14 +158,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 122
+            "angleDeg": 112
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 80
+            "angleDeg": 81
           }
         }
       ],
@@ -187,14 +187,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 160
+            "angleDeg": 136
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 102
+            "angleDeg": 101
           }
         }
       ],
@@ -216,14 +216,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 128
+            "angleDeg": 116
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 112
+            "angleDeg": 110
           }
         }
       ],
@@ -245,14 +245,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 148
+            "angleDeg": 128
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 84
+            "angleDeg": 85
           }
         }
       ],
@@ -274,7 +274,7 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 126
+            "angleDeg": 115
           }
         }
       ],
@@ -296,7 +296,7 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 154
+            "angleDeg": 132
           }
         }
       ],
@@ -318,14 +318,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 134
+            "angleDeg": 120
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 68
+            "angleDeg": 70
           }
         }
       ],
@@ -347,7 +347,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 104
+            "angleDeg": 103
           }
         }
       ],
@@ -369,7 +369,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 76
+            "angleDeg": 77
           }
         }
       ],
@@ -445,7 +445,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 84
+            "angleDeg": 85
           }
         }
       ],
@@ -540,7 +540,7 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 132
+            "angleDeg": 118
           }
         }
       ],
@@ -564,14 +564,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 156
+            "angleDeg": 133
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 100
+            "angleDeg": 99
           }
         }
       ],
@@ -595,14 +595,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 124
+            "angleDeg": 113
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 80
+            "angleDeg": 81
           }
         }
       ],
@@ -643,7 +643,7 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 140
+            "angleDeg": 123
           }
         },
         {
@@ -817,7 +817,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 70
+            "angleDeg": 72
           }
         }
       ],
@@ -841,7 +841,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 108
+            "angleDeg": 106
           }
         }
       ],
