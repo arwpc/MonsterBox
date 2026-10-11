@@ -443,12 +443,12 @@ async function transitionServos(characterId, parts, options = {}) {
     // part's channel kept ending up energized with no trace in the log.
     if (options.allowBrokenParts !== true) {
         try {
-            const { getPhysicalFault } = await import('../hardwareService/safetyLimits.js');
+            const { getPhysicalFault, warnBrokenPartDropped } = await import('../hardwareService/safetyLimits.js');
             const kept = [];
             for (const part of parts) {
                 const fault = await getPhysicalFault(characterId, part.partId);
                 if (fault.broken) {
-                    console.warn(`⛔ TransitionEngine: dropping part ${part.partId} — declared physically broken (${fault.reason})`);
+                    warnBrokenPartDropped('TransitionEngine', characterId, part.partId, fault.reason);
                 } else {
                     kept.push(part);
                 }

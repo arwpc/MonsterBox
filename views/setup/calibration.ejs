@@ -2369,7 +2369,7 @@
       // default takes its place, so a cleared channel / address / controllerType /
       // servoType left the servo driven as GPIO channel 0, that is, a different
       // servo or none. The overrides route refuses these nulls as well.
-      const IDENTITY_KEYS = ['controllerType', 'channel', 'address', 'servoType', 'pca9685Frequency'];
+      const IDENTITY_KEYS = ['controllerType', 'channel', 'address', 'servoType'];
       const schema = (OVERRIDE_SCHEMAS[selected.type] || []).filter(f => !IDENTITY_KEYS.includes(f.key));
       if (!schema.length) {
         showToast('Nothing to revert: every override for this type is wiring identity, which Revert keeps', 'info');

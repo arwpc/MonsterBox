@@ -455,7 +455,9 @@ async function deleteViaEditTab(id, name) {
   await openEdit(id);
   const errorsBefore = bag.consoleErrors.length;
   await page.click('#deletePartBtn');
-  const opened = await page.waitForSelector('[data-mb-confirm]', { timeout: 5000 }).then(() => true).catch(() => false);
+  // The confirm host is an unstyled wrapper whose backdrop and modal are fixed-position children, so the
+  // host itself has no box: wait for it to be attached (as confirmDialog() does), not 'visible'.
+  const opened = await page.waitForSelector('[data-mb-confirm]', { state: 'attached', timeout: 5000 }).then(() => true).catch(() => false);
   expect(opened, `Edit tab "Delete Part" opens the confirm dialog (page errors after click: ${JSON.stringify(bag.consoleErrors.slice(errorsBefore))})`).toBe(true);
   const resp = await confirmDialog(name);
   expect(resp.status(), 'DELETE (Edit tab) status').toBe(200);
@@ -780,11 +782,7 @@ test('servo: calibration-panel text saves (invert, Calibrated stamp, preset refu
   expect.soft(profileWrites() - before, 'no profile write for a refused preset').toBe(0);
   expect.soft(await page.locator('#presetsContainer').textContent(), 'no preset rendered').not.toContain('qa-open');
 
-  // The device-card header "Invert" switch (#invertDir) is a visible control: it must write.
-  const writesBefore = bag.writes.length;
-  await setSwitch('#invertDir', true);
-  await page.waitForTimeout(1200);
-  expect.soft(bag.writes.length - writesBefore, 'device-card "Invert" switch (#invertDir) issues a write').toBeGreaterThan(0);
+  // (The panel's Invert toggle was exercised above; the unwired device-card header switch was removed, UI audit F15.)
 
   await deleteViaEditTab(id, name);
   await noHazards();

@@ -321,7 +321,7 @@ const statusFor = (error) => Number(error && error.status) || 500;
 // hardware layer then falls back to GPIO / channel 0: a different servo, or
 // none (UI audit F4: "Revert to Model" erased a servo's wiring). Setting a
 // value is still allowed and still validated by validatePartConfigPatch.
-const IDENTITY_CONFIG_KEYS = ['controllerType', 'channel', 'address', 'servoType', 'pca9685Frequency'];
+const IDENTITY_CONFIG_KEYS = ['controllerType', 'channel', 'address', 'servoType'];
 function identityClearRefusal(patch) {
     if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return null;
     const cleared = IDENTITY_CONFIG_KEYS.filter((k) => patch[k] === null);

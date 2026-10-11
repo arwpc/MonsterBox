@@ -16,7 +16,7 @@ import { runPy, runWrapper } from './exec.js';
 import servoService from './servo.js';
 import stepperService from './stepper.js';
 import { getCalibrationStore, isPlaceholderProfile } from '../../server/calibration/store.js';
-import { getPartSafety, applySafetyLimits, runInPowerGroup, getPhysicalFault } from './safetyLimits.js';
+import { getPartSafety, applySafetyLimits, runInPowerGroup, getPhysicalFault, warnBrokenPartDropped } from './safetyLimits.js';
 import servoDaemonClient from './servoDaemonClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -2483,7 +2483,7 @@ export async function batchMoveServos(commands, options = {}) {
                 console.warn(`⚠️  physical-fault lookup failed for part ${cmd.partId}: ${err.message}`);
             }
             if (fault.broken) {
-                console.warn(`⛔ batchMoveServos: dropping part ${cmd.partId} — declared physically broken (${fault.reason})`);
+                warnBrokenPartDropped('batchMoveServos', charForFaults, cmd.partId, fault.reason);
             } else {
                 kept.push(cmd);
             }

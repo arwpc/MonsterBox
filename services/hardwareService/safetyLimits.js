@@ -343,3 +343,22 @@ export default {
     invalidateSafetyConfigCache,
     resetPowerGroups
 };
+
+// Throttled "dropping part" warning. Idle poses fire every few seconds, and a
+// broken-listed part present in four of Mina's thirteen idle poses produced one
+// .err line per pose execution, all night, on an SD card (2026-10-11). Log the
+// first drop per (scope, character, part), then at most once every ten minutes
+// with a count of what was suppressed. The DROP itself is never throttled.
+const _dropWarnState = new Map();
+const DROP_WARN_INTERVAL_MS = 10 * 60 * 1000;
+export function warnBrokenPartDropped(scope, characterId, partId, reason) {
+    const key = `${scope}:${characterId}:${partId}`;
+    const now = Date.now();
+    const st = _dropWarnState.get(key);
+    if (st && (now - st.at) < DROP_WARN_INTERVAL_MS) { st.suppressed += 1; return; }
+    const suffix = st && st.suppressed
+        ? ` (${st.suppressed} identical drops suppressed since the last line; repeats at most every 10 min)`
+        : ' (repeats at most every 10 min)';
+    console.warn(`⛔ ${scope}: dropping part ${partId} — declared physically broken (${reason})${suffix}`);
+    _dropWarnState.set(key, { at: now, suppressed: 0 });
+}
