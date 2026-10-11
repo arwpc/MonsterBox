@@ -184,6 +184,14 @@ def _broken_channels():
     channels = {}
     try:
         import mb_safety
+        # mb_safety caches every JSON file it loads for the life of the process
+        # (_json_cache). This daemon lives for days, so without a reset the
+        # "refresh" below re-read a physical-faults.json, app-config.json and
+        # parts.json frozen at daemon start: a fault registered at 23:02 on
+        # 2026-10-11 was still being driven at 23:10, and a channel map from
+        # before a rewire produced "REFUSED ch15" for a part that had moved to
+        # ch10. Two small files every 30 s is the price of telling the truth.
+        mb_safety.reset_cache()
         channels = mb_safety.broken_channels(mb_safety.resolve_character_id())
     except Exception as exc:
         _log(f"could not read physical-faults ({exc}) — not denying any channel")
