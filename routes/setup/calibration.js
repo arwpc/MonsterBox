@@ -315,6 +315,21 @@ const router = express.Router();
 // without a status stays a 500. Same fix as the jaw, LED and movement routes.
 const statusFor = (error) => Number(error && error.status) || 500;
 
+// Wiring identity must never be CLEARED through a config writer. The overrides
+// contract deletes a key posted as null; a null channel / address /
+// controllerType / servoType leaves the servo with no identity, and the
+// hardware layer then falls back to GPIO / channel 0: a different servo, or
+// none (UI audit F4: "Revert to Model" erased a servo's wiring). Setting a
+// value is still allowed and still validated by validatePartConfigPatch.
+const IDENTITY_CONFIG_KEYS = ['controllerType', 'channel', 'address', 'servoType', 'pca9685Frequency'];
+function identityClearRefusal(patch) {
+    if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return null;
+    const cleared = IDENTITY_CONFIG_KEYS.filter((k) => patch[k] === null);
+    if (!cleared.length) return null;
+    return `Refusing to clear ${cleared.join(', ')}: these identify which servo is driven and how, ` +
+        'and no model default takes their place. Set a value instead of clearing it (the Edit tab owns these fields).';
+}
+
 
 // The schema blesses alias spellings (`linear-actuator`, `continuous-servo`,
 // `continuous_servo`) but every consumer in this file exact-matches the canonical
@@ -702,6 +717,12 @@ router.put('/api/parts/:id', express.json(), async (req, res) => {
         if (!validation.ok) {
             return res.status(400).json({ success: false, error: validation.error });
         }
+        // Same identity guard as the overrides route: a null here deep-merges in
+        // as config.channel = null, which the hardware layer reads as "no channel".
+        const identityRefusal = identityClearRefusal(updates && updates.config);
+        if (identityRefusal) {
+            return res.status(400).json({ success: false, error: identityRefusal });
+        }
 
         const ctx = await resolveCharacter(req);
         const characterId = ctx ? ctx.id : null;
@@ -864,6 +885,10 @@ router.post('/api/parts/:id/overrides', express.json(), async (req, res) => {
         const validation = validatePartConfigPatch(overrides);
         if (!validation.ok) {
             return res.status(400).json({ success: false, error: validation.error });
+        }
+        const identityRefusal = identityClearRefusal(overrides);
+        if (identityRefusal) {
+            return res.status(400).json({ success: false, error: identityRefusal });
         }
         const ctx = await resolveCharacter(req);
         const characterId = ctx ? ctx.id : null;

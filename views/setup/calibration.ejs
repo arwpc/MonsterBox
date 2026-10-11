@@ -591,11 +591,9 @@
           </div>
           <div class="text-end">
             <span class="mb-badge mb-mono" id="modelBadge">Model: —</span>
-            <label class="mb-switch ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Reverse the direction of movement for this part">
-              <input type="checkbox" id="invertDir">
-              <span class="mb-switch-track"><span class="mb-switch-thumb"></span></span>
-              <span>Invert</span>
-            </label>
+            <!-- The header "Invert" switch (#invertDir) is gone (UI audit F15): it had no
+                 handler and rendered for every part type, so toggling it did nothing. The
+                 working control is "Invert Servo Direction" in the calibration panel. -->
           </div>
         </div>
         <div class="card-body">
@@ -648,6 +646,57 @@
                 <div class="col-12">
                   <label class="form-label">Description</label>
                   <input id="editDescription" class="mb-input" title="Edit the part description" placeholder="Describe this part">
+                </div>
+
+                <!-- Markers (UI audit F10): named positions kept on the part record
+                     (parts.json markers[]). The JS below has bound these ids for a
+                     long time; the markup never existed, so the API round-tripped
+                     while the page offered no editor. Min and Max feed the jaw and
+                     head guardrails. -->
+                <div class="col-12" id="markersCard">
+                  <div class="card">
+                    <div class="card-header"><i class="bi bi-bookmark"></i> Markers</div>
+                    <div class="card-body">
+                      <div class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                          <label class="form-label" for="minValue">Min</label>
+                          <div class="mb-input-group">
+                            <input type="number" step="any" class="mb-input" id="minValue" title="Min marker (degrees for a positional servo)" placeholder="e.g. 20">
+                            <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm" id="saveMinMarker" title="Save the Min marker on this part">Save</button>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label" for="midValue">Mid</label>
+                          <div class="mb-input-group">
+                            <input type="number" step="any" class="mb-input" id="midValue" title="Mid marker" placeholder="e.g. 90">
+                            <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm" id="saveMidMarker" title="Save the Mid marker on this part">Save</button>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label" for="maxValue">Max</label>
+                          <div class="mb-input-group">
+                            <input type="number" step="any" class="mb-input" id="maxValue" title="Max marker (degrees for a positional servo)" placeholder="e.g. 160">
+                            <button type="button" class="mb-btn mb-btn-secondary mb-btn-sm" id="saveMaxMarker" title="Save the Max marker on this part">Save</button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row g-2 align-items-end mt-1">
+                        <div class="col-md-5">
+                          <label class="form-label" for="newMarkerName">Custom marker</label>
+                          <input class="mb-input" id="newMarkerName" title="Name of a custom marker" placeholder="Name (e.g. Snarl)">
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label" for="newMarkerValue">Value</label>
+                          <input type="number" step="any" class="mb-input" id="newMarkerValue" title="Value of the custom marker" placeholder="0">
+                        </div>
+                        <div class="col-md-3">
+                          <button type="button" class="mb-btn mb-btn-primary mb-btn-sm w-100" id="addMarkerBtn" title="Add the custom marker to this part"><i class="bi bi-plus-lg"></i> Add</button>
+                        </div>
+                      </div>
+                      <div id="customMarkers" class="mt-2"></div>
+                      <div class="form-text">Saved on the part record (not the calibration profile). Min and Max are read by the jaw and head guardrails; other names are for scenes and poses. A value outside the part's span is refused.</div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Advanced JSON Config (collapsible) -->
@@ -733,7 +782,7 @@
                         </div>
                       </div>
                       <div class="d-flex justify-content-end gap-2">
-                        <button id="revertOverridesBtn" class="mb-btn mb-btn-secondary mb-btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Clear all part-specific overrides and revert to the model defaults"><i
+                        <button id="revertOverridesBtn" class="mb-btn mb-btn-secondary mb-btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Release this part's overrides back to the model defaults. Wiring identity (channel, address, controller, servo type) is kept."><i
                             class="bi bi-arrow-counterclockwise"></i> Revert to Model</button>
                         <button id="saveOverridesBtn" class="mb-btn mb-btn-primary mb-btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Save part-specific overrides (these take priority over model defaults)"><i class="bi bi-save"></i> Save
                           Overrides</button>
@@ -1123,6 +1172,8 @@
       renderEdit(selected);
       refreshEffective(selected.id);
       renderAdvancedTab(selected);
+      // Markers card (UI audit F10): show this part's markers on selection.
+      loadMarkers().catch(function () { /* markers are optional */ });
 
       // Enable Remove button when a part is selected
       const removeBtn = document.getElementById('btnRemove');
@@ -2314,7 +2365,16 @@
       // nothing on disk while the page behaved as if it had (v11 audit F9).
       // Non-schema config keys (tracking tuning, device assignments) are
       // untouched — reverting overrides must not strip other tabs' work.
-      const schema = OVERRIDE_SCHEMAS[selected.type] || [];
+      // Wiring identity is never released by Revert (UI audit F4): no servo model
+      // default takes its place, so a cleared channel / address / controllerType /
+      // servoType left the servo driven as GPIO channel 0, that is, a different
+      // servo or none. The overrides route refuses these nulls as well.
+      const IDENTITY_KEYS = ['controllerType', 'channel', 'address', 'servoType', 'pca9685Frequency'];
+      const schema = (OVERRIDE_SCHEMAS[selected.type] || []).filter(f => !IDENTITY_KEYS.includes(f.key));
+      if (!schema.length) {
+        showToast('Nothing to revert: every override for this type is wiring identity, which Revert keeps', 'info');
+        return;
+      }
       const clears = {};
       schema.forEach(f => { clears[f.key] = null; });
       const resp = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/overrides`), {
@@ -2324,7 +2384,7 @@
       if (j.success) {
         selected.config = j.config;
         overridesEditor.value = JSON.stringify(j.config || {}, null, 2);
-        showToast('Overrides reverted to model defaults', 'success');
+        showToast('Reverted to model defaults: ' + schema.map(f => f.label).join(', '), 'success');
         refreshEffective(selected.id);
       } else {
         showToast(j.error || 'Failed to revert overrides', 'error');
@@ -4019,17 +4079,28 @@
       return undefined;
     }
     async function saveMarkerFromField(fieldId, name) {
-      if (!selected) return;
+      if (!selected) { showToast('Select a part first', 'error'); return; }
       const el = document.getElementById(fieldId);
       if (!el) return;
       const raw = el.value;
-      const num = raw !== '' ? Number(raw) : undefined;
-      const body = { name, kind: 'absolute', value: num, unit: unitFor(selected) };
-      const response = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/markers`), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-      }).catch(() => null);
-      if (response && response.ok) {
-        await loadMarkers();
+      if (raw === '') { showToast(`Enter a value for ${name} first`, 'error'); return; }
+      const body = { name, kind: 'absolute', value: Number(raw), unit: unitFor(selected) };
+      try {
+        const response = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/markers`), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        const j = await response.json().catch(() => ({}));
+        if (response.ok && j.success !== false) {
+          await loadMarkers();
+          showToast(`Marker "${name}" saved`, 'success');
+        } else {
+          // The server refuses a value outside the span (400) or Min == Max (409):
+          // say why instead of silently keeping the old value.
+          showToast('Marker not saved: ' + (j.error || ('HTTP ' + response.status)), 'error');
+        }
+      } catch (err) {
+        console.error('Error saving marker:', err);
+        showToast('Error saving marker', 'error');
       }
     }
 
@@ -4057,19 +4128,23 @@
         }
 
         try {
-          const body = { name, kind: 'absolute', value: 0, unit: unitFor(selected) };
+          const valEl = document.getElementById('newMarkerValue');
+          const value = (valEl && valEl.value !== '') ? Number(valEl.value) : 0;
+          const body = { name, kind: 'absolute', value, unit: unitFor(selected) };
           const response = await fetch(window.mbPartsUrl(`/${encodeURIComponent(selected.id)}/markers`), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
           });
+          const j = await response.json().catch(() => ({}));
 
-          if (response.ok) {
+          if (response.ok && j.success !== false) {
             nameInput.value = '';
+            if (valEl) valEl.value = '';
             await loadMarkers();
             showToast(`Marker "${name}" added`, 'success');
           } else {
-            showToast('Failed to add marker', 'error');
+            showToast('Failed to add marker: ' + (j.error || ('HTTP ' + response.status)), 'error');
           }
         } catch (error) {
           console.error('Error adding marker:', error);
@@ -4077,6 +4152,13 @@
         }
       });
     }
+
+    // Min / Mid / Max save buttons of the markers card (UI audit F10).
+    [['saveMinMarker', 'minValue', 'Min'], ['saveMidMarker', 'midValue', 'Mid'], ['saveMaxMarker', 'maxValue', 'Max']]
+      .forEach(([btnId, fieldId, markerName]) => {
+        const b = document.getElementById(btnId);
+        if (b) b.addEventListener('click', () => { saveMarkerFromField(fieldId, markerName); });
+      });
 
     // Remove button functionality
     const removeBtn = document.getElementById('btnRemove');
@@ -4193,6 +4275,16 @@
 
     // Expose for other inline scripts that run earlier on DOMContentLoaded
     window.loadParts = loadParts;
+    // renderEdit (global scope, below this IIFE) binds "Delete Part" to
+    // deleteSelectedPart(): without this export every click threw
+    // ReferenceError and the button did nothing (UI audit F1). The marker
+    // chips' inline onclick="deleteMarker(...)" and loadEditServoValues'
+    // model-select fill are the same class.
+    window.deleteSelectedPart = deleteSelectedPart;
+    window.deleteMarker = deleteMarker;
+    window.renderMarkers = renderMarkers;
+    window.loadMarkers = loadMarkers;
+    window.populateEditServoModels = populateEditServoModels;
     loadParts().catch(e => console.error(e));
 
     // RETIRED (v11 audit F5): the sc_* Simple Calibration helpers and their
@@ -4257,7 +4349,11 @@
       // (data/models/speaker_models.json, microphone_models.json) and the list
       // route flags needsModel on any part without a top-level modelId, so an
       // audio part added without one is born showing "Needs Model" forever.
-      if (['servo', 'stepper', 'webcam', 'speaker', 'microphone'].includes(type)) {
+      // Every type with a registry under data/models/ (UI audit F13): the others
+      // were born with the "Needs Model" badge and no way to clear it here.
+      // (sensor has no registry file; led_ring needs the modelsController mapping
+      // added with F12.)
+      if (['servo', 'stepper', 'webcam', 'speaker', 'microphone', 'motor', 'linear_actuator', 'light', 'led', 'motion_sensor', 'led_ring'].includes(type)) {
         modelGroup.style.display = 'block';
         loadModelsForType(type);
       } else {
@@ -4484,7 +4580,7 @@
 
     function generateWebcamConfig() {
       return `
-          < div class="row" >
+          <div class="row">
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addWebcamDevice" class="form-label">Webcam Device</label>
@@ -4497,13 +4593,13 @@
               <div class="col-md-4 d-flex align-items-end">
                 <button type="button" class="mb-btn mb-btn-secondary w-100" onclick="scanWebcamsForAdd()" title="Scan for connected webcams">Scan Devices</button>
               </div>
-            </div >
+            </div>
           `;
     }
 
     function generateMicrophoneConfig() {
       return `
-          < div class="row" >
+          <div class="row">
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addAudioInput" class="form-label">Audio Input</label>
@@ -4516,13 +4612,13 @@
               <div class="col-md-4 d-flex align-items-end">
                 <button type="button" class="mb-btn mb-btn-secondary w-100" onclick="scanAudioInputsForAdd()" title="Scan for audio inputs">Scan Inputs</button>
               </div>
-            </div >
+            </div>
           `;
     }
 
     function generateSpeakerConfig() {
       return `
-          < div class="row" >
+          <div class="row">
               <div class="col-md-8">
                 <div class="mb-3">
                   <label for="addAudioOutput" class="form-label">Audio Output</label>
@@ -4535,7 +4631,7 @@
               <div class="col-md-4 d-flex align-items-end">
                 <button type="button" class="mb-btn mb-btn-secondary w-100" onclick="scanAudioOutputsForAdd()" title="Scan for audio outputs">Scan Outputs</button>
               </div>
-            </div >
+            </div>
           <div class="row">
             <div class="col-md-4">
               <div class="mb-3">
@@ -4685,7 +4781,7 @@
 
     function generateStepperConfig() {
         return `
-          < div class="card mb-3" >
+          <div class="card mb-3">
               <div class="card-header"><i class="bi bi-compass"></i> Stepper Motor Configuration</div>
               <div class="card-body">
                 <div class="row g-3">
@@ -4719,7 +4815,7 @@
                   </div>
                 </div>
               </div>
-            </div >
+            </div>
           `;
       }
 
@@ -5267,6 +5363,43 @@
       let lenPin = null;
       let controlBoard = null;
 
+      // Advanced JSON (UI audit F2 / F8). renderEdit prefills the textarea with
+      // the part's CURRENT values, and this function then "let the JSON
+      // override" the form on every Save, so the stale prefill reverted every
+      // form field it named: pins, board and limits typed in the form came
+      // straight back with a green toast (the operator's "I can't change pins").
+      // Now: only keys whose JSON value differs from the rendered snapshot count
+      // as edited; an edited key never wins over a form field touched in this
+      // selection (window.__mbEditDirty); and edited keys the form does not own
+      // are merged into config for EVERY type (the card was write-only for nine).
+      const advEl = document.getElementById('editConfig');
+      const advTxt = advEl ? advEl.value : '';
+      const advRendered = advEl ? (advEl.dataset.rendered || '') : '';
+      const advChanged = {};
+      if (advTxt.trim() && advTxt.trim() !== advRendered.trim()) {
+        try {
+          const adv = JSON.parse(advTxt);
+          let base = {};
+          try { base = JSON.parse(advRendered || '{}') || {}; } catch (e) { base = {}; }
+          Object.keys(adv || {}).forEach(k => {
+            if (JSON.stringify(adv[k]) !== JSON.stringify(base[k])) advChanged[k] = adv[k];
+          });
+        } catch (e) {
+          showToast('Advanced JSON is not valid JSON and was ignored; the form values were saved', 'warning');
+        }
+      }
+      const dirtyFields = window.__mbEditDirty || new Set();
+      // JSON key -> the form field that owns it; a touched field keeps its value.
+      const FORM_FIELD_FOR = {
+        controlBoard: 'editControlBoard', directionPin: 'editDirectionPin', pwmPin: 'editPwmPin',
+        rpwmPin: 'editRpwmPin', lpwmPin: 'editLpwmPin', renPin: 'editRenPin', lenPin: 'editLenPin',
+        maxDuration: 'editMaxDuration', maxExtension: 'editMaxExtension', maxRetraction: 'editMaxRetraction',
+        stepPin: 'editStepPin', dirPin: 'editDirPin', enablePin: 'editEnablePin',
+        microstepping: 'editMicrostepping', stepsPerRevolution: 'editStepsPerRev'
+      };
+      const fromJson = (key) => (Object.prototype.hasOwnProperty.call(advChanged, key)
+        && advChanged[key] != null && !dirtyFields.has(FORM_FIELD_FOR[key])) ? advChanged[key] : undefined;
+
       if (['motor', 'linear_actuator'].includes(type)) {
         // Control board and pins
         var cbEl = document.getElementById('editControlBoard');
@@ -5300,27 +5433,22 @@
           lenPin = null;
         }
 
-        // Allow Advanced JSON to override motor/linear_actuator fields
-        try {
-          const txt = document.getElementById('editConfig')?.value || '';
-          if (txt.trim().length) {
-            const adv = JSON.parse(txt);
-            if (adv.controlBoard != null) controlBoard = adv.controlBoard;
-            // MDD10A/Cytron pins
-            if (adv.directionPin != null) directionPin = parseInt(adv.directionPin);
-            if (adv.pwmPin != null) pwmPin = parseInt(adv.pwmPin);
-            // BTS7960 pins
-            if (adv.rpwmPin != null) rpwmPin = parseInt(adv.rpwmPin);
-            if (adv.lpwmPin != null) lpwmPin = parseInt(adv.lpwmPin);
-            if (adv.renPin != null) renPin = parseInt(adv.renPin);
-            if (adv.lenPin != null) lenPin = parseInt(adv.lenPin);
-            // Limits
-            if (adv.maxDuration != null) config.maxDuration = parseInt(adv.maxDuration);
-            if (adv.maxExtension != null) config.maxExtension = parseInt(adv.maxExtension);
-            if (adv.maxRetraction != null) config.maxRetraction = parseInt(adv.maxRetraction);
-            if (adv.modelId && !config.modelId) config.modelId = adv.modelId;
-          }
-        } catch (e) { /* ignore parse errors; keep form values */ }
+        // Advanced JSON: only keys the operator edited there, and never over a
+        // form field they touched (advChanged / fromJson above, UI audit F2).
+        if (fromJson('controlBoard') !== undefined) controlBoard = fromJson('controlBoard');
+        // MDD10A/Cytron pins
+        if (fromJson('directionPin') !== undefined) directionPin = parseInt(fromJson('directionPin'));
+        if (fromJson('pwmPin') !== undefined) pwmPin = parseInt(fromJson('pwmPin'));
+        // BTS7960 pins
+        if (fromJson('rpwmPin') !== undefined) rpwmPin = parseInt(fromJson('rpwmPin'));
+        if (fromJson('lpwmPin') !== undefined) lpwmPin = parseInt(fromJson('lpwmPin'));
+        if (fromJson('renPin') !== undefined) renPin = parseInt(fromJson('renPin'));
+        if (fromJson('lenPin') !== undefined) lenPin = parseInt(fromJson('lenPin'));
+        // Limits
+        if (fromJson('maxDuration') !== undefined) config.maxDuration = parseInt(fromJson('maxDuration'));
+        if (fromJson('maxExtension') !== undefined) config.maxExtension = parseInt(fromJson('maxExtension'));
+        if (fromJson('maxRetraction') !== undefined) config.maxRetraction = parseInt(fromJson('maxRetraction'));
+        if (fromJson('modelId') !== undefined && !config.modelId) config.modelId = fromJson('modelId');
       }
 
       if (type === 'stepper') {
@@ -5331,20 +5459,25 @@
         if (dEl && dEl.value) dirPin = parseInt(dEl.value);
         if (eEl && eEl.value) enablePin = parseInt(eEl.value);
 
-        // Allow Advanced JSON to override stepper fields
-        try {
-          const txt = document.getElementById('editConfig')?.value || '';
-          if (txt.trim().length) {
-            const adv = JSON.parse(txt);
-            if (adv.stepPin != null) stepPin = parseInt(adv.stepPin);
-            if (adv.dirPin != null) dirPin = parseInt(adv.dirPin);
-            if (adv.enablePin != null) enablePin = parseInt(adv.enablePin);
-            if (adv.microstepping != null) config.microstepping = parseInt(adv.microstepping);
-            if (adv.stepsPerRevolution != null) config.stepsPerRevolution = parseInt(adv.stepsPerRevolution);
-            if (adv.modelId && !config.modelId) config.modelId = adv.modelId;
-          }
-        } catch (e) { /* ignore parse errors; keep form values */ }
+        // Advanced JSON: edited keys only, never over a touched field (UI audit F2).
+        if (fromJson('stepPin') !== undefined) stepPin = parseInt(fromJson('stepPin'));
+        if (fromJson('dirPin') !== undefined) dirPin = parseInt(fromJson('dirPin'));
+        if (fromJson('enablePin') !== undefined) enablePin = parseInt(fromJson('enablePin'));
+        if (fromJson('microstepping') !== undefined) config.microstepping = parseInt(fromJson('microstepping'));
+        if (fromJson('stepsPerRevolution') !== undefined) config.stepsPerRevolution = parseInt(fromJson('stepsPerRevolution'));
+        if (fromJson('modelId') !== undefined && !config.modelId) config.modelId = fromJson('modelId');
       }
+
+      // UI audit F8: edited JSON keys the form does not own land in config for
+      // every type (the server deep-merges). The top-level wiring keys are
+      // handled above for motor / linear_actuator / stepper and never go into
+      // config here; a key the form already set keeps the form's value.
+      const TOP_LEVEL_JSON_KEYS = ['controlBoard', 'directionPin', 'pwmPin', 'rpwmPin', 'lpwmPin', 'renPin', 'lenPin', 'stepPin', 'dirPin', 'enablePin'];
+      Object.keys(advChanged).forEach(k => {
+        if (TOP_LEVEL_JSON_KEYS.includes(k)) return;
+        if (config[k] !== undefined) return;
+        config[k] = advChanged[k];
+      });
 
       // Build the update payload
       const updateData = {
@@ -5600,6 +5733,22 @@
         if (part.modelId) adv.modelId = part.modelId;
       }
       c.value = JSON.stringify(adv, null, 2);
+      // Snapshot of what was rendered, so Save can tell an operator edit from
+      // the stale prefill (UI audit F2).
+      c.dataset.rendered = c.value;
+    }
+
+    // Form fields the operator touches in THIS selection, so an Advanced JSON
+    // edit can never silently win over a value they just typed (UI audit F2).
+    window.__mbEditDirty = new Set();
+    var editPane = document.getElementById('tabEdit');
+    if (editPane && !editPane._dirtyBound) {
+      editPane._dirtyBound = true;
+      var markDirty = function (e) {
+        if (e.target && e.target.id && e.target.id !== 'editConfig') window.__mbEditDirty.add(e.target.id);
+      };
+      editPane.addEventListener('input', markDirty, true);
+      editPane.addEventListener('change', markDirty, true);
     }
 
     // Render type-specific configuration
@@ -6173,6 +6322,10 @@
     const controllerEl = document.getElementById('editControllerType');
     if (controllerEl) controllerEl.value = controllerType;
 
+    // UI audit F11: the select was never filled (populateEditServoModels had no
+    // caller), so it always read "Select model..." and could not write one. The
+    // servo models cache is loaded by selectPart before renderEdit runs.
+    if (window.populateEditServoModels) window.populateEditServoModels();
     const modelEl = document.getElementById('editServoModel');
     if (modelEl && modelId) modelEl.value = modelId;
 

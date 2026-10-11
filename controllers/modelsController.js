@@ -12,6 +12,10 @@ const TYPE_TO_FILE = {
   motor: 'motor_models.json',
   stepper: 'motor_models.json',
   led: 'led_models.json',
+  // Same file routes/setup/calibration.js MODEL_FILE_BY_TYPE resolves for the
+  // Calibration page's /effective; without it the Model tab logged a 400 for
+  // every led_ring selection (UI audit F12).
+  led_ring: 'led_ring_models.json',
   light: 'light_models.json',
   sensor: 'sensor_models.json',
   motion_sensor: 'motion_sensor_models.json',

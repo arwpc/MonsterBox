@@ -217,3 +217,71 @@ md5sum -c /tmp/qa-before.md5
 - `head_tracking` still exists in the Overrides field map (`calibration.ejs:2169`) and `MODEL_FILE_BY_TYPE`; both unreachable now and left to keep the change small.
 - The adapter cache in the calibration router is still keyed by bare partId (pre-existing, tracked in KNOWN-BUGS); character threading stops at the store and the position store, as the brief asked.
 - Found while fixing F9 and fixed in the same card: the microphone and speaker Edit loaders mirrored `'default'` into the device field, so a plain Save overwrote `deviceId` / `audioDeviceId` with `"default"`.
+
+## Second pass (UI audit follow-up, 2026-10-11)
+
+Work order: `report-calibration-crud-ui.md` (its own F-numbers; the table "Status after the lead's commit a0388040" lists what remained). Same rules: working tree only, no restart, no suite, no hardware call. Files touched this pass: `views/setup/calibration.ejs`, `routes/setup/calibration.js`, `server/calibration/router.js`, `controllers/modelsController.js` (one mapping, admitted to scope for UI F12). Line numbers are from the working tree after this pass.
+
+### UI F1 (operator-blocking) Edit tab "Delete Part" threw ReferenceError
+- `views/setup/calibration.ejs:4278-4287`: `window.deleteSelectedPart = deleteSelectedPart` next to the existing `window.loadParts` export. The same class was fixed in the same place: `deleteMarker` (the marker chips' inline `onclick`), `renderMarkers`, `loadMarkers` and `populateEditServoModels` are exported too.
+- Verify (UI): select any `QA-FIX-*` part, Edit tab, "Delete Part" opens the confirm naming the part; confirming removes it; the browser console has no `deleteSelectedPart is not defined`. Static: `grep -c "window.deleteSelectedPart = deleteSelectedPart" views/setup/calibration.ejs` prints 1.
+
+### UI F2 (operator-blocking, the complaint) and F8: Advanced JSON reverted form values; ignored for nine types
+- `views/setup/calibration.ejs:5736-5752` (`renderEdit`): the prefilled textarea keeps a snapshot of what was rendered (`dataset.rendered`); a delegated `input`/`change` listener on `#tabEdit` records every form field the operator touches in this selection (`window.__mbEditDirty`, reset per selection).
+- `:5366-5401` (`savePartChanges`): the JSON is parsed once; only keys whose value differs from the rendered snapshot count as edited (`advChanged`); `fromJson(key)` yields a value only when the key was edited AND its owning form field was not touched. `:5436-5451` (motor / linear_actuator) and `:5462-5468` (stepper) use it in place of the two "Allow Advanced JSON to override" blocks, which applied the stale prefill on every Save. `:5471-5480` (F8): edited keys the form does not own are merged into `config` for every type; the top-level wiring keys never go into config. Invalid JSON is reported by toast and ignored; the form values still save.
+- Rules now: form value typed this session always wins; an untouched form field yields to a key the operator edited in the JSON; an unedited JSON never changes anything.
+- Verify (UI, motor `QA-FIX-motor` with directionPin 22 / pwmPin 23 created via the API on character 3, page on the selected character works the same): (a) type Direction 25 / PWM 27, leave the JSON alone, Save: `jq '.[] | select(.name=="QA-FIX-motor") | {directionPin, pwmPin}' data/character-N/parts.json` shows 25 / 27 (was 22 / 23 before this pass). (b) Change only the JSON `"pwmPin": 12`, Save: pwmPin 12. (c) Type PWM 13 in the form and set the JSON to `"pwmPin": 14`, Save: 13. (d) Stepper: step / dir / enable, microstepping, steps/rev typed in the form persist. (e) F8: light, add `"qaJsonKey": "from-json"` to the JSON, Save: `config.qaJsonKey` is on disk.
+
+### UI F4 (hardware-dangerous) "Revert to Model" erased a servo's wiring
+- Client `views/setup/calibration.ejs:2367-2377, 2387`: the Revert handler drops `controllerType`, `channel`, `address`, `servoType`, `pca9685Frequency` from the keys it clears; for a servo (all five of its override fields are identity) it toasts "Nothing to revert" and sends no request; for other types the success toast names what was released. Button tooltip (`:785`) says identity is kept.
+- Server `routes/setup/calibration.js:318-331` (`identityClearRefusal`), applied in the overrides route (`:889-892`) and, because a null deep-merges in as `config.channel = null`, in `PUT /api/parts/:id` as well (`:720-725`): a `null` for any of those keys is refused with 400 and a message that says what to do instead. Setting a value is unchanged (still validated by `validatePartConfigPatch`); nulls for non-identity keys still delete.
+- Verify:
+```bash
+curl -s -w '\n%{http_code}\n' -X POST "$B/setup/calibration/api/parts/$SV/overrides?characterId=3" -H "$J" -d '{"overrides":{"channel":null,"controllerType":null}}'
+#  expect 400, "Refusing to clear channel, controllerType ..."; disk unchanged
+curl -s -w '\n%{http_code}\n' -X PUT "$B/setup/calibration/api/parts/$SV?characterId=3" -H "$J" -d '{"config":{"servoType":null}}'      # expect 400
+curl -s -w '\n%{http_code}\n' -X POST "$B/setup/calibration/api/parts/$ID/overrides?characterId=3" -H "$J" -d '{"overrides":{"speedMaxPct":null}}'   # expect 200 (non-identity null still deletes)
+#  UI: servo, Model tab, Revert -> toast "Nothing to revert ..." and no request in the network log; channel/address/controllerType/servoType intact on disk.
+```
+(`$SV` is a `QA-FIX-servo` created with `{"type":"servo","config":{"servoType":"standard","controllerType":"pca9685","channel":7,"address":64}}`.)
+
+### UI F6 Invert promoted a 0-180 placeholder to trusted
+- `server/calibration/router.js:1071-1078`: `set-invert` no longer sets `autoGenerated = false`; it writes `capability.invert` only. Only set-min / set-max and the Calibrated stamp change `autoGenerated` / `calibrated`.
+- Verify:
+```bash
+curl -s "$B/api/calibration/$SV/profile?characterId=3" | jq '{auto: .profile.autoGenerated, calibrated}'            # fresh: auto true, calibrated false
+curl -s -X POST "$B/api/calibration/$SV/set-invert?characterId=3" -H "$J" -d '{"invert":true}' | jq .invert           # true
+curl -s "$B/api/calibration/$SV/profile?characterId=3" | jq '{auto: .profile.autoGenerated, calibrated, inv: .profile.capability.invert}'
+#  expect auto true, calibrated false, inv true (before this pass: auto false, calibrated true)
+curl -s -X DELETE "$B/api/calibration/$SV/profile?characterId=3" >/dev/null   # cleanup
+```
+
+### UI F11 / F12 / F13 model plumbing
+- F11 `views/setup/calibration.ejs:6325-6330`: `loadEditServoValues` fills the servo Model select (`populateEditServoModels`, now exported) before selecting the part's model; a pick saves as `config.modelId`, which the PUT hoists to top-level (first pass F6). Verify (UI): servo, Edit tab, Model select lists the servo registry with the part's model preselected; pick another, Save, the badge shows it after the reload and `jq '.modelId'` matches.
+- F12 `controllers/modelsController.js:15-18`: `led_ring: 'led_ring_models.json'` (the same file `MODEL_FILE_BY_TYPE` in `routes/setup/calibration.js` resolves). Verify: `curl -s "$B/setup/models/api/led_ring" | jq '.success, (.models|length)'` prints `true` and `1` (was 400 "Unsupported model type").
+- F13 `views/setup/calibration.ejs:4352-4356`: the Add modal offers a model for every type with a registry (adds motor, linear_actuator, light, led, motion_sensor, led_ring; sensor has no registry file). Verify (UI): Add Part, type Motor, the Model select is visible and populated from `/setup/models/api/motor`.
+
+### UI F14 / F15 / F10 markup
+- F14 `views/setup/calibration.ejs:4583, 4602, 4621, 4784` and the four matching closers: `< div ...>` / `</div >` corrected, so the webcam, microphone, speaker and stepper modal sections no longer leak literal "< div" text. Static: `grep -c '< div' views/setup/calibration.ejs` prints 0.
+- F15 `:593-596`: the unwired header "Invert" switch (`#invertDir`) is removed; it rendered for every part type and had no handler. The working control is "Invert Servo Direction" in the calibration panel. Static: `grep -c 'id="invertDir"' views/setup/calibration.ejs` prints 0.
+- F10 `:651-700`: a Markers card in the Edit tab (above Advanced JSON) with Min / Mid / Max fields each with Save, a custom name + value + Add row, and the `#customMarkers` chip area; the JS that had bound these ids for years now has markup. `:4081-4104` (`saveMarkerFromField`) refuses a blank value and surfaces the server's 400 (outside the span) / 409 (Min/Max would collapse) messages; `:4130-4150` the Add handler reads the value field; `:4156-4161` binds the three Save buttons; `:1176` `selectPart` loads the markers on selection. Verify (UI, servo): Min 20, Save, chip/field persists and `jq '.[] | select(.id=="<id>") | .markers'` shows `{name:"Min", value:20, unit:"deg"}`; Min 200 toasts "Servo marker must be within 0-180"; custom "Snarl" 45 adds a chip whose x deletes it.
+
+### Static checks (second pass)
+```
+node --check routes/setup/calibration.js          OK
+node --check server/calibration/router.js         OK
+node --check controllers/modelsController.js      OK
+inline <script> bodies (EJS tags stubbed) node --check'ed:
+  views/setup/calibration.ejs script#1 (197 lines)   OK
+  views/setup/calibration.ejs script#2 (62 lines)    OK
+  views/setup/calibration.ejs script#3 (5776 lines)  OK
+  views/setup/models.ejs script#1 (597 lines)        OK
+npm run validate:schemas    ✓ Schema validation passed (6 character(s)).
+npm run audit:resolver      ✓ No direct character-state reads outside the allowlist.
+npm run audit:independence  ✓ Character-independence audit clean (21 total matches, all allowlisted).
+```
+
+### Notes for the lead (second pass)
+- Public API shapes unchanged. New refusals: 400 on a null identity key through the overrides route and through `PUT /api/parts/:id` config (message names the keys). No client in the repo sends those nulls except the old Revert, which no longer does.
+- The Playwright spec's Revert step on a servo now gets a toast and no request; its assertion that channel / address / controllerType / servoType survive should pass either way.
+- UI F17 (modal GPIO `required` never validated) and F18 (stamp-off writes a calibration backup) were not in this work order and are untouched.
