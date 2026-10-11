@@ -355,12 +355,11 @@ Detail: `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`, `docs/hardware/OPERATOR-TOD
 - 🔴 **OPEN (hardware): Mina's laser (part 10, ch11) cannot be lit by the PCA pin.** An output pin sources a few mA;
   the module needs its own supply through the part's modelled relay (`relay_aceirmc_3v_1ch`) or a logic-level
   MOSFET/NPN. Software already drives ch11 full-on/full-off.
-- 🟢 **FIXED in working tree (pending service restart; commit to follow): the servo daemon froze its safety data at
+- 🟢 **FIXED (commit 16fc7af9, verified live 2026-10-11 after the restart on her node: the daemon answered REFUSED ch10): the servo daemon froze its safety data at
   start.** `mb_safety._load_json` caches every JSON file for the life of the process, so the daemon's
   physical-fault veto and channel map never refreshed (a fault registered at 23:02 was still driven at 23:10; old
   "REFUSED ch15" lines came from a pre-rewire map). `python_wrappers/servo_daemon.py` now calls
-  `mb_safety.reset_cache()` before each 30 s refresh. **Takes effect on the next `monsterbox.service` restart on her
-  node; not yet verified live.**
+  `mb_safety.reset_cache()` before each 30 s refresh. Verified live after the 2026-10-11 restart.
 
 🔴 *(Partly superseded 2026-10-11: servos work; see the 2026-10-11 findings above.)* **2026-10-09 22:40, operator: "no hardware works other than light - linear actuator does not".** Jaw (1), neck (2),
 eye (3) and the coffin door actuator (4) are listed in `config/physical-faults.json`, so autonomous code, the scene

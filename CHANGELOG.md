@@ -201,8 +201,21 @@ proven by ear; open items and their daylight tests are in `docs/troubleshooting/
   confirmed by the operator's eyes. Details: `docs/hardware/PCA9685-CHANNEL-MAP-MINA.md`.
 - **Servo daemon refreshed its safety data never** (`python_wrappers/servo_daemon.py`): `mb_safety` cached its JSON
   files for the life of the process, freezing the physical-fault veto and channel map at daemon start. The daemon
-  now calls `mb_safety.reset_cache()` before each 30 s refresh. Takes effect on the next service restart; not yet
-  verified live.
+  now calls `mb_safety.reset_cache()` before each 30 s refresh. Verified live after the 2026-10-11 restart (the
+  daemon answered REFUSED ch10 for the listed jaw).
+- **Calibration page CRUD and save settings for every part type** (`routes/setup/calibration.js`, `routes/api/partsApi.js`,
+  `controllers/webcamController.js`, `server/calibration/router.js`, `server/calibration/store.js`,
+  `views/setup/calibration.ejs`, `views/setup/models.ejs`): linear-actuator and motor limits saved under `config.*`
+  while the jog route read top-level (the UI showed 12000, the hardware ran 15000); switching MDD10A and BTS7960
+  left the other board's pins on disk and conflict detection ignored BTS pins; the list row dropped controlBoard,
+  BTS pins and limits so a BTS part re-opened as MDD10A; the Add modal offered `head_tracking` (which the schema
+  gate refuses) and could not create an `led_ring`; create skipped config validation and answered 500 on a locked
+  character; the Edit-tab model landed in `config.modelId` where the list never looked; servo Invert never saved;
+  the global `PUT /api/parts/:id` and webcam controls persistence wrote the SELECTED character regardless of
+  `?characterId`; the microphone Edit gain wrote a dead key and a plain Save overwrote the device id with
+  "default"; stepper models never resolved; alias type spellings were second-class; and the `/api/calibration`
+  profile routes resolved the selected character instead of the request's. All fixed; 22 live checks pass
+  (`docs/development/missions/2026-10-castle-tuning/report-calibration-crud-{api,fixes}.md`).
 - **Mina (2026-10-09, superseded 2026-10-11 by the bullets above):** her servo rail and coffin actuator are dead (operator 2026-10-09); jaw, neck, eye and coffin door are
   listed in `config/physical-faults.json`, so autonomous code, the validator and her show use only her voice and the
   Burning Rose lamp.

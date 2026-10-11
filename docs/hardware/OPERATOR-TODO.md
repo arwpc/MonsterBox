@@ -45,6 +45,11 @@ PWM GPIO18, rose lamp GPIO16, PIR GPIO26 (`data/character-2/parts.json`).
    through the relay's NO contact from a 5 V (or the module's rated) supply, laser - to GND. Any logic-level
    N-MOSFET / NPN low-side switch does the same. Software already drives ch11 full-on / full-off.
 
+4. **Head tracking direction (eyes only, 30 seconds).** The tracker now clamps the neck to the measured 110-136
+   window and its configured window is centre 123, range 26. `headTracking.invertPan` is still `true` from the
+   old inverted calibration: stand to one side of the camera with tracking on and watch whether she turns toward
+   you or away; if away, flip Invert pan on `/setup/head-animation`.
+
 **Superseded by the above:** the 2026-09-25 items below (eye LED on ch15 — the laser is now ch11; the neck's
 48-180 inverted window — her neck now travels ~110-138 raw, profile 110-136, center 123, no invert; door
 polarity — test it only after the MDD10A drives the motor).
