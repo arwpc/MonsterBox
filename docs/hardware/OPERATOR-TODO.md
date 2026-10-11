@@ -3,7 +3,51 @@
 Software cannot close any of these. Each one has been isolated to a physical cause with evidence,
 so none of them needs re-diagnosing from scratch.
 
-Last updated **2026-09-25** (Mina harness confirmation follow-up — new top entry; previously 2026-09-13, PumpkinHead LED-ring extension).
+Last updated **2026-10-11** (Mina overnight findings — new top entry: jaw servo, coffin door, laser; previously 2026-09-25, Mina harness confirmation).
+
+---
+
+# Mina — three hands-on items (2026-10-11 overnight, new)
+
+Measured on her node with the operator asleep; witness was her ReSpeaker plus a spectral servo-whine
+detector (a servo move is a 5-7 kHz tone; a silent command is no travel), chip readback after every
+command. Channel map in force: neck ch15, eye ch14, jaw ch10, laser ch11, coffin door MDD10A DIR GPIO17 /
+PWM GPIO18, rose lamp GPIO16, PIR GPIO26 (`data/character-2/parts.json`).
+
+1. **Jaw servo (part 1, PCA ch10) does not position-follow — swap it.** It moves ONLY when a pulse train
+   first appears after a release and ignores every pulse-width change while energized (API and raw register
+   writes alike), while the eye and neck on the same chip whine on every move. Energized, it pulls to one
+   end (the clench) and stalls on the shared servo rail. Two-minute proof at the rig, either one:
+   - put the jaw servo on the servo tester and turn the knob SLOWLY: a good servo follows the knob; this one
+     runs to an end and stays;
+   - `POST /api/calibration/1/release`, plug the EYE servo's lead into ch10, then goto 30 and 90 on part 1:
+     if the eye follows on ch10, the channel and rail are fine and the jaw servo is the fault.
+   Swap in a standard MG90S (not a continuous-rotation unit), mount the horn with the jaw closed near the
+   low end of travel, then on `/setup/calibration`: goto 60 first, step toward closed and open with a hand on
+   the jaw, Set Min / Set Max, stamp Calibrated, set the jaw-animation window on `/setup/jaw-animation`
+   (closed = minAngle = park), enable it, and remove the part-1 entry from `config/physical-faults.json`
+   (the daemon re-reads it within 30 s). Until then poses drop the jaw and the daemon refuses ch10.
+
+2. **Coffin door (part 4): the Pi is driving, the motor is not running.** `jog-raw` extend 2 s at 100 %
+   puts DIR 17 HIGH and PWM 18 HIGH, retract puts DIR LOW and PWM HIGH, sampled with `pinctrl` while the
+   command ran; the room recording shows no motor noise either way. Checks at the MDD10A, in order:
+   - press the board's own M1A / M1B test buttons: if the actuator moves, VIN and the motor leads are fine
+     and the fault is on the signal side (DIR1/PWM1 header pins, the ground between Pi and board); if it
+     does not move, the fault is VIN (7-30 V present at the screw terminals?) or the motor leads / M1-vs-M2;
+   - confirm a COMMON GROUND: Pi GND to the MDD10A GND pin on the signal header, not only through VIN;
+   - confirm the leads are on M1 (DIR1/PWM1 drive M1; M2 needs DIR2/PWM2) and the board is in PWM/DIR mode.
+   Then watch one 2 s extend: API "extend" = DIR HIGH (`invertDirection: true`); if it closes instead, flip
+   `invertDirection` on the part.
+
+3. **Laser (part 10, PCA ch11) cannot be lit by the PCA pin alone.** A PCA9685 output sources a few mA at
+   logic level; a laser module needs its own supply. The part already models a relay
+   (`relay_aceirmc_3v_1ch`): wire relay IN <- ch11 signal pin, relay VCC <- 5 V, relay GND <- GND; laser +
+   through the relay's NO contact from a 5 V (or the module's rated) supply, laser - to GND. Any logic-level
+   N-MOSFET / NPN low-side switch does the same. Software already drives ch11 full-on / full-off.
+
+**Superseded by the above:** the 2026-09-25 items below (eye LED on ch15 — the laser is now ch11; the neck's
+48-180 inverted window — her neck now travels ~110-138 raw, profile 110-136, center 123, no invert; door
+polarity — test it only after the MDD10A drives the motor).
 
 ---
 

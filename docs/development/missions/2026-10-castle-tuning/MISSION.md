@@ -334,3 +334,25 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   `/home/remote/mina-sweep.py <channels>` (raw sweep, hold the lurk machine first). Her full-rig show (d5f71d51's
   predecessor 5242ac53) is pushed but its poses assume jaw 28–38°, neck 122–160°, eye 68–112°: re-check after
   calibration.
+- 2026-10-11 00:00 — MINA OVERNIGHT (autonomous, operator asleep; on her node). Witness for every claim below is
+  her ReSpeaker plus a spectral servo-whine detector (a servo MOVE is a >=30-50 dB tone at 5-7 kHz lasting
+  ~0.1 s per 15°; a silent command means no travel; RMS alone sees nothing and the XVF3800 suppresses steady
+  noise, so a silent stall is inaudible). Chip readback checked after every command.
+  JAW (part 1, ch10): the servo does NOT position-follow. It whines only when a pulse train first appears
+  after a release, and ignores every width change while energized — through the API and through raw register
+  writes that bypass all software — while the eye (ch14) and neck (ch15) on the same chip whine on every move.
+  That is the operator's "moved once" and the clench at any park: dead feedback pot or a continuous-rotation
+  unit. Registered in `config/physical-faults.json` (poses drop it, the daemon refuses ch10), jaw animation
+  disabled on the node, channel released. Hands-on proof and the swap are in `docs/hardware/OPERATOR-TODO.md`.
+  NECK (part 2, ch15): travels only ~110-138 (whines 110<->125<->140; silent at 95 and at 145-170; hunts at
+  140). The full-rig show parked her at 140 and gazed to 160, i.e. pressed into the upper stop. Profile 2:2
+  written 110-136, center 123. EYE (part 3, ch14): ~68-112 (short whines into stops near 66 and 114); profile
+  2:3 written 70-110, center 89. Both profiles live in her node-local `data/calibration_profiles.json`.
+  SHOW: poses re-aimed linearly (neck 122-160 -> 112-136, park 140 -> 123; eye 68-112 -> 70-110), validator 0
+  errors; scenes 3 and 8 played for real at 15 % volume (speech, poses, door and laser steps all reported
+  success; jaw dropped). COFFIN DOOR: DIR 17 / PWM 18 sampled hi/lo correctly on 2 s jogs at 100 %, motor
+  silent both ways — hardware (MDD10A VIN / common ground / M1-vs-M2). LASER: hardware (relay or MOSFET).
+  CALIBRATION CRUD (operator's second ask): API-level audit of every part type, 15 findings
+  (`report-calibration-crud-api.md`): the server persists every page write to the right character; "save does
+  not take" is key mismatches and what the list hands the Edit tab (F1-F4 high). UI-level audit with a durable
+  Playwright spec follows; fixes applied in one pass afterwards.
