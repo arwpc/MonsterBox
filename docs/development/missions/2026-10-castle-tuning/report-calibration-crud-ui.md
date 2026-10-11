@@ -387,3 +387,22 @@ their profiles. The character selector was never touched (`window.__MB_CHAR_ID` 
   spec removed (the route logs every profile delete by design). Nothing else from this work reaches the logs.
 - Selecting a QA microphone or webcam part starts the Controls tab's VU poll and stream; the spec answers those
   reads in-page, so no Python interpreter or camera was opened for a QA part.
+
+## Final runs after the fixes (lead, 2026-10-11 00:04-00:12 CDT, server at the final code)
+
+| Run | Code under test | Result |
+|---|---|---|
+| Runs 1-3 (23:05-23:30) | before any fix | 16 of 18 fail |
+| Run 4 (23:31) | fix pass 1 (a0388040) | 14 fail, 3 pass, 1 skip |
+| Run 6 (23:55) | fix pass 2 (16a38fe7) | 6 fail, 11 pass, 1 skip |
+| Run 7 (00:05) | pass 2 + spec corrections | 1 fail, 16 pass, 1 skip |
+| Run 8 (00:12, single test) | same | the last test passes: **17 pass, 1 skip** |
+
+Of the six failures in run 6, four were this spec's own detection (`deleteViaEditTab` waited for the confirm
+host to be *visible*; the host is an unstyled wrapper whose backdrop and modal are fixed-position children, so
+it has no box; `confirmDialog()` already checked presence, which is why the Remove-button path passed), and
+two were assertions made stale by intended changes (the device-card header `#invertDir` was removed as unwired,
+F15; `pca9685Frequency` was briefly treated as wiring identity and is not, so Revert releases it again). The
+Edit-tab Delete, the Advanced-JSON revert of pins / board / limits, Revert-to-Model stripping identity keys and
+Invert blessing a placeholder are fixed and proven by the spec. Each run ends with parts.json JSON-identical and
+byte-restored and calibration_profiles.json byte-identical to its pre-run snapshot.

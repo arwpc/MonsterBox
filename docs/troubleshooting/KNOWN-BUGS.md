@@ -2139,6 +2139,29 @@ window; a whispered line drove the jaw timeline (586 frames) on her node.
   drive them through the fallback window; measured parks: jaw 28°, neck 140°, eye 89°. Calibrate on
   `/setup/calibration` to let the validator check angles and to widen the show's moves.
 
+### Opened from the 2026-10-11 calibration CRUD audits (API + Playwright UI, Mina node)
+
+The audits and fixes are in `docs/development/missions/2026-10-castle-tuning/report-calibration-crud-{api,ui,fixes}.md`;
+the durable UI spec is `tests/browser/calibration-part-crud.spec.js` (run with `MB_USE_RUNNING_SERVER=1
+BASE_URL=http://localhost:3100 npx playwright test tests/browser/calibration-part-crud.spec.js --reporter=list`).
+Left open on purpose, all low:
+
+- 🟡 **Add Part modal: the GPIO pin field says "required" but is never validated** (`createPartFromCalibration` never
+  calls `reportValidity()`; a blank pin is accepted, also shown for PCA9685 servos where it is unused). **Fix:**
+  validate the form before the POST and hide the pin field for PCA9685 parts.
+- 🟡 **Clearing the Calibrated stamp writes a full-file calibration backup each time, and the store keeps ten**
+  (`JsonCalibrationStore._snapshotIfLosingMeasurements` treats a demotion like a loss). A test run or a few toggles
+  rotate the operator's real backups out. The 2026-10-11 UI runs moved their eight snapshots to
+  `data/calibration-backups/qa-ui-spec-runs/` so the September backups stayed. **Fix:** snapshot only when a
+  measured window is dropped or narrowed, not when the trust flag is cleared; or raise the cap.
+- 🟡 **Speaker `volume` / `bass` / `treble` persist from the Edit tab but nothing reads them** (master volume lives in
+  `config/animatronics.json` `sinkVolume`). UI honesty: hide or wire them.
+- 🟡 **Head-animation `POST /setup/head-animation/api/head-tracking/:charId/params` answers "Parameters updated" but
+  does not persist** (hot-update only); the full `POST /api/head-tracking/:charId` does. Found while setting Mina's
+  tracking window to her measured neck window. **Fix:** persist from `/params` too, or say "live only" in the reply.
+- ⚪ **Calibration router adapter cache is keyed by bare partId** (pre-existing; the 2026-10-11 fix threads the
+  character through the store and the position store, not the adapter cache). Harmless on a single-character node.
+
 ### Opened from the 2026-10-10 fleet log review (after the castle-tuning rollout)
 
 - ⚪ **Expected, not a fault (2026-10-11 log review):** `[PriorityManager] DENIED claim on servo N by "idle-loop" ... held by "head-tracking:N"` and the matching `RELEASE DENIED` lines are the servo arbitration working under lurk (head tracking owns the neck; the idle loop and speech co-expression yield). `scripts/log-review.mjs` counts them as error-ish because of the word DENIED; treat them as noise unless the holder never releases (a servo stuck for minutes with no tracking target).

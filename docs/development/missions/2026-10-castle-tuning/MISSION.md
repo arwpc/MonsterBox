@@ -356,3 +356,25 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   (`report-calibration-crud-api.md`): the server persists every page write to the right character; "save does
   not take" is key mismatches and what the list hands the Edit tab (F1-F4 high). UI-level audit with a durable
   Playwright spec follows; fixes applied in one pass afterwards.
+- 2026-10-11 00:15 — MINA OVERNIGHT, PART 2 (calibration CRUD, the operator's second ask) DONE. Two audits ran side by
+  side on her node: API-level (every part type, 249 calls per character on the node-local copies of characters 3 and
+  5, 15 findings, zero wrong-character writes) and UI-level (Playwright against the live page with throwaway parts
+  on Mina, 18 findings, 16 of 18 tests failing before the fixes). The server persisted every write to the right
+  character; the operator's "save does not take" was: actuator/motor limits saved under `config.*` while the jog
+  route read top-level (UI showed 12000, hardware ran 15000); the pre-filled Advanced JSON textarea re-applied over
+  the form on every Save for motors, actuators and steppers (pins, board and limits reverted); the Edit tab's
+  Delete threw a ReferenceError; the list row dropped controlBoard / BTS pins / limits so a BTS part re-opened as
+  MDD10A; `head_tracking` offered as a part type (the schema gate then blocked every commit); Revert to Model
+  stripped a servo's channel and address; Invert blessed a placeholder; `config.modelId` vs top-level; create
+  skipped validation and answered 500 on a locked character; global `PUT /api/parts/:id`, webcam controls and
+  every `/api/calibration` profile route resolved the SELECTED character regardless of `?characterId`. All fixed
+  in two passes (a0388040, 16a38fe7, and the follow-up), verified live after restarts: 22/22 API checks, and the
+  durable spec `tests/browser/calibration-part-crud.spec.js` at 17 pass / 1 skip with parts.json byte-restored.
+  Left open (low, in KNOWN-BUGS): modal GPIO "required" unvalidated; Calibrated-off stamp churns a backup; speaker
+  volume/bass/treble unread; head-animation `/params` does not persist. Also tonight: the servo daemon's
+  physical-fault veto was frozen by `mb_safety`'s process-lifetime JSON cache (fixed, verified: REFUSED ch10);
+  the broken-part drop warning is throttled to one line per ten minutes per part; head tracking's configured
+  window set to centre 123 / range 26 (node-local super-powers); the node boots into lurking by design (idle
+  poses + head tracking, agent and PIR wake off at night). Log review done from Mina (all peers offline at
+  23:35, unverified). Reports: `report-calibration-crud-{api,ui,fixes}.md`. Hands-on list for the morning:
+  `docs/hardware/OPERATOR-TODO.md` (jaw servo swap and proof, MDD10A checks, laser relay, head-tracking sign).
