@@ -321,3 +321,16 @@ agent turn settings (read-only with a deep link). Version bumps to 10.7.0.
   operator direction; 50 commits pushed to origin (gate green on push). MISSION COMPLETE except the operator items
   in KNOWN-BUGS (Renfield key/baseline, Goblins 1/4, Goblin 3 orientation, Goblin 2 heat, Orlok pitch audition,
   daylight human-interruption test on peers, Mina lullabies by ear). Tagging v10.7.0.
+- 2026-10-10 20:40 — MINA HARDWARE SESSION (unfinished; handed to the next session). Her servos DO work: raw
+  register sweeps and the app both move the neck and eyes once the parts carry the channels the plugs are really
+  on. The operator rewired several times; the last confirmed set is neck ch15, eye ch14, jaw ch10, laser ch11,
+  coffin door MDD10A DIR 17 / PWM 18 (parts.json on her node and in the repo, d5f71d51). Jaw: the servo responds
+  (operator felt it, "moved once"), the earlier clench was software (idle pose "Jaw Crack" + jaw park at 28°,
+  past the mechanical closed point); jaw animation is DISABLED on her node and the channel released until the
+  jaw's open/closed angles are calibrated. Laser: never seen lit on any channel (a PCA output pin cannot power a
+  laser; needs a transistor or the rose-lamp relay path). Coffin door: never moved; the Pi's DIR/PWM pins toggle
+  (proven by pinctrl sampling and static drive), so the MDD10A's motor supply/ground/M1-vs-M2 is the suspect.
+  Chip proven: 0x40 awake, 50 Hz, totem-pole, registers follow every command. Helper on her node:
+  `/home/remote/mina-sweep.py <channels>` (raw sweep, hold the lurk machine first). Her full-rig show (d5f71d51's
+  predecessor 5242ac53) is pushed but its poses assume jaw 28–38°, neck 122–160°, eye 68–112°: re-check after
+  calibration.
