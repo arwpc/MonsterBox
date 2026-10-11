@@ -4,72 +4,72 @@
     "name": "Jaw",
     "type": "servo",
     "pin": null,
-    "description": "Jaw servo for mouth movement PCA9685 channel 15 (operator-traced 2026-10-10).",
+    "description": "Jaw servo. PCA9685 channel 10, operator-confirmed 2026-10-10 20:35.",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 15,
+      "channel": 10,
       "inputGainPercent": 137
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-10-10T20:37:47.640Z"
+    "updated": "2026-10-11T01:33:04.207Z"
   },
   {
     "id": "2",
     "name": "Neck",
     "type": "servo",
     "pin": null,
-    "description": "Head/neck servo for turning — pan servo for head tracking",
+    "description": "Neck servo. PCA9685 channel 15, operator rewired and confirmed 2026-10-10 19:58.",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 7
+      "channel": 15
     },
     "created": "2025-10-12T06:00:01.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-09-25T20:17:56.412Z"
+    "updated": "2026-10-11T00:58:54.186Z"
   },
   {
     "id": "3",
     "name": "Eye",
     "type": "servo",
     "pin": null,
-    "description": "Eye movement servo PCA9685 channel 11 (operator-traced 2026-10-10).",
+    "description": "Eye servo. PCA9685 channel 14, operator rewired and confirmed 2026-10-10 19:58.",
     "config": {
       "servoType": "standard",
       "controllerType": "pca9685",
       "address": 64,
       "pca9685Frequency": 50,
-      "channel": 11
+      "channel": 14
     },
     "created": "2025-10-12T06:00:02.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-10-10T20:38:02.509Z"
+    "updated": "2026-10-11T00:58:54.186Z"
   },
   {
     "id": "10",
     "name": "Servo Channel Laser",
     "type": "light",
     "pin": null,
-    "description": "Eye laser on PCA9685 channel 3 (on/off power only). Operator-traced wiring 2026-10-10.",
+    "description": "Eye laser (on/off power). PCA9685 channel 11, operator-confirmed 2026-10-10 20:35.",
     "config": {
       "controllerType": "pca9685",
       "address": 64,
-      "channel": 3,
+      "channel": 11,
       "brightness": 100
     },
     "created": "2026-03-28T23:00:00.000Z",
     "enabled": true,
     "modelId": "relay_aceirmc_3v_1ch",
-    "updated": "2026-10-10T21:08:27.231Z"
+    "updated": "2026-10-11T01:33:04.207Z"
   },
   {
     "id": "4",
