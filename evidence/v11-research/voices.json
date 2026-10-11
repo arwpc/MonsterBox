@@ -1,0 +1,202 @@
+{
+  "stream": "voices",
+  "items": [
+    {
+      "name": "Complete writer inventory for data/character-*/ai-config/tts-config.json",
+      "status": "landed",
+      "evidence": [
+        "grep -rn 'tts-config.json' over *.js/*.mjs/*.py/*.sh: the ONLY code that writes the per-character file is services/aiConfigStore.js:34-38 writeJson() via mergeJson() (aiConfigStore.js:57), reached only from saveTTSConfig() (aiConfigStore.js:185-188).",
+        "grep -rn 'saveTTSConfig': exactly ONE caller in the whole repo — routes/api/elevenLabsApiRoutes.js:477 (POST /api/elevenlabs/tts/config). No service, boot path, script, or Python wrapper writes it.",
+        "routes/aiSettingsRoutes.js:134-142 READS the dir only (readJsonIfExists). services/aiPromptGeneratorService.js:357 READS agent_id only. routes/api/elevenLabsApiRoutes.js:339 (/tts/generate) resolves config read-only.",
+        "install.sh:405-419 writes the ROOT-LEVEL data/ai-config/tts-config.json (eleven_v3 / voice_id \"\"), never data/character-N/. That stray dir does not exist on Orlok today (`ls data/ai-config` -> No such file).",
+        "getAIConfigDir() (aiConfigStore.js:9-14) resolves cfg.dataPath, i.e. data/character-<selectedCharacter> — so every write lands on whichever character is SELECTED at write time, not on a character named in the request."
+      ],
+      "files_to_touch": [
+        "services/aiConfigStore.js",
+        "routes/api/elevenLabsApiRoutes.js"
+      ],
+      "remaining_work": "None for the inventory itself — it is now proven, not assumed. Record it so no future session re-hunts phantom writers in boot paths or Python.",
+      "risk": "low"
+    },
+    {
+      "name": "Second clobberer IDENTIFIED: an interactive Save on /ai-settings/tts (not a test suite)",
+      "status": "open",
+      "evidence": [
+        "git show e00aa2f2 -- data/character-3/ai-config/tts-config.json captures the drifted file verbatim: model eleven_v3->eleven_flash_v2_5, stability 0.25->0.6, similarity_boost 0.6->0.4, and three NEW keys style:0.8, use_speaker_boost:true, conversationalMode:false. voice_id and speed survived (the v9.2.0 merge fix worked).",
+        "The drifted blob ends '\\\\ No newline at end of file' — the exact signature of writeJson()'s JSON.stringify(data,null,2) in services/aiConfigStore.js:36. A hand edit or an agent Write would normally carry a trailing newline. This proves an IN-APP write through POST /api/elevenlabs/tts/config.",
+        "The key set is byte-for-byte the payload public/js/ai-settings-tts.js:474-503 builds: it always sends model+stability+similarity_boost+conversationalMode, and sends style+use_speaker_boost ONLY when model !== 'eleven_v3' (line 497-503). The drifted file has model=flash AND style — no other code in the repo constructs that shape.",
+        "Every drifted value is a valid step-0.1 slider position (0.6 / 0.4 / 0.8) and the model is a literal <option> in views/ai-settings/tts.ejs:74 — i.e. someone/something set the form and clicked 'Save Configuration'.",
+        "NOT the test suites: no browser spec clicks a TTS save. tests/browser/ai-settings.spec.js:214 only asserts the button is visible; tests/browser/actual-usage-testing.spec.js:1410-1436 only counts sliders and screenshots. tests/system/ai-audio.test.js:192 posts 0.5/0.5/eleven_v3 (different values) and now restores.",
+        "Independent second occurrence of the same mechanism on a DIFFERENT character: git show 193ad77f -- data/character-2/ai-config/tts-config.json shows Mina's file gaining conversationalMode/style/use_speaker_boost with the same no-trailing-newline signature during a browser-suite window on 2026-08-19, and that drift was then COMMITTED as canonical."
+      ],
+      "files_to_touch": [
+        "public/js/ai-settings-tts.js",
+        "views/ai-settings/tts.ejs",
+        "routes/api/elevenLabsApiRoutes.js",
+        "services/aiConfigStore.js"
+      ],
+      "remaining_work": "The mechanism is proven; the ACTOR (Aaron experimenting vs a prior agent driving the page via Playwright/MCP) is not, and does not need to be. Fix the path, not the actor: (a) act on the operator's standing decision in docs/handoff/2026-08-19-v104-overnight.md — model/stability/similarity/style/speaker-boost are dead on the conversational path (agent overrides all false) and eleven_v3 ignores style+speed, so REMOVE the dead controls and leave voice selection + a deep link to elevenlabs.io; (b) if any control stays, make POST /tts/config reject a body that changes model/stability/similarity_boost without an explicit intent flag, and log every accepted change with the before/after at warn level so /var/log/monsterbox.err names the next clobber; (c) require the request to name the characterId instead of silently targeting selectedCharacter.",
+      "risk": "medium"
+    },
+    {
+      "name": "ai-audio.test.js snapshot/restore is fixed but the restore itself re-materializes defaults and can null a voice",
+      "status": "partial",
+      "evidence": [
+        "tests/system/ai-audio.test.js:192-232 — the 2026-08-17 fix (snapshot in `before`, restore in `finally`) is present and correct in intent.",
+        "The snapshot is the GET response, and GET is getTTSConfig() (services/aiConfigStore.js:152-183), which MATERIALIZES defaults: conversationalMode:false, style:0.0, use_speaker_boost:true, speed clamped. Posting that back through mergeJson persists keys the file never had — exactly the three keys Mina's file gained on 2026-08-19 (193ad77f).",
+        "Worse case: getTTSConfig() returns voice_id:null when none is configured (aiConfigStore.js:156, 175). mergeJson (aiConfigStore.js:57-63) only skips `undefined`, so a restore would WRITE \"voice_id\": null — which then fails config/schemas/tts-config.schema.json (voice_id must be a string) and breaks the gate, or silently erases identity.",
+        "tests/system/ai-audio.test.js:138 BASE_URL defaults to http://localhost:3000, which is HTTPS-only in production — so on a prod node the fetch throws and the whole block no-ops; with BASE_URL=http://localhost:3100 it hits the live app and writes real files."
+      ],
+      "files_to_touch": [
+        "tests/system/ai-audio.test.js",
+        "services/aiConfigStore.js"
+      ],
+      "remaining_work": "Snapshot the FILE (raw bytes) rather than the GET response and restore the bytes; or make mergeJson refuse a null/empty voice_id outright (it should never be possible to null an identity field through a merge). Either fix is small and testable in tests/unit/ai-config-store.test.js.",
+      "risk": "medium"
+    },
+    {
+      "name": "The gate cannot catch tuning drift — only voice_id is guarded",
+      "status": "open",
+      "evidence": [
+        "tests/unit/tts-voice-identity.test.js asserts voice_id matches disk, no two characters share a voice, unconfigured characters throw, and speed is within 0.7-1.2. It never compares stability / similarity_boost / model / speed to any canonical.",
+        "config/schemas/tts-config.schema.json requires only `model` (any string) and types the rest — no enum, no canonical pinning, and `speed` is not even declared.",
+        "So the 2026-08-20 drift (0.6 / 0.4 / eleven_flash_v2_5) would have passed `npm run gate` cleanly.",
+        "scripts/log-review.mjs:97-114 IS a real detector — it diffs voice_id/stability/similarity_boost/speed/model against `git show HEAD:<path>` and raises an ERROR. That is what caught the 2026-08-20 drift (commit 5f4d94a8).",
+        "But it compares against git HEAD, so once a drifted value is COMMITTED the detector goes blind — which is precisely what happened to Mina in 193ad77f, where a service-written state got folded into canonical and the drift became the baseline."
+      ],
+      "files_to_touch": [
+        "tests/unit/tts-voice-identity.test.js",
+        "scripts/log-review.mjs",
+        "config/schemas/tts-config.schema.json"
+      ],
+      "remaining_work": "Add a unit assertion that every character's stability/similarity_boost/speed/voice_id match the committed agent snapshot in config/elevenlabs/agents/ (one source of truth, gate-enforced, shrink-only if a deliberate divergence is needed). Change log-review to compare against the SNAPSHOT as well as git HEAD so committing a drift no longer silences it.",
+      "risk": "low"
+    },
+    {
+      "name": "Designed-voice state per character: local tts-config vs committed agent snapshot",
+      "status": "partial",
+      "evidence": [
+        "All six data/character-N/ai-config/tts-config.json are CLEAN against git today (`git diff -- 'data/character-*/ai-config/'` is empty). char-3 mtime 2026-08-20 22:26:10 == the restore in 5f4d94a8 (22:26:03).",
+        "char-1 PumpkinHead: local Z7RrOqZFTyLpIlzCgfsp / 0.25 / 0.65 / 1.0  vs snapshot 0.35 / 0.65 / 1.0 -> stability DRIFT.",
+        "char-2 Mina: local hkk1bPcdsxSQCLzLFMT2 / 0.3 / 0.8 / 0.87 -> MATCHES snapshot and live agent.",
+        "char-3 Orlok: local Tj9l48J9AJbry5yCP5eW / 0.25 / 0.6 / 0.75 -> MATCHES snapshot.",
+        "char-4 Sir Dragomir: local wXvR48IpOq9HACltTmt7 / 0.5 / 0.8 / 0.9 -> MATCHES snapshot.",
+        "char-5 Groundbreaker: local vfaqCOvlrKi4Zp7C2IAm / 0.45 / 0.6 / 0.9 vs snapshot 0.35 / 0.6 / 0.96 -> stability + speed DRIFT.",
+        "char-6 Renfield: local zzG73sCjG25Zj6km5X4M / 0.3 / 0.75 / 1.05 vs snapshot 0.35 / 0.75 / 1.05 -> stability DRIFT.",
+        "Cause is known, not mysterious: 609245f5 (v9.3.0) measured new tuning for ALL SIX locally, but 518502ce (v10.0.0) PATCHed and re-snapshotted only the three ONLINE agents — `git show 518502ce --name-only` lists exactly dragomir.json, mina.json, orlok.json. The three offline characters were never pushed to their agents.",
+        "All six local files use model eleven_v3; all six agents use eleven_v3_conversational. That difference is correct (different code paths), not drift."
+      ],
+      "files_to_touch": [
+        "config/elevenlabs/agents/pumpkinhead.json",
+        "config/elevenlabs/agents/groundbreaker.json",
+        "config/elevenlabs/agents/renfield.json"
+      ],
+      "remaining_work": "PATCH the three offline agents (PumpkinHead 0.25, Groundbreaker 0.45/0.9, Renfield 0.30) to the measured local values via the ElevenLabs MCP, then refresh their snapshots from live. Purely an API + file operation — no hardware, no ear-check needed, and it closes three of the six drift rows before the fleet powers up.",
+      "risk": "low"
+    },
+    {
+      "name": "The committed agent snapshots are STALE vs live — two KNOWN-BUGS entries are refuted",
+      "status": "refuted",
+      "evidence": [
+        "Live agents_get(agent_8401k3f1dx98e05t94yp6kz4vf8n) for Mina, run this session: tts.optimize_streaming_latency = 0. The committed config/elevenlabs/agents/mina.json says 3 (and so do all six snapshots). The v10.4 handoff's '3->0 on all six' write DID land live; the snapshots were never refreshed.",
+        "This is the 'suspect the low/zero quality-vs-latency setting' hypothesis in .claude/commands/mega-session.md:24 — it is already at the quality-favouring value 0 on live Mina, so it is NOT the cause of any remaining voice complaint.",
+        "REFUTED — docs/troubleshooting/KNOWN-BUGS.md:713 'Mina suggested_audio_tags: []': live Mina carries SIX tags (whispers, sighs, exhales, breathes, crying, sings), each with a description.",
+        "REFUTED — same entry's 'ignore_default_personality: false where Orlok and Dragomir are true': live Mina has ignore_default_personality = true.",
+        "STILL TRUE — text_normalisation_type is inconsistent: Mina live 'system_prompt', Orlok snapshot 'elevenlabs'.",
+        "STILL TRUE — overrides.conversation_config_override.tts.* are all false on live Mina (model_id/voice_id/stability/speed/similarity_boost/pronunciation_dictionary_locators), so nothing in tts-config.json can reach a conversation. Only conversation.text_only and agent.language are overridable."
+      ],
+      "files_to_touch": [
+        "config/elevenlabs/agents/mina.json",
+        "config/elevenlabs/agents/orlok.json",
+        "config/elevenlabs/agents/dragomir.json",
+        "docs/troubleshooting/KNOWN-BUGS.md"
+      ],
+      "remaining_work": "Re-snapshot all six agents from live before any v11 voice work reasons off them, and correct the two refuted KNOWN-BUGS bullets. Treat the snapshots as untrusted until refreshed — this stream found three fields wrong in a single agent.",
+      "risk": "low"
+    },
+    {
+      "name": "Mina acceptance: the LIVE agent prompt explicitly instructs Romanian singing",
+      "status": "open",
+      "evidence": [
+        "Operator acceptance (.claude/commands/mega-session.md:23-25): 'Mina: no Romanian accent, does whisper, no singing.'",
+        "Live agent prompt (agents_get, this session) contains a SONG paragraph: 'she can SING - short Romanian songs from the knowledge base, [sings] tag, two to four lines, at most one song per conversation... ALWAYS take the words from KB_Mina_Songs... as a beckoning lure (a voice singing softly in Romanian from the dark draws people better than any call)'.",
+        "Reinforced in three more places: suggested_audio_tags includes a 'sings' entry described as 'Short Romanian songs from home'; knowledge_base includes KB_Mina_Songs.txt (id xlHMQoRSAqWRe71tqKEh); the Tools section lists 'KB_Mina_Songs - the Romanian songs: lullaby, waiting song, morning song'.",
+        "Provenance: 5f136ca1 'v8.5.0: [elevenlabs] Mina sings Romanian' deliberately added it, and docs/handoff/2026-08-19-session-continuation.md:205 STRENGTHENED it. This is a reversal of an earlier design decision, not a bug — it must be removed deliberately in all four places or it will be re-added by the next session reading those docs.",
+        "WHISPER is satisfied: [whispers] appears in the AUDIO TAGS block, the TRANCE rule, the BECKONING rule, the first_message, and suggested_audio_tags.",
+        "ACCENT: Mina's prompt contains NO accent instruction (the standing '[Romanian accent]' rule is Orlok's — docs/troubleshooting/KNOWN-BUGS.md:1158). Accent is a property of voice hkk1bPcdsxSQCLzLFMT2 itself, so 'no Romanian accent' is not statically decidable.",
+        "Latent Romanian trigger: conversation_config.language_presets.ro exists with a fully Romanian first_message, and overrides...agent.language = TRUE (client CAN set language). MonsterBox does not exploit it today — services/elevenLabsWebSocketService.js:665 and :2315 send an EMPTY conversation_config_override — and the built-in language_detection tool is null. Low risk, but the preset is one client field away from opening in Romanian."
+      ],
+      "files_to_touch": [
+        "config/elevenlabs/agents/mina.json",
+        "docs/handoff/2026-08-19-session-continuation.md",
+        "docs/troubleshooting/KNOWN-BUGS.md"
+      ],
+      "remaining_work": "Four coordinated live edits via the ElevenLabs MCP: delete the SONG paragraph from the prompt, drop the 'sings' suggested_audio_tag, detach/delete KB_Mina_Songs.txt from the knowledge base and its Tools bullet, and consider removing the `ro` language_preset. Re-snapshot after. Then annotate the two docs that currently instruct the opposite, or a later session will restore the singing.",
+      "risk": "low"
+    },
+    {
+      "name": "Sir Dragomir's voice id is correct; a stale doc still names the retired voice",
+      "status": "landed",
+      "evidence": [
+        "creative_list_voices(search='Ancient Monster') this session: wXvR48IpOq9HACltTmt7 = 'Ancient Monster - Evil and Scary', category professional, is_library_voice false (workspace-owned). No voice named 'Dante' exists.",
+        "data/character-4/ai-config/tts-config.json and config/elevenlabs/agents/dragomir.json both carry wXvR48IpOq9HACltTmt7 and are in agreement.",
+        "518502ce's message records the rationale in full: the tuning notes called that id 'Dante'; it is a RENAME, measured at 113.5 Hz and ear-verified at 94% recall. Swapping it discards the research.",
+        "HAZARD: docs/character_sir_dragomir.md:12 still lists 'TTS Voice | Harry - Fierce Warrior (SOYHLrjzK2X1ezoPC6cr)' — the RETIRED voice that an ear-check caught him speaking in on 2026-08-16 (docs/troubleshooting/KNOWN-BUGS.md:355). A session trusting that doc would 'fix' him back to the wrong voice."
+      ],
+      "files_to_touch": [
+        "docs/character_sir_dragomir.md"
+      ],
+      "remaining_work": "One-line doc correction to wXvR48IpOq9HACltTmt7 ('Ancient Monster - Evil and Scary', formerly noted as 'Dante'), with a do-not-revert note. CHANGELOG.md:426 already records the rename correctly.",
+      "risk": "low"
+    },
+    {
+      "name": "Deploy propagates ai-config fleet-wide, so one node's drift becomes every node's drift",
+      "status": "open",
+      "evidence": [
+        "scripts/deploy-to-animatronic.sh:124-155 excludes node-local state (parts.json, poses.json, servo_calibrations.json, super-powers.json, calibration_profiles.json, app-config.json ...) but does NOT exclude data/character-*/ai-config/.",
+        "That is deliberate — voice identity is fleet-canonical, not node-local (0f3eda75) — but it means the drifted char-3 file present on Orlok from some time before 2026-08-20 22:12 would have been rsynced onto Mina and Dragomir by the next `npm run deploy:all`, with --delete.",
+        "The inverse already bit once: docs/troubleshooting/KNOWN-BUGS.md:343-353 records Dragomir's copy of char-3 reading 0.3/0.5 against committed 0.25/0.6 because of a MISSED deploy window, distinguished from a live writer by mtime forensics."
+      ],
+      "files_to_touch": [
+        "scripts/deploy-to-animatronic.sh",
+        "scripts/log-review.mjs"
+      ],
+      "remaining_work": "Add a pre-flight check to the deploy: refuse (or loudly warn) when any data/character-*/ai-config/tts-config.json differs from the committed canonical, so a drifted node cannot broadcast its drift. Cheap, and it converts the amplification path into a detector.",
+      "risk": "medium"
+    },
+    {
+      "name": "Split of voice claims: provable statically now vs needs a live ear-check",
+      "status": "landed",
+      "evidence": [
+        "PROVABLE NOW (done or doable without hardware): the complete writer inventory; the clobber mechanism (e00aa2f2 diff + no-trailing-newline signature + client payload shape); local-vs-snapshot tuning drift for all six characters; snapshot-vs-live staleness (Mina proven); Mina's singing instruction; whisper tags present; Dragomir's voice id and its library name; the agent-side tts override lockout; optimize_streaming_latency = 0 live.",
+        "NEEDS AN EAR-CHECK (defer to implementation, per CLAUDE.md 'Audio claims are proven by ear-check, never by API success'): that each node PLAYS its designed voice (recorded + transcribed, voiceUsed compared to canonical, as scripts/fleet-audio/results/earcheck-2026-08-16T09-49-47.json did when it caught Dragomir's retired voice); whether Mina audibly carries a Romanian accent (a property of voice hkk1bPcdsxSQCLzLFMT2, not of any config field); whether whisper is audible rather than merely tagged; whether the corrected tuning is perceptibly better.",
+        "Ear-check tooling caveat (CLAUDE.md + docs/handoff/2026-08-19-v104-overnight.md): `npm run earcheck` scores a node it cannot SSH into as OFFLINE even while it serves fine — run it from Orlok and confirm any OFFLINE with `curl -sk https://<peer>:3000/health`. It also never reads the speaker-mute flag, so a muted node scores identically to a broken one.",
+        "Mina is hardware-unstable (docs/handoff/2026-08-20-recovery-realignment.md:35-41) — drive her ear-check FROM Orlok and treat her as a deploy target, not a session host."
+      ],
+      "files_to_touch": [
+        "scripts/fleet-audio/earcheck.mjs"
+      ],
+      "remaining_work": "Sequence the ear-checks AFTER the static fixes land and after the fleet is powered — nothing acoustic is claimable before then. Consider teaching earcheck.mjs to read the mute flag so a muted node stops reading as a dead one.",
+      "risk": "low"
+    }
+  ],
+  "dependencies_on_other_streams": [
+    "Ear-check items depend on the fleet being powered and on Mina's USB/audio hardware being stable (recovery-realignment §Mina is hardware-unstable). Static work has no hardware dependency.",
+    "The 'remove dead TTS controls' fix overlaps the ghost-settings / dashboard-freshness stream — both edit views/ai-settings/* and public/js/ai-settings-*.js. Coordinate so one stream owns the AI-settings pages.",
+    "The canonical-STT stream shares services/aiConfigStore.js (saveSTTConfig/getSTTConfig) and the same POST-merge semantics; the same clobber shape can hit stt-config.json.",
+    "The deploy pre-flight check touches scripts/deploy-to-animatronic.sh, shared with the fleet/deploy stream."
+  ],
+  "will_conflict_with": [
+    "Any stream editing public/js/ai-settings-tts.js or views/ai-settings/tts.ejs (dashboard/ghost-settings cleanup).",
+    "Any stream editing services/aiConfigStore.js (canonical STT).",
+    "Any stream editing scripts/log-review.mjs or docs/troubleshooting/KNOWN-BUGS.md (log-review runs continuously per the mega-session plan and rewrites that tracker).",
+    "Any stream editing scripts/deploy-to-animatronic.sh."
+  ],
+  "open_questions": [
+    "Does Aaron want the TTS tuning controls REMOVED outright (his standing decision on dead controls) or kept read-only with a deep link to elevenlabs.io? Removal makes the clobber structurally impossible and is the smaller long-term surface.",
+    "Is the local/agent split still wanted at all? Nothing in tts-config.json can reach a conversation (all tts overrides are false at the agent), so the local values only bite the one-shot say/scene path — the two may deserve explicitly different tunings rather than being forced to agree.",
+    "Mina's `ro` language_preset with a Romanian first_message: delete it, or keep it as an unused capability? overrides.agent.language is TRUE, so it is one client field away from being reachable.",
+    "Who actually clicked Save on 2026-08-20 — Aaron or a prior agent driving the page? Not needed for the fix, but if it was an agent, the same agent class may click other Save buttons on other settings pages."
+  ],
+  "fleet_wide_notes": "Every finding here was taken on the Orlok node (192.168.8.120) against the working tree at HEAD 609245f5 plus the uncommitted node-local state; no file was modified and no hardware or audio was driven. Two live ElevenLabs MCP reads were performed (agents_list, agents_get for Mina, creative_list_voices) — both read-only. The single most useful artifact for the implementation session is commit e00aa2f2, the rescue snapshot of Orlok's working tree taken at 22:12 on 2026-08-20, fourteen minutes BEFORE the canonical restore: it preserves the drifted tts-config byte-for-byte and is what turned an unidentified writer into a proven one."
+}

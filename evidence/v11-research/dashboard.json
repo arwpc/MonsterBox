@@ -1,0 +1,205 @@
+{
+  "stream": "dashboard",
+  "items": [
+    {
+      "name": "refreshPageState() is dead code — no server-truth refresh ever runs",
+      "status": "open",
+      "risk": "medium",
+      "files_to_touch": ["public/js/dashboard.js", "public/js/dashboard-v2.js"],
+      "evidence": [
+        "public/js/dashboard.js:679 `async function refreshPageState()` — calls setCharName, loadSpeakers, loadWebcam, loadJawSettings, loadHeadTrackStatus, loadLurkCapabilities, loadScenes, loadPoses, ManualControls.reload.",
+        "`grep -rn refreshPageState --include=*.js --include=*.ejs .` (node_modules excluded) returns EXACTLY ONE hit: its own definition at dashboard.js:679. Never called from init(), never from a timer, never from the view.",
+        "Every server-truth loader is one-shot inside init() at dashboard.js:637-646 (loadSpeakers 637, loadWebcam 640, loadJawSettings 641, loadHeadTrackStatus 642, loadMotionSensorStatus 643, loadLurkState 644) plus initChat's mute read at :833-840 and loadBridgeDevices at :2229.",
+        "Full timer inventory (grep setInterval): dashboard.js:408 pollActivity 1s (lurk-only), :492 pollLurkMotionStatus 3s (lurk-only), :843 character-change poll 10s, :1379 pollHeadTrackStatus 1s (head-tracking-only), :1496 click-track countdown, :1937 loadConsole 3s, :2303 refreshBadges 1.5s, :2312 syncLurk 1.5s; dashboard-v2.js:332 syncProxies 1s, :343 loadDeck 60s, :361 loadTelemetry 15s, :362 paintWs 2s. None of them asks the server for jaw/head/mute/idle/lurk/speaker state.",
+        "dashboard.js was touched exactly once since v10.1.0 (55d9ecf2 'webcam+models: the cameras were fine; the panels lied about them'); `git diff v10.1.0..HEAD -- public/js/dashboard.js` is +26/-2 lines and touches ONLY loadWebcam/clearWebcamRetry. No freshness fix landed in v10.4."
+      ],
+      "remaining_work": "Call refreshPageState() on a timer (~10 s) and reuse it at the existing character-change hook. Note refreshPageState() itself is incomplete: it omits loadMotionSensorStatus and the mute read from initChat:833-840, so add those before wiring it up. Guard against overwriting an in-flight operator toggle (skip refresh while lurkActivating or a save is pending)."
+    },
+    {
+      "name": "10 s character-change poll reconnects chat but never re-loads panel state",
+      "status": "open",
+      "risk": "medium",
+      "files_to_touch": ["public/js/dashboard.js"],
+      "evidence": [
+        "public/js/dashboard.js:843-863 — `setInterval(async () => { fetch('/setup/characters/api/current') ... if (newId !== currentCharacterId) { set chatCharNameEl, chatAgentId, close+reopen chatWs } }, 10000)`.",
+        "The block updates only chat name, agent id and the WS. It does not call loadJawSettings/loadHeadTrackStatus/loadSpeakers/loadLurkCapabilities/loadScenes/loadPoses — i.e. exactly the set refreshPageState() at :679 was written to run."
+      ],
+      "remaining_work": "This is the natural call site for refreshPageState(). Wiring it here fixes the character-switch staleness AND gives the freshness timer for free (poll already exists — no new interval, no extra SD/CPU cost)."
+    },
+    {
+      "name": "saveJawSettings() discards the POST response — Aaron's \"jaw enable doesn't deploy\"",
+      "status": "open",
+      "risk": "high",
+      "files_to_touch": ["public/js/dashboard.js"],
+      "evidence": [
+        "public/js/dashboard.js:1535-1543 — `async function saveJawSettings() { try { await fetch('/conversation/api/jaw-settings', {method:'POST', ...}); } catch { } }`. No `.json()`, no success check, no revert, no toast.",
+        "routes/conversation.js:160-190 — the POST returns HTTP 200 with `{success:false, error:'No jaw servo configured for this character'}` (:177) or `{success:false, error:'Jaw servo has no calibrated Min/Max window'}` (:181) and does NOT persist config.enabled in those branches.",
+        "Bound at dashboard.js:709 `ui.jawToggle.addEventListener('change', saveJawSettings)` — so the checkbox stays lit after a refused save, and nothing re-reads it (see the refreshPageState finding).",
+        "The correct pattern already exists in the same file: saveHeadTrackSettings() at dashboard.js:1405-1432 parses the response, calls showToast on failure, and reverts `ui.headTrackToggle.checked = !enabled`. saveJawSettings is the outlier."
+      ],
+      "remaining_work": "Mirror saveHeadTrackSettings: parse json, on !success showToast(j.error,'error') and revert the checkbox. Same treatment for the idle toggle (:746-765) and motion toggle (:771-788) which revert but only console.error — no operator-visible reason."
+    },
+    {
+      "name": "Lurk latches Jaw/Head/Idle checkboxes ON regardless of per-feature results",
+      "status": "open",
+      "risk": "high",
+      "files_to_touch": ["public/js/dashboard.js"],
+      "evidence": [
+        "public/js/dashboard.js:316-325 — inside `if (j && j.success)`: `if (ui.jawToggle) ui.jawToggle.checked = enabled; if (ui.headTrackToggle) ui.headTrackToggle.checked = enabled; if (ui.idleToggle) { ui.idleToggle.checked = enabled; }` — unconditional on the *envelope* success only.",
+        "The very next call, updateLurkUI() at :380-386, DOES consult per-feature results: `setBadge(badges.Jaw, awake && results.jaw && results.jaw.enabled)`, same for headTracking and randomPose. So the server already returns per-feature truth and the checkboxes throw it away.",
+        "routes/conversation.js:1039-1050 enableLurkSuperpowers() builds `results = {jaw, headTracking, randomPose, idle, motionSensor}` with per-feature `{enabled:false, error}` on failure while the envelope stays success:true.",
+        "Then dashboard.js:2290-2303 refreshBadges() re-mirrors the (wrong) checkbox back into the badge every 1.5 s, overwriting the correct per-feature badge updateLurkUI set."
+      ],
+      "remaining_work": "Set each checkbox from `j.results.<feature>.enabled` rather than from `enabled`, and surface the per-feature `error` string in a toast. Then either delete refreshBadges' 1.5 s poll or make it read the same result cache instead of the checkbox."
+    },
+    {
+      "name": "Mute toggle ignores its own response",
+      "status": "open",
+      "risk": "medium",
+      "files_to_touch": ["public/js/dashboard.js"],
+      "evidence": [
+        "public/js/dashboard.js:730-741 — `await fetch('/conversation/api/speaker-mute', {method:'POST', body:{muted}})` with no `.json()` and no revert; catch only console.errors.",
+        "The GET counterpart is read once at initChat, dashboard.js:833-840, and never again.",
+        "On the PANIC path (dashboard.js:2360-2364) the mute checkbox is force-set and a change event dispatched — a failed mute would leave the operator believing the fleet is silenced."
+      ],
+      "remaining_work": "Parse and honour the response; revert + toast on failure. Highest-consequence variant because it is on the PANIC path."
+    },
+    {
+      "name": "Per-node capability is applied only to the lurk badges, never to the chip checkboxes",
+      "status": "open",
+      "risk": "high",
+      "files_to_touch": ["public/js/dashboard.js", "views/conversation/showtime.ejs"],
+      "evidence": [
+        "public/js/dashboard.js:436-462 loadLurkCapabilities() — the map at :443-449 targets only `lurkBadgeJaw/Head/Idle/Motion/AI`, and the forEach at :450-459 only adds/removes the `lurk-badge-unavailable` class + a title suffix. It never touches `jawToggle`, `headTrackToggle`, `idleToggle`, `motionSensorToggle`.",
+        "The chips are separate elements: views/conversation/showtime.ejs:110 #jawToggle, :115 #headTrackToggle, :120 #parrotToggle, :125 #idleToggle, :130 #motionSensorToggle, :135 #speakerMuteToggle. The badges are at showtime.ejs:47-56 inside .sc-cb-badges.",
+        "LIVE PROOF — `curl -sk https://192.168.8.140:3000/conversation/api/lurk-mode/capabilities` → `{\"jaw\":true,\"headTracking\":false,\"idle\":false,\"motionSensor\":true,\"ai\":true}` (Mina). Mina's dashboard still renders an enabled Head chip AND an enabled Idle chip.",
+        "`curl -sk https://192.168.8.130:3000/...` → `{\"jaw\":true,\"headTracking\":true,\"idle\":true,\"motionSensor\":false,\"ai\":true}` (Dragomir) — he gets an enabled Motion chip he has no sensor for. Orlok returns all true, which is why this never shows on the dev node.",
+        "routes/conversation.js:990-1024 checkLurkCapabilities() is the authoritative source (jaw = jaw servo part exists; headTracking = webcam + findPanServo; idle = hasIdlePoses; motionSensor = enabled motion_sensor part with a pin).",
+        "Partial precedent exists: loadMotionSensorStatus at dashboard.js:1509-1522 DOES `toggle.disabled = true` when `!j.hasSensor`. Jaw/head/idle have no equivalent."
+      ],
+      "remaining_work": "Extend the loadLurkCapabilities map to disable + explain the corresponding chip input (reuse the :1518-1520 disabled+title pattern), and skip disabled features in toggleLurkMode's fan-out. This is character-independence-relevant: it is the only stream item that changes behaviour per node."
+    },
+    {
+      "name": "Speaker selector shows a part name, never the resolved device — and force-resets the operator's choice on every render",
+      "status": "open",
+      "risk": "medium",
+      "files_to_touch": ["public/js/dashboard.js", "routes/conversation.js"],
+      "evidence": [
+        "public/js/dashboard.js:1263-1267 — `const label = (sp.name || ('Speaker ' + sp.id)) + (sp.characterId ? (' (Char ' + sp.characterId + ')') : '');` — the option text is the parts.json name only.",
+        "public/js/dashboard.js:1269-1270 — `selectedSpeakerPartId = speakers[0].id; sel.value = String(selectedSpeakerPartId);` runs on EVERY renderSpeakerSelect(). Since loadSpeakers() is the first thing refreshPageState() does (:681), wiring up a refresh timer will silently reset any non-default speaker choice unless this is fixed first. **Ordering dependency: fix this before landing the freshness timer.**",
+        "LIVE — `curl -sk https://localhost:3000/conversation/api/speakers` → part 6 `\"name\":\"Speaker Orlok (ReSpeaker XVF3800)\"`, `\"config\":{\"audioDeviceId\":\"default\",...}`. The part claims `default`; the node's actual default sink is `alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_4-Mic_Array_114993701262200027-00.analog-stereo` (from `/setup/audio/api/system-config`). The panel can show neither.",
+        "services/serverPlaybackService.js:72-80 `_resolveSpeakerDevice()` is the resolution the UI should be reporting: `cfg.audioDeviceId || cfg.outputDevice || cfg.device || cfg.deviceName || cfg.pulseSink || cfg.sink || ... || 'default'`."
+      ],
+      "remaining_work": "Have /conversation/api/speakers return the resolved device (export _resolveSpeakerDevice or add a `resolvedDevice` field) and render `name — resolvedDevice`. Preserve the current sel.value across re-renders instead of resetting to speakers[0]."
+    },
+    {
+      "name": "showtime.ejs renders no microphone identity and no node output level",
+      "status": "open",
+      "risk": "medium",
+      "files_to_touch": ["views/conversation/showtime.ejs", "public/js/dashboard-v2.js"],
+      "evidence": [
+        "views/conversation/showtime.ejs:94-105 — the .sc-stage-tr 'monster's ears' block contains only #scListenBtn (:96, tooltip at :98) and a VU meter labelled 'Character audio level' (:101-104). No microphone device name, no input level from the node.",
+        "views/conversation/showtime.ejs:134-138 — the Mute chip. No output-level display or control anywhere near it; `grep -n 'volume' views/conversation/showtime.ejs` yields only :137 `bi-volume-mute` and :295-296, the BROWSER-side listen-in volume range #bridge-listenin-volume.",
+        "#chatVUMeter is driven by dashboard.js:1095 from the chat/ConvAI stream — it is the AI playback level, not the node microphone or the node sink level.",
+        "The data already exists server-side: GET /api/system/volume (routes/api/systemRoutes.js:269) returns `{volume:100, volumePercent:100, volumeFraction:1}` live; GET /setup/audio/api/input-level (routes/setup/audio.js:107) returns a probed mic level."
+      ],
+      "remaining_work": "Add a mic identity + input level readout to .sc-stage-tr and an output-level readout/slider next to the Mute chip, painted from the existing endpoints. Belongs in dashboard-v2.js's loadTelemetry (15 s) rather than a new timer."
+    },
+    {
+      "name": "FEATURE: dashboard input/output device dropdowns, persisted",
+      "status": "open",
+      "risk": "medium",
+      "files_to_touch": [
+        "views/conversation/showtime.ejs",
+        "public/js/dashboard-v2.js",
+        "routes/setup/audio.js",
+        "config/animatronics.json",
+        "server.js"
+      ],
+      "evidence": [
+        "SERVER SIDE IS ALREADY BUILT. routes/setup/audio.js: `/api/outputs` :35, `/api/inputs` :71, `/api/system-config` GET :225 / POST :269, `/api/set-default-sink` :181, `/api/set-default-source` :203, `/api/hardware-devices` :456, `/api/input-level` :107, `/api/audio-levels` :580. All mounted at /setup/audio (server.js:434).",
+        "LIVE on Orlok — GET /setup/audio/api/outputs → `[{id:'81',name:'reSpeaker XVF3800 4-Mic Array Analog Stereo',description:'... [Default]'},{id:'34',name:'Built-in Audio Stereo'}]`; GET /api/inputs → `[{id:'82', reSpeaker...},{id:'80','Webcam Vitade AF Mono'}]`.",
+        "TRAP: /api/inputs and /api/outputs return the PipeWire NODE ID as `id` ('81','82','34','80'). Those renumber on replug/reboot. GET /api/system-config returns the defaults as NAMES (`alsa_output.usb-Seeed_Studio_reSpeaker_XVF3800_...`). **Persist the name, never the numeric id.**",
+        "The dropdowns half-exist already: showtime.ejs:289 #bridge-listenin-source and :321 #bridge-talkthrough-sink, populated by loadBridgeDevices() at dashboard.js:1974-2000 from those exact endpoints — but they are Browser-Audio-Bridge scoped, per-request, and never persisted (loadBridgeDevices runs once, at DOMContentLoaded :2229).",
+        "NOTHING IS PERSISTED TODAY. POST /setup/audio/api/system-config (routes/setup/audio.js:269-353) only shells `pipewireService.setDefaultSink/setDefaultSource` — pure wpctl/pactl runtime state, no disk write, lost on reboot. `data/character-3/audio-config.json` does not exist (`ls data/character-3/`), and the only reference in the codebase is characterService.js:173-174.",
+        "THE ESTABLISHED PATTERN TO COPY: canonical sinkVolume. config/animatronics.json carries per-node `sinkVolume` (Mina 1.0, Orlok 1.3, Dragomir 0.55) and server.js:146-166 applies this node's entry at every service start, matched by `os.hostname()`, with 6 retries for the PipeWire boot race. config/animatronics.json is NOT in the deploy exclude list (scripts/deploy-to-animatronic.sh:132-157) — it ships fleet-wide and each node reads only its own hostname row. Rationale is written into scripts/fleet-audio/apply-volumes.mjs:3-13.",
+        "PER-CHARACTER SLOT ALSO ALREADY EXISTS AND IS ALREADY READ: speaker part `config.audioDeviceId` (services/serverPlaybackService.js:72-80) and microphone part `config.deviceId` (services/elevenLabsWebSocketService.js:221-238, `cfg.deviceId || cfg.inputDevice || cfg.audioDeviceId || 'default'`). Current values: Orlok speaker 6 audioDeviceId='default', Orlok mic 7 deviceId='alsa_input.usb-Seeed_Studio_reSpeaker_XVF3800_...'; Mina 6/8 and Dragomir 6/5 both 'default'. parts.json IS deploy-excluded (deploy-to-animatronic.sh:133) and is listed as node-local in .claude/skills/monsterbox-fleet/SKILL.md:34."
+      ],
+      "remaining_work": "Recommended shape: (a) UI — two <select>s on the stage in showtime.ejs, populated from /setup/audio/api/system-config (one call gives availableSinks, availableSources AND the current defaults, so the dropdown can render pre-selected); wire in dashboard-v2.js (ES5, has getJSON/postJSON/setStatus and a 15 s loadTelemetry to refresh from). (b) APPLY — POST /setup/audio/api/system-config, already correct. (c) PERSIST — write the chosen NAMES to the speaker part's config.audioDeviceId and the microphone part's config.deviceId for the resolved character, so the existing playback and STT read paths pick them up with zero new plumbing; add `defaultSink`/`defaultSource` to this node's config/animatronics.json row and re-apply at startup alongside the sinkVolume block at server.js:146, so the choice also survives reboot at the PipeWire level. Add a small POST /setup/audio/api/preferred-devices that does both writes atomically rather than making the client do two calls."
+    },
+    {
+      "name": "TRAP for the persistence work: PUT /api/parts/:id shallow-merges and stringifies the id",
+      "status": "open",
+      "risk": "high",
+      "files_to_touch": ["routes/api/partsApi.js"],
+      "evidence": [
+        "routes/api/partsApi.js:468 — `parts[index] = { ...parts[index], ...req.body, id: req.params.id };`. The spread is SHALLOW, so `PUT {config:{audioDeviceId:'x'}}` replaces the whole config object and destroys `volume`, `bass`, `treble` on a speaker part (Orlok part 6 currently carries volume:100, bass:0, treble:0) or `sampleRate`, `gain` on a mic part (Orlok part 7 carries sampleRate:44100, gain:50).",
+        "Same line coerces id to `req.params.id` (a string). data/character-3/parts.json already stores ids as strings ('1','2',...), so that is currently harmless here — but it is a silent type rewrite, and CLAUDE.md documents part ids as numbers in poses.json.",
+        "routes/api/partsApi.js:446-448 reads `configService.readConfig().selectedCharacter` directly rather than resolveCharacter(req); it is allowlisted as 'pending migration — add to Pillar 2 follow-up' in eslint-rules/no-direct-character-resolution.allowlist.json:30. A device-save that routes through this endpoint inherits the mutable-selectedCharacter seam and can write the wrong character's parts.json."
+      ],
+      "remaining_work": "Do NOT persist device choices through PUT /api/parts/:id as-is. Either deep-merge `config` in that handler (and keep the id's original type), or add a dedicated device-preference endpoint under /setup/audio that resolves the character with resolveCharacter(req) and merges the single key."
+    },
+    {
+      "name": "refreshBadges' 1.5 s poll is visually inert on the live dashboard",
+      "status": "open",
+      "risk": "low",
+      "files_to_touch": ["public/js/dashboard.js", "public/css/dashboard-v2.css"],
+      "evidence": [
+        "public/js/dashboard.js:2290-2296 toggles only the class `is-active`, driven purely by `t.checked`; :2303 `setInterval(refreshBadges, 1500)`.",
+        "The only CSS rule for it is public/css/dashboard.css:103 `.mb-opbar-status .mb-badge.is-active { opacity: 1; }`. That container id/class exists on the CLASSIC dashboard only (views/conversation/index.ejs:39 `<div id=\"lurkStatusIndicators\" class=\"mb-opbar-status\">`).",
+        "The live dashboard is views/conversation/showtime (server.js:609 renders 'conversation/showtime' for `/`); there the badges sit in `class=\"sc-cb-badges\"` (showtime.ejs:46). `grep '\\.is-active' public/css/dashboard-v2.css` → no match; the file only defines `.sc-cb-badges` layout at :23 and a hide at :267.",
+        "So the one timer that looks like a freshness mechanism (a) never asks the server and (b) paints nothing on the page Aaron actually uses."
+      ],
+      "remaining_work": "Delete refreshBadges + its interval once real server-truth refresh lands, or repoint it at the real badge classes (lurk-badge-on / lurk-badge-active in public/css/lurk-mode.css:59,67). Do not leave both mechanisms fighting."
+    },
+    {
+      "name": "The stated client-JS constraint (\"public/js/*.js is ES5 IIFE\") does not hold for dashboard.js",
+      "status": "refuted",
+      "risk": "low",
+      "files_to_touch": ["public/js/dashboard.js", "public/js/dashboard-v2.js", "CLAUDE.md"],
+      "evidence": [
+        "public/js/dashboard.js is pervasively ES6+: `const`/`let` (:284, :290-294), arrow functions (:388, :450, :653, :843), template literals (:1353-1355 inside showToast), `async function` throughout, optional catch binding `} catch {` (:461, :484, :1245, :1532, :1542), optional chaining (:692 `label.textContent?.trim()`).",
+        "public/js/dashboard-v2.js IS ES5-by-discipline (`var`, function expressions, no template literals) and says so in its own header at :8 — 'ES5 on purpose — see CLAUDE.md client-JS style rule'.",
+        "CLAUDE.md's rule is therefore aspirational for dashboard.js and enforced only in dashboard-v2.js. The repo convention that actually applies is the file-local one CLAUDE.md also states: 'match the existing style of each file'."
+      ],
+      "remaining_work": "For this stream: new stage/device code goes in public/js/dashboard-v2.js and MUST be ES5 (that file's convention, and showtime.ejs:16-19 designates it as the home for sc-* surface behaviour). Fixes inside dashboard.js should match dashboard.js's existing ES6+ style — forcing ES5 there would be inconsistent with 2400 lines around it. Worth a one-line CLAUDE.md correction so the next session does not write ES5 into an ES6 file or vice versa."
+    },
+    {
+      "name": "No test asserts a refused toggle reverts, or that a device choice survives a reload",
+      "status": "open",
+      "risk": "medium",
+      "files_to_touch": [
+        "tests/system/dashboard-api.test.js",
+        "tests/browser/conversation-refactor.spec.js"
+      ],
+      "evidence": [
+        "tests/system/dashboard-api.test.js covers the jaw/head/mute ENDPOINTS (describe blocks at :13, :66, :140, :192) — server contract only, never the client's handling of `{success:false}`.",
+        "tests/browser specs touch #jawToggle only for visibility/type/click (conversation-refactor.spec.js:120-122, :228; head-tracking-dashboard.spec.js:51; exhaustive-system-test.spec.js:263,529,584; mcp-comprehensive.spec.js:304,391). None asserts the checkbox reverts after a refusal.",
+        "`grep -n 'speakerSelect' tests/browser/*.spec.js` finds only #speakerSelect on the audio-library page (audio-library.spec.js:218) and actual-usage-testing.spec.js:1200 — nothing for the dashboard's #chatSpeakerSelect or the bridge selects.",
+        "No test anywhere asserts persistence of an audio device across a page load."
+      ],
+      "remaining_work": "Add (1) a browser test that stubs/forces a jaw refusal and asserts the chip goes back off with a toast, (2) a persistence test: select a non-default output, reload, assert the select still shows it, (3) a per-character capability test asserting a character with headTracking:false renders a disabled Head chip. Run against port 3100 with `MB_USE_RUNNING_SERVER=1 BASE_URL=http://localhost:3100 npx playwright test ... --reporter=list` — note port 3100 is NODE_ENV=production with MB_TEST_MODE unset, so an audio test there drives REAL devices."
+    }
+  ],
+  "will_conflict_with": [
+    "Any stream editing public/js/dashboard.js — this stream touches init()/refreshPageState (679-698), bindEvents (700-812), toggleLurkMode (296-363), loadLurkCapabilities (436-462), renderSpeakerSelect (1250-1272), saveJawSettings (1535-1543). A head-tracking stream will want saveHeadTrackSettings/loadHeadTrackStatus (1389-1432) and pollHeadTrackStatus (1364+) in the same file.",
+    "A head-tracking stream (V11-HANDOFF §5.2): it must add a cameraMount setting and branch on servoKind; `capabilities.headTracking` (routes/conversation.js:1003-1011, findPanServo) is shared with this stream's chip-gating fix. Agree one owner for checkLurkCapabilities.",
+    "Any audio/voice stream touching routes/setup/audio.js or services/serverPlaybackService.js — this stream adds a device-preference write path and may add a `resolvedDevice` field to /conversation/api/speakers.",
+    "views/conversation/showtime.ejs — the stage region (:82-153) and the say bar (:155+) are contended by any UI stream.",
+    "config/animatronics.json + server.js:146-166 — shared with fleet-audio/volume work; a defaultSink/defaultSource key added here sits next to sinkVolume."
+  ],
+  "dependencies_on_other_streams": [
+    "Ordering, internal to this stream: fix renderSpeakerSelect's forced reset to speakers[0] (dashboard.js:1269) BEFORE wiring any refresh timer, or the timer will stomp the operator's speaker choice every cycle.",
+    "The capability-gating fix depends on checkLurkCapabilities (routes/conversation.js:990-1024) staying authoritative; if a head-tracking stream changes findPanServo or adds cameraMount, headTracking capability semantics change under this stream.",
+    "Landing the device dropdowns on peer nodes requires a deploy; parts.json is deploy-excluded (scripts/deploy-to-animatronic.sh:133) so each node's device choice must be set on that node — verify per node with the fleet-verify skill, not by version string.",
+    "Nothing here depends on the calibration/pose stream, EXCEPT that the jaw-refusal toast will keep firing on Mina/Dragomir until their jaw calibration is real — which is the correct behaviour, not a regression."
+  ],
+  "open_questions": [
+    "Should the device choice be per-CHARACTER (parts.json config, node-local, survives redeploy) or per-NODE (config/animatronics.json row, fleet-committed, applied at startup)? They are not equivalent: one node hosts one character today, but the parts.json slot is what the playback/STT code already reads, while the animatronics.json slot is what survives a reboot at the PipeWire level. Recommendation is to write BOTH; needs Aaron's confirmation that a committed device name per node is acceptable.",
+    "Refresh cadence: reusing the existing 10 s character poll costs nothing extra. Is 10 s fresh enough for Aaron, or does he want ~3 s? On an RPi4B each cycle is 7 fetches (speakers, webcam, jaw, head, capabilities, scenes, poses) — 3 s would triple that; suggest splitting into a cheap chip-state poll and a slower list poll.",
+    "Should the freshness timer pause while the dashboard tab is hidden (document.visibilityState)? Not doing so keeps polling all night on a show-floor tablet.",
+    "The audit says '23 findings'; §5.1 records only the 4 root causes plus the feature. The other ~19 leaf findings are not in the repo — is there a fuller artifact, or is §5.1 the whole surviving record?",
+    "The classic dashboard at /dashboard/classic (views/conversation/index.ejs, server.js:615-624) shares dashboard.js. Do fixes need to render correctly there too, or is classic now decorative and safe to let drift?"
+  ],
+  "fleet_wide_notes": "Every §5.1 finding is CONFIRMED OPEN at the line numbers the handoff states — the doc is accurate here, unusually. dashboard.js changed exactly once since v10.1.0 (55d9ecf2, webcam status honesty, +26/-2, loadWebcam only); showtime.ejs, dashboard-v2.js and dashboard-v2.css have not changed since v9.3.0. v10.4 fixed nothing in this stream. One claim in the task brief IS refuted: public/js/dashboard.js is NOT ES5 (const/let/arrow/template-literal/optional-chaining throughout); dashboard-v2.js is, deliberately. The capability bug is the only item that behaves differently per node and it reproduces live: Mina returns headTracking:false + idle:false and Dragomir returns motionSensor:false while both still render enabled chips; Orlok returns all-true, which is why it has never been visible on the dev node — test any fix against Mina, not Orlok. For the feature, the server work is essentially already done (enumerate + apply endpoints exist and return live PipeWire data); the missing half is persistence, and the repo already contains the pattern to copy in server.js:146-166 (canonical sinkVolume from config/animatronics.json, keyed by os.hostname(), re-applied at every service start with a PipeWire boot-race retry). Persist device NAMES, never the numeric PipeWire node ids that /api/inputs and /api/outputs hand back — those renumber on replug, and Mina's USB hub was removed this cycle specifically because it renumbers devices."
+}

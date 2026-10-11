@@ -1,0 +1,4242 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Aaron Warner">
+      
+      
+        <link rel="canonical" href="https://arwpc.github.io/MonsterBox/development/missions/2026-10-castle-tuning/MISSION/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Warner Castle 2026 — character tuning, new scenes, Goblins (mission spine) - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#warner-castle-2026-character-tuning-new-scenes-goblins-mission-spine" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Warner Castle 2026 — character tuning, new scenes, Goblins (mission spine)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directory Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ / Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Character Sheets
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Character Sheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_mina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mina
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_sir_dragomir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sir Dragomir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_groundbreaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/PUMPKINHEAD_COMPLETE_PARTS_LIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead Parts List
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/GROUNDBREAKER_SETUP_INSTRUCTIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/GROUNDBREAKER_INSTALLATION_PACKAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronic Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSH Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/NODE-DISCOVERY-VALIDATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/HEAD-TRACKING-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/LINEAR_ACTUATOR_CALIBRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linear Actuator Calibration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/STT_TUNING_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STT Tuning Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/Noisy_Environment_Preset_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Noisy Environment Preset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/CENTRALIZED-PORT-MANAGEMENT-SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/PORT-MANAGEMENT-INTERFACE-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/HTTPS_DEPLOYMENT_HANDOFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTPS Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/secure-remote-access-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Secure Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/AUDIO-MICROPHONE-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audio & Microphone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ECHO-SUPPRESSION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Echo Suppression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/SCENE-CONCURRENCY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scene Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Log Collection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/head-tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/ORLOK_BTS7960_WIRING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok BTS7960 Wiring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/legacy_hardware_config_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Hardware Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs TTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/ELEVENLABS_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs Full Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/MJPG-STREAMER-INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MJPG-Streamer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/GOBLIN_VIDEO_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Video
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/Hardware-Integration-Layer-Interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Layer Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/api-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V9-RETROSPECTIVE-AND-ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Retrospective & Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V9-PERSONA-REVIEWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Persona Reviews
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../GESTURE-ENGINE-SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gesture Engine Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../NODE-DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery (mDNS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orchestration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ai-integration-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Integration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../AI-Management-Feature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Management Feature
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../goblin-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../middleware-audit-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Middleware Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Setup Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/api-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/conversation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conversation Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/DEEP-TESTING-FRAMEWORK-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Testing Framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/KNOWN-BUGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known Bugs & Open Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/head-tracking-troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronics Workshop
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Animatronics Workshop
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Familiarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simple Steps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hands-On Activities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Final Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_19" >
+        
+          
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../v6-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Audit Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../v6-final-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Final Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="warner-castle-2026-character-tuning-new-scenes-goblins-mission-spine">Warner Castle 2026 — character tuning, new scenes, Goblins (mission spine)</h1>
+<p>Started 2026-10-09 20:30 CDT on Orlok (dev seat). Lead session orchestrates; bounded workers build; this file is
+the durable plan and status log. Read it before touching anything in this mission. Recon reports with file:line
+evidence live beside it: <code>recon-conversation.md</code>, <code>recon-lurk.md</code>, <code>recon-goblins.md</code>, <code>recon-scenes-tests.md</code>,
+<code>evidence-elevenlabs.md</code>.</p>
+<h2 id="operator-brief-2026-10-09-verbatim-intent">Operator brief (2026-10-09, verbatim intent)</h2>
+<p>Tune the personalities of ALL characters, then build an entirely new set of scenes, get the Goblins running
+video, rebuild the tests. Use workflows/agents/subagents, work autonomously, commit often, test often.</p>
+<ol>
+<li>Common to all animatronics: responses are slow ("take too long to think"); responses too long and lecture-like
+   (goal: strike up a conversation and send visitors to the other animatronics by tying the back stories
+   together); hard to interrupt — they won't listen (mics are fine; use the latest ElevenLabs conversation
+   capabilities); they lag and cut off mid-sentence (busy Pi suspected).
+   Lurk mode, simplified: while lurking everyone moves occasionally, those able run head tracking, all have random
+   movements, nobody speaks until woken by PIR motion, a scheduled event, or AI mode being turned on. AI mode
+   enables ALL capabilities based on the parts configured for each animatronic. All unmuted by default. Orlok
+   alone keeps playing music while lurking until he senses motion or any other wake-up.</li>
+<li>Personalities: Orlok — deeper voice, more Romanian words, better conversationalist (star of the show).
+   Mina — from time to time in lurk mode she sings, Romanian only, lullabies and so forth. Groundbreaker — no
+   longer on the roof, breaking out of the ground; keep how he calls out to and describes the others; less
+   threatening, dumb observations about the others; big dumb kind-of-dangerous friend and protector of visitors,
+   especially anyone named Calvin, Ben, Bennett, Holden or Harrison. Sir Dragomir — boring now, must start
+   conversations; cars pull by, he sees them as carriages; sends people to Orlok or Mina; does NOT like
+   Pumpkinhead. Pumpkinhead — do not change his voice; keep "snap", "stalks", "cracks" and his descriptors; new
+   thread: Renfield is selling his baby pumpkins from the patch and he is not happy. Renfield — repetitive now,
+   be creative; learns and repeats names (sidewalk traffic); signs up clients for the master after vetting them;
+   1800s legal terms; can be mad, frenetic, shaking, repeating; pen moves FAST and OFTEN, constantly scribbling,
+   even his own words; asks people to let him write a contract with Orlok, or sells Pumpkinhead's pumpkins by
+   contract and sends them to Pumpkinhead to collect.</li>
+<li>New scenes only after ALL characters are updated and tested: ten new scenes per character, creative, as many
+   parts/combinations as possible, stories drive movement between and during lines and music, cast video. Delete
+   all old scenes and poses.</li>
+<li>Goblins: all working and running video. Goblin 1 most noticeable/clear; Goblin 2 big picture window, detail
+   hard to see; Goblin 3 small vertical window on the roof. New playlists per Goblin, looped by default.</li>
+<li>Rebuild tests around the new scenes; incorporate hardware testing; update the AI config UI as needed.</li>
+<li>(Added 21:25) Have fun with the scenes and poses — animatronics can trigger each other (send messages,
+   commands); have them interact. Create three new EVENTS using scenes, the big orchestrated kind with music,
+   video and movement where they all participate: a cool ceremony; one where Orlok issues orders and the
+   animatronics interact; and one where they all try to sing the same song together. Get crazy. Run one of them
+   every half hour; animatronics and Goblins must return to their original state afterwards. Don't forget the
+   music.</li>
+</ol>
+<h2 id="standing-rules-for-this-mission">Standing rules for this mission</h2>
+<ul>
+<li>Standing autonomy applies (no approvals needed); physical-safety knowledge still governs: never drive Orlok parts
+  4 and 5 together on our own initiative; never command Sir Dragomir's 900° neck (part 1) on our own initiative;
+  PumpkinHead motor never above 40 %; Groundbreaker head motor is physically dead (<code>config/physical-faults.json</code>).</li>
+<li>Quiet hours 23:00–08:00: no audio at full volume; fleet audio tests at 20 % (<code>PUT /api/orchestration/volume
+  {volume:20}</code>, undo with <code>POST /api/orchestration/volume/restore-canonical</code>), and anything loud waits for daylight.
+  Proofs that matter acoustically are marked UNPROVEN until an ear-check or the operator confirms.</li>
+<li>Locks: PumpkinHead (1) and Sir Dragomir (4) are config-locked. The brief explicitly directs changes to both
+  (scenes/poses, story threads), so they are unlocked deliberately for the rebuild and re-locked with refreshed
+  fingerprints at the end (<code>node scripts/character-lock.mjs unlock|lock|refresh</code>).</li>
+<li>Deploy = rsync of code; <code>parts/poses/scenes/super-powers/*-state</code> are node-local and excluded. New scenes and
+  poses therefore travel to each node by explicit file push + restart, never by <code>deploy:all</code>. Always diff with
+  <code>rsync -rnc</code> first and curl <code>/health</code> on every node afterwards.</li>
+<li>Mina (192.168.8.140) is powered off: her agent (cloud) is tuned now; her node files are staged in the repo and
+  pushed when she returns. Goblin 1 (.40) and Goblin 4 (.244) are off the network: their playlists are staged and
+  applied by the keep-alive when they return.</li>
+<li>Every claim in a report must point at a tool result. <code>success:true</code> is not proof; <code>played:true</code> lies while
+  muted; version strings lie; grep the node, read <code>/var/log/monsterbox.err</code>, measure.</li>
+<li>Agents on this Pi: at most 5 concurrent; audio-playing or hardware-driving work serialized.</li>
+<li>Commits: <code>v10.7.0: [area] description</code>, small and frequent, gate on push. Node-local files never committed
+  (<code>.mcp.json</code>, <code>config/app-config.json</code>, <code>data/audio-library/library.json</code>, service-written state while a suite runs).</li>
+</ul>
+<h2 id="what-the-evidence-says-details-in-evidence-elevenlabsmd-and-the-recon-files">What the evidence says (details in evidence-elevenlabs.md and the recon files)</h2>
+<ul>
+<li>ElevenLabs conversation logs for the fleet: LLM time-to-first-token 0.65–0.95 s, TTS TTFB 0.2 s — the model is
+  not the delay. In real guest conversations the agent waited 10–22 s after the guest went quiet before answering
+  (<code>convai_turn_silence_before_initiation</code> p50 14.7 s Mina, 10.6 s Renfield), replies ran 31–53 words (p90), and
+  2,181 "user" turns were literally <code>...</code> (noise). The client zeroes the mic while the character speaks and for
+  2.5 s after, so a guest who answers the closing question is unheard; the agent then waits its turn timeout and
+  plays filler. Callout one-shots cost 10–13 s to first audio.</li>
+<li><code>interruption</code> is missing from <code>client_events</code> on four of six agents; local barge-in is off on Orlok and
+  Renfield (self-triggered 665 times on 2026-10-04) and self-triggering elsewhere (echo floor tracks the quietest
+  frame). Barge-in and socket closes SIGTERM the shared player with no drain — the mid-sentence cut-offs.</li>
+<li>All six agents: <code>gpt-oss-120b</code> (a reasoning model), <code>max_tokens -1</code>, RAG on (20 chunks / 50 k chars),
+  prompts 4.4–10.3 k chars asking for ~40-word replies, <code>turn_model turn_v2</code> (current default <code>turn_v3</code>),
+  <code>optimize_streaming_latency</code> is now a documented no-op. Lab A/B (simulated turns): claude-haiku-4-5 0.48–0.57 s,
+  gpt-5.4-mini 0.49–0.79 s, gemini-3.5-flash-lite 0.6–0.78 s, gpt-oss-120b 1.1–1.3 s.</li>
+<li>Lurk: two modes share one PIR watcher; lurk is never restored at boot; sleep turns off movement and head
+  tracking (so the character is motionless while waiting); callouts and lurk scenes speak regardless; "AI on" starts
+  only the agent; schedules cannot wake; wake/sleep write config into <code>super-powers.json</code> (refused on locked
+  characters); mute persists across boots and Orlok has been muted since the 19:52 panic.</li>
+<li>Goblins: none showing video right now; Goblin 2 has an empty queue (blank screen on a "healthy" unit); Goblin 3
+  stopped by a fleet emergency stop (42,680 mpv respawns on one 6 s clip = respawn storm); Goblins 1 and 4 off the
+  network; 69 junk playlists; no name resolver for scene casts; no keep-alive.</li>
+<li>Orlok's voice "Count Orlok, Nosferatu" measures median F0 ≈ 88 Hz on the TTS path; no library voice is deeper;
+  ElevenLabs offers no pitch control (audio_effects = filters/reverb/distance only); voice-design from his own
+  reference at prompt_strength 0.6 keeps F0 but raises sub-150 Hz chest energy 0.47 → 0.53–0.61. Candidate
+  generated voice ids are in evidence-elevenlabs.md for audition.</li>
+</ul>
+<h2 id="design-decisions">Design decisions</h2>
+<p>D1 <strong>Conversation client (services/elevenLabsWebSocketService.js + serverPlaybackService.js)</strong> — full-duplex
+listening on nodes whose mic is a ReSpeaker XVF3800 (hardware AEC: Orlok, PumpkinHead, Dragomir, Renfield):
+real mic audio flows to the agent while it speaks; interruption is decided by the agent (<code>interruption</code> event)
+and honoured by stopping THIS character's player and flushing queued chunks. Half-duplex nodes (Mina webcam mic,
+Groundbreaker USB adapter) keep suppression but with an echo-aware barge-in (expected echo from the playback
+envelope, not the quietest frame) and a ≤400 ms tail. Auto-reconnect while AI mode is on (max-duration close,
+network drop) with no greeting replay. Guest speech resets inactivity. Chunk writes ordered and device resolution
+cached per session (no disk reads per chunk). Stops drain unless interrupting. Browser sessions never kill the
+headless player. One-shot asks end when the reply finishes (not at 30 s) and skip the discarded greeting. Scene
+<code>askAI</code> speaks once. Body-state contextual updates rate-limited (≥5 s, on change only). Per-turn latency
+instrumentation (guest-speech-end → first audio → playback start) exposed on <code>ai-status</code>.</p>
+<p>D2 <strong>Agents (ElevenLabs, all six)</strong> — <code>client_events</code> + <code>interruption</code>, <code>agent_response_complete</code>;
+<code>turn.turn_model turn_v3</code>, <code>turn_eagerness eager</code>, <code>speculative_turn true</code>, <code>turn_timeout 5</code>,
+<code>soft_timeout 3.0 s × 1</code>; LLM chosen per character from the lab measurements (default <code>claude-haiku-4-5</code>,
+<code>gpt-5.4-mini</code> acceptable), <code>max_tokens</code> 140 as a safety net, temperature 0.8, RAG off with the essential
+knowledge folded into tight prompts (Known Guests kept as <code>usage_mode: prompt</code>); <code>max_duration_seconds 1200</code>;
+<code>first_message</code> override enabled so a reconnect can pass an empty greeting; Mina
+<code>disable_first_message_interruptions false</code>. Prompts rewritten to the brief: 1–2 sentences, ≤ 25 words, one
+question or one send-off per turn, the castle's shared story, cross-references. PumpkinHead's TTS settings and
+voice untouched. Every change applied by REST with <code>/etc/monsterbox/elevenlabs.key</code>, snapshots refreshed in
+<code>config/elevenlabs/agents/</code>, previous state backed up in <code>/home/remote/fleet-backups/elevenlabs-agents/</code>.</p>
+<p>D3 <strong>Lurk/wake/AI-mode</strong> — one per-node state machine (<code>services/lurkStateService.js</code>, routes stay in
+<code>routes/conversation.js</code>): states <code>lurking</code> (default and boot state; idle loop over idle-tagged poses + head
+tracking where a camera and pan servo exist + Orlok's background music; NO speech) and <code>awake</code> (= AI mode: agent
+session + jaw + LED sync + head tracking + AI motion + follow orders, each only if the character's parts support
+it). Wake sources: PIR, <code>POST /conversation/api/wake</code> (used by a new schedule action <code>wake</code>), <code>ai-on</code>. Return to
+lurking after inactivity (default 5 min; guest speech and agent speech count as activity). Mute is runtime-only
+and defaults to unmuted at boot. Callouts and lurk scenes become opt-in features that are OFF by default and gated
+on <code>lurking</code> and quiet hours (not retired, not speaking by default). Wake/sleep never write <code>super-powers.json</code>;
+runtime overrides live in memory + <code>lurk-state.json</code> and are honoured by every reader. Fleet gets an <code>ai</code> key.
+Dashboard AI/Lurk toggles defer to the server.</p>
+<p>D4 <strong>Scenes/poses</strong> — after D1–D3 are deployed and conversation is proven on live nodes: for each character a new
+pose library (including <code>idle</code>-tagged poses for lurk, respecting the hazards) and ten scenes using every part
+combination, audio, TTS lines, music and Goblin casts (by Goblin name). Old scenes/poses deleted. Mina's lullabies
+are pre-generated Romanian TTS files in her audio library used by lurk-time scenes. Pushed per node, locks refreshed.</p>
+<p>D5 <strong>Goblins</strong> — per-Goblin looping playlist (single pre-concatenated reel per Goblin = one mpv <code>--loop</code>,
+portrait-cropped reel for Goblin 3), keep-alive watchdog that resumes a stopped non-empty queue and applies the
+staged playlist when an offline Goblin returns, <code>resolveGoblin(nameOrId)</code> for scene casts, display hints in the
+registry, junk playlists archived. No reboots, no restarts of goblin.service, <code>pgrep -c mpv</code> discipline deferred
+to daylight.</p>
+<p>D7 <strong>Cross-node steps and fleet events</strong> — the scene executor gains <code>fleet-scene</code> (run scene N on node X, by
+animatronic id or character name, optional wait), <code>fleet-say</code> (a line in that node's own voice via the
+orchestration say endpoint; <code>all</code> fans out), <code>fleet-audio</code>/<code>fleet-stop-audio</code> (the same library track on one or
+every node — music beds), and <code>fleet-mode</code> (<code>hold</code>/<code>release</code> over every node's lurk service so idle loops, head
+tracking and background music step aside for the show and come back afterwards). Scenes can therefore trigger
+each other. The three events are conductor scenes hosted on Orlok (ids 101–103: "The Lighting of the Castle"
+ceremony, "The Count's Orders", "One Song for Warner Castle"), composed of per-character event parts (each
+character's scenes 8–10) plus Goblin casts (play-once, so the reels resume) and a shared music bed on every node.
+<code>scripts/fleet-events/run-next.mjs</code> rotates them, refuses during quiet hours or while any node is in a guest
+conversation, and runs from the managed crontab every 30 minutes in show hours (<code>*/30 17-22 * * *</code>, visible on
+/schedule, operator-adjustable). Every event ends with <code>fleet-mode release</code>; the runner also releases on failure.</p>
+<p>D8 <strong>Time</strong> (operator, 21:27: "be sure time is synced to the Chicago time zone and these guys are updating time
+via NTP on their RPis") — verified 2026-10-09 21:27 CDT on every reachable Pi (Orlok, PumpkinHead, Sir Dragomir,
+Groundbreaker, Renfield, Goblin 2, Goblin 3): <code>America/Chicago</code>, <code>systemd-timesyncd</code> active, clock synchronized,
+identical to the second. Mina, Goblin 1 and Goblin 4 are off the network and get the same check when they return.
+To keep it true: <code>scripts/node-baseline/apply-baseline.sh</code> and <code>scripts/goblin-os/provision-goblin.sh</code> /
+<code>stabilize-goblin.sh</code> set <code>timedatectl set-timezone America/Chicago</code> and <code>set-ntp true</code> (neither does today);
+<code>/api/orchestration/fleet-health</code> reports <code>time {zone, ntpSynced, localTime, offsetMs}</code> per node and the Fleet
+Command Center flags drift or an unsynced clock; <code>npm run check:time</code> prints the fleet matrix. Schedules, quiet
+hours and the half-hour event rotation all depend on this.</p>
+<p>D6 <strong>Tests/UI</strong> — unit + system tests follow the new services; browser specs updated for the new scenes;
+hardware tests per character part list; AI settings page shows live conversation latency, duplex mode, and
+agent turn settings (read-only with a deep link). Version bumps to 10.7.0.</p>
+<h2 id="phases-and-workers">Phases and workers</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Worker (model)</th>
+<th>Owns these files</th>
+<th>Done when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1a</td>
+<td>conversation-engineer (opus)</td>
+<td><code>services/elevenLabsWebSocketService.js</code>, <code>services/serverPlaybackService.js</code>, <code>services/scenes/sceneExecutor.js</code> (askAI only), <code>services/jawAnimationAudioIntegration.js</code> if needed, their unit tests</td>
+<td>D1 implemented, unit tests green, headless session on Orlok proves reconnect + interruption handling + ordered playback with logged per-turn latency</td>
+</tr>
+<tr>
+<td>1b</td>
+<td>lurk-engineer (opus)</td>
+<td><code>routes/conversation.js</code>, <code>server.js</code>, <code>public/js/dashboard.js</code>, <code>services/lurkMotionWatcherService.js</code>, <code>services/calloutService.js</code>, <code>services/lurkSceneService.js</code>, <code>services/backgroundMusicService.js</code>, <code>services/scheduleService.js</code> (+ <code>public/js/schedule.js</code>), <code>services/orchestrationService.js</code>, <code>services/aiMotionSuperPowerService.js</code>, <code>routes/api/panicRoutes.js</code>, dashboard/orchestration views, their tests</td>
+<td>D3 implemented, boot lands in lurking, PIR/schedule/ai-on wake, inactivity returns to lurking, locked character works, unit/system tests green</td>
+</tr>
+<tr>
+<td>1c</td>
+<td>persona-writer (fable)</td>
+<td>ElevenLabs agents (REST), <code>config/elevenlabs/agents/*.json</code> snapshots, <code>docs/characters/</code> story bible</td>
+<td>D2 applied to all six, simulate-conversation transcripts show ≤ 25-word in-character replies with cross-references, measured TTFB per character</td>
+</tr>
+<tr>
+<td>1d</td>
+<td>goblin-engineer (opus)</td>
+<td><code>services/goblinManagerService.js</code>, <code>services/goblinPlaylistService.js</code>, <code>routes/videoLibrary.js</code>, <code>routes/goblinManagement.js</code>, <code>data/goblins.json</code>, <code>data/goblin-playlists.json</code>, <code>scripts/goblins/*</code>, their tests</td>
+<td>D5: reels built, Goblins 2 and 3 looping and proven by two reads 10 s apart, keep-alive running, resolver in place</td>
+</tr>
+<tr>
+<td>2</td>
+<td>lead</td>
+<td>integration, gate, deploy to live nodes, restart, measured conversation proof on ≥ 2 nodes</td>
+<td>conversation symptoms re-measured on live agents</td>
+</tr>
+<tr>
+<td>1e</td>
+<td>scene-infra engineer (opus)</td>
+<td><code>brief-scene-infra.md</code> file set + the fleet step types (D7)</td>
+<td>askAI single-play, audio &gt; 30 s, TTS cache, validator, replace endpoints, casts by name, fleet steps, tests green</td>
+</tr>
+<tr>
+<td>3a</td>
+<td>fleet-event author (fable)</td>
+<td><code>brief-fleet-events.md</code>: event scripts, Orlok conductor scenes 101–103, <code>scripts/fleet-events/*</code>, crontab entry, song lyrics + music choice</td>
+<td>the three scripts written before the scene authors start their event parts; conductors dry-run clean</td>
+</tr>
+<tr>
+<td>3b</td>
+<td>scene-author ×6 (opus, ≤ 3 concurrent)</td>
+<td><code>data/character-N/poses.json</code>, <code>scenes.json</code>, audio files for that character</td>
+<td>validated, dry-run on the node, pushed, locks refreshed</td>
+</tr>
+<tr>
+<td>3c</td>
+<td>fleet-event author (same)</td>
+<td>end-to-end rehearsal of each event at 20 % (or dry at night), state-restore proof on every node and Goblin, schedule armed</td>
+<td>three events proven, rotation running</td>
+</tr>
+<tr>
+<td>4</td>
+<td>test-engineer (sonnet/opus) + ui-engineer</td>
+<td><code>tests/**</code>, <code>views/ai-settings/**</code>, <code>public/js/ai-settings*.js</code></td>
+<td>suites green against the new scenes; hardware tests per character</td>
+</tr>
+<tr>
+<td>5</td>
+<td>docs-scribe (sonnet) + lead</td>
+<td>README, CHANGELOG, KNOWN-BUGS, docs, memory, version, locks, final deploy + fleet verify</td>
+<td>tagged v10.7.0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="phase-2-checklist-lead-after-1a1d-land">Phase 2 checklist (lead, after 1a–1d land)</h2>
+<ol>
+<li>Integrate: read each <code>report-*.md</code>, resolve cross-worker hooks (activity callback → lurk service; resolver →
+   executor), run <code>npm run gate</code>, <code>npm run test:unit</code>, targeted system suites (never <code>orchestration.test.js</code>
+   against :3100), commit per worker with their file lists.</li>
+<li>Restart Orlok, read <code>/var/log/monsterbox.err</code> from the boot boundary, confirm: boots into <code>lurking</code> (idle loop</li>
+<li>head tracking + music supervisor; nothing speaks), <code>ai-on</code> → <code>awake</code> with per-capability log, inactivity →
+   <code>lurking</code>, conversation latency lines present.</li>
+<li>Fleet: <code>rsync -rnc</code> preview per node (deploy pushes <code>data/characters.json</code>, <code>config/*</code>, audio library — check
+   nothing node-local would be clobbered), <code>scripts/deploy-to-animatronic.sh</code> per live node (1, 4, 5, 6), restart,
+   <code>curl -sk /health</code> each, grep each node for the new symbols (<code>lurkStateService</code>, <code>resolveGoblin</code>,
+   duplex-mode log line), then set per-node runtime state: callouts OFF, lurk scenes OFF, mute cleared,
+   <code>lurk-state.json</code> present. Mina skipped (off); note it.</li>
+<li>Measure, silently where quiet hours apply: on Orlok (sink muted at device level) open a headless session,
+   inject three text turns, record first-audio latency from the new instrumentation and the agent's own
+   <code>conversation_turn_metrics</code>; on one XVF3800 peer at 20 % volume in daylight, a real spoken exchange with an
+   interruption. Record numbers in the status log; mark acoustic items UNPROVEN until then.</li>
+</ol>
+<h2 id="status-log-append-newest-last">Status log (append, newest last)</h2>
+<ul>
+<li>2026-10-09 20:30 — clean build verified (main == origin/main 86c9bb0e, gate green, configs backed up to
+  <code>/home/remote/config-backup-20261009-195334</code> and <code>/home/remote/fleet-config-backup-20261009-195355</code>).</li>
+<li>2026-10-09 20:37 — all six agent configs backed up to <code>/home/remote/fleet-backups/elevenlabs-agents/20261009-203704/</code>.</li>
+<li>2026-10-09 20:58 — recon complete for conversation, lurk, goblins (scenes/tests recon still running). Lab agent
+  <code>agent_6701m4hqprpefaj9xdnj9548cmpv</code> (duplicate of Orlok) exists for A/B; delete at the end.</li>
+<li>2026-10-09 21:00–21:30 — phase-1 workers 1a–1d launched (conversation, lurk, personas, goblins). The lead session
+  was cut off at ~21:30 and the Pi rebooted at ~22:03 (wiping /tmp, including every worker scratchpad). The
+  half-written tree then crash-looped monsterbox.service at boot: the goblin-engineer's header rewrite of
+  <code>services/goblinManagerService.js</code> had dropped the HEAD helper block (<code>sanitizeGoblinFilename</code>, <code>rsyncToGoblin</code>,
+  <code>fetchWithTimeout</code>, …).</li>
+<li>2026-10-09 22:13 — recovery lead (new session): helper block restored verbatim from HEAD, service healthy again
+  (<code>/health</code> 10.7.0). Verified by REST that the six real ElevenLabs agents are untouched (only the lab agent
+  carries the new Orlok prompt + D2 settings). Worker briefs preserved under <code>briefs/</code>; predecessor action logs
+  under <code>/home/remote/mission-scratch/prior/</code>. All four workers relaunched with resume briefs at 22:16.</li>
+<li>2026-10-09 22:40 — operator: Renfield and Groundbreaker brought back up; Mina being powered on, but on Mina
+  "no hardware works other than light - linear actuator does not". Recorded as physical faults for Mina parts
+  1–4 (jaw, neck, eye, coffin door) so autonomous code, the validator and the scene author build her show from
+  voice + the Burning Rose lamp only; her jaw animation must be OFF on her node (dead servo would only add the
+  jaw pre-analysis delay to every line). Phase 3a: <code>docs/characters/FLEET-EVENTS.md</code> written (three event
+  scripts: 101 The Lighting of the Castle, 102 The Count's Orders, 103 One Song for Warner Castle); original
+  instrumental beds being generated with the ElevenLabs Music API into the audio library.</li>
+<li>2026-10-09 23:05 — phase 1c DONE (persona-writer): D2 applied to all six agents at 22:37–22:41 CDT, verified by
+  GET after each PATCH; LLMs chosen by measurement (Orlok, Dragomir, Renfield → gemini-3.5-flash-lite; Mina,
+  PumpkinHead, Groundbreaker → gpt-5.4-mini; claude-haiku-4-5 was fastest but lectured at 37–48 words); words per
+  turn 15–27 (was 31–53); Orlok's VOICE UNCHANGED (the designed candidate measured higher, not deeper; the only
+  achievable lever is a node-side rubberband pitch shift on the playback path, queued as a daylight follow-up for
+  the conversation engineer). Report <code>report-personas.md</code>, bible <code>docs/characters/STORY-BIBLE.md</code>. Phase 1e DONE
+  (scene-infra, commit d4d861c5): fleet step types, validator (gate step 1b), TTS cache + prerender, replace
+  endpoints, askAI single-play, audio steps to clip length; report <code>report-scene-infra.md</code>. Three event music beds
+  generated (ElevenLabs Music API, 230/260/235 s) and loudness-normalized for the library. Scene authors for Orlok
+  and Sir Dragomir launched 23:06 (two concurrent; conversation, lurk and goblin workers still running).</li>
+<li>2026-10-09 23:00 — phase 3a DONE (lead as fleet-event author): <code>docs/characters/FLEET-EVENTS.md</code> (three
+  scripts, every character's scenes 8/9/10 specified line-for-line), conductors <code>scripts/fleet-events/conductors/
+  {101,102,103}.json</code> + <code>install-conductors.mjs</code> (validated replace), runner <code>scripts/fleet-events/run-next.mjs</code>
+  (rotation, quiet hours, busy-node deferral, release-on-failure, Goblin read-back), beds in the audio library
+  (commit aab61105). Validate-only install shows only the expected gaps: peers' scenes 8–10 (authors running) and
+  the beds' library ids (registered by the rescan at the next restart). <code>brief-orlok-pitch.md</code> queued for the
+  conversation engineer after D1 (daylight audition). Pi load ≈ 8 with five workers; no more agents until a slot
+  frees. Still running: 1a conversation, 1b lurk, 1d goblins, scene authors Orlok + Sir Dragomir.</li>
+<li>2026-10-09 23:12 — operator: "set all of their volumes at 25% - its late". Done via <code>PUT /api/orchestration/volume
+  {volume:25}</code>; every node reads back 25 % (<code>GET /api/system/volume</code>); Orlok's sink stays MUTED at the device
+  level. Every restart/deploy re-applies canonical <code>sinkVolume</code>, so the lead re-applies 25 % after each restart
+  tonight; <code>POST /api/orchestration/volume/restore-canonical</code> brings show levels back in daylight.</li>
+<li>2026-10-10 ≈09:55 — POWER LOSS on Orlok (second interruption). Back at ≈09:58; service healthy on the dirty tree,
+  every dirty file parses, head tracking running from boot (the new lurk boot path). All five workers resumed from
+  their saved transcripts at 10:30 (conversation, lurk, goblins, Orlok author, Dragomir author). Operator: daytime,
+  "make as much noise as you like with volume and move however you like" — Orlok's sink unmuted, canonical volumes
+  restored fleet-wide (Mina unreachable again at 10:30: EHOSTUNREACH). A test left a synthetic microphone part
+  (id 987657, "Device Stamp Test Mic") in Orlok's parts.json — remove at cleanup.</li>
+</ul>
+<h2 id="goals-checklist-operator-brief-where-each-lands-reviewed-2026-10-10-1035-at-the-operators-request">Goals checklist (operator brief → where each lands; reviewed 2026-10-10 10:35 at the operator's request)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Operator goal</th>
+<th>Covered by</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1a</td>
+<td>Slow to respond, too long, lecture-like</td>
+<td>D2 agents + D1 client</td>
+<td>DONE: 15–27 words/turn; live guest turns median 1.5 s speech-end → playback (was 10–22 s)</td>
+</tr>
+<tr>
+<td>1b</td>
+<td>Hard to interrupt, won't listen</td>
+<td>D1 full-duplex on XVF3800 nodes, agent-decided <code>interruption</code>, echo-aware barge-in elsewhere</td>
+<td>DONE (61a15133); real guests interrupted Orlok acoustically; human interruption test on peers pending (tracker)</td>
+</tr>
+<tr>
+<td>1c</td>
+<td>Lag / cut off mid-sentence</td>
+<td>D1 ordered chunks, drain-on-stop, no SIGTERM from other sessions, reconnect</td>
+<td>DONE (61a15133)</td>
+</tr>
+<tr>
+<td>1d</td>
+<td>Lurk simplified: move occasionally, head tracking, random movement, silent until PIR/schedule/AI-on; AI mode = all capabilities; unmuted by default; Orlok keeps music</td>
+<td>D3 lurk state machine + idle-tagged poses from every scene author</td>
+<td>DONE (c246bd18), live on all six nodes</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Six personalities per the brief (Orlok deeper + Romanian, Mina lullabies, Groundbreaker ground + protector, Dragomir starts/carriages/anti-Pumpkinhead, Pumpkinhead vs Renfield's sales, Renfield names/contracts/pen)</td>
+<td>D2 prompts + bible</td>
+<td>DONE except Orlok's DEPTH: ElevenLabs cannot; playback pitch shift briefed (<code>brief-orlok-pitch.md</code>), daylight audition pending</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Ten new scenes per character, delete old scenes/poses, max part combinations, stories drive movement, cast video</td>
+<td>D4 + <code>brief-scene-author.md</code>; validator/cache/replace from 1e</td>
+<td>DONE: six shows committed, pushed to every node (<code>push-show.sh</code>), locks refreshed; Orlok's ten played for real</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Goblins all working, looped playlists per window</td>
+<td>D5 reels, keep-alive, resolver, hints</td>
+<td>DONE for Goblins 2 and 3 (proven looping, keep-alive acting); Goblins 1 and 4 staged, off the network (hands)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Rebuild tests around the new scenes, hardware tests, AI-config UI</td>
+<td>D6 phase 4 (test-engineer + ui-engineer)</td>
+<td>DONE: live-data guard, browser fixture, specs on the new contracts, parts-alive hardware test (proven on Orlok), AI settings page + Studio palette (90e5deeb, 93136a64)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Three fleet events with music, video, movement; every half hour; return to original state</td>
+<td>D7 scripts, conductors, runner, beds; <code>fleet-mode hold/release</code>; cron</td>
+<td>DONE: all three rehearsed for real (every node back to lurking, Goblins back on reels), rehearsal defects fixed and re-proven, schedule <code>*/30 17-22</code> armed</td>
+</tr>
+<tr>
+<td>D8</td>
+<td>Chicago time + NTP on every Pi, enforced and reported</td>
+<td>baseline/provision scripts + fleet-health <code>time</code> + <code>check:time</code></td>
+<td>DONE (d42eb74e, 751cabac): every node reports zone/NTP/sync/offset in fleet-health, all six OK</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Deploy everything to all nodes; Mina's files when she is on</td>
+<td>phase 2 + 3b</td>
+<td>pending</td>
+</tr>
+<tr>
+<td>- 2026-10-10 10:35 — D8 enforcement landed: <code>apply-baseline.sh</code> step 8 and the Goblin provision/stabilize scripts</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>converge America/Chicago + NTP; <code>npm run check:time</code> (scripts/check-time.mjs) prints the fleet clock matrix:</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>8/8 reachable nodes OK (zone, NTP, synced, offsets −26…−218 ms; Goblins 1 and 4 unreachable). Still open from</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>D8: fleet-health <code>time {zone, ntpSynced, localTime, offsetMs}</code> + Fleet Command Center flag (lurk-engineer's</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>files; after 1b). PumpkinHead's sink ignored <code>wpctl set-volume @DEFAULT_AUDIO_SINK@</code> but took the set by node</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>id (79); canonical 1.0 restored that way. Mina is reachable again (ssh + health).</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-10 10:45 — phase 1b DONE (lurk, commit c246bd18; report-lurk.md; unit suite 1077 passing); follow-orders</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>overlay hook applied by the lead; Orlok's disk jaw flag restored to true. Scene authors DONE for Orlok and Sir</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Dragomir (commit 406dd3ae, reports saved); Renfield and Groundbreaker authors launched 10:37. Orlok's scene 3</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>played for real (lamp, arm, cached line, 15 s, clean logs); scenes 1,2,4–10 playing for real now in sequence.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Still running: 1a conversation, 1d goblins. Next: 1a/1d commits → gate → deploy all six → per-node runtime state</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>(callouts off, lurk scenes off; Dragomir lurk rotation → scenes 1,2) → push Orlok/Dragomir shows + lock refresh.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-10 10:55 — phase 1a DONE (conversation, commit 61a15133; hooks wired by the lead: ai-status latency/mode,</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>lurk ignores unprompted agent speech + one-shots, panic stops the agent immediately). Shows DONE and committed</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>for Orlok, Sir Dragomir, Groundbreaker (voice-only, empty pose set), Renfield; PumpkinHead and Mina authors</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>running. Orlok's ten scenes PLAYED FOR REAL on this node: all steps succeeded except casts to the offline</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Goblin 1; walls 33/37/15/100/102/87/50/26/26/34 s (event parts 8 ≈ 26 s, 9 ≈ 26 s, 10 ≈ 34 s vs budgets</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>28/20–25/24–28 — the conductor waits per part, so only the totals stretch). A mid-run service restart by another</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>worker cut three responses; those three were replayed clean. Still running: 1d goblins.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-10 11:05 — ALL SIX SHOWS committed (Orlok, Sir Dragomir, Groundbreaker, Renfield, PumpkinHead, Mina</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>with three pre-rendered lullabies in the library); validator 6/6 clean, baseline emptied; conductors 101–103</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>installed on Orlok (validate clean: every event part and bed resolves). Silence rule (skip_turn) on all six</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>agents. Fixed from the log review: jaw-daemon EPIPE uncaught exception; 413s were a deliberate oversize test</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>(10 MB cap). <code>scripts/push-show.sh</code> ready; locked characters' config files match their nodes byte for byte.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Waiting only on 1d (Goblins: Goblin 2 looping its reel already) before the fleet deploy.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-10 11:20 — phase 1d DONE (Goblins, commit 8a58c232): reels proven looping on Goblins 2 and 3, keep-alive</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>on Orlok acting with proof, resolver, manifests, Video Control board; Goblins 1 and 4 staged (need hands; Goblin</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2 runs hot at 79.5 °C). GATE GREEN (the smoke step had been timing out at 60 s on a 1078-test suite; cap raised;</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>the one real failure was test residue the timeout had left in Orlok's live parts.json — synthetic parts</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>987655/987657 — removed). PHASE 2 ROLLOUT RUNNING (<code>/home/remote/mission-scratch/phase2.sh</code>): deploy →</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>health → symbol grep → push-show → lurk-state, nodes 1, 4, 5, 6, 2, then Orlok.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-10 13:00 — PHASE 2 DONE on all six nodes: code 10.7.0 with every new symbol, shows pushed, lurk</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>rotation → [1,2] (off), callouts and lurk scenes off, every node in <code>lurking</code>; locks verified on PumpkinHead's</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>and Sir Dragomir's nodes (fingerprints now ignore node-local <code>backups/</code>). A LAN/internet outage 11:31–12:50 cut</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Mina's and Orlok's pushes and killed the test engineer (both resumed); Renfield's new Pi has no key trust from</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Orlok (an ssh-copy-id was refused by the session's permission layer — operator action), so his deploy and push</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>used the fleet password through <code>MONSTERBOX_SSH_PASSWORD</code> (push-show gained that fallback). Daylight rehearsal of</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>events 101/102/103 running now (<code>/home/remote/mission-scratch/rehearse.sh</code>). Test engineer (phase 4) running;</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>UI engineer next; then docs, log review, memory, tag.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-10 13:45 — Rehearsal 12:58–13:13: all three events played for real; every node released to lurking,</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Goblins 2/3 back on their reels. Defects found and fixed (commits cb7a7c35, a903f8d2, 05c507fb, 751cabac,</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6a5a8f2f): beds reported failed while playing (node play route blocked for the track; now background), the</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>host skipped its own part because its PIR-woken agent counted as a conversation (busy now = guest spoke</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>within 60 s; self never skipped; a guestless awake node sleeps for the show), library.json write race, two</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>casts Goblin 2 would not switch to, probe timeout 2.5 → 6 s, cast proof polls to 6 s, zero-duration clamp</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>no-op, D8 fleet-health <code>time</code> block + Fleet Command Center pill. Proof run of 101 at 13:32 (after the first</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>fixes): 22 ok; the remaining failures were Goblin 1 offline and the two timing items fixed in 6a5a8f2f.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Half-hour schedule armed (<code>*/30 17-22 * * *</code>, through /schedule). Phase 4 UI DONE (commit 90e5deeb); phase 5</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>docs DONE (dbe2fe13). Test engineer still running. Final peer deploy starting.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-10 15:20 — phase 4 tests DONE (93136a64: gate green, 1103 unit, browser re-runs clean, parts-alive</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>proven on Orlok); fleet log review and ear-check recorded; PumpkinHead's crash-looping MCP user units disabled at</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>operator direction; 50 commits pushed to origin (gate green on push). MISSION COMPLETE except the operator items</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>in KNOWN-BUGS (Renfield key/baseline, Goblins 1/4, Goblin 3 orientation, Goblin 2 heat, Orlok pitch audition,</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>daylight human-interruption test on peers, Mina lullabies by ear). Tagging v10.7.0.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-10 20:40 — MINA HARDWARE SESSION (unfinished; handed to the next session). Her servos DO work: raw</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>register sweeps and the app both move the neck and eyes once the parts carry the channels the plugs are really</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>on. The operator rewired several times; the last confirmed set is neck ch15, eye ch14, jaw ch10, laser ch11,</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>coffin door MDD10A DIR 17 / PWM 18 (parts.json on her node and in the repo, d5f71d51). Jaw: the servo responds</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>(operator felt it, "moved once"), the earlier clench was software (idle pose "Jaw Crack" + jaw park at 28°,</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>past the mechanical closed point); jaw animation is DISABLED on her node and the channel released until the</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>jaw's open/closed angles are calibrated. Laser: never seen lit on any channel (a PCA output pin cannot power a</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>laser; needs a transistor or the rose-lamp relay path). Coffin door: never moved; the Pi's DIR/PWM pins toggle</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>(proven by pinctrl sampling and static drive), so the MDD10A's motor supply/ground/M1-vs-M2 is the suspect.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Chip proven: 0x40 awake, 50 Hz, totem-pole, registers follow every command. Helper on her node:</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>/home/remote/mina-sweep.py &lt;channels&gt;</code> (raw sweep, hold the lurk machine first). Her full-rig show (d5f71d51's</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>predecessor 5242ac53) is pushed but its poses assume jaw 28–38°, neck 122–160°, eye 68–112°: re-check after</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>calibration.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-11 00:00 — MINA OVERNIGHT (autonomous, operator asleep; on her node). Witness for every claim below is</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>her ReSpeaker plus a spectral servo-whine detector (a servo MOVE is a &gt;=30-50 dB tone at 5-7 kHz lasting</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>~0.1 s per 15°; a silent command means no travel; RMS alone sees nothing and the XVF3800 suppresses steady</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>noise, so a silent stall is inaudible). Chip readback checked after every command.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>JAW (part 1, ch10): the servo does NOT position-follow. It whines only when a pulse train first appears</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>after a release, and ignores every width change while energized — through the API and through raw register</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>writes that bypass all software — while the eye (ch14) and neck (ch15) on the same chip whine on every move.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>That is the operator's "moved once" and the clench at any park: dead feedback pot or a continuous-rotation</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>unit. Registered in <code>config/physical-faults.json</code> (poses drop it, the daemon refuses ch10), jaw animation</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>disabled on the node, channel released. Hands-on proof and the swap are in <code>docs/hardware/OPERATOR-TODO.md</code>.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>NECK (part 2, ch15): travels only ~110-138 (whines 110&lt;-&gt;125&lt;-&gt;140; silent at 95 and at 145-170; hunts at</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>140). The full-rig show parked her at 140 and gazed to 160, i.e. pressed into the upper stop. Profile 2:2</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>written 110-136, center 123. EYE (part 3, ch14): ~68-112 (short whines into stops near 66 and 114); profile</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2:3 written 70-110, center 89. Both profiles live in her node-local <code>data/calibration_profiles.json</code>.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>SHOW: poses re-aimed linearly (neck 122-160 -&gt; 112-136, park 140 -&gt; 123; eye 68-112 -&gt; 70-110), validator 0</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>errors; scenes 3 and 8 played for real at 15 % volume (speech, poses, door and laser steps all reported</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>success; jaw dropped). COFFIN DOOR: DIR 17 / PWM 18 sampled hi/lo correctly on 2 s jogs at 100 %, motor</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>silent both ways — hardware (MDD10A VIN / common ground / M1-vs-M2). LASER: hardware (relay or MOSFET).</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>CALIBRATION CRUD (operator's second ask): API-level audit of every part type, 15 findings</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>(<code>report-calibration-crud-api.md</code>): the server persists every page write to the right character; "save does</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>not take" is key mismatches and what the list hands the Edit tab (F1-F4 high). UI-level audit with a durable</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Playwright spec follows; fixes applied in one pass afterwards.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>- 2026-10-11 00:15 — MINA OVERNIGHT, PART 2 (calibration CRUD, the operator's second ask) DONE. Two audits ran side by</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>side on her node: API-level (every part type, 249 calls per character on the node-local copies of characters 3 and</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5, 15 findings, zero wrong-character writes) and UI-level (Playwright against the live page with throwaway parts</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>on Mina, 18 findings, 16 of 18 tests failing before the fixes). The server persisted every write to the right</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>character; the operator's "save does not take" was: actuator/motor limits saved under <code>config.*</code> while the jog</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>route read top-level (UI showed 12000, hardware ran 15000); the pre-filled Advanced JSON textarea re-applied over</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>the form on every Save for motors, actuators and steppers (pins, board and limits reverted); the Edit tab's</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Delete threw a ReferenceError; the list row dropped controlBoard / BTS pins / limits so a BTS part re-opened as</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>MDD10A; <code>head_tracking</code> offered as a part type (the schema gate then blocked every commit); Revert to Model</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>stripped a servo's channel and address; Invert blessed a placeholder; <code>config.modelId</code> vs top-level; create</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>skipped validation and answered 500 on a locked character; global <code>PUT /api/parts/:id</code>, webcam controls and</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>every <code>/api/calibration</code> profile route resolved the SELECTED character regardless of <code>?characterId</code>. All fixed</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>in two passes (a0388040, 16a38fe7, and the follow-up), verified live after restarts: 22/22 API checks, and the</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>durable spec <code>tests/browser/calibration-part-crud.spec.js</code> at 17 pass / 1 skip with parts.json byte-restored.</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Left open (low, in KNOWN-BUGS): modal GPIO "required" unvalidated; Calibrated-off stamp churns a backup; speaker</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>volume/bass/treble unread; head-animation <code>/params</code> does not persist. Also tonight: the servo daemon's</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>physical-fault veto was frozen by <code>mb_safety</code>'s process-lifetime JSON cache (fixed, verified: REFUSED ch10);</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>the broken-part drop warning is throttled to one line per ten minutes per part; head tracking's configured</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>window set to centre 123 / range 26 (node-local super-powers); the node boots into lurking by design (idle</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>poses + head tracking, agent and PIR wake off at night). Log review done from Mina (all peers offline at</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>23:35, unverified). Reports: <code>report-calibration-crud-{api,ui,fixes}.md</code>. Hands-on list for the morning:</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>docs/hardware/OPERATOR-TODO.md</code> (jaw servo swap and proof, MDD10A checks, laser relay, head-tracking sign).</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
