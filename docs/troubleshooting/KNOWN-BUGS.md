@@ -2261,9 +2261,9 @@ reboot-proven; Goblin 4 hardened in part, then locked up (see below).**
   over SSH and run `bash scripts/goblin-os/harden-all.sh 192.168.8.244`. Its queue is `Bigskull.mp4`, which the
   reel metrics measured black in 100% of samples, and its mpv exits at spawn (read `logs/mpv.stderr.log` once in).
   It wants the showcase reel, which is staged on Orlok.
-- 🟡 **Goblin 1 plays the 2026-09-26 Greenskull loop, not its showcase reel.** The reel lives in
+- ✅ **(FIXED 2026-10-12 17:59: Orlok's `POST /video-library/api/goblins/goblin-192-168-8-40/show` copied the reel, 155,805,956 B in 52 s; on-device sha256 `f50c871f…04a3` equals the staged playlist; one mpv; `show.json` records it, so it survives a power cut without Orlok.) Goblin 1 plays the 2026-09-26 Greenskull loop, not its showcase reel.** The reel lives in
   `/home/remote/goblin-reels/reels/` on Orlok (offline today); the keep-alive delivers it when Orlok is back.
-- 🟡 **Goblin 1 has no NOPASSWD sudo** (the other three do); fleet scripts pass the SSH password to `sudo -S`.
+- ✅ **(FIXED 2026-10-12, operator's direction: `/etc/sudoers.d/010_pi-nopasswd`, same rule as Goblins 2-4, `visudo -c` clean.) Goblin 1 has no NOPASSWD sudo.**
 - ⚪ `GOBLIN_MPV_EXTRA_ARGS` in the unit is unquoted, so systemd passes only `--no-config` and drops the rest
   (`Invalid environment assignment, ignoring: --no-osc` ×20 in the journal). Left as is: every proven show has
   played this way, and quoting it would switch on `--video-sync=display-resample --display-fps=59.94` untested.
