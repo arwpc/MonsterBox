@@ -5,6 +5,7 @@
 #   /home/remote/goblin            the player app (a copy of a working Goblin's dir, node_modules included)
 #   /home/remote/media/video       the video files
 #   /home/remote/goblin-os/        this script + goblin.service + goblin-setup.sh + goblin-autostart.sh + stabilize-goblin.sh
+#                                  + harden-goblin.sh + goblin-wifi-guard.sh
 # Idempotent. Mirrors what Goblin 3 (192.168.8.14, trixie) runs: Debian nodejs 20 + mpv 0.40, vc4-kms-v3d,
 # hdmi_group=1/hdmi_mode=4 (720p60), gpu_mem=128, the gold "Goblin Gold Media Player" unit, CLI-only boot.
 set -u
@@ -56,6 +57,11 @@ echo "   $(timedatectl show -p Timezone -p NTP -p NTPSynchronized --value 2>/dev
 
 say "6. OS hygiene (stabilize-goblin.sh)"
 [ -f "$D/stabilize-goblin.sh" ] && bash "$D/stabilize-goblin.sh"
+
+say "7. Wi-Fi that survives a power cut, and a player that boots into its show (harden-goblin.sh)"
+# A re-imaged Goblin keeps its Wi-Fi profile in /etc/netplan, where a power cut can leave it 0 bytes
+# and the unit never rejoins (Goblins 1 and 4, 2026-10). This moves it to a guarded keyfile.
+[ -f "$D/harden-goblin.sh" ] && bash "$D/harden-goblin.sh" || echo "   harden-goblin.sh missing from $D; run scripts/goblin-os/harden-all.sh <ip> from a MonsterBox node"
 
 say "done. Reboot to apply the display config and the CLI-only target: sudo reboot"
 echo "After the reboot: curl -s http://127.0.0.1:3001/health | head -c 120 ; pgrep -c mpv   (expect 1)"

@@ -17,7 +17,9 @@ dd if=/dev/zero of=/dev/fb0 bs=1M count=1 2>/dev/null || true
 # Ensure runtime dir for user 1000 (remote)
 mkdir -p /run/user/1000
 mkdir -p /run/user/1000/pulse
-chown -R remote:remote /run/user/1000
+# Not recursive: a desktop login leaves FUSE mounts here (doc, gvfs) that even root cannot
+# chown, and under set -e that failure kept the player from starting (Goblin 4, 2026-10-12).
+chown remote:remote /run/user/1000 /run/user/1000/pulse || true
 chmod 700 /run/user/1000
 
 # Device permissions for DRM/KMS
@@ -28,8 +30,8 @@ chmod 666 /dev/tty1 2>/dev/null || true
 
 # Kill anything holding our port/display
 lsof -ti:3001 | xargs -r kill -9 2>/dev/null || true
-pkill -f mpv 2>/dev/null || true
-pkill -f vlc 2>/dev/null || true
+#pkill -f mpv 2>/dev/null || true
+#pkill -f vlc 2>/dev/null || true
 
 # Switch to VT1 for DRM access
 chvt 1 2>/dev/null || true

@@ -7,6 +7,8 @@ const DEFAULT_BASE_DIR = '/home/remote/goblin';
 const TMPFS_DIR = '/dev/shm/goblin';
 const TMPFS_LIMIT_BYTES = 512 * 1024 * 1024; // 512MB cap
 const CACHE_DIR = '/home/remote/goblin/cache/720p60';
+const QUICK_EXIT_MS = 3000;
+const MAX_RESPAWN_DELAY_MS = 60000;
 
 class QueueManager {
   constructor(mpvController, options = {}) {
@@ -14,6 +16,9 @@ class QueueManager {
     this.baseDir = options.baseDir || DEFAULT_BASE_DIR;
     this.queueFile = options.queueFile || path.join(this.baseDir, 'queue.json');
     this.stateFile = options.stateFile || path.join(this.baseDir, 'state.json');
+    // Last non-empty queue. A Goblin must come back from a power cut playing its show
+    // with no controller on the network, so this survives a lost or emptied queue.json.
+    this.showFile = options.showFile || path.join(this.baseDir, 'show.json');
 
     this.queue = { videos: [], currentIndex: 0, loopMode: 'none', playing: false };
     this.saveTimer = null;
@@ -34,12 +39,78 @@ class QueueManager {
 
   async load() {
     await this.ensureDirs();
-    try {
-      const data = await fs.readFile(this.queueFile, 'utf8');
-      this.queue = JSON.parse(data);
-    } catch (_) {
-      await this.save();
+    // Goblins lose power without a shutdown. A queue.json caught mid-write used to fail
+    // JSON.parse here and be overwritten with an EMPTY queue, so the unit booted dark until
+    // a controller re-sent its show (Goblins 2 and 3, 2026-10-10/11).
+    const loaded = await this._readQueueFile(this.queueFile);
+    if (loaded && loaded.videos.length > 0) {
+      this.queue = loaded;
+      return;
     }
+    const show = await this._readQueueFile(this.showFile);
+    if (show && show.videos.length > 0) {
+      this.queue = { ...show, currentIndex: 0, playing: true };
+      console.log(`queue.json ${loaded ? 'empty' : 'unreadable'}; restored ${show.videos.length} video(s) from show.json`);
+    } else {
+      const fallback = await this._fallbackQueue();
+      if (fallback) {
+        this.queue = fallback;
+        console.log(`queue.json ${loaded ? 'empty' : 'unreadable'} and no show.json; built a queue of ${fallback.videos.length} local video(s)`);
+      } else if (loaded) {
+        this.queue = loaded;
+      }
+    }
+    await this.save();
+  }
+
+  async _readQueueFile(file) {
+    try {
+      const parsed = JSON.parse(await fs.readFile(file, 'utf8'));
+      if (!parsed || !Array.isArray(parsed.videos)) return null;
+      return {
+        videos: parsed.videos.filter(v => v && typeof v.filename === 'string'),
+        currentIndex: Number.isInteger(parsed.currentIndex) ? parsed.currentIndex : 0,
+        loopMode: ['none', 'single', 'queue'].includes(parsed.loopMode) ? parsed.loopMode : 'queue',
+        playing: parsed.playing !== false
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Nothing to restore: play the unit's own reel(s) if it has any, else every clip it holds.
+  async _fallbackQueue() {
+    const mediaRoot = this.mpv && this.mpv.mediaRoot ? this.mpv.mediaRoot : '/home/remote/media/video';
+    let names;
+    try {
+      names = (await fs.readdir(mediaRoot)).filter(n => /\.(mp4|mov|avi|mkv)$/i.test(n)).sort();
+    } catch (_) {
+      return null;
+    }
+    const reels = names.filter(n => /^reel-/i.test(n));
+    const picked = reels.length > 0 ? reels : names;
+    if (picked.length === 0) return null;
+    const now = Date.now();
+    return {
+      videos: picked.map((filename, i) => ({ id: String(now + i), filename, addedAt: new Date(now).toISOString(), playCount: 0 })),
+      currentIndex: 0,
+      loopMode: 'queue',
+      playing: true
+    };
+  }
+
+  // Temp file + fsync + rename, so a power cut leaves the old file or the new one, never a
+  // truncated one.
+  async _writeAtomic(file, text) {
+    const tmp = `${file}.tmp`;
+    const handle = await fs.open(tmp, 'w');
+    try {
+      await handle.writeFile(text);
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+    await fs.rename(tmp, file);
   }
 
   async save() {
@@ -47,9 +118,19 @@ class QueueManager {
     this.saveTimer = setTimeout(async () => {
       try {
         await this.ensureDirs();
-        await fs.writeFile(this.queueFile, JSON.stringify(this.queue, null, 2));
+        await this._writeAtomic(this.queueFile, JSON.stringify(this.queue, null, 2));
+        if (this.queue.videos.length > 0) {
+          const show = { videos: this.queue.videos, loopMode: this.queue.loopMode };
+          const text = JSON.stringify(show, null, 2);
+          // playCount changes every pass; rewrite show.json only when the line-up changes.
+          const key = JSON.stringify([show.loopMode, show.videos.map(v => v.filename)]);
+          if (key !== this._lastShowKey) {
+            await this._writeAtomic(this.showFile, text);
+            this._lastShowKey = key;
+          }
+        }
       } catch (e) {
-        // noop
+        console.error('queue save failed:', e.message);
       }
     }, 75);
   }
@@ -126,13 +207,38 @@ class QueueManager {
       || (this.queue.loopMode === 'queue' && this.queue.videos.length === 1);
 
     // Play directly - videos are already optimized for Pi3
+    this._lastSpawnAt = Date.now();
     await this.mpv.play(videoPath, { loop });
     video.playCount++;
     await this.save();
   }
 
+  // An mpv that dies right after spawning (no HDMI sink, DRM busy, unreadable file) used to be
+  // respawned at once, forever: 65 spawns in 23 s on Goblin 4 (2026-10-12), which starved the box
+  // until SSH and HTTP stopped answering and it looked like it had dropped off the network.
+  // Quick exits now back off 2 s, 4 s, ... up to 60 s; a pass that ran normally resets it.
+  _respawnDelayMs() {
+    const ranMs = Date.now() - (this._lastSpawnAt || 0);
+    if (ranMs >= QUICK_EXIT_MS) {
+      this._quickExits = 0;
+      return 0;
+    }
+    this._quickExits = (this._quickExits || 0) + 1;
+    if (this._quickExits < 2) return 0;
+    const delay = Math.min(MAX_RESPAWN_DELAY_MS, 1000 * 2 ** (this._quickExits - 1));
+    console.error(`mpv exited after ${ranMs} ms (${this._quickExits} quick exits in a row); next start in ${delay / 1000} s`);
+    return delay;
+  }
+
   async onVideoEnd() {
     if (!this.queue.playing) return;
+    const delay = this._respawnDelayMs();
+    if (delay > 0) {
+      clearTimeout(this._respawnTimer);
+      await new Promise(resolve => { this._respawnTimer = setTimeout(resolve, delay); });
+      // A stop, or a new start, during the wait owns the player now.
+      if (!this.queue.playing || (this.mpv && this.mpv.process)) return;
+    }
     if (this.queue.loopMode !== 'single') {
       this.queue.currentIndex += 1;
       await this.playNext();

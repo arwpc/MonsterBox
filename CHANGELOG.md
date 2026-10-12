@@ -2,6 +2,34 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [Unreleased] - 2026-10-12: Goblins stay on MonsterNet and boot into their show
+
+Operator brief: Goblins 1 and 4 kept dropping off the network and had to be set up by hand; every Goblin must
+boot into MonsterBox and run its video without ever losing Wi-Fi. Evidence and open items are in
+`docs/troubleshooting/KNOWN-BUGS.md` → Goblins (2026-10-12 status).
+
+### Fixed
+
+- **Wi-Fi profile lost to a power cut.** The re-imaged Goblins kept their Wi-Fi profile in
+  `/etc/netplan/90-NM-<uuid>.yaml`. Units are switched off at the wall, and a cut during a rewrite left the file
+  0 bytes, so NetworkManager never joined again. New `scripts/goblin-os/harden-goblin.sh` (fleet runner
+  `harden-all.sh`) moves the profile to a keyfile with a root-only copy. Autoconnect retries forever, power-save
+  is off and the hidden-SSID probe is on. It installs `goblin-wifi-guard.service`, which restores a missing or
+  empty profile and walks a reconnect ladder: connection up, then radio cycle, then driver reload, then a
+  rate-limited reboot. `provision-goblin.sh` runs it on every rebuild.
+- **mpv crash loop starved the unit.** The player respawned a dying mpv with no delay at `SCHED_RR` 80, so the
+  box answered ping and nothing else. Quick exits now back off (2 s doubling to 60 s). `goblin.service` drops
+  real-time scheduling and no longer waits for `network-online.target`.
+- **Show erased by a power cut.** `queue.json` is written atomically, and `show.json` remembers the last line-up.
+  A unit with a lost or empty queue boots into that show, else its own `reel-*.mp4`, else every clip it holds,
+  with no controller needed.
+- **Player failed to start after a desktop login.** `goblin-setup.sh`'s recursive chown of `/run/user/1000` hit a
+  session's FUSE mounts under `set -e`.
+- **Goblins 1 and 4 restored to players.** An SD-card fixup had made them desktops with `goblin.service` disabled
+  and a timer writing to the boot partition; harden-goblin.sh undoes it.
+- `goblin/systemd/goblin.service` in the repo was a stale unit (`src/server.js`, a watchdog the app never
+  feeds); it now matches what the Goblins run.
+
 ## [10.7.0] - 2026-10-10: Warner Castle tuning (conversation, lurk, six personas, new shows, Goblin reels, fleet events)
 
 The operator's brief (2026-10-09): the characters were slow to answer, lectured, would not be interrupted and cut

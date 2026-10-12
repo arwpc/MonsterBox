@@ -2221,8 +2221,55 @@ Groundbreaker, Mina; Renfield through the fleet password). Everything below is t
 
 ### Goblins (video displays) — opened from the 2026-09-25 gold-snapshot review
 
+**2026-10-12 status (from Alpha, the new dev box): all four Goblins on MonsterNet; 1, 2 and 3 hardened, playing and
+reboot-proven; Goblin 4 hardened in part, then locked up (see below).**
+- ✅ **FIXED: Goblins 1 and 4 "drop off the WiFi and have to be configured by hand."** Root cause, read from Goblin
+  1's persistent journal and the boot-partition diagnostics: the re-imaged units (trixie, Imager + cloud-init)
+  kept the Wi-Fi profile as a netplan file, `/etc/netplan/90-NM-<uuid>.yaml`. The Goblins are switched off at the
+  wall: every recorded boot on Goblin 1 ends with no shutdown. A power cut during a rewrite left the profile
+  **0 bytes** (Goblin 1's `90-NM-993bf648….yaml`, the wlan0 profile, truncated 2026-09-26 17:14). With no profile,
+  NetworkManager brought the radio up and never tried to join: boots of 2026-10-09 and 10-10 show `wlan0`
+  reaching `disconnected` and no activation at all. Goblins 2 and 3 kept a NetworkManager keyfile
+  (`preconfigured`) and never lost theirs. Fix: `scripts/goblin-os/harden-goblin.sh` (fleet runner
+  `harden-all.sh`). The profile is a keyfile, and a root-only copy sits in `/etc/goblin/wifi/`. Autoconnect retries
+  are infinite, Wi-Fi power-save is off and the hidden-SSID probe is on. `goblin-wifi-guard.service` restores the
+  profile within 30 s if it is ever missing or empty, then walks a reconnect ladder: connection up, then radio
+  cycle, then brcmfmac reload, then a reboot (held below 15 min uptime and capped at 2 per 6 h). Proven on Goblin 4: truncating
+  the profile was repaired at the next check with the link up throughout; a forced `nmcli connection down` came
+  back by itself in 74 s with video playing throughout.
+- ✅ **FIXED: a Goblin "on the network" that answers ping and nothing else.** `mpv` that dies at spawn was respawned
+  at once, forever (65 spawns in 23 s on Goblin 4), and `goblin.service` ran at `SCHED_RR` 80, so the storm starved
+  sshd (`kex_exchange_identification: Connection reset by peer`) and HTTP while the kernel still answered ping:
+  the same picture as Goblin 3 on 2026-09-26. Fix: the player backs off quick mpv exits (2 s doubling to 60 s;
+  `goblin/src/queueManager.js`), and harden-goblin.sh removes real-time scheduling from the unit (`Nice=-10`).
+- ✅ **FIXED: a Goblin boots dark until a controller re-sends its show.** `queue.json` was written in place; a power
+  cut mid-write failed `JSON.parse` at boot and `load()` overwrote it with an EMPTY queue (Goblins 2 and 3 were found
+  that way today with Orlok, the keep-alive controller, offline). Writes are now temp + fsync + rename, and
+  `show.json` keeps the last non-empty line-up; boot restores from it, or else queues the unit's own `reel-*.mp4`
+  (else every clip it holds). Goblins 2 and 3 came back on their reels from their own disks. 8 unit tests in
+  `tests/unit/goblin-queue-persistence.test.js`.
+- ✅ **FIXED: Goblins 1 and 4 were desktops with the player disabled.** A one-time SD-card fixup run on 2026-10-11/12
+  (files `claude-fixup.sh`, `CLAUDE-FIXUP-README.txt`, `claude-diag/` on the boot partition) set `graphical.target`
+  + lightdm autologin, disabled `goblin.service`, renamed Goblin 4's 720p drop-in away, and installed a timer
+  writing to the FAT boot partition every 10 min (a FAT write cut by a power loss can stop a Pi booting).
+  harden-goblin.sh undoes those. It keeps that fixup's useful part, the recreated MonsterNet keyfile. It also
+  makes `goblin-setup.sh` survive a desktop session's FUSE mounts. Its `chown -R /run/user/1000` failed under
+  `set -e` and kept the player from starting.
+- ✅ `goblin.service` no longer waits for `network-online.target`; the show plays from local disk with no Wi-Fi.
+- 🔴 **Goblin 4 (.244) locked up in the mpv storm during the rollout, before the back-off reached it.** It
+  answers ping only. **Needs hands:** a power cycle. Then, inside the first ~40 s of boot, stop `goblin.service`
+  over SSH and run `bash scripts/goblin-os/harden-all.sh 192.168.8.244`. Its queue is `Bigskull.mp4`, which the
+  reel metrics measured black in 100% of samples, and its mpv exits at spawn (read `logs/mpv.stderr.log` once in).
+  It wants the showcase reel, which is staged on Orlok.
+- 🟡 **Goblin 1 plays the 2026-09-26 Greenskull loop, not its showcase reel.** The reel lives in
+  `/home/remote/goblin-reels/reels/` on Orlok (offline today); the keep-alive delivers it when Orlok is back.
+- 🟡 **Goblin 1 has no NOPASSWD sudo** (the other three do); fleet scripts pass the SSH password to `sudo -S`.
+- ⚪ `GOBLIN_MPV_EXTRA_ARGS` in the unit is unquoted, so systemd passes only `--no-config` and drops the rest
+  (`Invalid environment assignment, ignoring: --no-osc` ×20 in the journal). Left as is: every proven show has
+  played this way, and quoting it would switch on `--video-sync=display-resample --display-fps=59.94` untested.
+
 **2026-10-10 status (castle tuning, `docs/development/missions/2026-10-castle-tuning/report-goblins.md`):**
-- 🔴 **Goblin 1 (.40) and Goblin 4 (.244) are off the network.** Their showcase reel is staged; within about a
+- ✅ **(2026-10-12: both back on MonsterNet; see the status block above.) Goblin 1 (.40) and Goblin 4 (.244) are off the network.** Their showcase reel is staged; within about a
   minute of a unit answering, the keep-alive copies the 156 MB reel and starts it. **Needs hands:** power, PSU, SD,
   Wi-Fi on each; afterwards `pgrep -c mpv` = 1 on the unit and the Video Control card shows the reel. Also say where
   Goblin 4 stands so it can get a fitted reel.
@@ -2381,7 +2428,7 @@ reports were not kept.
   day (01:55 and 11:20) were wrong; the 11:20 one was inferred by elimination from what the TVs
   showed and the operator overruled it after rebooting the units. Do not infer this mapping from
   a screen again: ask the operator, and identify a unit by hostname.
-- 🔴 **Goblins drop off the WiFi after a reboot and do not come back on their own (2026-09-26).**
+- ✅ **(FIXED 2026-10-12, see the status block above.) Goblins drop off the WiFi after a reboot and do not come back on their own (2026-09-26).**
   All three Goblins are on `wlan0` (NetworkManager, "preconfigured"; `eth0` unavailable). After
   the 01:09 fleet reboot, Goblin Two re-joined within a minute; Goblin One (.40) never appeared
   and Goblin Three (.14, MAC `b8:27:eb:b1:c9:22`) answered ping from 01:28 with 10–200 ms jitter but
