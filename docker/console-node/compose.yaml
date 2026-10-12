@@ -1,0 +1,28 @@
+# Alpha's console node. State lives in ~/monsterbox-console (seed it once with seed-state.sh).
+# Hostname "alpha" maps to character 7 (hardware "none") through config/animatronics.json.
+name: monsterbox-console
+services:
+  monsterbox:
+    build:
+      context: ../..
+      dockerfile: docker/console-node/Dockerfile
+    image: monsterbox-console:latest
+    container_name: monsterbox-console
+    hostname: alpha
+    restart: unless-stopped
+    ports:
+      - "3000:3000"          # HTTPS UI + Orchestration Console. 3100 (test listener) stays inside.
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      TZ: America/Chicago
+    env_file:
+      - path: /etc/monsterbox/env   # MONSTERBOX_SSH_PASSWORD, like every node
+        required: false
+    volumes:
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/data:/app/data
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/config:/app/config
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/certs:/app/certs:ro
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }

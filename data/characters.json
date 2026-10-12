@@ -57,5 +57,11 @@
     "name": "Renfield",
     "elevenLabsAgentId": "agent_1501m04ks76jf5svnxb70zyvz6s1",
     "activeImage": "renfield.jpg"
+  },
+  {
+    "id": 7,
+    "name": "Alpha",
+    "activeImage": "alpha-hal.jpg",
+    "hardware": "none"
   }
 ]

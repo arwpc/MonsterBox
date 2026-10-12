@@ -1,0 +1,16 @@
+# Build context for docker/console-node: ship code only. State (data/, node-local config, certs)
+# is mounted from the host so the container never writes into the git tree.
+.git
+node_modules
+data
+backups
+tests
+test-results
+playwright-report
+docs
+certs
+logs
+.env
+.claude
+.vscode
+*.log

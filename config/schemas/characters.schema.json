@@ -11,7 +11,8 @@
       "name": { "type": "string" },
       "elevenLabsAgentId": { "type": "string" },
       "activeImage": { "type": "string" },
-      "sttConfig": { "type": "object" }
+      "sttConfig": { "type": "object" },
+      "hardware": { "type": "string", "enum": ["none"], "description": "'none' marks a node with no hardware of its own (Alpha, the Orchestration Console dev box): parts.json must be empty, and the pact suite checks that instead of requiring an enabled part." }
     }
   }
 }

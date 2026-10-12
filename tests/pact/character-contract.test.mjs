@@ -77,9 +77,13 @@ describe('Character Pact Suite', function () {
         expect(result.valid, `schema errors:\n${summary}`).to.equal(true);
       });
 
-      it('has parts.json with at least one enabled part', function () {
+      it('has parts.json with at least one enabled part (none at all for a hardware:none console)', function () {
         const parts = readJsonOrNull(path.join(charDir, 'parts.json'));
         expect(parts, 'parts.json parses').to.be.an('array');
+        if (character.hardware === 'none') {
+          expect(parts.length, 'a hardware:none character declares no parts').to.equal(0);
+          return;
+        }
         const enabled = parts.filter((p) => p.enabled !== false);
         expect(enabled.length, 'enabled parts count').to.be.greaterThan(0);
       });

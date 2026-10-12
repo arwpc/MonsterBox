@@ -1065,6 +1065,7 @@ Re-check with `npm run check:discovery`, `npm run check:time` and
 | Sir Dragomir | 4 | 192.168.8.130 | 🟢 Online, config-locked; PIR dead (wakes by schedule, AI or fleet) |
 | Groundbreaker | 5 | 192.168.8.200 | 🟢 Online; motor dead, show is voice only |
 | Renfield | 6 | 192.168.8.249 | 🟢 Online (Pi 4B since 2026-09-27), unlocked; no SSH key trust from Orlok yet |
+| Alpha | 7 | 192.168.8.223 | Console node: the operator's Ubuntu dev box, no hardware (HAL eye picture); runs in Docker (`docker/console-node/`), skipped by `deploy:all` |
 
 Sir Dragomir carries 3 PCA9685 servos — head ch0 (continuous), jaw ch1, magic box ch3 —
 plus webcam, mic, speaker. (`parts.json` is the source of truth for channels; older docs

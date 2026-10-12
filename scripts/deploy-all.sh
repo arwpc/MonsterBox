@@ -35,7 +35,9 @@ fi
 # Enumerate nodes from the roster — id + ip + name, no hardcoding.
 mapfile -t NODES < <(node -e "
   const a = require('./config/animatronics.json').animatronics || [];
-  for (const n of a) if (n.id != null && n.ip) console.log([n.id, n.ip, String(n.name||'').replace(/\s+/g,'_')].join(' '));
+  // deploy:false marks a node that updates itself from git (Alpha, the dev box): rsyncing over
+  // its working tree would clobber uncommitted work.
+  for (const n of a) if (n.id != null && n.ip && n.deploy !== false) console.log([n.id, n.ip, String(n.name||'').replace(/\s+/g,'_')].join(' '));
 ")
 
 if [ "${#NODES[@]}" -eq 0 ]; then
