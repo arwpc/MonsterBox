@@ -2256,6 +2256,15 @@ reboot-proven; Goblin 4 hardened in part, then locked up (see below).**
   makes `goblin-setup.sh` survive a desktop session's FUSE mounts. Its `chown -R /run/user/1000` failed under
   `set -e` and kept the player from starting.
 - ✅ `goblin.service` no longer waits for `network-online.target`; the show plays from local disk with no Wi-Fi.
+- ✅ **FIXED 2026-10-12 19:05: after a fleet-event cast the player lost track of the mpv on screen.** `mpvController.stop()`
+  waited 1 s after SIGTERM and then forgot the process; a hardware-decoding mpv on a Pi 3 takes longer, and when the
+  replaced mpv finally exited its handler nulled `this.process` (now the NEW mpv) and fired `onEnd`. Seen after the
+  18:30 event on Goblins 2 and 3: the reel on screen, `/health` saying `mpvRunning:false`. Orlok's keep-alive then
+  failed its start proof, stopped the queue, and stood down ("cannot hold the display", "respawn storm"). The same
+  late `onEnd` made a skip advance twice. Fix (`goblin/src/mpvController.js`): only the current process may clear
+  state or end a pass, a deliberate stop detaches before signalling, and stop waits up to 5 s for the display to be
+  released. 3 tests in `tests/unit/goblin-mpv-tracking.test.js` (2 fail on the old controller). Deployed to Goblins
+  1-3 with `harden-all.sh` (it now ships mpvController.js too); keep-alive resumes proven on all three.
 - 🔴 **Goblin 4 (.244) locked up in the mpv storm during the rollout, before the back-off reached it.** It
   answers ping only. **Needs hands:** a power cycle. Then, inside the first ~40 s of boot, stop `goblin.service`
   over SSH and run `bash scripts/goblin-os/harden-all.sh 192.168.8.244`. Its queue is `Bigskull.mp4`, which the

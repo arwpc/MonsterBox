@@ -27,6 +27,9 @@ boot into MonsterBox and run its video without ever losing Wi-Fi. Evidence and o
   session's FUSE mounts under `set -e`.
 - **Goblins 1 and 4 restored to players.** An SD-card fixup had made them desktops with `goblin.service` disabled
   and a timer writing to the boot partition; harden-goblin.sh undoes it.
+- **Player lost track of the mpv on screen after a cast.** A replaced mpv that exited late (Pi 3 hardware decode)
+  cleared the new process and fired its end, so Orlok's keep-alive saw nothing playing and stopped the queue. Only
+  the current mpv may now clear state; stop waits up to 5 s for the display.
 - `goblin/systemd/goblin.service` in the repo was a stale unit (`src/server.js`, a watchdog the app never
   feeds); it now matches what the Goblins run.
 

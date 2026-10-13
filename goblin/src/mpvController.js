@@ -4,6 +4,7 @@ const fs = require('fs');
 
 // Standardized 720p30 video directory for all Goblins
 const DEFAULT_MEDIA_ROOT = '/home/remote/media/video';
+const STOP_WAIT_MS = 5000;
 const LOG_DIR = '/home/remote/goblin/logs';
 try { fs.mkdirSync(LOG_DIR, { recursive: true }); } catch (_) { }
 
@@ -132,37 +133,45 @@ class MPVController {
     else if (envMode) args.push(`--drm-mode=${envMode}`);
     args.push(videoPath);
 
-    this.process = spawn('mpv', args, {
+    const proc = spawn('mpv', args, {
       detached: false,
       stdio: ['ignore', 'ignore', 'pipe'], // capture only stderr for diagnostics
       env: process.env // explicitly pass environment
     });
+    this.process = proc;
 
     // Handle spawn errors
-    this.process.on('error', (err) => {
+    proc.on('error', (err) => {
       console.error('MPV spawn error:', err);
+      if (this.process !== proc) return;
       this.process = null;
       this.currentVideo = null;
     });
 
     try {
       const logPath = path.join('/home/remote/goblin', 'logs', 'mpv.stderr.log');
-      this.process.stderr.on('data', (buf) => {
+      proc.stderr.on('data', (buf) => {
         try { fs.appendFile(logPath, buf, () => { }); } catch (_) { }
       });
     } catch (_) { }
 
     this.currentVideo = filename;
 
-    this.process.on('exit', (code, signal) => {
+    const playing = filename;
+    proc.on('exit', (code, signal) => {
       if (code !== 0 && code !== null) {
         console.error(`MPV exited with code ${code}, signal ${signal}`);
       }
+      // An mpv that was replaced exits late (a hardware-decoding mpv on a Pi 3 can take seconds
+      // after SIGTERM). Its exit used to null this.process and fire onEnd while the NEW mpv was
+      // already on screen, so the player lost track of the video it was showing and a keep-alive
+      // start then spawned a second mpv against a held display (Goblins 2 and 3 after the
+      // 2026-10-12 18:30 fleet-event cast). Only the current process may clear state or end a pass.
+      if (this.process !== proc) return;
       this.process = null;
-      const finished = this.currentVideo;
       this.currentVideo = null;
       if (typeof this.onEnd === 'function') {
-        try { this.onEnd(finished); } catch (_) { }
+        try { this.onEnd(playing); } catch (_) { }
       }
     });
 
@@ -183,21 +192,25 @@ class MPVController {
       return; // Process already exited
     }
 
+    // Detach first: a deliberate stop is not the natural end of a pass, so the exit handler of
+    // the process being stopped must not fire onEnd.
+    const proc = this.process;
+    this.process = null;
+    this.currentVideo = null;
     try {
       // Use SIGTERM only - never SIGKILL (causes kernel panic with DRM)
-      this.process.kill('SIGTERM');
+      proc.kill('SIGTERM');
 
-      // Wait for graceful shutdown
-      const timeout = 1000; // 1 second max wait
+      // Wait for graceful shutdown. The next mpv cannot take the DRM display until this one has
+      // let go, so wait long enough for a hardware decoder to wind down (1 s was too short).
       const start = Date.now();
-      while (this.process && this.process.exitCode === null && (Date.now() - start) < timeout) {
+      while (proc.exitCode === null && proc.signalCode === null && (Date.now() - start) < STOP_WAIT_MS) {
         await new Promise(r => setTimeout(r, 50));
       }
 
       // If still running after timeout, log warning but DON'T use SIGKILL
-      if (this.process && this.process.exitCode === null) {
-        console.warn('MPV did not exit gracefully within timeout, leaving it to exit naturally');
-        // Process will be cleaned up by exit handler
+      if (proc.exitCode === null && proc.signalCode === null) {
+        console.warn(`MPV did not exit within ${STOP_WAIT_MS} ms of SIGTERM; leaving it to exit naturally`);
       }
     } catch (err) {
       // Ignore errors from killing already-dead process
