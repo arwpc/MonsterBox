@@ -116,10 +116,19 @@ function releaseLock() { try { unlinkSync(LOCK_FILE); } catch { /* already gone 
 async function fleetNodes() {
   try {
     const r = await axios.get(`${BASE}/api/orchestration/nodes`, { timeout: 15000 });
-    return (r.data?.nodes || []).map((n) => ({
+    const nodes = (r.data?.nodes || []).map((n) => ({
       id: n.id, name: n.name, characterId: n.characterId ?? n.id,
       ip: n.ip, port: n.port || 3000, online: n.status === 'online'
     }));
+    // A runner without mDNS (no avahi on the host, or multicast blocked) sees every node as 'unknown',
+    // which used to skip the busy check and the release for the whole fleet. Ask those nodes directly.
+    await Promise.all(nodes.filter((n) => !n.online && n.ip).map(async (n) => {
+      try {
+        const h = await axios.get(`https://${n.ip}:${n.port}/health`, { timeout: 4000 });
+        n.online = h.status === 200;
+      } catch { /* unreachable: stays absent */ }
+    }));
+    return nodes;
   } catch (err) {
     warn(`could not read the node registry (${err.code || err.message}); falling back to config/animatronics.json`);
     try {
