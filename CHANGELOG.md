@@ -8,6 +8,15 @@ Operator brief: Goblins 1 and 4 kept dropping off the network and had to be set 
 boot into MonsterBox and run its video without ever losing Wi-Fi. Evidence and open items are in
 `docs/troubleshooting/KNOWN-BUGS.md` → Goblins (2026-10-12 status).
 
+### Added
+
+- **`scripts/hit-part.py` (on a node: `python3 ~/hit.py`).** Interactive bench tool for finding what a channel
+  drives: type a channel number, pick the part type (servo or on/off on the PCA9685, motor on an MDD10A DIR/PWM
+  pair), and it sweeps that output five times back and forth, releases it, and asks again until Esc. Raw by design
+  (smbus2 register writes, lgpio on the motor pins, nothing of MonsterBox in the path); it holds the lurk machine
+  while it runs and leaves every swept channel released. One-shot form for scripts: `hit-part.py 15 servo 40-140`,
+  `hit-part.py 11 onoff`, `hit-part.py 17 mdd 18 2`.
+
 ### Fixed
 
 - **Wi-Fi profile lost to a power cut.** The re-imaged Goblins kept their Wi-Fi profile in
