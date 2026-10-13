@@ -2189,6 +2189,28 @@ Left open on purpose, all low:
 - ⚪ **Calibration router adapter cache is keyed by bare partId** (pre-existing; the 2026-10-11 fix threads the
   character through the store and the position store, not the adapter cache). Harmless on a single-character node.
 
+### Opened 2026-10-12: the agent's voice over an orchestrated event (Mina node)
+
+- ~~🔴 **An awake node in AI mode talked over the event's scene and answered its lines.**~~ **FIXED, verified live 2026-10-12 21:58 CDT on Mina (commit ba3d7dab: AI on, scene 3 played, the agent was cut before the first word and restarted without a greeting afterwards).** Operator's words:
+  "when AI mode is running and a scene comes in from an orchestrated event it runs the AI voice over the voice of
+  the event. One at a time: it must interrupt, then scene, then back to its original state." Cause: `eventHold()`
+  left an awake node with a recent guest awake WITH its agent live (only a guestless node was put to sleep,
+  `05c507fb`), so the agent kept talking and transcribed the show's lines as a guest; `_releaseHold()` restored
+  idle, head and music but never touched the agent; and `setAgentEnabledForCharacter(id, false)` drains the
+  sentence being spoken unless `opts.immediate`. Fix (`services/lurkStateService.js`,
+  `services/elevenLabsWebSocketService.js`, `services/scenes/sceneExecutor.js`, `services/scenes/sceneQueue.js`):
+  a hold cuts a live agent at once and remembers it (`remembered.agent`), the release restarts it without a greeting
+  when the node is still awake, and every real scene run on an awake node (dashboard, SSE, armed mode, a queue once
+  per loop) holds and releases the same way, the conductor's outer hold winning. A lurking node is untouched.
+  Proof after the restart: AI on, talk to the character, play a scene from the dashboard while it is answering;
+  `/var/log/monsterbox.log` shows `EVENT HOLD (scene:N) in awake — agent cut (restarts at release)`,
+  `🛑 Headless agent session stopped for character N (..., immediate)`, the scene's own lines, then `event over
+  (scene:N) — agent restarted without a greeting, listening again; node awake` and `✅ Headless agent session
+  started`. The ear is the acceptance: the agent's sentence stops before the scene's first word, and it answers a
+  question again afterwards without re-greeting. Unit: `tests/unit/lurk-state.test.js` (hold, release, off, nested,
+  guestless sleep) and `tests/unit/scene-infra.test.js` (dry run and test mode take no hold; a real run holds and
+  releases, also on a throw; lurking and outer holds are left alone).
+
 ### Opened from the 2026-10-10 fleet log review (after the castle-tuning rollout)
 
 - ⚪ **Expected, not a fault (2026-10-11 log review):** `[PriorityManager] DENIED claim on servo N by "idle-loop" ... held by "head-tracking:N"` and the matching `RELEASE DENIED` lines are the servo arbitration working under lurk (head tracking owns the neck; the idle loop and speech co-expression yield). `scripts/log-review.mjs` counts them as error-ish because of the word DENIED; treat them as noise unless the holder never releases (a servo stuck for minutes with no tracking target).

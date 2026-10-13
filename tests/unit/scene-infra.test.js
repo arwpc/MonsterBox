@@ -18,7 +18,8 @@ import express from 'express';
 import request from 'supertest';
 import { fileURLToPath } from 'url';
 
-import { deriveAudioTimeoutMs, AUDIO_TIMEOUT_CAP_MS, resolveGoblinRef, executeStep } from '../../services/scenes/sceneExecutor.js';
+import { deriveAudioTimeoutMs, AUDIO_TIMEOUT_CAP_MS, resolveGoblinRef, executeStep, executeScene, SCENE_HOLD_MAX_MS } from '../../services/scenes/sceneExecutor.js';
+import lurkStateService from '../../services/lurkStateService.js';
 import { ttsCacheKey, generateSpeechCached, getCachedSpeech } from '../../services/scenes/ttsCache.js';
 import { createFleetSteps, resolveFleetNodes, isSelfNode } from '../../services/scenes/fleetSteps.js';
 import { validateQueueDefinition } from '../../services/scenes/queueLibrary.js';
@@ -287,6 +288,73 @@ describe('Scene infrastructure', function () {
       const src = await read('services/scenes/sceneExecutor.js');
       const set = src.match(/const NON_FATAL_STEP_TYPES = new Set\(\[([\s\S]*?)\]\)/)[1];
       for (const t of ['fleet-scene', 'fleet-say', 'fleet-audio', 'fleet-stop-audio', 'fleet-mode']) expect(set).to.contain(`'${t}'`);
+    });
+  });
+
+  describe('a scene holds the node while it is in AI mode', function () {
+    // No scene id: the analytics write is skipped, so nothing under data/ is touched.
+    const SCENE = { name: 'hold probe', steps: [{ type: 'wait', duration: 1 }] };
+    const savedMode = process.env.MB_TEST_MODE;
+    let calls;
+    let state;
+    let holdReply;
+
+    beforeEach(function () {
+      calls = [];
+      state = 'awake';
+      holdReply = { success: true, held: true, hold: { reason: 'x' } };
+      // The executor reaches the one lurk singleton by dynamic import: stand in for the three calls it makes.
+      lurkStateService.getState = () => state;
+      lurkStateService.eventHold = async (cid, opts) => { calls.push(['hold', cid, opts]); return holdReply; };
+      lurkStateService.eventRelease = async (cid, opts) => { calls.push(['release', cid, opts]); return { success: true, released: true }; };
+    });
+
+    afterEach(function () {
+      delete lurkStateService.getState;
+      delete lurkStateService.eventHold;
+      delete lurkStateService.eventRelease;
+      if (savedMode === undefined) delete process.env.MB_TEST_MODE; else process.env.MB_TEST_MODE = savedMode;
+    });
+
+    it('a dry run, and any run in test mode, takes no hold', async function () {
+      process.env.MB_TEST_MODE = '1';
+      await executeScene(SCENE, 9301, null, {});
+      delete process.env.MB_TEST_MODE;
+      await executeScene(SCENE, 9301, null, { dryRun: true });
+      expect(calls).to.have.length(0);
+    });
+
+    it('a real run on an awake node holds for the scene and releases in its finally path', async function () {
+      delete process.env.MB_TEST_MODE;
+      const r = await executeScene(SCENE, 9301, null, {});
+      expect(r.success).to.equal(true);
+      expect(calls.map(c => c[0])).to.deep.equal(['hold', 'release']);
+      expect(calls[0][1]).to.equal(9301);
+      expect(calls[0][2]).to.deep.equal({ reason: 'scene:hold probe', maxMs: SCENE_HOLD_MAX_MS });
+      expect(calls[1][2]).to.deep.equal({ reason: 'scene:hold probe' });
+      expect(SCENE_HOLD_MAX_MS).to.be.greaterThan(AUDIO_TIMEOUT_CAP_MS); // the backstop outlives the longest audio step
+      // The release happens when the scene throws, too.
+      calls.length = 0;
+      let err;
+      try { await executeScene({ name: 'boom', steps: [{ type: 'no-such-step' }] }, 9301, null, {}); } catch (e) { err = e; }
+      expect(err && err.message).to.contain('Unknown step type');
+      expect(calls.map(c => c[0])).to.deep.equal(['hold', 'release']);
+    });
+
+    it('leaves a lurking node alone, and leaves an outer hold (the conductor, the queue) to its holder', async function () {
+      delete process.env.MB_TEST_MODE;
+      state = 'lurking';
+      await executeScene(SCENE, 9301, null, {});
+      expect(calls).to.have.length(0);
+      state = 'awake';
+      holdReply = { success: true, held: true, alreadyHeld: true, hold: {} };
+      await executeScene(SCENE, 9301, null, {});
+      expect(calls.map(c => c[0])).to.deep.equal(['hold']);
+      // A character this node does not animate: nothing was held, so nothing is released.
+      calls.length = 0;
+      holdReply = { success: false, error: 'character 9301 is not the character this node animates (9302)' };
+      await executeScene(SCENE, 9301, null, {});
+      expect(calls.map(c => c[0])).to.deep.equal(['hold']);
     });
   });
 

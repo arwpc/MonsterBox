@@ -1,4 +1,4 @@
-import { executeScene } from './sceneExecutor.js';
+import { executeScene, holdNodeForScene, releaseNodeAfterScene } from './sceneExecutor.js';
 import scenesService from './scenesService.js';
 
 // In-memory queue per character (reset on server restart)
@@ -170,6 +170,10 @@ async function runLoop(characterId) {
   const q = ensureQueue(characterId);
   if (q.running) return; // already running
   q.running = true;
+  // One hold for the whole run (AI mode only; see holdNodeForScene): otherwise every
+  // looped scene would cut the agent and reconnect it in the 250 ms between scenes.
+  // Each scene's own hold call inside extends the expiry; the release is here.
+  const nodeHold = await holdNodeForScene(characterId, 'scene-queue', {});
   try {
     while (!q.stopRequested) {
       // Priority override first
@@ -208,6 +212,7 @@ async function runLoop(characterId) {
     q.paused = false;
     q.skipRequested = false;
     q.nowPlaying = null;
+    await releaseNodeAfterScene(nodeHold);
   }
 }
 

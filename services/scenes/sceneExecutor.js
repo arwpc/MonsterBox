@@ -1151,6 +1151,57 @@ async function executeStepsWithConcurrency(steps, characterId, emit, opts) {
   return { results, stepsExecuted };
 }
 
+// A scene owns the servos and the speaker while it runs, as a fleet event does. On a
+// node in AI mode the lurk state machine is held for the scene's duration: the agent
+// is cut and stopped (so it neither talks over the scene nor answers its lines as a
+// guest), idle movement and head tracking pause, and the release afterwards brings
+// the agent back, listening, without a greeting (operator, 2026-10-12: "it must
+// interrupt, then scene, then back to its original state"). A lurking node keeps its
+// movers and music exactly as before (servo arbitration covers them; there is no
+// agent to interrupt). Never for a dry run or in test mode. A nested hold (the fleet
+// conductor already holds the node, a scene inside a scene, the queue runner) is the
+// outer holder's to release. The hold self-expires as a crash backstop only; one
+// audio step may run AUDIO_TIMEOUT_CAP_MS, so the expiry sits above that.
+export const SCENE_HOLD_MAX_MS = 20 * 60 * 1000;
+
+function lurkHoldWanted(opts) {
+  if (opts && opts.dryRun) return false;
+  return !(process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true');
+}
+
+/**
+ * Hold the node's lurk state machine for a scene (or a queue of them) when the node
+ * is in AI mode. Returns a token for releaseNodeAfterScene, or null when there is
+ * nothing to release (dry run, test mode, lurking or off, not this node's character,
+ * an outer holder, the lurk service unavailable). Never throws.
+ */
+export async function holdNodeForScene(characterId, reason, opts) {
+  if (!lurkHoldWanted(opts) || characterId == null) return null;
+  try {
+    // Loaded lazily: the lurk service pulls in the conversation and movement stacks,
+    // which this executor must not drag in at import time (and which reach back here).
+    const { default: lurk } = await import('../lurkStateService.js');
+    if (!lurk.isAwake(characterId)) return null;
+    const r = await lurk.eventHold(characterId, { reason, maxMs: SCENE_HOLD_MAX_MS });
+    if (!r || !r.success || !r.held) return null; // not this node's character: nothing was held
+    if (r.alreadyHeld) return null; // the outer holder releases
+    return { lurk, characterId, reason };
+  } catch (e) {
+    console.warn(`[Scene] lurk hold skipped for character ${characterId} (${reason}): ${e && e.message}`);
+    return null;
+  }
+}
+
+/** Release a hold holdNodeForScene took (a null token is a no-op). Never throws. */
+export async function releaseNodeAfterScene(hold) {
+  if (!hold) return;
+  try {
+    await hold.lurk.eventRelease(hold.characterId, { reason: hold.reason });
+  } catch (e) {
+    console.warn(`[Scene] lurk release failed for character ${hold.characterId} (${hold.reason}): ${e && e.message}`);
+  }
+}
+
 export async function executeScene(scene, characterId, emit, options) {
   const steps = Array.isArray(scene.steps) ? scene.steps : [];
   const results = [];
@@ -1161,6 +1212,7 @@ export async function executeScene(scene, characterId, emit, options) {
 
   emit && emit({ type: 'scene', status: 'start', id: scene.id, name: scene.name, totalSteps: steps.length, dryRun: !!opts.dryRun });
 
+  const nodeHold = await holdNodeForScene(characterId, `scene:${scene.id != null ? scene.id : (scene.name || 'unnamed')}`, opts);
   try {
     const execResult = await executeStepsWithConcurrency(steps, characterId, emit, opts);
     results.push(...execResult.results);
@@ -1216,6 +1268,8 @@ export async function executeScene(scene, characterId, emit, options) {
       }
     }
     throw error;
+  } finally {
+    await releaseNodeAfterScene(nodeHold);
   }
 }
 

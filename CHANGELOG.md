@@ -214,6 +214,18 @@ proven by ear; open items and their daylight tests are in `docs/troubleshooting/
 - **A show skipped its own host** and "busy" meant any live agent: a show never skips its host, and busy now means a
   guest spoke in the last minute (`ai-status` `conversing` / `guestIdleMs`) (`05c507fb`).
 - **A guestless awake node answered the show's lines**: an event hold now puts such a node to sleep (`05c507fb`).
+- **An awake node's agent talked over a show and answered its lines** (operator, 2026-10-12: "when AI mode is
+  running and a scene comes in from an orchestrated event it runs the AI voice over the voice of the event. One at a
+  time: it must interrupt, then scene, then back to its original state"). An event hold now cuts a live agent at
+  once (`setAgentEnabledForCharacter(id, false, { immediate: true })`: its own player only, not drained) whatever
+  the guest-idle verdict, keeps the node awake and remembers the agent (`remembered.agent` in the hold reply); the
+  release starts it again, first and alone and without the walk-up greeting, when the node is still awake, and
+  leaves it off when the node slept or was switched off during the show. A nested hold keeps the first hold's
+  memory and cuts an agent woken mid-show. Every real scene run on a node in AI mode (dashboard play, SSE play,
+  armed mode, and the queue runner once per loop) takes the same hold for its duration and releases it afterwards;
+  the conductor's outer hold is left to the conductor. Lurking nodes, dry runs and test mode are untouched
+  (`services/lurkStateService.js`, `services/elevenLabsWebSocketService.js`, `services/scenes/sceneExecutor.js`,
+  `services/scenes/sceneQueue.js`; pending a service restart on the node that carries it).
 - **The audio library's write raced** under concurrent plays: each write uses a unique temp file (`05c507fb`).
 - **The jaw daemon raised an uncaught EPIPE** when its servo daemon was dead: stdin error handler and writable guard
   (`344baa35`).

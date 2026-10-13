@@ -596,19 +596,23 @@ function defaultDeps() {
         capabilities: (id) => detectCapabilities(id),
 
         agent: {
-            async start(id) {
+            // opts.noGreeting: open without the walk-up greeting (an event release
+            // restoring the conversation a hold interrupted).
+            async start(id, opts = {}) {
                 if (isTestMode()) return { enabled: false, skipped: 'test-mode' };
                 const ws = await load('ws', './elevenLabsWebSocketService.js');
-                const r = await ws.setAgentEnabledForCharacter(id, true);
+                const r = await ws.setAgentEnabledForCharacter(id, true, { noGreeting: !!opts.noGreeting });
                 return r && r.success && r.enabled
                     ? { enabled: true, sessionId: r.sessionId, alreadyRunning: !!r.alreadyRunning }
                     : { enabled: false, error: (r && r.error) || 'agent did not start' };
             },
-            async stop(id) {
+            // opts.immediate: cut the sentence being spoken now (an event hold);
+            // the default lets it finish (AI off, sleep).
+            async stop(id, opts = {}) {
                 if (isTestMode()) return { enabled: false, skipped: 'test-mode' };
                 const ws = await load('ws', './elevenLabsWebSocketService.js');
-                const r = await ws.setAgentEnabledForCharacter(id, false);
-                return { enabled: false, stopped: !!(r && r.success && !r.alreadyStopped) };
+                const r = await ws.setAgentEnabledForCharacter(id, false, { immediate: !!opts.immediate });
+                return { enabled: false, stopped: !!(r && r.success && !r.alreadyStopped), immediate: !!opts.immediate };
             },
             isLive(id) {
                 // Synchronous: only consult a module that is already loaded.
@@ -1024,30 +1028,53 @@ export class LurkStateMachine {
     /**
      * Fleet event hold: remember what is running, then stop the idle loop and
      * head tracking and pause background music, so the event's scenes own the
-     * servos and the speaker. Speech is untouched (an awake conversation stays
-     * awake). Works in lurking or awake; a no-op hold in off.
+     * servos and the speaker. The agent is cut too, NOW (its sentence is not
+     * drained): while a hold is active the agent neither talks nor listens, so
+     * the show's lines are neither talked over nor answered. An awake node
+     * stays awake and remembers that its agent was live (remembered.agent);
+     * the release starts it again. Works in lurking or awake; a no-op hold in
+     * off.
      *
      * Idempotent: a second hold extends the safety expiry but keeps what the
      * FIRST hold remembered (remembering the frozen state would make the
-     * release restore nothing). Self-expiring after opts.maxMs (default
-     * EVENT_HOLD_MAX_MS) so a crashed conductor cannot leave a node frozen.
+     * release restore nothing); it still cuts an agent that came back live
+     * meanwhile (an explicit wake during the show) and notes it. Self-expiring
+     * after opts.maxMs (default EVENT_HOLD_MAX_MS) so a crashed conductor
+     * cannot leave a node frozen.
      */
     eventHold(characterId, opts = {}) {
         return this._run(characterId, opts, async (entry) => {
             const now = this.deps.now();
             const maxMs = clampHoldMs(opts.maxMs);
+            const id = entry.characterId;
             if (entry.eventHold) {
                 entry.eventHold.until = now + maxMs;
                 entry.eventHold.holds += 1;
+                const results = {};
+                // The invariant covers the whole chain of holds: an agent that came back
+                // live meanwhile (an explicit wake during the show) is cut again, and the
+                // release restores it. What the first hold remembered is only added to.
+                if (this.deps.agent.isLive(id)) {
+                    results.agent = await this._stopAgent(entry, { immediate: true });
+                    if (entry.state === AWAKE) entry.eventHold.remembered.agent = true;
+                    this.deps.log(`[Lurk] character ${id}: nested event hold (${opts.reason || 'event'}) found the agent live in ${entry.state} — cut`
+                        + `${entry.state === AWAKE ? '; the release restarts it' : ''}`);
+                }
                 this._scheduleHoldExpiry(entry, maxMs);
                 await this._persist(entry);
-                return { held: true, alreadyHeld: true, hold: this._publicHold(entry) };
+                return { held: true, alreadyHeld: true, hold: this._publicHold(entry), ...(results.agent ? { results } : {}) };
             }
-            const id = entry.characterId;
+            const results = {};
+            // The agent first, and cut NOW rather than drained: a scene must not run under the
+            // agent's voice, and the agent must not hear the show as a guest (operator, 2026-10-12:
+            // "it must interrupt, then scene, then back to its original state").
+            const agentWasLive = this.deps.agent.isLive(id);
+            if (agentWasLive) results.agent = await this._stopAgent(entry, { immediate: true });
             // The host of a fleet event (and any node it holds) may be AWAKE only because its PIR fired or
             // its agent answered room noise. A real guest is one who spoke in the last minute; without one
-            // the node sleeps for the show, otherwise its agent transcribes the show's own lines as a guest
-            // and talks over it (event 103, 2026-10-10: the host skipped its own part that way).
+            // the node sleeps for the show and stays asleep afterwards, otherwise it stays awake and the
+            // release brings its agent back (event 103, 2026-10-10: the host skipped its own part when its
+            // agent transcribed the show's own lines as a guest and talked over it).
             if (entry.state === AWAKE) {
                 const guestIdle = entry.lastGuestAt ? now - entry.lastGuestAt : Infinity;
                 if (guestIdle > EVENT_HOLD_GUEST_IDLE_MS) {
@@ -1055,7 +1082,8 @@ export class LurkStateMachine {
                     await this._enterLurking(entry, { reason: 'event-hold' });
                 }
             }
-            const remembered = { state: entry.state, idle: false, headTracking: false, music: null };
+            // remembered.agent: the agent was live and the node stays awake for the show, so the release restarts it.
+            const remembered = { state: entry.state, agent: agentWasLive && entry.state === AWAKE, idle: false, headTracking: false, music: null };
             try { remembered.idle = await this.deps.idle.isRunning(id); } catch (_) { /* treat as off */ }
             try { remembered.headTracking = await this.deps.head.isActive(id); } catch (_) { /* treat as off */ }
             try {
@@ -1070,7 +1098,6 @@ export class LurkStateMachine {
                 transitionsAtHold: entry.transitions,
                 remembered
             };
-            const results = {};
             try {
                 if (remembered.idle) await this.deps.idle.stop();
                 results.idle = { enabled: false, paused: remembered.idle };
@@ -1084,8 +1111,10 @@ export class LurkStateMachine {
             try { await this.deps.music.nudge(id); results.music = { paused: true }; } catch (e) { results.music = { paused: true, note: e.message }; }
             this._scheduleHoldExpiry(entry, maxMs);
             await this._persist(entry);
-            this.deps.log(`[Lurk] character ${id}: EVENT HOLD (${entry.eventHold.reason}) in ${entry.state} — idle ${remembered.idle ? 'paused' : 'was off'}, `
-                + `head ${remembered.headTracking ? 'paused' : 'was off'}, music paused; safety release in ${Math.round(maxMs / 1000)} s`);
+            this.deps.log(`[Lurk] character ${id}: EVENT HOLD (${entry.eventHold.reason}) in ${entry.state} — `
+                + `agent ${agentWasLive ? (remembered.agent ? 'cut (restarts at release)' : 'cut') : 'was off'}, `
+                + `idle ${remembered.idle ? 'paused' : 'was off'}, head ${remembered.headTracking ? 'paused' : 'was off'}, music paused; `
+                + `safety release in ${Math.round(maxMs / 1000)} s`);
             return { held: true, hold: this._publicHold(entry), results };
         });
     }
@@ -1112,8 +1141,11 @@ export class LurkStateMachine {
     /**
      * Restore after an event. When nothing changed during the hold, exactly what
      * was running comes back. When the state changed meanwhile (a conversation
-     * ended, the boot start ran), the current state's own policy applies. An
-     * awake conversation is left alone; off restores nothing (a panic wins).
+     * ended, the boot start ran), the current state's own policy applies. The
+     * agent the hold cut comes back first and alone (as a wake starts it) when
+     * the node is still awake, and without a greeting: the guest was mid-
+     * conversation. A node that slept or was switched off during the show keeps
+     * that; off restores nothing (a panic wins).
      */
     async _releaseHold(entry, { reason }) {
         const hold = entry.eventHold;
@@ -1126,6 +1158,7 @@ export class LurkStateMachine {
         } else {
             const changed = entry.transitions !== hold.transitionsAtHold || entry.state !== hold.remembered.state;
             const caps = await this._caps(entry);
+            if (hold.remembered.agent) results.agent = await this._restoreAgentAfterHold(entry, caps, reason);
             results.headTracking = (changed || hold.remembered.headTracking)
                 ? await this._ensureHead(entry, caps)
                 : { enabled: false, reason: 'was off before the event' };
@@ -1139,6 +1172,28 @@ export class LurkStateMachine {
         const heldMs = this.deps.now() - hold.since;
         this.deps.log(`[Lurk] character ${entry.characterId}: EVENT RELEASE (${reason}) after ${Math.round(heldMs / 1000)} s, back in ${entry.state} — ${summarizeResults(results)}`);
         return { released: true, heldMs, remembered: hold.remembered, results };
+    }
+
+    /** The hold cut a live agent on an awake node: bring it back, or say why not. One log line either way. */
+    async _restoreAgentAfterHold(entry, caps, reason) {
+        const id = entry.characterId;
+        let result;
+        let why;
+        if (entry.state !== AWAKE) {
+            result = { enabled: false, reason: `node is ${entry.state} now` };
+            why = `NOT restarted: the node went to ${entry.state} during the event`;
+        } else if (this.deps.agent.isLive(id)) {
+            result = { enabled: true, alreadyRunning: true };
+            why = 'already live again (woken during the event)';
+        } else if (!(caps.agent && caps.agent.available)) {
+            result = { enabled: false, reason: (caps.agent && caps.agent.reason) || 'not supported' };
+            why = `NOT restarted: ${result.reason}`;
+        } else {
+            result = await this._startAgentAlone(entry, { noGreeting: true });
+            why = result.enabled ? 'restarted without a greeting, listening again' : `did NOT restart: ${result.error || 'unknown error'}`;
+        }
+        this.deps.log(`[Lurk] character ${id}: event over (${reason}) — agent ${why}; node ${entry.state}`);
+        return result;
     }
 
     _publicHold(entry) {
@@ -1519,7 +1574,7 @@ export class LurkStateMachine {
 
     // ---- capability helpers ------------------------------------------------------
 
-    async _startAgentAlone(entry) {
+    async _startAgentAlone(entry, opts) {
         const id = entry.characterId;
         // The idle loop is the mover that can drive a motor; stop it so the
         // agent's websocket + mic + audio pipeline cold-start on a quiet supply.
@@ -1532,15 +1587,16 @@ export class LurkStateMachine {
             }
         } catch (_) { /* best-effort */ }
         let agent;
-        try { agent = await this.deps.agent.start(id); } catch (e) { agent = { enabled: false, error: e.message }; }
+        try { agent = await this.deps.agent.start(id, opts); } catch (e) { agent = { enabled: false, error: e.message }; }
         if (paused) agent = { ...agent, idlePaused: true };
         return agent;
     }
 
-    async _stopAgent(entry) {
+    /** opts.immediate cuts the sentence being spoken (an event hold); the default lets it finish. */
+    async _stopAgent(entry, opts) {
         try {
             if (!this.deps.agent.isLive(entry.characterId)) return { enabled: false };
-            return await this.deps.agent.stop(entry.characterId);
+            return await this.deps.agent.stop(entry.characterId, opts);
         } catch (e) {
             return { enabled: false, error: e.message };
         }

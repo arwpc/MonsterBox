@@ -78,8 +78,8 @@ function fakeDeps(over = {}) {
         writeState: async (id, s) => { state.writes.push(s); },
         capabilities: async () => (over.caps ? over.caps() : ALL_CAPS()),
         agent: {
-            start: async (id) => { log('agent.start', id); if (over.agentFails) return { enabled: false, error: 'boom' }; state.agentLive = true; return { enabled: true }; },
-            stop: async (id) => { log('agent.stop', id); state.agentLive = false; return { enabled: false, stopped: true }; },
+            start: async (id, opts) => { log('agent.start', id, opts || {}); if (over.agentFails) return { enabled: false, error: 'boom' }; state.agentLive = true; return { enabled: true }; },
+            stop: async (id, opts) => { log('agent.stop', id, opts || {}); state.agentLive = false; return { enabled: false, stopped: true, immediate: !!(opts && opts.immediate) }; },
             isLive: () => state.agentLive
         },
         idle: {
@@ -428,14 +428,115 @@ describe('lurk state machine — transitions', () => {
         expect(f.state.idleRunning).to.equal(true);
     });
 
-    it('an event hold never tears down an awake conversation', async () => {
+    // Operator, 2026-10-12: "when AI mode is running and a scene comes in from an orchestrated event it
+    // runs the AI voice over the voice of the event. One at a time: it must interrupt, then scene, then
+    // back to its original state."
+    it('an event hold cuts a live agent NOW and keeps the node awake; the release brings the agent back without a greeting', async () => {
         const { m, f } = await bootedMachine();
         await m.wake(CID, { source: 'api' });
-        await m.eventHold(CID, { reason: 'song' });
-        expect(m.getState(CID)).to.equal('awake');
         expect(f.state.agentLive).to.equal(true);
-        await m.eventRelease(CID);
+        f.calls.length = 0;
+        const h = await m.eventHold(CID, { reason: 'song' });
+        expect(h.held).to.equal(true);
+        expect(m.getState(CID)).to.equal('awake');   // the conversation's state survives the show...
+        expect(f.state.agentLive).to.equal(false);   // ...but the agent neither talks nor listens during it
+        expect(h.hold.remembered.agent).to.equal(true);
+        expect(h.results.agent.immediate).to.equal(true);
+        const stop = f.calls.find(c => c[0] === 'agent.stop');
+        expect(stop[2]).to.deep.equal({ immediate: true }); // cut mid-sentence, not drained
+        expect(f.state.idleRunning).to.equal(false);
+        expect(f.state.headActive).to.equal(false);
+        f.calls.length = 0;
+        const rel = await m.eventRelease(CID);
+        expect(rel.released).to.equal(true);
+        expect(rel.remembered.agent).to.equal(true);
+        expect(rel.results.agent.enabled).to.equal(true);
+        expect(f.state.agentLive).to.equal(true);
         expect(m.getState(CID)).to.equal('awake');
+        const start = f.calls.find(c => c[0] === 'agent.start');
+        expect(start[2]).to.deep.equal({ noGreeting: true });
+        // The agent comes back first and alone; the movers after it, as a wake orders them.
+        const n = f.names();
+        expect(n.indexOf('agent.start')).to.be.lessThan(n.indexOf('idle.start'));
+        expect(f.state.idleRunning).to.equal(true);
+        expect(f.state.headActive).to.equal(true);
+    });
+
+    it('a release after the operator switched the node off (Lurk OFF or AI off) does not restart the agent', async () => {
+        // Lurk OFF during the show ends the hold itself: nothing is restored (the panic rule).
+        let { m, f } = await bootedMachine();
+        await m.wake(CID, { source: 'api' });
+        await m.eventHold(CID, { reason: 'song' });
+        await m.disarm(CID);
+        expect(m.getState(CID)).to.equal('off');
+        f.calls.length = 0;
+        let rel = await m.eventRelease(CID);
+        expect(rel.released).to.equal(false);
+        expect(f.names()).to.not.include('agent.start');
+        expect(f.state.agentLive).to.equal(false);
+        // AI off during the show: the node is lurking now, and lurking never has the agent.
+        ({ m, f } = await bootedMachine());
+        await m.wake(CID, { source: 'api' });
+        await m.eventHold(CID, { reason: 'song' });
+        await m.aiOff(CID);
+        expect(m.getState(CID)).to.equal('lurking');
+        f.calls.length = 0;
+        rel = await m.eventRelease(CID);
+        expect(rel.released).to.equal(true);
+        expect(rel.results.agent).to.deep.equal({ enabled: false, reason: 'node is lurking now' });
+        expect(f.names()).to.not.include('agent.start');
+        expect(f.state.agentLive).to.equal(false);
+        expect(f.state.idleRunning).to.equal(true); // lurking's own movers came back
+    });
+
+    it('a nested hold keeps what the first hold remembered, the agent included, and cuts an agent woken mid-show', async () => {
+        const { m, f } = await bootedMachine();
+        await m.wake(CID, { source: 'api' });
+        const h1 = await m.eventHold(CID, { reason: 'ceremony', maxMs: 60000 });
+        expect(h1.hold.remembered.agent).to.equal(true);
+        const h2 = await m.eventHold(CID, { reason: 'scene:3', maxMs: 60000 });
+        expect(h2.alreadyHeld).to.equal(true);
+        expect(h2.hold.remembered).to.include({ state: 'awake', agent: true });
+        expect(h2.hold.holds).to.equal(2);
+        expect(h2.results).to.equal(undefined); // nothing was live to cut
+        expect(f.state.agentLive).to.equal(false);
+        f.calls.length = 0;
+        const rel = await m.eventRelease(CID);
+        expect(rel.released).to.equal(true);
+        expect(f.names().filter(x => x === 'agent.start')).to.have.length(1);
+        expect(f.state.agentLive).to.equal(true);
+        // An operator wake during a show brings the agent back; the next (nested) hold cuts it again,
+        // and the release still restores it.
+        await m.eventHold(CID, { reason: 'ceremony' });
+        await m.wake(CID, { source: 'api' });
+        expect(f.state.agentLive).to.equal(true);
+        const h3 = await m.eventHold(CID, { reason: 'scene:4' });
+        expect(h3.alreadyHeld).to.equal(true);
+        expect(h3.results.agent.immediate).to.equal(true);
+        expect(h3.hold.remembered.agent).to.equal(true);
+        expect(f.state.agentLive).to.equal(false);
+        await m.eventRelease(CID);
+        expect(f.state.agentLive).to.equal(true);
+        expect(m.getState(CID)).to.equal('awake');
+    });
+
+    it('a hold on an awake node with no guest for a minute still cuts the agent NOW, sleeps it for the show, and the release leaves it lurking', async () => {
+        const { m, f } = await bootedMachine();
+        await m.wake(CID, { source: 'pir' });
+        f.advance(61 * 1000);
+        f.calls.length = 0;
+        const h = await m.eventHold(CID, { reason: 'ceremony' });
+        expect(m.getState(CID)).to.equal('lurking');
+        expect(h.hold.remembered).to.include({ state: 'lurking', agent: false });
+        const stop = f.calls.find(c => c[0] === 'agent.stop');
+        expect(stop[2]).to.deep.equal({ immediate: true });
+        expect(f.state.agentLive).to.equal(false);
+        f.calls.length = 0;
+        await m.eventRelease(CID);
+        expect(m.getState(CID)).to.equal('lurking');
+        expect(f.names()).to.not.include('agent.start');
+        expect(f.state.agentLive).to.equal(false);
+        expect(f.state.idleRunning).to.equal(true);
     });
 
     it('refuses to animate a character this node does not own', async () => {

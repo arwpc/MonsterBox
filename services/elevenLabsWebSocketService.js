@@ -957,7 +957,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
                     }
                 } catch (_) { /* noop */ }
             }
-            console.log(`🚀 Starting real-time conversation with agent: ${agentId}${opts.reconnect ? ' (reconnect)' : ''}`);
+            console.log(`🚀 Starting real-time conversation with agent: ${agentId}${opts.reconnect ? ' (reconnect)' : opts.noGreeting ? ' (no greeting)' : ''}`);
 
             // Close any existing ElevenLabs connection. Forget it FIRST so its
             // close handler knows it has been superseded and does nothing.
@@ -968,14 +968,17 @@ class ElevenLabsWebSocketService extends EventEmitter {
                 try { old.close(); } catch (_) { /* noop */ }
             }
 
-            // A reconnect must not replay the walk-up greeting: ask for an empty
-            // first message (the agent then waits for the guest). Agents that do
-            // not allow the override refuse the whole conversation (close 1008),
-            // so a recent refusal is remembered and the greeting is filtered
-            // client-side instead (see _suppressGreeting).
-            const wantEmptyFirst = !!opts.reconnect && !this._firstMessageRefusedRecently(agentId);
+            // A reconnect must not replay the walk-up greeting, and neither must a
+            // session restored after a fleet event cut it (opts.noGreeting: the
+            // guest was mid-conversation): ask for an empty first message (the
+            // agent then waits for the guest). Agents that do not allow the
+            // override refuse the whole conversation (close 1008), so a recent
+            // refusal is remembered and the greeting is filtered client-side
+            // instead (see _suppressGreeting).
+            const quiet = !!opts.reconnect || !!opts.noGreeting;
+            const wantEmptyFirst = quiet && !this._firstMessageRefusedRecently(agentId);
             const override = wantEmptyFirst ? { agent: { first_message: '' } } : {};
-            connection._suppressGreeting = !!opts.reconnect && !wantEmptyFirst;
+            connection._suppressGreeting = quiet && !wantEmptyFirst;
             connection._greetingVerdicts = new Map();
             connection._greetingStaged = new Map();
             connection._resumeFromEventId = null;
@@ -1645,6 +1648,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
      *
      * @param {number|string} characterId
      * @param {boolean} enabled
+     * @param {{immediate?:boolean, noGreeting?:boolean}} [opts] disable: `immediate` cuts the sentence
+     *   being spoken (a fleet event hold, a panic) instead of draining it; enable: `noGreeting` opens
+     *   without the walk-up greeting (a conversation restored after an event cut it).
      * @returns {Promise<{success:boolean, enabled:boolean, sessionId?:string, agentId?:string, error?:string}>}
      */
     async setAgentEnabledForCharacter(characterId, enabled, opts = {}) {
@@ -1703,7 +1709,9 @@ class ElevenLabsWebSocketService extends EventEmitter {
         this.headlessSessions.set(key, sessionId);
 
         try {
-            await this.startConversation(sessionId, agentId);
+            // opts.noGreeting: a session restored after a fleet event cut it opens
+            // without the walk-up greeting (the guest was mid-conversation).
+            await this.startConversation(sessionId, agentId, opts.noGreeting ? { noGreeting: true } : {});
             const ready = await this._waitForAgentReady(sessionId);
             if (!ready) {
                 this.headlessSessions.delete(key);

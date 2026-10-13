@@ -84,14 +84,8 @@
       "parts": {}
     },
     "2": {
-      "_note": "Mina. 2026-10-11 overnight autonomous session: the JAW SERVO on PCA ch10 does not position-follow. It whines (moves) only when a pulse train first appears after a release and ignores every pulse-width change while energized, through the API and through raw register writes; the eye (ch14) and neck (ch15) on the same chip whine on every move and the chip readback follows every command. Dead feedback pot or a continuous-rotation unit. Energized, it pulls to one end (the clench the operator saw) and stalls on the shared servo rail. Clear this entry after swapping the servo and calibrating the jaw by eye on /setup/calibration.",
-      "parts": {
-        "1": {
-          "status": "broken",
-          "reason": "Mina jaw servo (PCA ch10) does not position-follow: moves once on energize, ignores width changes (API and raw I2C), while eye/neck on the same chip follow every move. Swap the servo, then clear this entry. Measured 2026-10-11 overnight (ReSpeaker spectral witness).",
-          "since": "2026-10-11"
-        }
-      }
+      "_note": "Mina. 2026-10-11 11:10 CDT: the jaw entry registered overnight (servo does not position-follow: moved once on energize, ignored width changes while eye/neck followed; see docs/hardware/OPERATOR-TODO.md) was LIFTED at the operator's direction for a supervised test with eyes on the jaw. Re-add part 1 here if the jaw still only moves once.",
+      "parts": {}
     }
   }
 }
