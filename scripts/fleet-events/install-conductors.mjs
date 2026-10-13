@@ -6,7 +6,7 @@
  *   node scripts/fleet-events/install-conductors.mjs --character 3                 # install on the host character
  *   node scripts/fleet-events/install-conductors.mjs --character 3 --validate-only # check without writing
  *   node scripts/fleet-events/install-conductors.mjs --character 3 --base http://localhost:3100
- *   node scripts/fleet-events/install-conductors.mjs --character 3 --dir host-parts --base https://192.168.8.120:3000
+ *   node scripts/fleet-events/install-conductors.mjs --character 3 --dir host-parts --base https://<host-node-ip>:3000
  *
  * The character's existing scenes are kept; any scene whose id matches a conductor id is replaced. A locked
  * character answers 423 (unlock first: `node scripts/character-lock.mjs unlock <id>`). The conductor files live
