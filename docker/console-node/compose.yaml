@@ -25,6 +25,7 @@ services:
       - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/certs:/home/remote/MonsterBox/certs:ro
       - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/logs:/home/remote/yard-theater-logs
       - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/secrets:/etc/monsterbox:ro   # elevenlabs.key (night memory)
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/goblin-reels:/home/remote/goblin-reels:ro   # the keep-alive copies a missing reel from here
       - crontabs:/var/spool/cron/crontabs   # the managed schedule survives rebuilds
     logging:
       driver: json-file
