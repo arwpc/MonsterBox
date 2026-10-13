@@ -4,7 +4,7 @@ How to run, rehearse, stop and check the three orchestrated shows of Warner Cast
 and how each character moves) are in [docs/characters/FLEET-EVENTS.md](../characters/FLEET-EVENTS.md); the runner
 reference is [scripts/fleet-events/README.md](../../scripts/fleet-events/README.md).
 
-| Conductor scene (on Orlok) | Event | Music bed |
+| Conductor scene (on Alpha, character 7) | Event | Music bed |
 |---|---|---|
 | 101 | The Lighting of the Castle (ceremony) | `fleet-event-castle-vigil` |
 | 102 | The Count's Orders | `fleet-event-counts-march` |
@@ -13,27 +13,37 @@ reference is [scripts/fleet-events/README.md](../../scripts/fleet-events/README.
 Each conductor calls every character's event part on that character's own node (scenes 8, 9 and 10 of each
 character), casts clips to the Goblins, and plays the bed on every node.
 
+**Alpha conducts (since 2026-10-12).** Alpha is the always-on Ubuntu console node (character 7, no hardware,
+`docker/console-node/`). Every conductor step is a fleet step, so any node can conduct: Orlok's own lines and moves
+are his host-part scenes 1011 to 1032 (`scripts/fleet-events/host-parts/orlok.json`, installed on Orlok), which
+the conductor calls with `fleet-scene`. The conductors are also installed on Orlok, so he can still conduct a
+rehearsal, but his schedule entry is disabled: only Alpha's crontab fires shows. Alpha also runs the Goblin
+keep-alive (`controllerHost: "alpha"`), so no animatronic has to stay on for the schedule.
+
 ## How the half-hour rotation works
 
-1. The managed crontab on Orlok (visible and editable on `/schedule`, entry "Fleet events: one show every half
-   hour (show hours)") fires `scripts/fleet-events/run-next.mjs` at `*/30 17-22 * * *`.
+1. The managed crontab on Alpha (cron inside the `monsterbox-console` container; visible and editable on
+   `https://192.168.8.223:3000/schedule`, entry "Fleet events: one show every half hour (show hours)") fires `scripts/fleet-events/run-next.mjs` at `*/30 17-22 * * *`.
 2. The runner refuses inside quiet hours (23:00 to 08:00 local; every Pi runs America/Chicago with NTP, check with
    `npm run check:time`). Quiet hours are the real guard, so the cron window can be widened safely.
 3. If any node reports a guest conversation (a guest spoke in the last minute: `ai-status` `conversing` /
    `guestIdleMs`), the runner waits 5 minutes and looks again, up to three times, then gives up on that slot.
-   The host node (Orlok) is never skipped.
-4. It plays the next event in the rotation (101, 102, 103, then 101 again) through Orlok's scene API.
+   The conducting node is never skipped. Nodes whose mDNS status is unknown (Alpha's container has no mDNS) are
+   probed directly, so the busy check and the release still cover them.
+4. It plays the next event in the rotation (101, 102, 103, then 101 again) through Alpha's scene API.
 5. The conductor opens with `fleet-mode hold` on every node: idle loops, head tracking, background music,
    callouts, lurk scenes and PIR wakes step aside, and an awake node with no guest is put to sleep so its agent
    cannot answer the show's lines. An awake conversation with a guest is never ended.
 6. The conductor ends with `fleet-mode release`; the runner then sends `event-release` to every node again (this
    covers a crashed show) and reads back each online Goblin. A hold also expires by itself (default 10 minutes).
-7. Goblin casts are play-once, so each Goblin returns to its reel; the Goblin keep-alive on Orlok resumes any reel
+7. Goblin casts are play-once, so each Goblin returns to its reel; the Goblin keep-alive on Alpha resumes any reel
    that did not.
 
 Settings live in `scripts/fleet-events/events.json` (rotation, quiet hours, busy-retry, `playTimeoutMs`).
 
 ## Rehearse one event
+
+On Alpha, run these inside the console container: prefix each with `docker exec monsterbox-console`.
 
 ```bash
 cd /home/remote/MonsterBox
@@ -64,10 +74,10 @@ landed; judge the show by eye and ear.
 
 | What | Where |
 |---|---|
-| Rotation state and history (node-local, not committed) | `data/fleet-events-state.json` on Orlok |
+| Rotation state and history (node-local, not committed) | `~/monsterbox-console/data/fleet-events-state.json` on Alpha |
 | Run lock (a stale lock from a dead pid is taken over) | `data/fleet-events.lock` |
-| Cron output | `/home/remote/yard-theater-logs/fleet-events.log` |
-| Step failures and fleet warnings | `/var/log/monsterbox.err` on Orlok (and on each node for its own part) |
+| Cron output | `~/monsterbox-console/logs/fleet-events.log` on Alpha (`/home/remote/yard-theater-logs/` in the container) |
+| Step failures and fleet warnings | `docker logs monsterbox-console` on Alpha (and `/var/log/monsterbox.err` on each node for its own part) |
 | Normal progress | `/var/log/monsterbox.log` |
 | Per-node lurk state | `GET /conversation/api/lurk-state` on each node |
 

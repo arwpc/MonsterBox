@@ -5,8 +5,7 @@
  * Plays the NEXT conductor scene in the rotation (scripts/fleet-events/events.json: 101 → 102 → 103 → 101 …) on
  * this node, through the node's own scene API, and then makes sure the yard is back where it was: every node gets
  * a lurk `event-release` (the conductor sends one itself, but a crashed show must not leave a node holding), and
- * every online Goblin's playback is read back so the log shows whether its reel resumed (the Goblin keep-alive is
- * what actually resumes a stopped queue).
+ * every Goblin whose reel the show stopped is resumed (after a short grace for the last cast) and read back.
  *
  * It refuses to start a show during quiet hours, and when any node reports a live guest conversation it waits and
  * looks again (a show that talks over a guest is worse than a show that is five minutes late).
@@ -47,6 +46,7 @@ const abs = (p) => (isAbsolute(p) ? p : join(ROOT, p));
 const STATE_FILE = abs(cfg.stateFile || 'data/fleet-events-state.json');
 const LOCK_FILE = abs(cfg.lockFile || 'data/fleet-events.lock');
 const PLAY_TIMEOUT = Number(cfg.playTimeoutMs) || 720000;
+const GOBLIN_RESUME_GRACE_MS = Number(cfg.goblinResumeGraceMs) || 20000;
 
 const stamp = () => new Date().toLocaleString('sv-SE').slice(0, 19);
 const log = (...m) => console.log(`[${stamp()}]`, ...m);
@@ -175,7 +175,16 @@ async function releaseAll(nodes, reason) {
   for (const line of results) log('  release →', line);
 }
 
-/** Read every online Goblin's playback status once, for the log (the keep-alive resumes a stopped reel). */
+/**
+ * Read every Goblin's playback back, and put each reel the show interrupted back on screen.
+ *
+ * A cast is play-once: it stops the Goblin's queue, and the keep-alive treats a stopped queue like an operator's
+ * Stop and holds the screen dark for stopHoldMs (10 min) before resuming it. With a show every half hour that left
+ * the cast Goblins dark a third of the evening (Goblins 2 and 3, 2026-10-12: stopped 600 s and 722 s after the
+ * 20:00 show). So after the show the runner resumes every Goblin whose queue is stopped and non-empty, through the
+ * conducting node's resume call (serialized, proven by two reads, ends any keep-alive hold), after a short grace for
+ * the last cast clip. A Goblin that is playing, unreachable or empty is left alone.
+ */
 async function goblinStatus() {
   let goblins = [];
   try {
@@ -183,17 +192,36 @@ async function goblinStatus() {
     goblins = Array.isArray(raw) ? raw : (raw.goblins || []);
     if (!Array.isArray(goblins)) goblins = Object.values(goblins);
   } catch { return; }
-  await Promise.all(goblins.map(async (g) => {
+  const read = async (g) => {
     const endpoint = g.endpoint || (g.ipAddress ? `http://${g.ipAddress}:${g.port || 3001}` : null);
-    if (!endpoint) return;
+    if (!endpoint) return null;
     try {
       const r = await axios.get(`${endpoint}/playback-status`, { timeout: 3000 });
-      const d = r.data || {};
-      log(`  goblin ${g.name}: playing=${d.playing} mpv=${d.mpvRunning} video=${d.currentVideo || '-'} loop=${d.queue?.loopMode || '-'} queue=${d.queue?.videos?.length ?? '?'}`);
+      return r.data || {};
     } catch (err) {
-      log(`  goblin ${g.name}: no answer (${err.code || err.message})`);
+      return { error: err.code || err.message };
     }
-  }));
+  };
+  const describe = (g, d) => (d.error
+    ? `  goblin ${g.name}: no answer (${d.error})`
+    : `  goblin ${g.name}: playing=${d.playing} mpv=${d.mpvRunning} video=${d.currentVideo || '-'} loop=${d.queue?.loopMode || '-'} queue=${d.queue?.videos?.length ?? '?'}`);
+
+  const first = await Promise.all(goblins.map(async (g) => ({ g, d: await read(g) })));
+  const stopped = first.filter(({ d }) => d && !d.error && d.queue && d.queue.playing === false && (d.queue.videos?.length || 0) > 0);
+  if (DRY || stopped.length === 0) {
+    for (const { g, d } of first) if (d) log(describe(g, d));
+    return;
+  }
+  await sleep(GOBLIN_RESUME_GRACE_MS);
+  for (const { g } of stopped) {
+    try {
+      const r = await axios.post(`${BASE}/video-library/api/goblins/${encodeURIComponent(g.id || g.name)}/resume`, {}, { timeout: 60000 });
+      log(`  goblin ${g.name}: queue was stopped after the show; resume ${r.data?.verified ? 'proven' : (r.data?.success ? 'accepted' : 'refused')}`);
+    } catch (err) {
+      log(`  goblin ${g.name}: resume failed (${err.response?.status || err.code || err.message})`);
+    }
+  }
+  for (const { g, d } of await Promise.all(goblins.map(async (g) => ({ g, d: await read(g) })))) if (d) log(describe(g, d));
 }
 
 /** Compact summary of a conductor run from the play endpoint's result. */

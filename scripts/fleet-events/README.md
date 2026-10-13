@@ -13,6 +13,7 @@ node scripts/fleet-events/run-next.mjs --event 103 --force   # rehearse one even
 node scripts/fleet-events/run-next.mjs --status   # rotation state, last runs, what plays next
 node scripts/fleet-events/run-next.mjs --release-only   # tell every node the event is over (ops, after a crash)
 node scripts/fleet-events/install-conductors.mjs  # (re)write scenes 101–103 into this node's scenes.json from conductors/
+node scripts/fleet-events/install-conductors.mjs --character 3 --dir host-parts --base https://192.168.8.120:3000  # Orlok's host-part scenes 1011–1032
 ```
 
 - `events.json` holds the rotation, quiet hours (23:00–08:00, local time: every Pi is on America/Chicago with NTP),
@@ -25,7 +26,8 @@ node scripts/fleet-events/install-conductors.mjs  # (re)write scenes 101–103 i
 
 ## Schedule (every half hour in show hours)
 
-Add a `raw` schedule on `/schedule` (it lands in the managed crontab block) or add the line by hand:
+Alpha (the always-on console node, `docker/console-node/`) owns this entry since 2026-10-12; Orlok's copy is
+disabled. Add a `raw` schedule on `/schedule` (it lands in the managed crontab block) or add the line by hand:
 
 ```
 */30 17-22 * * * cd /home/remote/MonsterBox && (node scripts/fleet-events/run-next.mjs) >> /home/remote/yard-theater-logs/fleet-events.log 2>&1
