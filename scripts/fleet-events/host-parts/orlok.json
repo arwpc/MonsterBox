@@ -1,0 +1,297 @@
+{
+  "_readme": "Orlok's host-part scenes for the fleet-event conductors. Install on Orlok (character 3) with: node scripts/fleet-events/install-conductors.mjs --character 3 --dir host-parts --base https://192.168.8.120:3000",
+  "scenes": [
+    {
+      "id": 1011,
+      "name": "Event 101 host part 1: [deep voice] Tăcere. The sun is dead, and the ca...",
+      "description": "Orlok's own moment in fleet event 101 (The Lighting of the Castle), step 1. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "on",
+          "duration": 2000,
+          "concurrent": true
+        },
+        {
+          "type": "servo",
+          "partId": "15",
+          "angle": 70,
+          "duration": 2500
+        },
+        {
+          "type": "wait",
+          "duration": 2500
+        },
+        {
+          "type": "sayThis",
+          "text": "[deep voice] Tăcere. The sun is dead, and the castle is awake. Sir Dragomir... call the watch."
+        }
+      ]
+    },
+    {
+      "id": 1012,
+      "name": "Event 101 host part 2: [chuckles] Da. The night is named. Now go, copii...",
+      "description": "Orlok's own moment in fleet event 101 (The Lighting of the Castle), step 2. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "sayThis",
+          "text": "[chuckles] Da. The night is named. Now go, copii. Meet them all. The road is Renfield's. Mind the pumpkins."
+        },
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "off",
+          "duration": 0
+        },
+        {
+          "type": "servo",
+          "partId": "15",
+          "angle": 99,
+          "duration": 2000
+        }
+      ]
+    },
+    {
+      "id": 1021,
+      "name": "Event 102 host part 1: [deep voice] Dragomir. Ride down and put Pumpkin...",
+      "description": "Orlok's own moment in fleet event 102 (The Count's Orders), step 1. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "servo",
+          "partId": "15",
+          "angle": 70,
+          "duration": 1500
+        },
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "on",
+          "duration": 1000,
+          "concurrent": true
+        },
+        {
+          "type": "sayThis",
+          "text": "[deep voice] Dragomir. Ride down and put Pumpkinhead in his place. He mocks my gardens and he mocks me."
+        }
+      ]
+    },
+    {
+      "id": 1022,
+      "name": "Event 102 host part 2: Renfield. Record that the knight refused me. The...",
+      "description": "Orlok's own moment in fleet event 102 (The Count's Orders), step 2. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "servo",
+          "partId": "15",
+          "angle": 116,
+          "duration": 1500
+        },
+        {
+          "type": "sayThis",
+          "text": "Renfield. Record that the knight refused me. Then draft a contract: Pumpkinhead's patch, mine, in perpetuity."
+        }
+      ]
+    },
+    {
+      "id": 1023,
+      "name": "Event 102 host part 3: Pumpkinhead. Your patch is mine by contract. Del...",
+      "description": "Orlok's own moment in fleet event 102 (The Count's Orders), step 3. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "on",
+          "duration": 1000,
+          "concurrent": true
+        },
+        {
+          "type": "sayThis",
+          "text": "Pumpkinhead. Your patch is mine by contract. Deliver forty pumpkins to the road by midnight. Nu... make it fifty."
+        }
+      ]
+    },
+    {
+      "id": 1024,
+      "name": "Event 102 host part 4: Groundbreaker. Rise, and guard the road. Quietly...",
+      "description": "Orlok's own moment in fleet event 102 (The Count's Orders), step 4. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "sayThis",
+          "text": "Groundbreaker. Rise, and guard the road. Quietly. [pause] I said quietly."
+        }
+      ]
+    },
+    {
+      "id": 1025,
+      "name": "Event 102 host part 5: Mina. Doamna mea. The house is loud and stupid t...",
+      "description": "Orlok's own moment in fleet event 102 (The Count's Orders), step 5. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "on",
+          "duration": 0
+        },
+        {
+          "type": "servo",
+          "partId": "15",
+          "angle": 99,
+          "duration": 1500
+        },
+        {
+          "type": "sayThis",
+          "text": "Mina. Doamna mea. The house is loud and stupid tonight. Sing it to order, as only you can."
+        }
+      ]
+    },
+    {
+      "id": 1026,
+      "name": "Event 102 host part 6: [chuckles] The knight sulks. The solicitor scrib...",
+      "description": "Orlok's own moment in fleet event 102 (The Count's Orders), step 6. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "sayThis",
+          "text": "[chuckles] The knight sulks. The solicitor scribbles. The pumpkin plots. The giant shouts. The lady sings."
+        },
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "off",
+          "duration": 0
+        },
+        {
+          "type": "wait",
+          "duration": 400
+        },
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "on",
+          "duration": 400
+        },
+        {
+          "type": "wait",
+          "duration": 400
+        },
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "on",
+          "duration": 400
+        },
+        {
+          "type": "wait",
+          "duration": 400
+        },
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "on",
+          "duration": 400
+        },
+        {
+          "type": "linear-actuator",
+          "partId": "1",
+          "direction": "extend",
+          "speed": 50,
+          "duration": 2000,
+          "concurrent": true
+        },
+        {
+          "type": "sayThis",
+          "text": "My household. Perfect. Go, prieteni... tell the road what you saw. Noapte bună."
+        },
+        {
+          "type": "linear-actuator",
+          "partId": "1",
+          "direction": "retract",
+          "speed": 50,
+          "duration": 2000
+        },
+        {
+          "type": "servo",
+          "partId": "15",
+          "angle": 99,
+          "duration": 1500
+        }
+      ]
+    },
+    {
+      "id": 1031,
+      "name": "Event 103 host part 1: light",
+      "description": "Orlok's own moment in fleet event 103 (One Song for Warner Castle), step 1. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "on",
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "id": 1032,
+      "name": "Event 103 host part 2: [chuckles] Groaznic. Dreadful. Perfect. That is ...",
+      "description": "Orlok's own moment in fleet event 103 (One Song for Warner Castle), step 2. Called by the conductor with fleet-scene so the conductor can run on any node (Alpha). Source of truth: scripts/fleet-events/host-parts/orlok.json.",
+      "tags": [
+        "fleet-event",
+        "host-part"
+      ],
+      "steps": [
+        {
+          "type": "sayThis",
+          "text": "[chuckles] Groaznic. Dreadful. Perfect. That is my household. Noapte bună, Warner Castle. Go home... slowly."
+        },
+        {
+          "type": "light",
+          "partId": "8",
+          "state": "off",
+          "duration": 0
+        },
+        {
+          "type": "servo",
+          "partId": "15",
+          "angle": 99,
+          "duration": 2000
+        }
+      ]
+    }
+  ]
+}

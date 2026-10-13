@@ -20,9 +20,14 @@ services:
       - path: /etc/monsterbox/env   # MONSTERBOX_SSH_PASSWORD, like every node
         required: false
     volumes:
-      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/data:/app/data
-      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/config:/app/config
-      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/certs:/app/certs:ro
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/data:/home/remote/MonsterBox/data
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/config:/home/remote/MonsterBox/config
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/certs:/home/remote/MonsterBox/certs:ro
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/logs:/home/remote/yard-theater-logs
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/secrets:/etc/monsterbox:ro   # elevenlabs.key (night memory)
+      - crontabs:/var/spool/cron/crontabs   # the managed schedule survives rebuilds
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
+volumes:
+  crontabs:

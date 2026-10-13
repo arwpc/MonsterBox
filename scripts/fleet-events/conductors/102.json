@@ -1,7 +1,7 @@
 {
   "id": 102,
   "name": "Event: The Count's Orders",
-  "description": "Fleet event 2 (conductor). Orlok musters the household and gives five orders; the knight refuses, Renfield records everything, Pumpkinhead complains about the pumpkin sales, Groundbreaker misunderstands 'quietly', Mina sings the house to order. Script: docs/characters/FLEET-EVENTS.md.",
+  "description": "Fleet event 2 (conductor). Orlok musters the household and gives five orders; the knight refuses, Renfield records everything, Pumpkinhead complains about the pumpkin sales, Groundbreaker misunderstands 'quietly', Mina sings the house to order. Script: docs/characters/FLEET-EVENTS.md. Host-agnostic: Orlok's own lines and moves are his host-part scenes (ids 1021+, scripts/fleet-events/host-parts/orlok.json), so the conductor runs from any node; Alpha schedules it.",
   "tags": [
     "fleet-event",
     "conductor"
@@ -34,21 +34,11 @@
       "timeoutMs": 60000
     },
     {
-      "type": "servo",
-      "partId": "15",
-      "angle": 70,
-      "duration": 1500
-    },
-    {
-      "type": "light",
-      "partId": "8",
-      "state": "on",
-      "duration": 1000,
-      "concurrent": true
-    },
-    {
-      "type": "sayThis",
-      "text": "[deep voice] Dragomir. Ride down and put Pumpkinhead in his place. He mocks my gardens and he mocks me."
+      "type": "fleet-scene",
+      "node": "Orlok",
+      "scene": 1021,
+      "wait": true,
+      "timeoutMs": 60000
     },
     {
       "type": "goblin-video",
@@ -64,14 +54,11 @@
       "timeoutMs": 60000
     },
     {
-      "type": "servo",
-      "partId": "15",
-      "angle": 116,
-      "duration": 1500
-    },
-    {
-      "type": "sayThis",
-      "text": "Renfield. Record that the knight refused me. Then draft a contract: Pumpkinhead's patch, mine, in perpetuity."
+      "type": "fleet-scene",
+      "node": "Orlok",
+      "scene": 1022,
+      "wait": true,
+      "timeoutMs": 60000
     },
     {
       "type": "goblin-video",
@@ -87,15 +74,11 @@
       "timeoutMs": 60000
     },
     {
-      "type": "light",
-      "partId": "8",
-      "state": "on",
-      "duration": 1000,
-      "concurrent": true
-    },
-    {
-      "type": "sayThis",
-      "text": "Pumpkinhead. Your patch is mine by contract. Deliver forty pumpkins to the road by midnight. Nu... make it fifty."
+      "type": "fleet-scene",
+      "node": "Orlok",
+      "scene": 1023,
+      "wait": true,
+      "timeoutMs": 60000
     },
     {
       "type": "goblin-video",
@@ -117,8 +100,11 @@
       "timeoutMs": 60000
     },
     {
-      "type": "sayThis",
-      "text": "Groundbreaker. Rise, and guard the road. Quietly. [pause] I said quietly."
+      "type": "fleet-scene",
+      "node": "Orlok",
+      "scene": 1024,
+      "wait": true,
+      "timeoutMs": 60000
     },
     {
       "type": "goblin-video",
@@ -140,20 +126,11 @@
       "timeoutMs": 60000
     },
     {
-      "type": "light",
-      "partId": "8",
-      "state": "on",
-      "duration": 0
-    },
-    {
-      "type": "servo",
-      "partId": "15",
-      "angle": 99,
-      "duration": 1500
-    },
-    {
-      "type": "sayThis",
-      "text": "Mina. Doamna mea. The house is loud and stupid tonight. Sing it to order, as only you can."
+      "type": "fleet-scene",
+      "node": "Orlok",
+      "scene": 1025,
+      "wait": true,
+      "timeoutMs": 60000
     },
     {
       "type": "goblin-video",
@@ -175,69 +152,11 @@
       "timeoutMs": 60000
     },
     {
-      "type": "sayThis",
-      "text": "[chuckles] The knight sulks. The solicitor scribbles. The pumpkin plots. The giant shouts. The lady sings."
-    },
-    {
-      "type": "light",
-      "partId": "8",
-      "state": "off",
-      "duration": 0
-    },
-    {
-      "type": "wait",
-      "duration": 400
-    },
-    {
-      "type": "light",
-      "partId": "8",
-      "state": "on",
-      "duration": 400
-    },
-    {
-      "type": "wait",
-      "duration": 400
-    },
-    {
-      "type": "light",
-      "partId": "8",
-      "state": "on",
-      "duration": 400
-    },
-    {
-      "type": "wait",
-      "duration": 400
-    },
-    {
-      "type": "light",
-      "partId": "8",
-      "state": "on",
-      "duration": 400
-    },
-    {
-      "type": "linear-actuator",
-      "partId": "1",
-      "direction": "extend",
-      "speed": 50,
-      "duration": 2000,
-      "concurrent": true
-    },
-    {
-      "type": "sayThis",
-      "text": "My household. Perfect. Go, prieteni... tell the road what you saw. Noapte bună."
-    },
-    {
-      "type": "linear-actuator",
-      "partId": "1",
-      "direction": "retract",
-      "speed": 50,
-      "duration": 2000
-    },
-    {
-      "type": "servo",
-      "partId": "15",
-      "angle": 99,
-      "duration": 1500
+      "type": "fleet-scene",
+      "node": "Orlok",
+      "scene": 1026,
+      "wait": true,
+      "timeoutMs": 60000
     },
     {
       "type": "wait",

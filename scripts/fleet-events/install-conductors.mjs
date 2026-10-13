@@ -6,6 +6,7 @@
  *   node scripts/fleet-events/install-conductors.mjs --character 3                 # install on the host character
  *   node scripts/fleet-events/install-conductors.mjs --character 3 --validate-only # check without writing
  *   node scripts/fleet-events/install-conductors.mjs --character 3 --base http://localhost:3100
+ *   node scripts/fleet-events/install-conductors.mjs --character 3 --dir host-parts --base https://192.168.8.120:3000
  *
  * The character's existing scenes are kept; any scene whose id matches a conductor id is replaced. A locked
  * character answers 423 (unlock first: `node scripts/character-lock.mjs unlock <id>`). The conductor files live
@@ -26,8 +27,10 @@ const CHAR = opt('--character', null);
 const VALIDATE_ONLY = args.includes('--validate-only');
 if (!CHAR) { console.error('Usage: install-conductors.mjs --character <id> [--base url] [--validate-only]'); process.exit(2); }
 
-const conductors = readdirSync(join(HERE, 'conductors')).filter((f) => f.endsWith('.json')).sort()
-  .map((f) => JSON.parse(readFileSync(join(HERE, 'conductors', f), 'utf8')));
+// --dir host-parts installs the host character's own moments (a file of {scenes:[...]}) instead of the conductors.
+const DIR = opt('--dir', 'conductors');
+const conductors = readdirSync(join(HERE, DIR)).filter((f) => f.endsWith('.json')).sort()
+  .flatMap((f) => { const j = JSON.parse(readFileSync(join(HERE, DIR, f), 'utf8')); return Array.isArray(j.scenes) ? j.scenes : [j]; });
 const ids = new Set(conductors.map((c) => c.id));
 
 const current = await axios.get(`${BASE}/scenes/api/?characterId=${CHAR}`, { timeout: 15000 });
