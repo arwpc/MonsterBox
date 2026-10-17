@@ -80,6 +80,8 @@ class MotionTracker:
         self.cv_tracker = None
         self.cv_tracker_bbox = None  # (x,y,w,h) in pixels
         self.cv_tracker_ok = False
+        # Full detections in a row that found nothing while the tracker still held a box.
+        self.empty_full_detects = 0
         self.detect_interval = config.get('detect_interval', 5)  # run full detection every N frames
         self.frames_since_detect = 0
 
@@ -821,6 +823,22 @@ class MotionTracker:
                     best = max(new_detections, key=lambda d: d['area'])
                     bx, by, bw, bh = best['bbox']
                     self._init_cv_tracker(frame, (bx, by, bw, bh))
+                    self.empty_full_detects = 0
+                elif use_tracker and self.cv_tracker is not None:
+                    # The inter-frame tracker only bridges frames BETWEEN detections.
+                    # Left alone after detection stops confirming it, KCF follows its
+                    # last box forever: one false HOG hit on a static lamp pinned a
+                    # node's head at the edge of its window all night (Orlok,
+                    # 2026-10-16, the same box for hours in an empty room). A few
+                    # misses are tolerated so one missed frame of a real guest
+                    # does not drop them.
+                    self.empty_full_detects += 1
+                    if self.empty_full_detects >= self.config.get('tracker_max_empty_detects', 3):
+                        logger.info(f"{self._cv_tracker_kind or 'CV'} tracker dropped — "
+                                    f"{self.empty_full_detects} detections in a row found nothing")
+                        self.cv_tracker = None
+                        self.cv_tracker_ok = False
+                        self.empty_full_detects = 0
 
             # Check manual target expiry
             if self.manual_target and time.time() > self.manual_target['expires_at']:
@@ -859,7 +877,12 @@ class MotionTracker:
                     tobj['center'] = det['center']
                     tobj['bbox'] = det['bbox']
                     tobj['area'] = det['area']
-                    tobj['age'] += 1
+                    # Only a real detection confirms a target. The inter-frame
+                    # tracker re-reporting its own box is not evidence: counted,
+                    # one false detection on a lamp confirmed itself two frames
+                    # later and pulled the head toward it.
+                    if det.get('source') != 'tracker':
+                        tobj['age'] += 1
                     tobj['lost_count'] = 0
                 elif looked:
                     tobj['lost_count'] += 1
