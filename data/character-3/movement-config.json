@@ -2,8 +2,8 @@
   "characterPersonality": "slow_menacing",
   "idle": {
     "enabled": false,
-    "minHoldMs": 5000,
-    "maxHoldMs": 12000,
+    "minHoldMs": 3000,
+    "maxHoldMs": 7000,
     "transitionDurationMs": 3000,
     "defaultEasing": "ease_in_out"
   },

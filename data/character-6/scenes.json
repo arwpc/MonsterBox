@@ -2969,5 +2969,1189 @@
     ],
     "created": "2026-10-10T18:00:00.000Z",
     "updated": "2026-10-10T18:00:00.000Z"
+  },
+  {
+    "id": 11,
+    "name": "Renfield: Lurk Bark 1",
+    "description": "Lurk bark (operator 2026-10-16): while nobody watches he barks one line, shakes and scribbles furiously. Played by the lurk-scene rotation only while lurking.",
+    "created": "2026-10-17T01:45:00.000Z",
+    "updated": "2026-10-17T01:45:00.000Z",
+    "tags": [
+      "lurk"
+    ],
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[muttering] Clause forty-seven... subsection nine... the Master will want it in triplicate. TRIPLICATE!",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 66,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 128,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 67,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 122,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 66,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 128,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 72,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 126,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 107,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 66,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 56,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 119,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 71,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 129,
+        "duration": 150
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "name": "Renfield: Lurk Bark 2",
+    "description": "Lurk bark (operator 2026-10-16): while nobody watches he barks one line, shakes and scribbles furiously. Played by the lurk-scene rotation only while lurking.",
+    "created": "2026-10-17T01:45:00.000Z",
+    "updated": "2026-10-17T01:45:00.000Z",
+    "tags": [
+      "lurk"
+    ],
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[frantic] Nobody is reading. Good. GOOD. The ink must be dry before the Master wakes.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 123,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 71,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 117,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 74,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 73,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 108,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 73,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 113,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 66,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 116,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 116,
+        "duration": 150
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "name": "Renfield: Lurk Bark 3",
+    "description": "Lurk bark (operator 2026-10-16): while nobody watches he barks one line, shakes and scribbles furiously. Played by the lurk-scene rotation only while lurking.",
+    "created": "2026-10-17T01:45:00.000Z",
+    "updated": "2026-10-17T01:45:00.000Z",
+    "tags": [
+      "lurk"
+    ],
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[whispering] Whereas the party of the first part... shall be eaten. Yes. Eaten. Initial here.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 64,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 112,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 74,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 116,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 63,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 128,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 55,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 125,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 69,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 61,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 112,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 63,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 123,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 116,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 66,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 129,
+        "duration": 150
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "name": "Renfield: Lurk Bark 4",
+    "description": "Lurk bark (operator 2026-10-16): while nobody watches he barks one line, shakes and scribbles furiously. Played by the lurk-scene rotation only while lurking.",
+    "created": "2026-10-17T01:45:00.000Z",
+    "updated": "2026-10-17T01:45:00.000Z",
+    "tags": [
+      "lurk"
+    ],
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[giggles] Another soul for the ledger! Another signature! Oh, the Master will be so pleased!",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 71,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 109,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 64,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 66,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 76,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 117,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 57,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 111,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 72,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 129,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 69,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 123,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 62,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 129,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 111,
+        "duration": 150
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "name": "Renfield: Lurk Bark 5",
+    "description": "Lurk bark (operator 2026-10-16): while nobody watches he barks one line, shakes and scribbles furiously. Played by the lurk-scene rotation only while lurking.",
+    "created": "2026-10-17T01:45:00.000Z",
+    "updated": "2026-10-17T01:45:00.000Z",
+    "tags": [
+      "lurk"
+    ],
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[shouting] Objection! Overruled! Sustained! [muttering] I do all the voices myself, you know.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 64,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 123,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 64,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 107,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 57,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 114,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 117,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 66,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 121,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 69,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 118,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 62,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 126,
+        "duration": 150
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "name": "Renfield: Lurk Bark 6",
+    "description": "Lurk bark (operator 2026-10-16): while nobody watches he barks one line, shakes and scribbles furiously. Played by the lurk-scene rotation only while lurking.",
+    "created": "2026-10-17T01:45:00.000Z",
+    "updated": "2026-10-17T01:45:00.000Z",
+    "tags": [
+      "lurk"
+    ],
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[nervous] Is someone there? No? Then the flies are entered into evidence. Delicious evidence.",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 78,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 117,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 55,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 125,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 77,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 117,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 62,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 112,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 125,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 105,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 57,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 119,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 73,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 130,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 67,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "name": "Renfield: Lurk Bark 7",
+    "description": "Lurk bark (operator 2026-10-16): while nobody watches he barks one line, shakes and scribbles furiously. Played by the lurk-scene rotation only while lurking.",
+    "created": "2026-10-17T01:45:00.000Z",
+    "updated": "2026-10-17T01:45:00.000Z",
+    "tags": [
+      "lurk"
+    ],
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[urgent] The deadline is midnight! It is always midnight! Stamp, stamp, STAMP!",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 65,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 126,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 56,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 129,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 68,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 114,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 118,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 77,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 110,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 78,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 106,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 79,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 112,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 121,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 80,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 111,
+        "duration": 150
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "name": "Renfield: Lurk Bark 8",
+    "description": "Lurk bark (operator 2026-10-16): while nobody watches he barks one line, shakes and scribbles furiously. Played by the lurk-scene rotation only while lurking.",
+    "created": "2026-10-17T01:45:00.000Z",
+    "updated": "2026-10-17T01:45:00.000Z",
+    "tags": [
+      "lurk"
+    ],
+    "steps": [
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 60,
+        "duration": 500,
+        "concurrent": true
+      },
+      {
+        "type": "sayThis",
+        "text": "[muttering] Spiders, forty. Flies, a hundred and twelve. Guests... pending. Pending! [giggles]",
+        "concurrent": true
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 77,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 115,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 62,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 113,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 56,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 127,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 70,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 129,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 74,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 119,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 60,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 109,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 71,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 121,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 74,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 123,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 75,
+        "duration": 150
+      },
+      {
+        "type": "servo",
+        "partId": "7",
+        "angle": 120,
+        "duration": 150
+      },
+      {
+        "type": "motor",
+        "partId": "1",
+        "direction": "forward",
+        "speed": 55,
+        "duration": 400
+      },
+      {
+        "type": "wait",
+        "duration": 1500
+      },
+      {
+        "type": "pose",
+        "poseId": 9
+      }
+    ]
   }
 ]

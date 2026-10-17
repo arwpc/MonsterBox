@@ -1,8 +1,8 @@
 {
   "idle": {
     "enabled": false,
-    "minHoldMs": 3000,
-    "maxHoldMs": 8000,
+    "minHoldMs": 600,
+    "maxHoldMs": 1800,
     "transitionDurationMs": 2000,
     "defaultEasing": "ease_in_out",
     "steppedTransitions": true,

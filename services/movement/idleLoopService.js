@@ -11,7 +11,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { assertConfigPathWritable } from '../characterConfigLock.js';
-import { getRandomIdlePose, poseAngles } from './poseLibrary.js';
+import { getRandomIdlePose, getIdlePoses, poseAngles } from './poseLibrary.js';
 import { claimServo, releaseAll, getActiveClaims, getOwner, PRIORITY } from './priorityManager.js';
 import { applyPoseJitter, getEffectiveWindow, clampIntoWindow } from '../poses/poseBounds.js';
 
@@ -323,7 +323,13 @@ async function loopIteration() {
                     durationMs: activePose.transitionDurationMs || idleConfig.transitionDurationMs || 2000,
                     easing: activePose.transitionProfile || idleConfig.defaultEasing || 'ease_in_out',
                     stepped: idleConfig.steppedTransitions !== false,
-                    signal: currentAbort.signal
+                    signal: currentAbort.signal,
+                    // Head tracking reclaims the pan servo the instant a guest appears;
+                    // the rest of a 3 s idle glide must not keep fighting it.
+                    stillOwned: (partId) => {
+                        const owner = getOwner(String(partId));
+                        return !!owner && owner.owner === OWNER;
+                    }
                 });
             } else if (claimedParts.length > 0) {
                 console.log('[IdleLoop] No transitionEngine available, skipping hardware transition');
@@ -450,6 +456,39 @@ export function stop() {
     currentPoseId = null;
 }
 
+// wantsPart() is asked on every tracker frame; the idle library only changes when
+// an operator edits poses, so a short cache keeps that off the SD card.
+const WANTS_PART_CACHE_MS = 30 * 1000;
+let wantsPartCache = { characterId: null, at: 0, partIds: new Set() };
+
+/**
+ * Is the idle loop running for this character with at least one idle pose that
+ * positions this servo? Head tracking asks before sweeping an empty view: if the
+ * idle library has authored head poses, those read as a character keeping watch,
+ * where a slow 0.5° creep reads as nothing at all.
+ *
+ * @param {number|string} charId
+ * @param {number|string} partId
+ * @returns {Promise<boolean>}
+ */
+export async function wantsPart(charId, partId) {
+    if (!running || String(charId) !== String(characterId)) return false;
+    const now = Date.now();
+    if (String(wantsPartCache.characterId) !== String(charId) || now - wantsPartCache.at > WANTS_PART_CACHE_MS) {
+        const partIds = new Set();
+        try {
+            const poses = await getIdlePoses(charId);
+            for (const pose of poses) {
+                for (const id of Object.keys(poseAngles(pose))) partIds.add(String(id));
+            }
+        } catch (err) {
+            console.warn(`[IdleLoop] Could not read idle poses for character ${charId}: ${err.message}`);
+        }
+        wantsPartCache = { characterId: charId, at: now, partIds };
+    }
+    return wantsPartCache.partIds.has(String(partId));
+}
+
 /**
  * Get current status of the idle loop.
  *
@@ -473,4 +512,4 @@ export function getStatus() {
     };
 }
 
-export default { start, stop, getStatus };
+export default { start, stop, getStatus, wantsPart };

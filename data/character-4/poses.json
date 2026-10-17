@@ -39,10 +39,10 @@
     {
       "id": 2,
       "name": "Idle: Watch the Road",
-      "category": "idle",
+      "category": "scene",
       "description": "Eyes on the road where the carriages pass.",
       "tags": [
-        "idle"
+        "scene"
       ],
       "transitionProfile": "ease_in_out",
       "transitionDurationMs": 2500,
@@ -76,10 +76,10 @@
     {
       "id": 3,
       "name": "Idle: Watch the Keep",
-      "category": "idle",
+      "category": "scene",
       "description": "A look back toward the barred keep door.",
       "tags": [
-        "idle"
+        "scene"
       ],
       "transitionProfile": "ease_in_out",
       "transitionDurationMs": 2500,
@@ -113,10 +113,10 @@
     {
       "id": 4,
       "name": "Idle: The Lid Breathes",
-      "category": "idle",
+      "category": "scene",
       "description": "The magic box lid lifts a hair, as if something inside breathed.",
       "tags": [
-        "idle"
+        "scene"
       ],
       "transitionProfile": "ease_in_out",
       "transitionDurationMs": 1800,
@@ -144,10 +144,10 @@
     {
       "id": 5,
       "name": "Idle: Jaw a Crack",
-      "category": "idle",
+      "category": "scene",
       "description": "Jaw parts a crack, an old soldier muttering.",
       "tags": [
-        "idle"
+        "scene"
       ],
       "transitionProfile": "ease_in_out",
       "transitionDurationMs": 900,
@@ -175,10 +175,10 @@
     {
       "id": 6,
       "name": "Idle: Peek in the Box",
-      "category": "idle",
+      "category": "scene",
       "description": "The lid lifts to a peek; the jaw follows a little.",
       "tags": [
-        "idle"
+        "scene"
       ],
       "transitionProfile": "ease_in_out",
       "transitionDurationMs": 2000,
@@ -206,10 +206,10 @@
     {
       "id": 7,
       "name": "Idle: Old Steel Settles",
-      "category": "idle",
+      "category": "scene",
       "description": "Back to centre, everything shut and still.",
       "tags": [
-        "idle"
+        "scene"
       ],
       "transitionProfile": "ease_in_out",
       "transitionDurationMs": 2200,
@@ -243,10 +243,10 @@
     {
       "id": 8,
       "name": "Idle: Muttered Oath",
-      "category": "idle",
+      "category": "scene",
       "description": "A silent oath: jaw working, lid tapping.",
       "tags": [
-        "idle"
+        "scene"
       ],
       "transitionProfile": "ease_in_out",
       "transitionDurationMs": 700,
@@ -274,10 +274,10 @@
     {
       "id": 9,
       "name": "Idle: Glance at the Patch",
-      "category": "idle",
+      "category": "scene",
       "description": "A cold sideways look at the pumpkin patch.",
       "tags": [
-        "idle"
+        "scene"
       ],
       "transitionProfile": "ease_in_out",
       "transitionDurationMs": 2000,
@@ -622,6 +622,296 @@
         }
       ],
       "created": "2026-10-10T15:00:00.000Z"
+    },
+    {
+      "id": 24,
+      "name": "Idle: Watch: Far Left",
+      "category": "idle",
+      "description": "Lurk watch pose (operator 2026-10-16: head and jaw move noticeably, like he is on watch). Head stays inside the 372-406 scene-hazards window (cable wrap outside it).",
+      "tags": [
+        "idle",
+        "watch"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 3500,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 374
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 10,
+      "holdVariance": 1500
+    },
+    {
+      "id": 25,
+      "name": "Idle: Watch: Far Right",
+      "category": "idle",
+      "description": "Lurk watch pose (operator 2026-10-16: head and jaw move noticeably, like he is on watch). Head stays inside the 372-406 scene-hazards window (cable wrap outside it).",
+      "tags": [
+        "idle",
+        "watch"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 3500,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 404
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 10,
+      "holdVariance": 1500
+    },
+    {
+      "id": 26,
+      "name": "Idle: Watch: The Gate",
+      "category": "idle",
+      "description": "Lurk watch pose (operator 2026-10-16: head and jaw move noticeably, like he is on watch). Head stays inside the 372-406 scene-hazards window (cable wrap outside it).",
+      "tags": [
+        "idle",
+        "watch"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2500,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 389
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 130
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 10,
+      "holdVariance": 1500
+    },
+    {
+      "id": 27,
+      "name": "Idle: Watch: Left, Teeth Bared",
+      "category": "idle",
+      "description": "Lurk watch pose (operator 2026-10-16: head and jaw move noticeably, like he is on watch). Head stays inside the 372-406 scene-hazards window (cable wrap outside it).",
+      "tags": [
+        "idle",
+        "watch"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2500,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 378
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 165
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 8,
+      "holdVariance": 1500
+    },
+    {
+      "id": 28,
+      "name": "Idle: Watch: Right, Muttering",
+      "category": "idle",
+      "description": "Lurk watch pose (operator 2026-10-16: head and jaw move noticeably, like he is on watch). Head stays inside the 372-406 scene-hazards window (cable wrap outside it).",
+      "tags": [
+        "idle",
+        "watch"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2500,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 400
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 152
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 8,
+      "holdVariance": 1500
+    },
+    {
+      "id": 29,
+      "name": "Idle: Watch: Grim Mutter",
+      "category": "idle",
+      "description": "Lurk watch pose (operator 2026-10-16: head and jaw move noticeably, like he is on watch). Head stays inside the 372-406 scene-hazards window (cable wrap outside it).",
+      "tags": [
+        "idle",
+        "watch"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 800,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 395
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 160
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 20
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 8,
+      "holdVariance": 1500
+    },
+    {
+      "id": 30,
+      "name": "Idle: Watch: Glance at the Patch",
+      "category": "idle",
+      "description": "Lurk watch pose (operator 2026-10-16: head and jaw move noticeably, like he is on watch). Head stays inside the 372-406 scene-hazards window (cable wrap outside it).",
+      "tags": [
+        "idle",
+        "watch"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 2000,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "servo",
+          "target": {
+            "angleDeg": 384
+          }
+        },
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 136
+          }
+        },
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 28
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 6,
+      "holdVariance": 1500
+    },
+    {
+      "id": 31,
+      "name": "Idle: Watch: Jaw Clack",
+      "category": "idle",
+      "description": "Jaw snaps open, head holds where it is.",
+      "tags": [
+        "idle",
+        "watch"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 400,
+      "parts": [
+        {
+          "partId": 2,
+          "type": "servo",
+          "target": {
+            "angleDeg": 168
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 6,
+      "holdVariance": 800
     }
   ],
   "templates": {}

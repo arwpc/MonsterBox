@@ -3,9 +3,9 @@
     {
       "characterId": 1,
       "name": "PumpkinHead",
-      "lockedAt": "2026-09-21T00:08:30.966Z",
+      "lockedAt": "2026-10-17T01:34:24.100Z",
       "lockedBy": "Aaron Warner",
-      "reason": "Finished and verified at 100%; configuration frozen at operator direction. Sway poses set to 40% motor (60% browns out his Pi and hard-resets it).",
+      "reason": "Finished and verified at 100%; configuration frozen at operator direction. Sway poses set to 40% motor (60% browns out his Pi and hard-resets it). 2026-10-16 operator: lurk idle is a 40% sway about every 10 s (poses 14-15); the twitch poses 2-9 stay for scenes.",
       "fingerprints": {
         "ai-config/stt-config.json": "bb8838556f1cb2860e4a165b8d81ac4c50ca536af7f5f928ee9d952b5135630b",
         "ai-config/tts-config.json": "a538fe654aff407af54973cc602bac2bdd6909c00f9e07530912ec13d6060619",
@@ -16,39 +16,37 @@
         "models/motor_models.json": "95531e61c157644d311707966d10875e4b4eb6f91dd3f718a259a520c106a008",
         "models/servo_models.json": "d8df81ba879697e346efa319df6c6d559619a24581a07d73e2b97a29a31af481",
         "models/webcam_models.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-        "movement-config.json": "9e03520ea87663d9d48446c635101ac60705b4e538e4971b429f11a11746360f",
+        "movement-config.json": "da3abb3d2cb72bfbdca989fed4a194a0818e8606aeebc67f469bac9629cc8de0",
         "parts.json": "52a5c4853a32969c027658641b580046d298298fcd14c2182aef086654ecc0b0",
-        "poses.json": "0d5f7475885fe568d007c9a660c0cfae191032632095f714041649d611dc4984",
+        "poses.json": "9394426e9a7c38325131d51d8faa0a396c3e5a9f383b6f2e5a5380354fdbf47c",
         "scenes.json": "9a821f737b4e5483ba525b2169e54c4cfb62e90f5d9e8bcc0b5e70563020d295",
         "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "servos.json": "1c9cf70286dd56b67639934f2a1e55628bac23f99608ef18161d041b98a9664f",
         "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "super-powers.json": "48f060d3b61f0ecbd5cadfdb5affdeb2a7be18351981395b6498009f92a9ea8a"
-      },
-      "refreshedAt": "2026-10-10T17:59:11.394Z"
+      }
     },
     {
       "characterId": 4,
       "name": "Sir Dragomir",
-      "lockedAt": "2026-09-22T01:37:58.089Z",
+      "lockedAt": "2026-10-17T01:34:26.093Z",
       "lockedBy": "Aaron Warner",
-      "reason": "Finished and verified at 100% (2026-09-21). Head servo repaired (bad solder joint inside the servo) and recalibrated; jaw proven moving on PCA9685 ch3 after a physically unplugged connector was reseated; ReSpeaker XVF3800 pinned and proven by frames; jaw sensitivity 1.6; three Magic Box riddle scenes. PIR corrected to GPIO 26 at operator direction (the old GPIO 23 was inherited from his Skulltalker config and never measured).",
+      "reason": "Finished and verified at 100% (2026-09-21). Head servo repaired (bad solder joint inside the servo) and recalibrated; jaw proven moving on PCA9685 ch3 after a physically unplugged connector was reseated; ReSpeaker XVF3800 pinned and proven by frames; jaw sensitivity 1.6; three Magic Box riddle scenes. PIR corrected to GPIO 26 at operator direction (the old GPIO 23 was inherited from his Skulltalker config and never measured). 2026-10-16 operator: lurk idle keeps watch with noticeable head and jaw (poses 24-31, head inside 372-406); poses 2-9 stay for scenes.",
       "fingerprints": {
         "ai-config/stt-config.json": "211d44f33a09cc072fedcd10b20fc1da41d46b8222a4711625e65e60c10178a8",
         "ai-config/tts-config.json": "a682de5368cb34406e28cb3e03450c26b7f05108fe61fa2b06c124c326e455c8",
         "characters.json": "ff5af55fbd546d8e8f8c505c71a89412730b10abf7dae8649e85adaad11271ef",
         "images/John_Hunyadi__Chronica_Hungarorum_.jpg": "d2925747cb996771581fb81c732d38a2669f97270f55f67145420637db176ec5",
         "linear_actuator_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
-        "movement-config.json": "fb8e724cca400b5f2470fc5dd92d3c6148e55cde3d420bad9b7182b99e23f2cd",
+        "movement-config.json": "81919de134f1acc3ce722d8f68569e06f58aae0a1bfd15a5841712e0fb49070c",
         "parts.json": "e03d8eaac96633911ab11fe60d6dddc2aa9a4b879e9df1dbd65b489e70c9098f",
-        "poses.json": "950eea067bb50177623cb3a3b3386007695f0946e72b0d985d0058672953d540",
+        "poses.json": "1ffdda9d0000ce8adede427b8ec1d16a9cc5d983596edd5d2a6d0455d2c6ba2e",
         "scenes.json": "e215ada748b3efd1644776f5485e671b213eba11e8c277aaf86349a22ad60c10",
         "servo_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "servos.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
         "simple_calibrations.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
         "super-powers.json": "6e5024b70f97d9f256f667bd5d5d1753804c698e6f5b179e1b952af25b7321ec"
-      },
-      "refreshedAt": "2026-10-10T17:59:11.630Z"
+      }
     }
   ]
 }

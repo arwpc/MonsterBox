@@ -511,7 +511,14 @@ async function transitionServos(characterId, parts, options = {}) {
                 for (let frame = 0; frame < frames; frame++) {
                     throwIfAborted(signal);
                     const frameStart = Date.now();
-                    const commands = tracks.map(t => ({ partId: t.partId, angleDeg: t.angles[frame] }));
+                    // A caller holding servos at low priority (the idle loop) passes
+                    // stillOwned so a servo taken mid-glide by a higher-priority owner
+                    // is left to that owner instead of being fought frame by frame.
+                    const liveTracks = typeof options.stillOwned === 'function'
+                        ? tracks.filter(t => options.stillOwned(t.partId))
+                        : tracks;
+                    if (liveTracks.length === 0) break;
+                    const commands = liveTracks.map(t => ({ partId: t.partId, angleDeg: t.angles[frame] }));
                     lastFrameResult = await hwService.batchMoveServos(commands, { characterId });
                     const spent = Date.now() - frameStart;
                     const remaining = perFrameMs - spent;

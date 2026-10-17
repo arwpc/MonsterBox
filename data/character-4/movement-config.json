@@ -2,10 +2,11 @@
   "characterPersonality": "formal_stiff",
   "idle": {
     "enabled": false,
-    "minHoldMs": 6000,
-    "maxHoldMs": 15000,
+    "minHoldMs": 2500,
+    "maxHoldMs": 6000,
     "transitionDurationMs": 2500,
-    "defaultEasing": "linear"
+    "defaultEasing": "linear",
+    "distanceWeighting": false
   },
   "microMovement": {
     "enabled": false,

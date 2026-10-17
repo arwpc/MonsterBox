@@ -236,7 +236,7 @@
     },
     {
       "id": 16,
-      "name": "Idle: Hand Stirs",
+      "name": "Idle: Arm Rises",
       "category": "idle",
       "tags": [
         "idle",
@@ -249,9 +249,9 @@
           "type": "linear_actuator",
           "target": {
             "direction": "extend",
-            "speed": 40,
-            "durationMs": 400,
-            "duration": 400
+            "speed": 50,
+            "durationMs": 1500,
+            "duration": 1500
           }
         }
       ],
@@ -259,12 +259,12 @@
       "created": "2026-10-10T16:00:00.000Z",
       "modified": "2026-10-10T16:00:00.000Z",
       "transitionDurationMs": 800,
-      "weight": 6,
+      "weight": 10,
       "holdVariance": 1500
     },
     {
       "id": 17,
-      "name": "Idle: Hand Withdraws",
+      "name": "Idle: Arm Lowers",
       "category": "idle",
       "tags": [
         "idle",
@@ -277,9 +277,9 @@
           "type": "linear_actuator",
           "target": {
             "direction": "retract",
-            "speed": 40,
-            "durationMs": 700,
-            "duration": 700
+            "speed": 50,
+            "durationMs": 2200,
+            "duration": 2200
           }
         }
       ],
@@ -287,7 +287,7 @@
       "created": "2026-10-10T16:00:00.000Z",
       "modified": "2026-10-10T16:00:00.000Z",
       "transitionDurationMs": 800,
-      "weight": 9,
+      "weight": 12,
       "holdVariance": 1500
     },
     {
@@ -316,9 +316,9 @@
           "type": "linear_actuator",
           "target": {
             "direction": "retract",
-            "speed": 40,
-            "durationMs": 600,
-            "duration": 600
+            "speed": 50,
+            "durationMs": 1500,
+            "duration": 1500
           }
         }
       ],

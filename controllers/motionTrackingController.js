@@ -831,6 +831,22 @@ export function effectiveDriveWindow(centerDeg, rangeDeg, guardrails) {
   return { center: center, min: min, max: max, range: range, snapped: false };
 }
 
+// How long the view must be empty before the head scans or yields to idle poses.
+const SCAN_DELAY_MS = 3000;
+
+let idleLoopModule = null;
+/** Does the idle loop, running for this character, have poses for this servo? */
+async function idleLoopWantsServo(characterId, servoId) {
+  if (characterId == null) return false;
+  try {
+    if (!idleLoopModule) idleLoopModule = await import('../services/movement/idleLoopService.js');
+    return await idleLoopModule.wantsPart(characterId, servoId);
+  } catch (e) {
+    console.warn('Head tracking: idle-loop lookup failed, scanning instead: ' + e.message);
+    return false;
+  }
+}
+
 async function maybeDriveHead(webcamId, status) {
   const cfg = headTrackingConfigs.get(webcamId);
   if (!cfg || !cfg.enabled) return;
@@ -869,6 +885,24 @@ async function maybeDriveHead(webcamId, status) {
         releaseServo(cfg.panServoId, headOwner(webcamId));
         console.warn('Head tracking: released the claim on servo ' + cfg.panServoId
           + ' — it has no usable calibrated window, so holding it only starves lower-priority motion');
+      }
+      return;
+    }
+  }
+
+  // Nobody in view for the scan delay, and the idle loop has authored poses for
+  // this servo: give the head to the idle loop. Its glances are what "keeping
+  // watch" looks like; the scan below creeps 0.5° a frame, which on a geared or
+  // multi-turn neck sits inside the servo's deadband and reads as a frozen head
+  // (and holding the claim starved those idle poses entirely). The re-claim
+  // below takes the head back on the first frame with a target.
+  if (cfg.panServoId != null && (!status || !status.target_detected)) {
+    const prior = headTrackingStates.get(webcamId);
+    if (prior && prior.lastTargetAt && Date.now() - prior.lastTargetAt >= SCAN_DELAY_MS
+        && await idleLoopWantsServo(cfg.characterId, cfg.panServoId)) {
+      const owner = getOwner(cfg.panServoId);
+      if (owner && owner.owner === headOwner(webcamId)) {
+        releaseServo(cfg.panServoId, headOwner(webcamId));
       }
       return;
     }
@@ -916,8 +950,8 @@ async function maybeDriveHead(webcamId, status) {
     // yet) the 3 s wait restarted forever and the head never swept at all.
     headTrackingStates.set(webcamId, state);
 
-    // Wait 3 seconds of no target before scanning
-    if (now - state.lastTargetAt < 3000) return;
+    // Wait for a few seconds of no target before scanning
+    if (now - state.lastTargetAt < SCAN_DELAY_MS) return;
 
     // The scan sweep drives the servo with no operator watching, so it gets the
     // same guardrails as target tracking. It used to command raw center±range/2

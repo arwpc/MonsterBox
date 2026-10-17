@@ -27,10 +27,10 @@
     {
       "id": 2,
       "name": "Idle: Stalks Stir",
-      "category": "idle",
+      "category": "twitch",
       "description": "The stalks stir in a breeze nobody else feels.",
       "tags": [
-        "idle"
+        "twitch"
       ],
       "transitionProfile": "linear",
       "transitionDurationMs": 300,
@@ -52,10 +52,10 @@
     {
       "id": 3,
       "name": "Idle: Stalks Stir Back",
-      "category": "idle",
+      "category": "twitch",
       "description": "The stalks sway back the other way.",
       "tags": [
-        "idle"
+        "twitch"
       ],
       "transitionProfile": "linear",
       "transitionDurationMs": 300,
@@ -77,10 +77,10 @@
     {
       "id": 4,
       "name": "Idle: A Crack",
-      "category": "idle",
+      "category": "twitch",
       "description": "A quick dry crack of the vine.",
       "tags": [
-        "idle"
+        "twitch"
       ],
       "transitionProfile": "linear",
       "transitionDurationMs": 300,
@@ -102,10 +102,10 @@
     {
       "id": 5,
       "name": "Idle: A Snap",
-      "category": "idle",
+      "category": "twitch",
       "description": "A sharp snap, the other way.",
       "tags": [
-        "idle"
+        "twitch"
       ],
       "transitionProfile": "linear",
       "transitionDurationMs": 300,
@@ -127,10 +127,10 @@
     {
       "id": 6,
       "name": "Idle: The Long Creak",
-      "category": "idle",
+      "category": "twitch",
       "description": "A slow creak as the husk turns to watch.",
       "tags": [
-        "idle"
+        "twitch"
       ],
       "transitionProfile": "linear",
       "transitionDurationMs": 300,
@@ -152,10 +152,10 @@
     {
       "id": 7,
       "name": "Idle: Root Settles",
-      "category": "idle",
+      "category": "twitch",
       "description": "The root settles back into the dirt.",
       "tags": [
-        "idle"
+        "twitch"
       ],
       "transitionProfile": "linear",
       "transitionDurationMs": 300,
@@ -177,10 +177,10 @@
     {
       "id": 8,
       "name": "Idle: Leaning In",
-      "category": "idle",
+      "category": "twitch",
       "description": "Leans in toward a sound on the road.",
       "tags": [
-        "idle"
+        "twitch"
       ],
       "transitionProfile": "linear",
       "transitionDurationMs": 300,
@@ -202,10 +202,10 @@
     {
       "id": 9,
       "name": "Idle: Shiver",
-      "category": "idle",
+      "category": "twitch",
       "description": "A brittle little shiver, like frost on the husk.",
       "tags": [
-        "idle"
+        "twitch"
       ],
       "transitionProfile": "linear",
       "transitionDurationMs": 300,
@@ -315,6 +315,58 @@
         }
       ],
       "created": "2026-10-10T17:00:00.000Z"
+    },
+    {
+      "id": 14,
+      "name": "Idle: Sway Forward",
+      "category": "idle",
+      "description": "Lurk sway: one slow lean every ~10 s (operator spec 2026-10-16). 40% is his proven ceiling; 60% browns out his Pi.",
+      "tags": [
+        "idle",
+        "sway"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "forward",
+            "speed": 40,
+            "duration": 900
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 10,
+      "holdVariance": 400
+    },
+    {
+      "id": 15,
+      "name": "Idle: Sway Back",
+      "category": "idle",
+      "description": "Lurk sway: one slow lean every ~10 s (operator spec 2026-10-16). 40% is his proven ceiling; 60% browns out his Pi.",
+      "tags": [
+        "idle",
+        "sway"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 300,
+      "parts": [
+        {
+          "partId": 1,
+          "type": "motor",
+          "target": {
+            "direction": "reverse",
+            "speed": 40,
+            "duration": 900
+          }
+        }
+      ],
+      "created": "2026-10-17T01:40:00.000Z",
+      "weight": 10,
+      "holdVariance": 400
     }
   ],
   "templates": {}
