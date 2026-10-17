@@ -79,6 +79,19 @@ touches another animatronic's audio.
   it.
 - **Backgrounding a capture over SSH with `nohup … &` dies when the session
   exits.** Run it synchronously, or the file will be empty.
+- **Blinking red LED = Safe Mode, not a dead board** (Orlok, 2026-10-16). The
+  XVF3800 boots its Factory-partition safe firmware when the **Mute button reads
+  pressed at power-on**. A wet board does it too: water across the button
+  contacts held it "pressed" through every reboot. Signature: `lsusb -v -d 2886:001a`
+  shows `bcdDevice 0.03` and `bNumInterfaces 1` (DFU only; a healthy unit is
+  `2.06` / `6`), and no ALSA card appears, so the node has no speaker or mic.
+  A Pi reboot does NOT power-cycle it (USB stays powered); neither does a sysfs
+  port disable. Fix: dry the board and free the Mute button, then unplug the
+  ReSpeaker's own USB cable. Re-flashing (`sudo dfu-util -R -e -a 1 -D
+  respeaker_xvf3800_usb_dfu_firmware_v2.0.6.bin`, from Seeed's
+  `xmos_firmwares/usb/old_firmwares/`; the fleet runs 2.0.6) is safe but does not
+  help while the button reads pressed: the board keeps choosing Safe Mode.
+  After it recovers, restart `monsterbox.service` so audio binds to the card.
 
 ## Capture traps — the zero-frames failure
 
