@@ -36,7 +36,7 @@
           "partId": 4,
           "type": "linear_actuator",
           "target": {
-            "direction": "retract",
+            "direction": "extend",
             "speed": 95,
             "durationMs": 3500
           }
@@ -657,7 +657,7 @@
           "partId": 4,
           "type": "linear_actuator",
           "target": {
-            "direction": "retract",
+            "direction": "extend",
             "speed": 95,
             "durationMs": 500
           }
@@ -748,7 +748,7 @@
           "partId": 4,
           "type": "linear_actuator",
           "target": {
-            "direction": "extend",
+            "direction": "retract",
             "speed": 95,
             "durationMs": 300
           }
@@ -784,7 +784,7 @@
           "partId": 4,
           "type": "linear_actuator",
           "target": {
-            "direction": "retract",
+            "direction": "extend",
             "speed": 95,
             "durationMs": 500
           }
