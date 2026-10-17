@@ -99,7 +99,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 30,
+        "speed": 95,
         "duration": 400
       },
       {
@@ -110,7 +110,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 30,
+        "speed": 95,
         "duration": 600
       },
       {
@@ -299,7 +299,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 30,
+        "speed": 95,
         "duration": 500
       },
       {
@@ -317,7 +317,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 30,
+        "speed": 95,
         "duration": 700
       },
       {
@@ -416,7 +416,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 40,
+        "speed": 95,
         "duration": 600,
         "concurrent": true
       },
@@ -471,7 +471,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 40,
+        "speed": 95,
         "duration": 800
       },
       {
@@ -605,7 +605,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 35,
+        "speed": 95,
         "duration": 1500,
         "concurrent": true
       },
@@ -775,7 +775,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 35,
+        "speed": 95,
         "duration": 1800
       },
       {
@@ -952,7 +952,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 35,
+        "speed": 95,
         "duration": 800
       },
       {
@@ -963,7 +963,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 35,
+        "speed": 95,
         "duration": 1000
       },
       {
@@ -1350,7 +1350,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 30,
+        "speed": 95,
         "duration": 1000
       },
       {
@@ -1503,7 +1503,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 30,
+        "speed": 95,
         "duration": 1200
       },
       {
@@ -1744,7 +1744,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 35,
+        "speed": 95,
         "duration": 400
       },
       {
@@ -1755,7 +1755,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 35,
+        "speed": 95,
         "duration": 600
       },
       {
@@ -1803,7 +1803,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 40,
+        "speed": 95,
         "duration": 3000,
         "concurrent": true
       },
@@ -1960,7 +1960,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 40,
+        "speed": 95,
         "duration": 3000
       },
       {
@@ -1994,7 +1994,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 30,
+        "speed": 95,
         "duration": 1500,
         "concurrent": true
       },
@@ -2168,7 +2168,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 30,
+        "speed": 95,
         "duration": 1500
       },
       {
@@ -2218,7 +2218,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "extend",
-        "speed": 40,
+        "speed": 95,
         "duration": 3000,
         "concurrent": true
       },
@@ -2282,7 +2282,7 @@
         "type": "linear-actuator",
         "partId": "4",
         "direction": "retract",
-        "speed": 40,
+        "speed": 95,
         "duration": 3000
       },
       {

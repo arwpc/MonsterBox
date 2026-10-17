@@ -37,8 +37,8 @@
           "type": "linear_actuator",
           "target": {
             "direction": "retract",
-            "speed": 40,
-            "durationMs": 1000
+            "speed": 95,
+            "durationMs": 3500
           }
         },
         {
@@ -658,7 +658,7 @@
           "type": "linear_actuator",
           "target": {
             "direction": "retract",
-            "speed": 35,
+            "speed": 95,
             "durationMs": 500
           }
         }
@@ -749,7 +749,7 @@
           "type": "linear_actuator",
           "target": {
             "direction": "extend",
-            "speed": 35,
+            "speed": 95,
             "durationMs": 300
           }
         },
@@ -785,7 +785,7 @@
           "type": "linear_actuator",
           "target": {
             "direction": "retract",
-            "speed": 35,
+            "speed": 95,
             "durationMs": 500
           }
         },

@@ -11,12 +11,13 @@
       "address": 64,
       "pca9685Frequency": 50,
       "channel": 10,
-      "inputGainPercent": 137
+      "inputGainPercent": 137,
+      "modelId": "servo_miuzei_mg90s"
     },
     "created": "2025-10-12T06:00:00.000Z",
     "enabled": true,
     "modelId": "servo_miuzei_mg90s",
-    "updated": "2026-10-11T01:33:04.207Z"
+    "updated": "2026-10-11T16:07:21.326Z"
   },
   {
     "id": "2",
@@ -78,12 +79,12 @@
     "pin": null,
     "description": "Coffin door actuator. invertDirection restored 2026-09-21: docs/character_mina.md and CHANGELOG v8.0.0 record this door as wired with opposite DIR polarity to Orlok (API extend = DIR HIGH = open); the flag had been dropped from this file by a rewrite.",
     "config": {
-      "invertDirection": true,
+      "invertDirection": false,
       "controlBoard": "MDD10A",
       "maxExtension": 15000,
       "maxRetraction": 15000,
       "modelId": "1759010196402",
-      "notes": "Cytron MDD10A: DIR=GPIO17, PWM=GPIO18. Operator-traced wiring 2026-10-10."
+      "notes": "Cytron MDD10A: DIR=GPIO17, PWM=GPIO18. Operator-traced wiring 2026-10-10. 2026-10-17: new Pi 4 (same SD card); extend/retract were reversed, invertDirection set false."
     },
     "created": "2025-10-12T06:00:03.000Z",
     "enabled": true,

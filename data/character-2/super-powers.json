@@ -1,20 +1,20 @@
 {
   "jawAnimation": {
-    "enabled": false,
+    "enabled": true,
     "servoPartId": "1",
     "activeConfigId": "config-1",
     "configs": [
       {
         "id": "config-1",
         "name": "Default",
-        "sensitivity": 4.2,
-        "smoothing": 0.2,
+        "sensitivity": 4.6,
+        "smoothing": 0.5,
         "volumeThreshold": 0.02,
         "attackTime": 50,
         "releaseTime": 140,
         "useBandpassFilter": true,
         "useAGC": true,
-        "quantizationLevels": 17,
+        "quantizationLevels": 13,
         "preset": "custom",
         "minAngle": 28,
         "maxAngle": 84,
@@ -44,15 +44,15 @@
   },
   "headTracking": {
     "opencvEnabled": true,
-    "enabled": false,
+    "enabled": true,
     "panServoId": "2",
     "webcamPartId": "7",
-    "centerDeg": 114,
-    "rangeDeg": 66,
+    "centerDeg": 123,
+    "rangeDeg": 26,
     "invertPan": true,
-    "smoothing": 0.35,
-    "deadzone": 2,
-    "motionThreshold": 25,
+    "smoothing": 0.5,
+    "deadzone": 1,
+    "motionThreshold": 23,
     "minContourArea": 3000,
     "maxContourArea": 100000,
     "backgroundLearningRate": 0.017,
@@ -63,7 +63,7 @@
     "targetLockStrength": 2,
     "confirmFrames": 3,
     "detectInterval": 5,
-    "detectionMode": "person+motion"
+    "detectionMode": "person"
   },
   "followOrders": {
     "enabled": false,
@@ -89,7 +89,7 @@
     "triggers": {
       "agentGesture": true,
       "guestCommand": true,
-      "ambientDuringSpeech": false
+      "ambientDuringSpeech": true
     },
     "permissions": {
       "allowedRoles": [
