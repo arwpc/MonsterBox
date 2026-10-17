@@ -110,7 +110,29 @@ while [ "$try" -lt "$MAX_TRIES" ]; do
 
     if [ -n "$bytes" ]; then
         echo "mjpg-launcher: streaming (attempt $try, first frame ${bytes} bytes)"
-        # Stable from here on — hand the process our lifetime.
+        # Watch it for as long as it runs. A capture that stalls mid-stream
+        # ("select() timeout" from input_uvc) kills only mjpg_streamer's input
+        # thread: the process and its HTTP server stay up serving no frames, so
+        # Restart=on-failure never fires and every page shows a frozen picture
+        # until someone restarts the unit by hand (Renfield 2026-10-16 19:56,
+        # Mina 2026-10-17 14:04). One local snapshot every WATCH_SEC is the check.
+        WATCH_SEC="${MB_CAM_WATCH_SEC:-5}"
+        WATCH_FAILS="${MB_CAM_WATCH_FAILS:-3}"
+        fails=0
+        while kill -0 "$CHILD" 2>/dev/null; do
+            sleep "$WATCH_SEC"
+            kill -0 "$CHILD" 2>/dev/null || break
+            if snapshot_bytes >/dev/null; then
+                fails=0
+            else
+                fails=$((fails + 1))
+                if [ "$fails" -ge "$WATCH_FAILS" ]; then
+                    echo "mjpg-launcher: no frames for $((fails * WATCH_SEC)) s (capture stalled) — restarting the camera" >&2
+                    stop_child
+                    exit 1
+                fi
+            fi
+        done
         wait "$CHILD"
         rc=$?
         CHILD=""
