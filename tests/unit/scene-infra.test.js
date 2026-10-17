@@ -213,6 +213,12 @@ describe('Scene infrastructure', function () {
       expect(isSelfNode(REG[1], REG, { hostname: 'counttest' })).to.equal(false);
     });
 
+    it("'all' leaves out a hardware-none console node, which stays reachable by name", function () {
+      const withConsole = REG.concat([{ id: 77, name: 'Console Test', characterId: 9307, hostname: 'consoletest', ip: '10.9.0.77', port: 3000, hardware: 'none' }]);
+      expect(resolveFleetNodes('all', withConsole).nodes.map(n => n.id)).to.deep.equal([71, 72, 73]);
+      expect(resolveFleetNodes('console test', withConsole).nodes[0].id).to.equal(77);
+    });
+
     it('fleet-say to all skips an offline node and a node in a guest conversation, fast', async function () {
       const { fleet, calls } = harness({ '10.9.0.72': { offline: true }, '10.9.0.73': { guest: true } });
       const local = { say: async () => ({ success: true }) };

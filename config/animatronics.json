@@ -80,8 +80,9 @@
       "agentId": null,
       "defaultSceneId": null,
       "sinkVolume": 1,
-      "deploy": false,
-      "_role": "2026-10-12: Alpha is the operator's Ubuntu dev box (x86, wired eno1). It runs MonsterBox as a node with a part-less character (HAL eye picture) so the Orchestration Console has a home that drives no hardware of its own. deploy:false keeps npm run deploy:all from rsyncing over its git working tree; update it with git pull."
+      "deploy": "console",
+      "_role": "2026-10-12: Alpha is the operator's Ubuntu dev box (x86, wired eno1). It runs MonsterBox in Docker as a node with a part-less character (HAL eye picture) so the Orchestration Console has a home that drives no hardware. deploy:'console' (2026-10-16): npm run deploy:all rsyncs the SAME file set the animatronics get into ~/monsterbox-console/tree and rebuilds the container from it (scripts/deploy-console-node.sh), never over the git working tree; Alpha's code must never deviate from the fleet's. hardware:'none' keeps it out of fleet steps aimed at 'all'.",
+      "hardware": "none"
     }
   ],
   "goblins": [

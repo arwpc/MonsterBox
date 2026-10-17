@@ -1,0 +1,53 @@
+# Paths a deploy never sends or deletes, one rsync pattern per line.
+# Shared by scripts/deploy-to-animatronic.sh (the Pis) and scripts/deploy-console-node.sh
+# (the Docker console node), so every node that runs MonsterBox receives the identical file
+# set: build artifacts stay out, and each node's own operational state (calibration,
+# superpower toggles, poses, scenes, runtime *-state.json, selected character) is never
+# overwritten by the deploying machine's copy. A locked character's whole data directory is
+# excluded on top of this list by the deploy scripts.
+node_modules
+data/character-*/parts.json
+data/character-*/poses.json
+data/character-*/servo_calibrations.json
+data/character-*/super-powers.json
+data/character-*/lurk-mode-state.json
+data/character-*/motion-armed-state.json
+data/character-*/*-state.json
+data/character-*/microphones.json
+data/character-*/audio-config.json
+data/character-*/ai_agent_state.json
+data/character-*/movement-config.json
+data/character-*/scenes.json
+data/character-*/gestures.json
+data/character-*/scene-queues.json
+data/character-*/scene-queue-templates.json
+data/character-*/backups/
+data/goblin-keepalive-state.json
+data/fleet-events-state.json
+data/fleet-events.lock
+data/calibration_profiles.json
+data/actuator-positions.json
+data/speaker-state.json
+data/monsterbox.pid
+data/manual-nodes.json
+data/startup-health.json
+data/performance-history.json
+data/scene-analytics.json
+data/movement-telemetry.json
+/data/tts-cache/
+config/app-config.json
+/data/ai-config/
+/certs/
+/.claude/settings.local.json
+/.scratch/
+__pycache__/
+scripts/fleet-audio/results
+scripts/halloween-judges/results
+.git
+logs
+tmp
+*.log
+playwright-report
+test-results
+playwright-diagnostics
+ARCHIVE

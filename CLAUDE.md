@@ -140,7 +140,8 @@ Each character at `data/character-{id}/` contains:
 - `git log --oneline -20` — Recent commit history
 
 ### Multi-node (MonsterNet) / mDNS discovery
-- `npm run deploy:all` — deploy the current code to **every** animatronic in `config/animatronics.json` (parallel, `--dry-run` to preview). SSH creds from `MONSTERBOX_SSH_PASSWORD`.
+- `npm run deploy:all` — deploy the current code to **every** animatronic in `config/animatronics.json` (parallel, `--dry-run` to preview). SSH creds from `MONSTERBOX_SSH_PASSWORD`. The file set is `scripts/deploy-excludes.txt` (one list for every node; it keeps node-local state, including `data/tts-cache/`, from being overwritten or deleted).
+- **Alpha code parity — permanent operator rule (2026-10-16).** Alpha (the Docker console node, character 7, `hardware: "none"`) must NEVER run code that deviates from what the animatronics run. No Alpha-only code paths, hostname checks, patches or forks; it differs only in its character, parts and node-local state. Its registry entry is `deploy: "console"`, so `deploy:all` refreshes it with the fleet via `scripts/deploy-console-node.sh` (same file set into `~/monsterbox-console/tree`, container rebuilt from that tree only). Anything Alpha needs must be a general, data-driven MonsterBox change. See `docker/console-node/README.md`.
 - `npm run check:discovery` — fleet who-sees-whom matrix (spots nodes up-but-not-discovered)
 - `npm run check:time` — fleet clock matrix (every Pi on America/Chicago, NTP on, synchronized, offset from this node); schedules, quiet hours and the half-hour fleet events are local time on every node. `apply-baseline.sh` and the Goblin provisioning scripts converge timezone + NTP.
 - `npm run advertise-node` — write this node's `_monsterbox._tcp` avahi service file (also done on server startup and by the deploy)

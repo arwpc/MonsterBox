@@ -25,7 +25,10 @@ export function resolveFleetNodes(target, registry, { allowAll = true } = {}) {
   const raw = String(target).trim();
   if (raw.toLowerCase() === 'all') {
     if (!allowAll) return { error: "node 'all' is not allowed for this step" };
-    return { nodes: list.slice() };
+    // 'all' means every node that can perform. A registry entry declared
+    // hardware "none" (a console node: no speaker, no servos) is a monitor, not a
+    // performer; it is still reachable by naming it.
+    return { nodes: list.filter(n => String(n.hardware || '').toLowerCase() !== 'none') };
   }
   if (/^\d+$/.test(raw)) {
     const byId = list.filter(n => String(n.id) === raw);

@@ -1,10 +1,15 @@
-# Alpha's console node. State lives in ~/monsterbox-console (seed it once with seed-state.sh).
-# Hostname "alpha" maps to character 7 (hardware "none") through config/animatronics.json.
+# Alpha's console node. Hostname "alpha" maps to character 7 (hardware "none") through
+# config/animatronics.json.
+#
+# Code parity (operator rule 2026-10-16, permanent): the image builds ONLY from
+# ~/monsterbox-console/tree, which scripts/deploy-console-node.sh fills with the same file set
+# the animatronics get (scripts/deploy-excludes.txt). Never point the build at a git checkout.
+# Deploy with `npm run deploy:all` (or scripts/deploy-console-node.sh <ip>).
 name: monsterbox-console
 services:
   monsterbox:
     build:
-      context: ../..
+      context: ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/tree
       dockerfile: docker/console-node/Dockerfile
     image: monsterbox-console:latest
     container_name: monsterbox-console
@@ -20,8 +25,8 @@ services:
       - path: /etc/monsterbox/env   # MONSTERBOX_SSH_PASSWORD, like every node
         required: false
     volumes:
-      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/data:/home/remote/MonsterBox/data
-      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/config:/home/remote/MonsterBox/config
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/tree/data:/home/remote/MonsterBox/data
+      - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/tree/config:/home/remote/MonsterBox/config
       - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/certs:/home/remote/MonsterBox/certs:ro
       - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/logs:/home/remote/yard-theater-logs
       - ${MB_CONSOLE_STATE:-${HOME}/monsterbox-console}/secrets:/etc/monsterbox:ro   # elevenlabs.key (night memory)

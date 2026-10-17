@@ -35,9 +35,10 @@ fi
 # Enumerate nodes from the roster — id + ip + name, no hardcoding.
 mapfile -t NODES < <(node -e "
   const a = require('./config/animatronics.json').animatronics || [];
-  // deploy:false marks a node that updates itself from git (Alpha, the dev box): rsyncing over
-  // its working tree would clobber uncommitted work.
-  for (const n of a) if (n.id != null && n.ip && n.deploy !== false) console.log([n.id, n.ip, String(n.name||'').replace(/\s+/g,'_')].join(' '));
+  // deploy:'console' is a Docker console node (Alpha): it gets the same file set through
+  // deploy-console-node.sh, into its container tree rather than over a git checkout, so it can
+  // never run code the animatronics do not. deploy:false skips a node entirely.
+  for (const n of a) if (n.id != null && n.ip && n.deploy !== false) console.log([n.id, n.ip, String(n.name||'').replace(/\s+/g,'_'), n.deploy === 'console' ? 'console' : 'pi'].join(' '));
 ")
 
 if [ "${#NODES[@]}" -eq 0 ]; then
@@ -57,9 +58,14 @@ LOGDIR="$(mktemp -d)"
 for entry in "${NODES[@]}"; do
   # shellcheck disable=SC2086
   set -- $entry
-  ID="$1"; IP="$2"
+  ID="$1"; IP="$2"; KIND="${4:-pi}"
+  if [ "$KIND" = "console" ]; then
+    DEPLOY_CMD=(bash "$REPO_DIR/scripts/deploy-console-node.sh" "$IP" $DRY)
+  else
+    DEPLOY_CMD=(bash "$REPO_DIR/scripts/deploy-to-animatronic.sh" "$ID" "$IP" $DRY)
+  fi
   (
-    if bash "$REPO_DIR/scripts/deploy-to-animatronic.sh" "$ID" "$IP" $DRY > "$LOGDIR/${ID}.log" 2>&1; then
+    if "${DEPLOY_CMD[@]}" > "$LOGDIR/${ID}.log" 2>&1; then
       echo "OK" > "$LOGDIR/${ID}.status"
     else
       echo "FAIL" > "$LOGDIR/${ID}.status"

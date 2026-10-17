@@ -7,6 +7,9 @@
 
 set -e
 
+# Absolute, so the shared exclude list resolves whatever directory this is run from.
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
 if [ $# -lt 2 ]; then
     echo "Usage: $0 <character_id> <ip_address> [--dry-run]"
     echo "Example: $0 3 192.168.8.120 --dry-run"
@@ -161,50 +164,7 @@ done < <(node -e "
 
 ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     "${LOCK_EXCLUDES[@]}" \
-    --exclude 'node_modules' \
-    --exclude 'data/character-*/parts.json' \
-    --exclude 'data/character-*/poses.json' \
-    --exclude 'data/character-*/servo_calibrations.json' \
-    --exclude 'data/character-*/super-powers.json' \
-    --exclude 'data/character-*/lurk-mode-state.json' \
-    --exclude 'data/character-*/motion-armed-state.json' \
-    --exclude 'data/character-*/*-state.json' \
-    --exclude 'data/character-*/microphones.json' \
-    --exclude 'data/character-*/audio-config.json' \
-    --exclude 'data/character-*/ai_agent_state.json' \
-    --exclude 'data/character-*/movement-config.json' \
-    --exclude 'data/character-*/scenes.json' \
-    --exclude 'data/character-*/gestures.json' \
-    --exclude 'data/character-*/scene-queues.json' \
-    --exclude 'data/character-*/scene-queue-templates.json' \
-    --exclude 'data/character-*/backups/' \
-    --exclude 'data/goblin-keepalive-state.json' \
-    --exclude 'data/fleet-events-state.json' \
-    --exclude 'data/fleet-events.lock' \
-    --exclude 'data/calibration_profiles.json' \
-    --exclude 'data/actuator-positions.json' \
-    --exclude 'data/speaker-state.json' \
-    --exclude 'data/monsterbox.pid' \
-    --exclude 'data/manual-nodes.json' \
-    --exclude 'data/startup-health.json' \
-    --exclude 'data/performance-history.json' \
-    --exclude 'data/scene-analytics.json' \
-    --exclude 'config/app-config.json' \
-    --exclude '/data/ai-config/' \
-    --exclude '/certs/' \
-    --exclude '/.claude/settings.local.json' \
-    --exclude '/.scratch/' \
-    --exclude '__pycache__/' \
-    --exclude 'scripts/fleet-audio/results' \
-    --exclude 'scripts/halloween-judges/results' \
-    --exclude '.git' \
-    --exclude 'logs' \
-    --exclude 'tmp' \
-    --exclude '*.log' \
-    --exclude 'playwright-report' \
-    --exclude 'test-results' \
-    --exclude 'playwright-diagnostics' \
-    --exclude 'ARCHIVE' \
+    --exclude-from "${REPO_DIR}/scripts/deploy-excludes.txt" \
     ./ ${REMOTE_USER}@${IP_ADDRESS}:${REMOTE_PATH}/
 RSYNC_RC=$?
 set -e
