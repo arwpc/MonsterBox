@@ -619,7 +619,14 @@ router.post('/generate-and-play', async (req, res) => {
         // Get character's TTS configuration (per-character or global fallback)
         let ttsConfig = await getTTSConfigForCharacter(characterId);
 
-        let ttsResult = await elevenLabsTTSService.generateSpeech(text, ttsConfig.voice_id, ttsConfig);
+        // Cache-first: the same disk cache scene lines use (data/tts-cache/<char>/).
+        // Fleet-console and yard-theater lines repeat show after show; each unique
+        // line costs one ElevenLabs render, every later play comes from disk.
+        const { generateSpeechCached } = await import('../../services/scenes/ttsCache.js');
+        let ttsResult = await generateSpeechCached({
+            text, voiceId: ttsConfig.voice_id, ttsCfg: ttsConfig, characterId,
+            generate: (t, v, cfg) => elevenLabsTTSService.generateSpeech(t, v, cfg)
+        });
 
         // Fallback: if the configured voice fails (e.g., 404 or permissions), retry with global default voice
         let usedFallback = false;
@@ -667,7 +674,8 @@ router.post('/generate-and-play', async (req, res) => {
                 message: `TTS played on character ${characterId} speaker`,
                 text: text,
                 voiceId: ttsConfig.voice_id,
-                voiceFallback: usedFallback || false
+                voiceFallback: usedFallback || false,
+                cached: !!ttsResult.cached
             });
         } else {
             return res.status(500).json({

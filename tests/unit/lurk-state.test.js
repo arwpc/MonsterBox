@@ -14,6 +14,8 @@ import { expect } from 'chai';
 import {
     LurkStateMachine,
     DEFAULT_INACTIVITY_MS,
+    DEFAULT_WAKE_GUEST_GRACE_MS,
+    WAKE_GUEST_COOLDOWN_MS,
     RUNTIME_KEYS,
     applyOptOut,
     clampHoldMs,
@@ -158,6 +160,9 @@ describe('lurk state machine — pure helpers', () => {
         expect(normalizePrefs({ inactivityTimeoutMs: 0 }).inactivityTimeoutMs).to.equal(0);
         expect(normalizePrefs({ pirQuietHours: null }).pirQuietHours).to.equal(null);
         expect(normalizePrefs({ capabilityOptOut: ['aiMotion', 'nonsense'] }).capabilityOptOut).to.deep.equal(['aiMotion']);
+        expect(d.wakeGuestGraceMs).to.equal(DEFAULT_WAKE_GUEST_GRACE_MS);
+        expect(normalizePrefs({ wakeGuestGraceMs: 0 }).wakeGuestGraceMs).to.equal(0);
+        expect(normalizePrefs({ wakeGuestGraceMs: 5 }).wakeGuestGraceMs).to.equal(15000);
     });
 
     it('validates prefs patches', () => {
@@ -166,6 +171,8 @@ describe('lurk state machine — pure helpers', () => {
         expect(validatePrefsPatch({ pirWake: 'yes' })).to.have.length(1);
         expect(validatePrefsPatch({ pirQuietHours: { start: '25:00', end: '08:00' } })).to.have.length(1);
         expect(validatePrefsPatch({ capabilityOptOut: ['music'] })).to.have.length(1);
+        expect(validatePrefsPatch({ wakeGuestGraceMs: 0 })).to.deep.equal([]);
+        expect(validatePrefsPatch({ wakeGuestGraceMs: -5 })).to.have.length(1);
     });
 
     it('decides what a motion edge does', () => {
@@ -327,6 +334,8 @@ describe('lurk state machine — transitions', () => {
 
     it('an agent talking to room noise cannot keep a node awake forever', async () => {
         const { m, f } = await bootedMachine();
+        // This exercises the no-guest CEILING; the shorter wake grace (its own test) is switched off.
+        m.entry.prefs.wakeGuestGraceMs = 0;
         await m.wake(CID, { source: 'pir' });
         // The agent "replies" every minute; ASR noise is logged as guest "...".
         for (let i = 0; i < 16; i++) {
@@ -347,6 +356,40 @@ describe('lurk state machine — transitions', () => {
         expect((await m.handleMotion(CID, { source: 'pir' })).action).to.equal('wake');
         // 3 x the 5-minute timeout after the wake, not sooner.
         expect(f.now - m.entry.lastTransition.at).to.be.at.most(60 * 1000);
+    });
+
+    it('a PIR wake nobody speaks to goes back to lurking after the guest grace, and the PIR rests', async () => {
+        const { m, f } = await bootedMachine();
+        await m.wake(CID, { source: 'pir' });
+        expect(f.state.agentLive).to.equal(true);
+        // The agent greeting and a restless PIR are not a guest.
+        f.advance(30 * 1000);
+        m.noteActivity(CID, 'agent_speech');
+        f.advance(DEFAULT_WAKE_GUEST_GRACE_MS);
+        await f.fireDue(m);
+        expect(m.getState(CID)).to.equal('lurking');
+        expect(m.entry.lastTransition.reason).to.equal('no-guest-after-wake');
+        expect(f.state.agentLive).to.equal(false);
+        m.entry.prefs.pirQuietHours = null;
+        expect((await m.handleMotion(CID, { source: 'pir' })).reason).to.equal('rewake-cooldown');
+        f.advance(WAKE_GUEST_COOLDOWN_MS + 1);
+        expect((await m.handleMotion(CID, { source: 'pir' })).action).to.equal('wake');
+    });
+
+    it('a guest who speaks inside the grace keeps the PIR wake; explicit wakes never use the grace', async () => {
+        const { m, f } = await bootedMachine();
+        await m.wake(CID, { source: 'pir' });
+        f.advance(40 * 1000);
+        f.state.speech = { entries: [{ at: new Date(f.now).toISOString(), speaker: 'guest', text: 'hello?' }], seq: 1 };
+        f.advance(DEFAULT_WAKE_GUEST_GRACE_MS);
+        await f.fireDue(m);
+        expect(m.getState(CID)).to.equal('awake');
+
+        const b = await bootedMachine();
+        await b.m.wake(CID, { source: 'api', explicit: true });
+        b.f.advance(DEFAULT_WAKE_GUEST_GRACE_MS + 60 * 1000);
+        await b.f.fireDue(b.m);
+        expect(b.m.getState(CID)).to.equal('awake');
     });
 
     it('activity events (the conversation hook) keep it awake', async () => {

@@ -310,6 +310,21 @@ async function executeWaitStep(step, emit) {
   return { success: true, waitedMs: d };
 }
 
+/**
+ * May a scene line be rendered live (an ElevenLabs call) right now? Only while
+ * the character is awake. A character this node does not animate (no lurk state
+ * for it) keeps the old behaviour: render on a miss.
+ */
+async function liveSpeechAllowed(characterId) {
+  try {
+    const { default: lurk } = await import('../lurkStateService.js');
+    const gate = lurk.getGateState(characterId);
+    return gate == null || gate === 'awake';
+  } catch (_) {
+    return true;
+  }
+}
+
 async function executeSayThisStep(step, characterId, emit) {
   const text = (step.text || step.say || '').trim();
   if (!text) throw new Error('sayThis.step requires text');
@@ -320,12 +335,21 @@ async function executeSayThisStep(step, characterId, emit) {
 
   const ttsCfg = await getTTSConfigForCharacter(characterId);
   const voiceId = step.voiceId || ttsCfg.voice_id;
-  // Scripted lines replay from the disk cache (data/tts-cache/<char>/); only a
-  // miss — or an explicit nocache:true on the step — costs an ElevenLabs call.
+  // Scripted lines replay from the disk cache (data/tts-cache/<char>/). A miss
+  // costs an ElevenLabs call, so it is rendered live ONLY while the character is
+  // awake (someone came by, AI on). Lurking, off or in a fleet show, scenes are
+  // pre-recorded only: lines are rendered once when a scene is saved and on every
+  // deploy (scripts/prerender-scene-tts.mjs), never per play.
+  const allowLive = await liveSpeechAllowed(characterId);
   const gen = await generateSpeechCached({
-    text, voiceId, ttsCfg, characterId, nocache: step.nocache === true,
+    text, voiceId, ttsCfg, characterId, nocache: step.nocache === true && allowLive, allowLive,
     generate: (t, v, cfg) => elevenLabsTTSService.generateSpeech(t, v, cfg)
   });
+  if (!gen.success && gen.notPrerecorded) {
+    console.warn(`🔇 Scene sayThis (character ${characterId}) skipped — not pre-recorded and the character is not awake, so no live ElevenLabs render: "${text.slice(0, 60)}" (fix: node scripts/prerender-scene-tts.mjs ${characterId})`);
+    emit && emit({ type: 'step', status: 'complete', stepType: 'sayThis', skipped: true, reason: 'not-prerecorded' });
+    return { success: true, skipped: true, reason: 'not-prerecorded' };
+  }
   if (!gen.success) {
     emit && emit({ type: 'step', status: 'error', stepType: 'sayThis', error: gen.error });
     throw new Error(gen.error || 'TTS generation failed');

@@ -1134,6 +1134,19 @@ async function onServerReady(protocol) {
         console.error(`❌ Failed to start the lurk state machine:`, error.message);
     }
 
+    // Pre-record this character's scripted speech (scenes, fleet-say lines aimed
+    // at it, yard-theater moments) a few minutes after boot. Only missing lines
+    // are rendered, so after a deploy or reboot this costs nothing unless a line
+    // is new; a lurking character never renders speech at play time.
+    try {
+        if (config && config.selectedCharacter != null) {
+            const { schedulePrerender, BOOT_DELAY_MS } = await import('./services/scenes/prerenderService.js');
+            schedulePrerender(config.selectedCharacter, { delayMs: BOOT_DELAY_MS });
+        }
+    } catch (error) {
+        console.error(`❌ Failed to schedule speech pre-recording:`, error.message);
+    }
+
     // Background music is opt-in per character (super-powers.json →
     // backgroundMusic.enabled). The supervisor pauses itself for conversations,
     // scene queues, other playback and quiet hours, so it is safe to start here.

@@ -99,10 +99,12 @@ export async function putCachedSpeech(characterId, key, audioBuffer, contentType
  * @param {object} a.ttsCfg      the character's TTS config (model, stability, similarity_boost, ...)
  * @param {number} a.characterId
  * @param {boolean} [a.nocache]  bypass the cache entirely (no read, no write)
+ * @param {boolean} [a.allowLive=true]  false: a miss is NOT rendered (no ElevenLabs call) and
+ *                               comes back {success:false, notPrerecorded:true}
  * @param {Function} a.generate  (text, voiceId, ttsCfg) => {success, audioBuffer, contentType, error}
  * @returns {Promise<{success:boolean, audioBuffer?:Buffer, contentType?:string, cached:boolean, key?:string, error?:string}>}
  */
-export async function generateSpeechCached({ text, voiceId, ttsCfg = {}, characterId, nocache = false, generate, root = cacheRoot() }) {
+export async function generateSpeechCached({ text, voiceId, ttsCfg = {}, characterId, nocache = false, allowLive = true, generate, root = cacheRoot() }) {
   if (typeof generate !== 'function') throw new Error('generateSpeechCached needs a generate function');
   if (nocache) {
     const gen = await generate(text, voiceId, ttsCfg);
@@ -114,6 +116,9 @@ export async function generateSpeechCached({ text, voiceId, ttsCfg = {}, charact
     if (hit) return { success: true, audioBuffer: hit.audioBuffer, contentType: hit.contentType, cached: true, key, file: hit.file };
   } catch (e) {
     console.warn(`⚠️ TTS cache read failed (${e.message}) — rendering live`);
+  }
+  if (!allowLive) {
+    return { success: false, cached: false, key, notPrerecorded: true, error: 'line is not pre-recorded (live rendering is off for this play)' };
   }
   const gen = await generate(text, voiceId, ttsCfg);
   if (!gen || !gen.success) return Object.assign({ success: false }, gen || {}, { cached: false, key });

@@ -119,6 +119,20 @@ describe('Scene infrastructure', function () {
       expect(calls).to.equal(1);
     });
 
+    it('allowLive:false never calls ElevenLabs on a miss, and still serves a pre-recorded hit', async function () {
+      let calls = 0;
+      const generate = async () => { calls++; return { success: true, audioBuffer: audio, contentType: 'audio/mpeg' }; };
+      const miss = await generateSpeechCached({ text: 'Unrecorded', voiceId: 'v1', ttsCfg: cfg, characterId: 9201, generate, root, allowLive: false });
+      expect(miss.success).to.equal(false);
+      expect(miss.notPrerecorded).to.equal(true);
+      expect(calls).to.equal(0);
+      await generateSpeechCached({ text: 'Recorded', voiceId: 'v1', ttsCfg: cfg, characterId: 9201, generate, root });
+      const hit = await generateSpeechCached({ text: 'Recorded', voiceId: 'v1', ttsCfg: cfg, characterId: 9201, generate, root, allowLive: false });
+      expect(hit.success).to.equal(true);
+      expect(hit.cached).to.equal(true);
+      expect(calls).to.equal(1);
+    });
+
     it('nocache:true bypasses both read and write', async function () {
       let calls = 0;
       const generate = async () => { calls++; return { success: true, audioBuffer: audio, contentType: 'audio/mpeg' }; };

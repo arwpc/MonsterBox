@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readConfig } from '../configService.js';
 import { writeJsonAtomic, withFileLock } from '../atomicStore.js';
+import { schedulePrerender } from './prerenderService.js';
 import { assertConfigPathWritable } from '../characterConfigLock.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,7 +39,18 @@ export async function saveScenes(scenes, characterId) {
   // Atomic write: a power loss mid-write previously left a truncated scenes.json
   // that failed to parse on next boot — losing the entire scene library.
   await writeJsonAtomic(filePath, scenes || []);
+  prerenderLinesFor(filePath);
   return true;
+}
+
+/**
+ * New or edited lines are pre-recorded in the background shortly after a save,
+ * so a scene never has to render speech live (prerenderService.js). The
+ * character comes from the file written, whatever the caller passed.
+ */
+function prerenderLinesFor(filePath) {
+  const m = /character-(\d+)[\\/]scenes\.json$/.exec(String(filePath));
+  if (m) schedulePrerender(Number(m[1]));
 }
 
 /**
@@ -89,6 +101,7 @@ export async function replaceScenes(scenes, characterId) {
     const backup = await backupDataFile(filePath, 'scenes');
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await writeJsonAtomic(filePath, scenes || []);
+    prerenderLinesFor(filePath);
     return { backup, count: (scenes || []).length, file: filePath };
   });
 }

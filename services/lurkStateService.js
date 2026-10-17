@@ -54,6 +54,16 @@ const { LURKING, AWAKE, OFF } = STATES;
 export const DEFAULT_INACTIVITY_MS = 5 * 60 * 1000;
 export const MIN_INACTIVITY_MS = 30 * 1000;
 export const MAX_INACTIVITY_MS = 2 * 60 * 60 * 1000;
+// A PIR wake starts a billed ElevenLabs agent session. If no guest says anything
+// within this window it was not a guest (one node's PIR woke it 22 times in an
+// evening; four of those sessions ran the whole no-guest ceiling to an empty yard
+// and one hit the provider's maximum call duration). 0 disables the check.
+export const DEFAULT_WAKE_GUEST_GRACE_MS = 90 * 1000;
+export const MIN_WAKE_GUEST_GRACE_MS = 15 * 1000;
+export const MAX_WAKE_GUEST_GRACE_MS = 30 * 60 * 1000;
+// After such a wake, the PIR is ignored this long so a noisy sensor cannot open
+// session after session.
+export const WAKE_GUEST_COOLDOWN_MS = 2 * 60 * 1000;
 // Same window callouts, lurk scenes and background music default to: a cat at
 // 03:00 must not open an agent session that greets the household.
 export const DEFAULT_PIR_QUIET_HOURS = Object.freeze({ start: '23:00', end: '08:00' });
@@ -175,6 +185,11 @@ export function normalizePrefs(raw) {
         // session then stays open until AI is switched off).
         inactivityTimeoutMs = t === 0 ? 0 : Math.min(MAX_INACTIVITY_MS, Math.max(MIN_INACTIVITY_MS, Math.round(t)));
     }
+    const g = Number(src.wakeGuestGraceMs);
+    let wakeGuestGraceMs = DEFAULT_WAKE_GUEST_GRACE_MS;
+    if (Number.isFinite(g)) {
+        wakeGuestGraceMs = g === 0 ? 0 : Math.min(MAX_WAKE_GUEST_GRACE_MS, Math.max(MIN_WAKE_GUEST_GRACE_MS, Math.round(g)));
+    }
     let pirQuietHours;
     if (src.pirQuietHours === null) pirQuietHours = null;
     else if (validQuietHours(src.pirQuietHours)) {
@@ -182,6 +197,7 @@ export function normalizePrefs(raw) {
     } else pirQuietHours = { ...DEFAULT_PIR_QUIET_HOURS };
     return {
         inactivityTimeoutMs,
+        wakeGuestGraceMs,
         // Default ON: the PIR is a wake source unless the operator switched it off
         // (a dead or floating sensor). A sensor listed in physical-faults.json is
         // never armed regardless.
@@ -213,6 +229,12 @@ export function validatePrefsPatch(raw) {
         const n = Number(raw.inactivityTimeoutMs);
         if (raw.inactivityTimeoutMs === null || !Number.isFinite(n) || n < 0 || n > MAX_INACTIVITY_MS) {
             errors.push(`inactivityTimeoutMs must be 0 (never) or between ${MIN_INACTIVITY_MS} and ${MAX_INACTIVITY_MS}`);
+        }
+    }
+    if (raw.wakeGuestGraceMs !== undefined) {
+        const n = Number(raw.wakeGuestGraceMs);
+        if (raw.wakeGuestGraceMs === null || !Number.isFinite(n) || n < 0 || n > MAX_WAKE_GUEST_GRACE_MS) {
+            errors.push(`wakeGuestGraceMs must be 0 (off) or between ${MIN_WAKE_GUEST_GRACE_MS} and ${MAX_WAKE_GUEST_GRACE_MS}`);
         }
     }
     if (raw.pirWake !== undefined && typeof raw.pirWake !== 'boolean') errors.push('pirWake must be a boolean');
@@ -251,6 +273,18 @@ export function decideMotion(s = {}) {
     if (s.inArmGrace) return { action: 'ignore', reason: 'arm-grace' };
     if (s.inQuietHours) return { action: 'ignore', reason: 'quiet-hours' };
     return { action: 'wake', reason: 'motion' };
+}
+
+/**
+ * When does a PIR wake that no guest has answered run out? Null when the check
+ * does not apply: an explicit wake (AI button, schedule, fleet), a guest already
+ * heard, or the window switched off.
+ */
+export function wakeGuestDeadline({ wake, since, lastGuestAt, wakeGuestGraceMs }) {
+    if (!wake || wake.source !== 'pir' || wake.explicit || !wakeGuestGraceMs) return null;
+    if (!Number.isFinite(since)) return null;
+    if (Number.isFinite(lastGuestAt) && lastGuestAt > since) return null;
+    return since + wakeGuestGraceMs;
 }
 
 /** Where an awake character goes when AI mode ends. */
@@ -1503,12 +1537,15 @@ export class LurkStateMachine {
 
     _scheduleSleepCheck(entry) {
         this._clearSleepTimer();
-        if (entry.state !== AWAKE || !entry.prefs.inactivityTimeoutMs) return;
+        if (entry.state !== AWAKE) return;
         const now = this.deps.now();
         const timeout = entry.prefs.inactivityTimeoutMs;
-        const byActivity = sleepInMs({ now, lastActivityAt: entry.lastActivityAt, inactivityTimeoutMs: timeout });
-        const byGuest = sleepInMs({ now, lastActivityAt: entry.lastGuestAt, inactivityTimeoutMs: timeout * NO_GUEST_CEILING_FACTOR });
-        const delay = Math.max(1000, Math.min(byActivity, byGuest));
+        const deadline = wakeGuestDeadline({ wake: entry.wake, since: entry.since, lastGuestAt: entry.lastGuestAt, wakeGuestGraceMs: entry.prefs.wakeGuestGraceMs });
+        if (!timeout && deadline == null) return;
+        const byActivity = timeout ? sleepInMs({ now, lastActivityAt: entry.lastActivityAt, inactivityTimeoutMs: timeout }) : Infinity;
+        const byGuest = timeout ? sleepInMs({ now, lastActivityAt: entry.lastGuestAt, inactivityTimeoutMs: timeout * NO_GUEST_CEILING_FACTOR }) : Infinity;
+        const byWakeGrace = deadline == null ? Infinity : deadline - now;
+        const delay = Math.max(1000, Math.min(byActivity, byGuest, byWakeGrace));
         const timer = this.deps.setTimeout(() => {
             this._sleepTimer = null;
             this._serialize(() => this._checkSleep(entry))
@@ -1528,7 +1565,16 @@ export class LurkStateMachine {
         this._absorbActivity(entry);
         const now = this.deps.now();
         const timeout = entry.prefs.inactivityTimeoutMs;
-        if (!timeout) return { slept: false };
+        const deadline = wakeGuestDeadline({ wake: entry.wake, since: entry.since, lastGuestAt: entry.lastGuestAt, wakeGuestGraceMs: entry.prefs.wakeGuestGraceMs });
+        if (deadline != null && now >= deadline && !this.deps.audio.recentlyPlaying(entry.characterId, now)) {
+            entry.pirCooldownUntil = now + WAKE_GUEST_COOLDOWN_MS;
+            await this._sleepToRest(entry, { reason: 'no-guest-after-wake' });
+            return { slept: true, reason: 'no-guest-after-wake' };
+        }
+        if (!timeout) {
+            if (deadline != null) this._scheduleSleepCheck(entry);
+            return { slept: false };
+        }
         const noGuest = now - (entry.lastGuestAt || now) >= timeout * NO_GUEST_CEILING_FACTOR;
         if (!noGuest && now - (entry.lastActivityAt || now) < timeout) {
             this._scheduleSleepCheck(entry);

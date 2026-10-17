@@ -6,7 +6,8 @@
  *   node scripts/prerender-scene-tts.mjs <charId|all> [--dry-run]
  *   node scripts/prerender-scene-tts.mjs --character <id> --text "a line" [--dry-run]
  *
- * Lines collected per character: its own `sayThis` steps, plus every
+ * Lines collected per character: its own `sayThis` steps, its yard-theater
+ * moment `say` lines, plus every
  * `fleet-say` line (in any character's scenes) aimed at it — `node: 'all'`
  * counts for every character in config/animatronics.json. Each line is keyed
  * exactly as the executor keys it (text + voice + model + stability +
@@ -62,6 +63,20 @@ async function collectLines() {
           for (const n of r.nodes || []) push(n.characterId != null ? n.characterId : n.id, step.text || step.say, null);
         }
       }
+    }
+  }
+  // Yard-theater moments speak through /api/elevenlabs/generate-and-play, which
+  // reads the same cache: { "say": { "node": <animatronic id>|"all", "text": "..." } }.
+  const momentsDir = path.join(ROOT, 'scripts', 'yard-theater', 'moments');
+  let momentFiles = [];
+  try { momentFiles = (await fs.readdir(momentsDir)).filter(f => f.endsWith('.json')); } catch (_) { /* none */ }
+  for (const file of momentFiles) {
+    const moment = await readJson(path.join(momentsDir, file));
+    const steps = Array.isArray(moment) ? moment : (moment && Array.isArray(moment.steps) ? moment.steps : []);
+    for (const step of steps) {
+      if (!step || !step.say || !step.say.text) continue;
+      const r = resolveFleetNodes(String(step.say.node), registry, { allowAll: true });
+      for (const n of r.nodes || []) push(n.characterId != null ? n.characterId : n.id, step.say.text, null);
     }
   }
   if (target !== 'all') {
