@@ -48,7 +48,7 @@ check_animatronic() {
 
 # Check all 5 animatronics
 check_animatronic "PumpkinHead" "pumpkinhead" "1"
-check_animatronic "Mina" "mina" "2"
+check_animatronic "Mina" "coffin" "2"
 check_animatronic "Orlok" "orlok" "3"
 check_animatronic "Sir Dragomir" "sirdragomir" "4"
 check_animatronic "Groundbreaker" "192.168.8.200" "6"
