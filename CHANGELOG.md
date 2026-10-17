@@ -2,7 +2,48 @@
 
 All notable changes to MonsterBox are documented in this file.
 
-## [Unreleased] - 2026-10-12: Goblins stay on MonsterNet and boot into their show
+## [10.8.0] - 2026-10-17: GOLD release — Halloween 2026 working version
+
+The operator's sign-off: every animatronic deployed, running and working together. This is the version the
+fleet runs for Halloween 2026. All six animatronics and the Alpha console run identical code (checksum-proven
+after the final deploy).
+
+### The fleet at release
+
+- **PumpkinHead** sways every ~10 s while lurking (40% motor, his proven ceiling).
+- **Mina** (new Pi 4, hostname `coffin`, 192.168.8.140) is fully rebuilt: rewired servos recalibrated (jaw
+  122-179 closed at 122, neck 3-180 forward at 90, eye 3-180 centred at 89), poses remapped, eye look-around
+  idle poses, jaw sync, head tracking at 90 +/-45, coffin door at 95% with a measured 15 s stroke, resting open.
+- **Orlok** moves his right arm and head while lurking; his head no longer locks on a lamp; ReSpeaker recovered
+  from Safe Mode.
+- **Sir Dragomir** keeps watch with head and jaw inside the 372-406 neck hazard window.
+- **Groundbreaker** plays the fleet's background music; his camera runs 640x480.
+- **Renfield** scribbles constantly and barks pre-recorded lines while lurking.
+- **Alpha** (Docker console) conducts every scheduled show and the Goblin keep-alive.
+
+### Added
+
+- Head tracking hands an empty view to the idle loop's authored head poses (no more frozen 0.5-degree creep).
+- Pre-recorded speech: scenes render live only while a character is awake; lines are pre-recorded at boot and
+  on scene save (`services/scenes/prerenderService.js`); `generate-and-play` is cache-first; yard-theater moment
+  lines are pre-recorded too.
+- PIR wake guest grace (`wakeGuestGraceMs`, default 90 s): a wake nobody speaks to returns to lurking.
+- Alpha code parity: `deploy:all` deploys the console node with the fleet's exact file set
+  (`scripts/deploy-excludes.txt`, `scripts/deploy-console-node.sh`); fleet steps aimed at `all` skip
+  `hardware: "none"` nodes.
+- Open-loop actuator `motion.defaultSpeedPct` for moves that name no speed.
+- Camera watchdog in `scripts/mjpg-launcher.sh`: a stream with no frames for 15 s is restarted.
+
+### Fixed
+
+- Deploys no longer delete each node's TTS cache.
+- Head tracking: the inter-frame tracker is dropped after 3 empty detections, and only real detections confirm a
+  target.
+- Lurk scene speech, callouts and agent sessions no longer spend ElevenLabs credits on an empty yard.
+- HHWei cameras hang (Mina) or crawl at 5 fps (Groundbreaker) at 320x240; both run 640x480.
+- ReSpeaker blinking red = Safe Mode (wet Mute button); recovery documented.
+
+## [10.8.0, part 1] - 2026-10-12: Goblins stay on MonsterNet and boot into their show
 
 Operator brief: Goblins 1 and 4 kept dropping off the network and had to be set up by hand; every Goblin must
 boot into MonsterBox and run its video without ever losing Wi-Fi. Evidence and open items are in
