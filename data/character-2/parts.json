@@ -81,18 +81,18 @@
     "config": {
       "invertDirection": false,
       "controlBoard": "MDD10A",
-      "maxExtension": 15000,
-      "maxRetraction": 15000,
+      "maxExtension": 23000,
+      "maxRetraction": 23000,
       "modelId": "1759010196402",
-      "notes": "Cytron MDD10A: DIR=GPIO17, PWM=GPIO18. Operator-traced wiring 2026-10-10. 2026-10-17: new Pi 4 (same SD card); extend/retract were reversed, invertDirection set false."
+      "notes": "Cytron MDD10A: DIR=GPIO17, PWM=GPIO18. Operator-traced wiring 2026-10-10. 2026-10-17: new Pi 4 (same SD card); extend/retract were reversed, invertDirection set false. Full stroke 15 s at 95%; runs at 95% (slower is too slow); per-drive cap 23 s so Home (15 s + 50% overdrive) reaches the closed stop."
     },
     "created": "2025-10-12T06:00:03.000Z",
     "enabled": true,
     "controlBoard": "MDD10A",
     "directionPin": 17,
     "pwmPin": 18,
-    "maxExtension": 15000,
-    "maxRetraction": 15000,
+    "maxExtension": 23000,
+    "maxRetraction": 23000,
     "modelId": "1759010196402",
     "updated": "2026-10-10T21:08:27.231Z"
   },
