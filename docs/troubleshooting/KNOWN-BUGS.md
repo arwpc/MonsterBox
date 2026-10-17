@@ -4413,3 +4413,12 @@ resolving the chosen device to its stable `/dev/v4l/by-id/` path.
 
 Standing caution: judge a camera by FRAMES, never by "the unit is active" or
 "the process is up" — both were true for the entire outage.
+
+**2026-10-17 (Mina, HHWei 1c45:6200):** the camera advertises 320x240 MJPEG but hangs in it:
+one frame, then `select() timeout`, then refused starts, even after a USB power cycle. A direct
+`v4l2-ctl --stream-mmap` test streamed 640x480 and 160x120 at 30 fps and hung at 320x240. Fix
+is node-local: `/etc/default/monsterbox-cam` `MB_CAM_RES=640x480` (10 fps). This camera sends
+its own MJPEG, so `MB_CAM_Q` does not shrink frames (~120 KB at 640x480). Groundbreaker has the
+same model; if its video freezes, try the same setting before suspecting USB. The launcher now
+also restarts a stream that stops delivering frames for 15 s (it used to serve a frozen picture
+until someone restarted the unit).
