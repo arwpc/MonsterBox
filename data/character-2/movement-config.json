@@ -2,8 +2,8 @@
   "characterPersonality": "fluid_expressive",
   "idle": {
     "enabled": false,
-    "minHoldMs": 2000,
-    "maxHoldMs": 5000,
+    "minHoldMs": 4000,
+    "maxHoldMs": 9000,
     "transitionDurationMs": 1500,
     "defaultEasing": "ease_in_out"
   },

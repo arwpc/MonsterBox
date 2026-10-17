@@ -15,21 +15,21 @@
           "partId": 1,
           "type": "servo",
           "target": {
-            "angleDeg": 28
+            "angleDeg": 122
           }
         },
         {
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 123
+            "angleDeg": 90
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 89
+            "angleDeg": 87
           }
         },
         {
@@ -129,14 +129,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 123
+            "angleDeg": 90
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 92
+            "angleDeg": 93
           }
         }
       ],
@@ -158,14 +158,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 112
+            "angleDeg": 68
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 81
+            "angleDeg": 71
           }
         }
       ],
@@ -187,14 +187,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 136
+            "angleDeg": 116
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 101
+            "angleDeg": 111
           }
         }
       ],
@@ -216,14 +216,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 116
+            "angleDeg": 76
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 110
+            "angleDeg": 129
           }
         }
       ],
@@ -245,14 +245,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 128
+            "angleDeg": 100
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 85
+            "angleDeg": 79
           }
         }
       ],
@@ -274,7 +274,7 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 115
+            "angleDeg": 74
           }
         }
       ],
@@ -296,7 +296,7 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 132
+            "angleDeg": 108
           }
         }
       ],
@@ -318,14 +318,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 120
+            "angleDeg": 84
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 70
+            "angleDeg": 49
           }
         }
       ],
@@ -347,7 +347,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 103
+            "angleDeg": 115
           }
         }
       ],
@@ -369,7 +369,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 77
+            "angleDeg": 63
           }
         }
       ],
@@ -391,7 +391,7 @@
           "partId": 1,
           "type": "servo",
           "target": {
-            "angleDeg": 38
+            "angleDeg": 132
           }
         }
       ],
@@ -413,7 +413,7 @@
           "partId": 1,
           "type": "servo",
           "target": {
-            "angleDeg": 28
+            "angleDeg": 122
           }
         }
       ],
@@ -445,7 +445,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 85
+            "angleDeg": 79
           }
         }
       ],
@@ -506,7 +506,7 @@
           "partId": 1,
           "type": "servo",
           "target": {
-            "angleDeg": 33
+            "angleDeg": 127
           }
         }
       ],
@@ -540,7 +540,7 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 118
+            "angleDeg": 80
           }
         }
       ],
@@ -564,14 +564,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 133
+            "angleDeg": 110
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 99
+            "angleDeg": 107
           }
         }
       ],
@@ -595,14 +595,14 @@
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 113
+            "angleDeg": 70
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 81
+            "angleDeg": 71
           }
         }
       ],
@@ -636,21 +636,21 @@
           "partId": 1,
           "type": "servo",
           "target": {
-            "angleDeg": 28
+            "angleDeg": 122
           }
         },
         {
           "partId": 2,
           "type": "servo",
           "target": {
-            "angleDeg": 123
+            "angleDeg": 90
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 89
+            "angleDeg": 87
           }
         },
         {
@@ -683,7 +683,7 @@
           "partId": 1,
           "type": "servo",
           "target": {
-            "angleDeg": 38
+            "angleDeg": 132
           }
         },
         {
@@ -717,14 +717,14 @@
           "partId": 1,
           "type": "servo",
           "target": {
-            "angleDeg": 28
+            "angleDeg": 122
           }
         },
         {
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 92
+            "angleDeg": 93
           }
         }
       ],
@@ -793,7 +793,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 86
+            "angleDeg": 81
           }
         }
       ],
@@ -817,7 +817,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 72
+            "angleDeg": 53
           }
         }
       ],
@@ -841,7 +841,7 @@
           "partId": 3,
           "type": "servo",
           "target": {
-            "angleDeg": 106
+            "angleDeg": 121
           }
         }
       ],
@@ -851,6 +851,78 @@
       "transitionDurationMs": 1800,
       "weight": 5,
       "holdVariance": 2000
+    },
+    {
+      "id": 29,
+      "name": "Idle: Look Left",
+      "category": "idle",
+      "description": "Operator 2026-10-17: her eyes move left to right occasionally, like she is looking around.",
+      "tags": [
+        "idle",
+        "eye"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 900,
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 55
+          }
+        }
+      ],
+      "created": "2026-10-17T21:30:00.000Z",
+      "weight": 8,
+      "holdVariance": 1500
+    },
+    {
+      "id": 30,
+      "name": "Idle: Look Right",
+      "category": "idle",
+      "description": "Operator 2026-10-17: her eyes move left to right occasionally, like she is looking around.",
+      "tags": [
+        "idle",
+        "eye"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 900,
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 123
+          }
+        }
+      ],
+      "created": "2026-10-17T21:30:00.000Z",
+      "weight": 8,
+      "holdVariance": 1500
+    },
+    {
+      "id": 31,
+      "name": "Idle: Look Ahead",
+      "category": "idle",
+      "description": "Operator 2026-10-17: her eyes move left to right occasionally, like she is looking around.",
+      "tags": [
+        "idle",
+        "eye"
+      ],
+      "transitionProfile": "ease_in_out",
+      "transitionDurationMs": 900,
+      "parts": [
+        {
+          "partId": 3,
+          "type": "servo",
+          "target": {
+            "angleDeg": 89
+          }
+        }
+      ],
+      "created": "2026-10-17T21:30:00.000Z",
+      "weight": 10,
+      "holdVariance": 1500
     }
   ],
   "templates": {}
