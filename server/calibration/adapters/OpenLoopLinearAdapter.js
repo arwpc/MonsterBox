@@ -26,6 +26,17 @@ export class OpenLoopLinearAdapter {
     this.reversalCompensationBeta = 0;
   }
 
+  /**
+   * Speed for a move whose caller named none (the calibration page's Home and
+   * Go, body-map buttons). A profile may set motion.defaultSpeedPct: a door that
+   * only moves usefully near full power used to be homed at a hardcoded 50%,
+   * where its stroke outlasts the driver's per-drive cap and Home stopped halfway.
+   */
+  get defaultSpeedPct() {
+    const v = Number(this.motion && this.motion.defaultSpeedPct);
+    return Number.isFinite(v) && v > 0 && v <= 100 ? v : 50;
+  }
+
   getCapabilities() { return { kind: 'openloop-linear', invert: this.invert }; }
 
   selectBin(requestedPwmPct) {
@@ -63,7 +74,7 @@ export class OpenLoopLinearAdapter {
   async nudge(dir, scale, opts) {
     const delta = NUDGE_SCALES[scale] || NUDGE_SCALES.med;
     const newP = dir === 'max' ? Math.min(1, this.currentP + delta) : Math.max(0, this.currentP - delta);
-    await this.gotoNormalized(newP, Object.assign({ speedPct: 50 }, opts || {}));
+    await this.gotoNormalized(newP, Object.assign({ speedPct: this.defaultSpeedPct }, opts || {}));
   }
 
   async stop() {
@@ -83,7 +94,8 @@ export class OpenLoopLinearAdapter {
    * @param {'retract'|'extend'} direction - Which endstop to seek
    * @param {number} speedPct - Motor speed percentage (default 50)
    */
-  async home(direction = 'retract', speedPct = 50, opts) {
+  async home(direction = 'retract', speedPct, opts) {
+    speedPct = (typeof speedPct === 'number' && speedPct > 0) ? speedPct : this.defaultSpeedPct;
     const targetP = direction === 'retract' ? 0 : 1;
     const hwDir = direction === 'retract' ? 'retract' : 'extend';
     // Full-range drive time plus generous overdrive
@@ -127,7 +139,7 @@ export class OpenLoopLinearAdapter {
     const currentDir = deltaP > 0 ? 'max' : 'min';
     let compensatedDelta = Math.abs(deltaP);
     if (this.lastDir && this.lastDir !== currentDir && this.reversalCompensationBeta > 0) compensatedDelta += this.reversalCompensationBeta;
-    const speedPct = (opts && opts.speedPct) || 50;
+    const speedPct = (opts && opts.speedPct) || this.defaultSpeedPct;
 
     // Calculate pure motor-on time (without settle).
     // Both spellings are honoured: the nudge/goto routes send durationMs while
