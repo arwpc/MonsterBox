@@ -8,9 +8,10 @@ description: Commanding MonsterBox physical hardware — the physical-risk parts
 ## Physical-risk parts — software refuses NOTHING; the knowledge still applies
 
 **2026-08-20 operator ruling: every per-part safety limit was removed, all characters,
-permanently** ("we don't need them ever again"). `config/hardware-safety.json` is empty and
-must stay that way — do not re-add blocks, windows, caps, exclusions, or serialization
-without Aaron's direction. He manages physical risk at the rig. The incidents below remain
+permanently** ("we don't need them ever again"). `config/hardware-safety.json` is empty
+except the one entry Aaron has since directed (2026-10-18: Groundbreaker's turn motor, char 5
+part 1, `maxDurationMs: 1500`, 1500 ms at 50% each way from center; no endstop, never Home it)
+— do not re-add blocks, windows, caps, exclusions, or serialization without Aaron's direction. He manages physical risk at the rig. The incidents below remain
 true as *knowledge*: an agent drives these parts only on operator direction, never on its
 own initiative, and no automated suite should command them.
 

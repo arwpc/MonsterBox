@@ -288,12 +288,20 @@ describe('Hardware safety limits', function () {
 
   describe('configured limits for the shipped fleet', function () {
     // 2026-08-20 operator ruling: every per-part limit was removed, all characters,
-    // permanently ("we don't need them ever again"). The shipped config is EMPTY by
-    // design — this test now guards that state so a well-meaning session cannot
-    // silently re-add limits the operator retired.
-    it('ships no per-part limits for any character', async function () {
+    // permanently ("we don't need them ever again"). The shipped config holds only
+    // limits the operator has since directed by name — this test guards that exact
+    // set so a well-meaning session cannot silently re-add limits he retired.
+    it('ships only the operator-directed per-part limits', async function () {
       const raw = JSON.parse(await readFile(new URL('../../config/hardware-safety.json', import.meta.url), 'utf-8'));
-      expect(raw.characters).to.deep.equal({});
+      const shipped = {};
+      for (const [cid, c] of Object.entries(raw.characters || {})) {
+        for (const [pid, limits] of Object.entries((c && c.parts) || {})) {
+          const { notes, ...enforced } = limits;
+          shipped[`${cid}:${pid}`] = enforced;
+        }
+      }
+      // 2026-10-18: Groundbreaker's turn motor, 1500 ms at 50% each way from center.
+      expect(shipped).to.deep.equal({ '5:1': { maxDurationMs: 1500 } });
     });
 
     it('returns empty limits for formerly-blocked parts', async function () {

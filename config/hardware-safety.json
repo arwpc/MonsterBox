@@ -4,7 +4,17 @@
     "Every per-part limit (blockAllMotion, angle windows, duration caps, noRetractBelowMin, powerGroup serialization,",
     "excludeFromAutomatedTests) was removed for every character. Do not re-add entries without his direction.",
     "The enforcement code (services/hardwareService/safetyLimits.js) still reads this file and applies nothing when empty;",
-    "its removal is the deferred safety-teardown job in V11-HANDOFF/V11-DECISIONS."
+    "its removal is the deferred safety-teardown job in V11-HANDOFF/V11-DECISIONS.",
+    "EXCEPTION by operator direction 2026-10-18: Groundbreaker's turn motor (char 5 part 1) below. Leave it in place."
   ],
-  "characters": {}
+  "characters": {
+    "5": {
+      "parts": {
+        "1": {
+          "maxDurationMs": 1500,
+          "notes": "Operator 2026-10-18: 12V wiper motor (BTS7960) turning Groundbreaker; he was centered facing forward. 'Dont turn him more than 1500ms at 50% in either direction.' Clamped in python_wrappers/mb_safety.py on every drive, calibration Home included. One drive is capped, not his position: two drives the same way still add up, so the open-loop tracker (center p=0.5, full span 3000 ms at 50%) is what keeps him inside the window. There is no endstop - never Home this part."
+        }
+      }
+    }
+  }
 }
