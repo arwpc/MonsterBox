@@ -43,7 +43,8 @@
       "characterId": 4,
       "agentId": "agent_7901k3f1dza1ee68w1257zh3s9x6",
       "defaultSceneId": 1,
-      "sinkVolume": 0.55
+      "sinkVolume": 0.85,
+      "_sinkVolume": "Raised 0.55 -> 0.85 on 2026-10-18 after the first Slipknot rehearsal: the operator heard him as silent under Groundbreaker's song. 0.55 (-15 dB on the XVF3800's attenuator) was tuned for his OLD speaker (BENCH-CHECKLIST K4.5 flagged it for a re-tune). Measured on the node: his cached line at 0.70 / 0.85 / 1.00 tripped no USB over-current; 0.85 keeps the same margin as Groundbreaker. Room level is the speaker's own knob."
     },
     {
       "id": 5,
