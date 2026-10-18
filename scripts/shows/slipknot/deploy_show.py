@@ -14,6 +14,7 @@ import re
 import ssl
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
@@ -23,6 +24,8 @@ REG = {a['characterId']: a for a in json.load(open(f'{REPO}/config/animatronics.
 LOCK_REASON = {l['characterId']: l.get('reason', '') for l in json.load(open(f'{REPO}/config/character-locks.json'))['locks']}
 LOCKS = set(LOCK_REASON)
 SLUG = {1: 'pumpkinhead', 2: 'mina', 3: 'orlok', 4: 'dragomir', 6: 'renfield'}
+# Part scene ids a dry run would have saved, so the conductor's references to them are expected misses
+DRY_PART_IDS = set()
 CTX = ssl.create_default_context()
 CTX.check_hostname = False
 CTX.verify_mode = ssl.CERT_NONE
@@ -79,8 +82,19 @@ def save_scene(cid, scene):
     new = dict(scene, id=sid)
     locked = cid in LOCKS
     if DRY:
-        r = api(cid, f'/scenes/api/replace?characterId={cid}&validateOnly=1', {'scenes': kept + [new]})
-        log(f'  char {cid}: validate {r.get("success")} {r.get("errors") or ""}')
+        try:
+            r = api(cid, f'/scenes/api/replace?characterId={cid}&validateOnly=1', {'scenes': kept + [new]})
+        except urllib.error.HTTPError as e:
+            r = json.loads(e.read() or b'{}')
+        # A dry run uploads and saves nothing, so its own audio, clips and part scenes read as missing
+        errors = r.get('errors') or []
+        pending = [e for e in errors
+                   if ('audioId "slipknot-' in e and 'is not in the audio library' in e)
+                   or ('"slipknot-g' in e and 'clip manifest' in e)
+                   or any(f'fleet-scene: scene "{i}" not found' in e for i in DRY_PART_IDS)]
+        real = [e for e in errors if e not in pending]
+        log(f'  char {cid}: validate {"FAILED " + str(real) if real else "ok"}'
+            + (f' ({len(pending)} ref(s) to show audio, clips or part scenes this run would create)' if pending else ''))
         return sid
     if locked:
         log(f'  char {cid} is locked: unlocking for the save', ssh(cid, f'cd /home/remote/MonsterBox && node scripts/character-lock.mjs unlock {cid}').stdout.strip()[-60:])
@@ -111,6 +125,7 @@ def main():
             scene['steps'][0]['audioId'] = aid
             log(f'  audio uploaded as {aid}')
         part_ids[name] = save_scene(cid, scene)
+        DRY_PART_IDS.add(part_ids[name])
 
     log('== Groundbreaker (char 5): song, videos, conductor')
     gb = 5

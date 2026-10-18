@@ -12,6 +12,7 @@ import armedModeRoutes from './armed-mode.js';
 import { resolveCharacterSync } from '../../services/characterContext.js';
 import { isConfigLockedError } from '../../services/characterConfigLock.js';
 import poseRepository from '../../services/poses/poseRepository.js';
+import orchestrationService from '../../services/orchestrationService.js';
 import { validateCharacterData, loadValidationContext, loadCharacterFiles, formatIssue } from '../../services/scenes/sceneValidator.js';
 
 const router = express.Router();
@@ -36,6 +37,17 @@ function sendWriteError(res, e, fallbackStatus = 500) {
  */
 async function validateScenesFor(characterId, scenes) {
   const ctx = await loadValidationContext();
+  // A conductor's fleet-scene targets live on other nodes; ask them, because this
+  // node's copy of their scenes.json is never deployed and goes stale.
+  ctx.fetchPeerScenes = async (node, targetCid) => {
+    try {
+      const r = await orchestrationService.httpNode(node, { path: `/scenes/api/?characterId=${encodeURIComponent(targetCid)}`, timeout: 5000 });
+      return r && Array.isArray(r.scenes) ? r.scenes : null;
+    } catch (e) {
+      console.warn(`[scenes] could not read ${node.name || node.ip}'s scenes for validation: ${e.message}`);
+      return null;
+    }
+  };
   const files = await loadCharacterFiles(characterId);
   const poses = await poseRepository.loadPoses(characterId);
   return validateCharacterData({ characterId, scenes, parts: files.parts, posesForLookup: poses, ctx });

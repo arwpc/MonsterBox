@@ -256,5 +256,25 @@ describe('Scene validator', function () {
       expect(msgs(r.errors)).to.contain('scene "77" not found');
       expect(r.errors).to.have.length(1);
     });
+
+    it('asks the target node for its library when the caller can (this node\'s copy lags)', async function () {
+      const asked = [];
+      const ctx = makeCtx({ fetchPeerScenes: async (node, cid) => { asked.push(cid); return [{ id: 5, name: 'Part Five', steps: [] }]; } });
+      const r = await check({ ctx, scenes: scene([
+        { type: 'fleet-scene', node: 'Sir Testalot', scene: 5 },
+        { type: 'fleet-scene', node: 'Sir Testalot', scene: 'Part Five' },
+        { type: 'fleet-scene', node: 'Sir Testalot', scene: 6 }
+      ]) });
+      expect(asked).to.deep.equal(['9102']);
+      expect(msgs(r.errors)).to.contain('scene "6" not found on Sir Testalot');
+      expect(r.errors).to.have.length(1);
+    });
+
+    it('only warns when the target node cannot be asked and the stale local copy misses', async function () {
+      const ctx = makeCtx({ fetchPeerScenes: async () => null });
+      const r = await check({ ctx, scenes: scene([{ type: 'fleet-scene', node: 'Sir Testalot', scene: 6 }]) });
+      expect(r.errors).to.have.length(0);
+      expect(msgs(r.warnings)).to.match(/did not answer|cannot check/);
+    });
   });
 });

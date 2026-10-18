@@ -533,15 +533,31 @@ export async function validateCharacterData({ characterId, scenes, poses, parts 
       const node = r.nodes[0];
       const targetCid = String(node.characterId != null ? node.characterId : node.id);
       // The target's library: the scenes under test when it is this character,
-      // otherwise that character's file in this repo (node-local, may lag).
+      // otherwise the target node's own library when the caller can ask it
+      // (ctx.fetchPeerScenes, live endpoints only), else that character's file
+      // in this repo. That file is never deployed (scenes.json is node-local),
+      // so it can lag by weeks and a miss in it is only a warning when the
+      // target could not be asked.
       let list = null;
+      let peer = null;
       if (targetCid === cid && Array.isArray(scenes)) list = scenes;
-      else list = await readJson(path.join(ctx.root, 'data', `character-${targetCid}`, 'scenes.json'));
+      else {
+        if (typeof ctx.fetchPeerScenes === 'function') {
+          if (!ctx.peerScenes) ctx.peerScenes = new Map();
+          if (!ctx.peerScenes.has(targetCid)) ctx.peerScenes.set(targetCid, ctx.fetchPeerScenes(node, targetCid));
+          list = await ctx.peerScenes.get(targetCid);
+          if (Array.isArray(list)) peer = node.name || node.id;
+        }
+        if (!Array.isArray(list)) list = await readJson(path.join(ctx.root, 'data', `character-${targetCid}`, 'scenes.json'));
+      }
       if (!Array.isArray(list)) { add(warnings, where, `cannot check scene "${raw}" — no data/character-${targetCid}/scenes.json in this repo`); return; }
       const found = /^\d+$/.test(String(raw).trim())
         ? list.some(s => parseInt(s.id, 10) === parseInt(raw, 10))
         : list.filter(s => String(s.name || '').trim().toLowerCase() === String(raw).trim().toLowerCase()).length === 1;
-      if (!found) add(errors, where, `fleet-scene: scene "${raw}" not found in data/character-${targetCid}/scenes.json`);
+      if (found) return;
+      if (peer) add(errors, where, `fleet-scene: scene "${raw}" not found on ${peer} (character ${targetCid})`);
+      else if (typeof ctx.fetchPeerScenes === 'function' && targetCid !== cid) add(warnings, where, `fleet-scene: ${node.name || node.id} did not answer and scene "${raw}" is not in this node's copy of data/character-${targetCid}/scenes.json (which may lag)`);
+      else add(errors, where, `fleet-scene: scene "${raw}" not found in data/character-${targetCid}/scenes.json`);
     } else if (t === 'fleet-say') {
       if (!String(step.text || step.say || '').trim()) add(errors, where, 'fleet-say needs text');
     } else if (t === 'fleet-audio') {
