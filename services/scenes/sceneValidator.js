@@ -481,6 +481,13 @@ export async function validateCharacterData({ characterId, scenes, poses, parts 
       }
       case 'wait':
       case 'delay': {
+        if (step.untilMs != null) {
+          // Wait until a point on the scene clock (ms since the scene started).
+          const u = Number(step.untilMs);
+          if (!Number.isFinite(u) || u < 0) add(errors, where, 'wait.untilMs must be a time in ms since the scene started');
+          else if (u > 60 * 60 * 1000) add(errors, where, `wait.untilMs ${u} is more than an hour into the scene`);
+          break;
+        }
         const d = Number(step.duration != null ? step.duration : step.durationMs);
         if (!Number.isFinite(d) || d < 0) add(errors, where, 'wait needs a duration in ms');
         else if (d > MAX_WAIT_MS) add(errors, where, `wait ${d} ms is longer than 10 minutes`);

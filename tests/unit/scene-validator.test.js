@@ -79,6 +79,13 @@ describe('Scene validator', function () {
     expect(r.errors, msgs(r.errors)).to.have.length(0);
   });
 
+  it('accepts wait.untilMs on the scene clock and rejects a bad one', async function () {
+    const ok = await check({ scenes: scene([{ type: 'wait', untilMs: 1500 }]) });
+    expect(ok.errors, msgs(ok.errors)).to.have.length(0);
+    const bad = await check({ scenes: scene([{ type: 'wait', untilMs: -5 }]) });
+    expect(msgs(bad.errors)).to.match(/untilMs/);
+  });
+
   it('reports file:scene:step messages', async function () {
     const r = await check({ scenes: scene([{ type: 'pose', poseId: 99 }]) });
     expect(r.errors).to.have.length(1);

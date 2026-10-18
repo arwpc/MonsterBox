@@ -302,8 +302,16 @@ async function executePartStep(step, characterId, emit) {
   return r;
 }
 
-async function executeWaitStep(step, emit) {
-  const d = parseInt(step.duration, 10) || parseInt(step.durationMs, 10) || 0;
+async function executeWaitStep(step, emit, options) {
+  // untilMs: wait until that many ms after the scene's step loop began, not for a
+  // span. Steps run one after another, and each one's own overhead used to add up:
+  // a five-minute music scene with hundreds of beat-timed moves drifted off the
+  // track. Waiting on the scene clock keeps every move exactly where it was placed.
+  const clock = options && options._sceneClockStart;
+  const until = Number(step.untilMs);
+  const d = (clock && Number.isFinite(until))
+    ? Math.max(0, clock + until - Date.now())
+    : (parseInt(step.duration, 10) || parseInt(step.durationMs, 10) || 0);
   emit && emit({ type: 'step', status: 'start', stepType: 'wait', duration: d });
   await new Promise(r => setTimeout(r, d));
   emit && emit({ type: 'step', status: 'complete', stepType: 'wait', duration: d });
@@ -1035,7 +1043,7 @@ export async function executeStep(step, characterId, emit, options) {
     // throw aborted the whole scene — Mina's scene 100 (Halloween Audio Loop)
     // died on its second step every single time it was played.
     case 'delay':
-      return executeWaitStep(step, emit);
+      return executeWaitStep(step, emit, options);
     case 'sayThis':
       return executeSayThisStep(step, characterId, emit);
     case 'askAI':
@@ -1128,7 +1136,9 @@ const NON_FATAL_STEP_TYPES = new Set([
   'fleet-scene', 'fleet-say', 'fleet-audio', 'fleet-stop-audio', 'fleet-mode'
 ]);
 
-async function executeStepsWithConcurrency(steps, characterId, emit, opts) {
+async function executeStepsWithConcurrency(steps, characterId, emit, options) {
+  // The scene clock that wait.untilMs counts from.
+  const opts = Object.assign({}, options || {}, { _sceneClockStart: Date.now() });
   const results = [];
   const backgroundPromises = [];
   let stepsExecuted = 0;
