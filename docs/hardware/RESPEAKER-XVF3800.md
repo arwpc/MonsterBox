@@ -170,6 +170,31 @@ this is written. Until a cross-node transcript exists, treat continuous capture
 on an XVF3800 node as **unproven**, and read any silence through the five rules
 above rather than through the hardware.
 
+## 48 kHz firmware (Groundbreaker, 2026-10-18)
+
+The stock firmware the fleet runs (v2.0.6) exposes playback and capture at **16 kHz only**
+(`/proc/asound/Array/stream0` → `Rates: 16000`). That is fine for speech and ruinous for
+music: everything above 8 kHz is gone, and the operator heard Groundbreaker's Slipknot song
+as "half the volume, distorted, playing badly". Seeed's
+[`xmos_firmwares/usb`](https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/tree/master/xmos_firmwares/usb)
+ships **v2.1.1 `_48k2ch`**: 48 kHz both ways, 2 capture channels, and the AIC3104 output gain
+default raised from +6 dB to +8 dB. Flashed on Groundbreaker only:
+
+```bash
+sudo apt-get install -y dfu-util
+sudo systemctl stop monsterbox.service
+sudo dfu-util -R -e -a 1 -D respeaker_xvf3800_usb_dfu_firmware_v2.1.1_48k2ch.bin   # alt 1 = Upgrade slot; Factory stays
+# verify: lsusb -v -d 2886:001a → bcdDevice 2.11; /proc/asound/Array/stream0 → Rates: 48000
+amixer -c Array -q sset 'PCM',1 100% unmute && sudo alsactl store
+systemctl --user restart wireplumber pipewire pipewire-pulse && sudo systemctl start monsterbox.service
+```
+
+Proven after the flash: PyAudio capture delivers frames on `default` and the explicit source
+(the STT path asks for 16 kHz and PipeWire resamples), and 30 s of the song at sink 1.00
+tripped no USB over-current. Operator by ear: "Much better sound!" Roll back by flashing
+`old_firmwares/respeaker_xvf3800_usb_dfu_firmware_v2.0.6.bin` the same way. Any node that
+plays music through its array is a candidate.
+
 ## Why it matters per feature
 
 - **STT / conversation** — the reason it was bought. Beamforming plus
