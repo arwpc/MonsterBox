@@ -1,7 +1,7 @@
 """Deploy Groundbreaker's Slipknot 'Virus of Life' show to the fleet. Idempotent: re-run it
 after re-tuning (it replaces any earlier "Slipknot:" scenes, re-uploads audio, re-deploys video).
 
-  python3 scripts/shows/slipknot/deploy_show.py SHOW_DIR [--dry-run]
+  python3 scripts/shows/slipknot/deploy_show.py SHOW_DIR [--dry-run] [--clips-from-here]
 
 SHOW_DIR (on the console node, not in git: band audio and art) holds:
   audio/slipknot-part-<slug>.mp3, audio/slipknot-groundbreaker-virus-of-life.mp3
@@ -15,11 +15,14 @@ import ssl
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 SHOW = os.path.abspath(sys.argv[1])
 DRY = '--dry-run' in sys.argv
+# Copy Goblin clips from this machine instead of through Groundbreaker (he needs MONSTERBOX_SSH_PASSWORD for that)
+CLIPS_FROM_HERE = '--clips-from-here' in sys.argv
 REG = {a['characterId']: a for a in json.load(open(f'{REPO}/config/animatronics.json'))['animatronics']}
 LOCK_REASON = {l['characterId']: l.get('reason', '') for l in json.load(open(f'{REPO}/config/character-locks.json'))['locks']}
 LOCKS = set(LOCK_REASON)
@@ -60,6 +63,30 @@ def ssh(cid, cmd):
 
 def log(*a):
     print(*a, flush=True)
+
+
+def copy_clip_from_here(gb, n, path):
+    """Copy a clip straight onto Goblin n from this machine, the way Groundbreaker's own
+    deploy does (rsync to the player's media dir, then a rescan), for when Groundbreaker
+    has no SSH credential to reach the Goblins himself."""
+    g = api(gb, f'/video-library/api/goblins/resolve?name=Goblin%20{n}')
+    host = urllib.parse.urlparse(g['endpoint']).hostname
+    name = os.path.basename(path)
+    env = dict(os.environ)
+    if 'SSHPASS' not in env:
+        m = re.search(r'MONSTERBOX_SSH_PASSWORD=(.*)', open('/etc/monsterbox/env').read())
+        env['SSHPASS'] = m.group(1).strip().strip('"\'')
+    cp = subprocess.run(['rsync', '-t', '--partial', '--inplace', '--timeout=90',
+                         '-e', 'sshpass -e ssh -o StrictHostKeyChecking=no -o ConnectTimeout=8 -o LogLevel=ERROR',
+                         path, f'remote@{host}:/home/remote/media/video/{name}'],
+                        capture_output=True, text=True, env=env, timeout=900)
+    if cp.returncode != 0:
+        raise SystemExit(f'copy of {name} to Goblin {n} failed (rsync {cp.returncode}): {cp.stderr.strip()[-200:]}')
+    with urllib.request.urlopen(f'{g["endpoint"]}/api/videos/scan', timeout=60) as r:
+        listed = any(v.get('filename') == name for v in json.loads(r.read()).get('videos', []))
+    log(f'  {name} -> Goblin {n} ({host}): copied from here, listed after rescan: {listed}')
+    if not listed:
+        raise SystemExit(f'Goblin {n} does not list {name} after the copy')
 
 
 def audio_id(resp):
@@ -136,12 +163,19 @@ def main():
             if s['type'] == 'audio':
                 s['audioId'] = sid
         for n in (1, 2, 3):
+            if CLIPS_FROM_HERE:
+                copy_clip_from_here(gb, n, f'{SHOW}/video/slipknot-g{n}.mp4')
+                continue
             up = upload(gb, f'{SHOW}/video/slipknot-g{n}.mp4', 'videoFiles', '/video-library/api/upload')
             vids = up.get('videos') or up.get('files') or up.get('uploaded') or []
             vid = (vids[0].get('id') if vids and isinstance(vids[0], dict) else None) or up.get('id')
             gid = api(gb, f'/video-library/api/goblins/resolve?name=Goblin%20{n}')['id']
             dep = api(gb, '/video-library/api/deploy', {'videoId': vid, 'goblinId': gid}, timeout=600)
             log(f'  slipknot-g{n}.mp4 -> Goblin {n}: {dep.get("success")} {dep.get("error") or ""}')
+        if CLIPS_FROM_HERE:
+            # The conductor's clip check reads Groundbreaker's manifests; refresh them from the Goblins' own listings
+            r = ssh(gb, 'cd /home/remote/MonsterBox && node scripts/goblins/publish-manifests.mjs 2>&1 | tail -4')
+            log('  manifests on Groundbreaker:', (r.stdout or r.stderr).strip().replace('\n', ' | ')[-240:])
     for s in cond['steps']:
         if s['type'] == 'fleet-scene' and s['node'] in part_ids:
             s['scene'] = part_ids[s['node']]

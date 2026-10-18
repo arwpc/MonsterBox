@@ -54,8 +54,8 @@
       "characterId": 5,
       "agentId": "agent_4201k6s9y384f9v9hqmg67ygc645",
       "defaultSceneId": 1,
-      "sinkVolume": 1,
-      "_sinkVolume": "Set 2026-09-07. Groundbreaker's speaker is a Unitek Y-247A USB adapter; at 0.65 he scored SILENT on the 2026-08-31 ear-check and at 1.00 AUDIBLE (38.4 dB rise, 100% recall). He had no canon at all, so applyCanonicalSinkVolume had nothing to restore and a fleet fan-out left him parked at 0.20 on 2026-09-07. Set the room level on the powered speaker's own knob; 1.00 is full scale with no digital gain."
+      "sinkVolume": 0.85,
+      "_sinkVolume": "CAPPED AT 0.85 on 2026-10-18 - USB POWER, not loudness. Groundbreaker's speaker moved to a ReSpeaker XVF3800 that day (its 'PCM',1 shipped at -20 dB and was normalized to 0 dB). At 1.00 the array's amp tripped the Pi 4's shared USB over-current sense (~60 trips in his first 100 min; +12 trip lines during one 7 s line), and each trip reset the array and the webcam mid-sentence: 'his audio keeps getting interrupted, it stops and he catches back up'. Measured: 0.85 and 0.70 tripped nothing on the same line, and 0.85 stayed clean through 30 s of the Slipknot song. Same failure and cure as Renfield. Raise toward 1.00 only after the ReSpeaker moves to a POWERED USB HUB (re-measure with `dmesg | grep -c over-current` across loud playback); set room level on the speaker's own knob. Previous note (Unitek Y-247A, 2026-09-07): 0.65 scored SILENT, 1.00 AUDIBLE."
     },
     {
       "id": 6,
