@@ -92,7 +92,7 @@ def orlok():
                        (L['o6'] + 2.0, 6.0),    # the monologue
                        (L['o13'] + 0.4, 4.5),   # "now... be still"
                        (L['o15'] + 0.3, 2.5),   # "everything is offered"
-                       (L['o11'] + 1.0, 6.0),   # the Turks
+                       (L['o17'] + 0.3, 2.5),   # "I am coming" (v3)
                        (L['o8'] + 1.5, 3.0)])   # reaching for Mina
     # dawn: the Hand gutters, his head thrashes, his arm flails up and falls
     t = L['o9']
@@ -101,7 +101,7 @@ def orlok():
     m.append((t + 4.2, light('8', False)))
     m += [(L['o9'] + 0.3 + k * 0.55, servo('15', 72 if k % 2 else 108, 450)) for k in range(7)]
     m += [(L['o9'] + 0.5, act_('1', 'extend', 1200, 70)), (L['o9'] + 5.0, act_('1', 'retract', 2600, 35)),
-          (L['o9'] + 6.0, servo('15', 80, 3000)), (E['k7'] + 0.5, servo('15', 90, 1500))]
+          (L['o9'] + 6.0, servo('15', 80, 3000)), (E['k18'] + 0.5, servo('15', 90, 1500))]
     return m
 
 
@@ -110,21 +110,22 @@ def mina():
     a3 = ACT[3]['start']
     t = 6.0
     while t < a3 - 4:  # Acts I-II: she sleeps restlessly, eyes wandering, head stirring
-        if not (L['m6'] - 2 <= t <= E['m6'] + 3):
+        if not (L['m10'] - 2 <= t <= E['o17'] + 3):
             m.append((t, servo('3', rnd.choice([58, 66, 75, 104, 112, 120]), 450)))
             m.append((t + 1.4, servo('3', 89, 450)))
             if rnd.random() < 0.45:
                 m.append((t + 0.6, servo('2', rnd.choice([84, 96, 102]), 1600)))
         t += rnd.uniform(5, 8)
-    m += [(L['m6'], servo('2', 104, 1200)), (L['m6'] + 0.4, servo('3', 70, 350)),                      # she stirs: who is calling?
-          (L['m6'] + 1.6, servo('3', 110, 350)), (E['m6'] + 1.0, servo('2', 90, 1800)), (E['m6'] + 1.2, servo('3', 89, 500))]
+    m += [(L['m10'], servo('2', 104, 1200)), (L['m10'] + 0.4, servo('3', 70, 350)),                    # she calls to him across the water
+          (L['m10'] + 1.8, servo('3', 110, 350)), (L['o17'], servo('2', 112, 1400)), (L['o17'] + 0.3, servo('3', 64, 400)),  # and turns as he answers
+          (E['o17'] + 1.2, servo('2', 90, 1800)), (E['o17'] + 1.4, servo('3', 89, 500))]
     m += [(L['r5'] + 0.2, servo('3', 64, 300)), (L['r5'] + 0.4, servo('2', 104, 900)),                   # her name
           (L['o5'] + 0.3, servo('3', 60, 300)), (E['o5'] + 2.0, servo('3', 89, 700)), (E['o5'] + 2.2, servo('2', 90, 1500))]
     # Act III: the door draws partway shut, the rose lights, and she rises as she speaks
-    m += [(a3 + 0.5, act_('4', 'retract', 2500, 95)), (L['k6'] + 5.0, light('5', True)),
+    m += [(a3 + 0.5, act_('4', 'retract', 2500, 95)), (L['k17'] + 2.0, light('5', True)),
           (L['m1'] - 2.5, act_('4', 'extend', 3500, 95))]
     for ln in LINES:
-        if ln['act'] != 3 or ln['start'] < L['m1'] or ln['id'] in ('o9', 'm4', 'k7'):
+        if ln['act'] != 3 or ln['start'] < L['m1'] or ln['id'] in ('o9', 'm4', 'k18'):
             continue
         if ln['cid'] == 2:    # she speaks: head up and forward, eyes steady, a small turn mid-line
             m += [(ln['start'], servo('2', 108, 1100)), (ln['start'] + 0.2, servo('3', 89, 350))]
@@ -134,9 +135,8 @@ def mina():
             m += [(ln['start'] + 0.2, servo('2', 96, 1400)), (ln['start'] + 0.4, servo('3', 68, 450))]
         else:                 # a comment from the yard: her eyes flick toward it, then back
             m += [(ln['start'] + 0.3, servo('3', 118, 350)), (ln['end'] - 0.2, servo('3', 89, 450))]
-    m += [(L['o11'] + 3.0, servo('3', 120, 700)), (L['o11'] + 9.0, servo('3', 89, 700))]                   # she looks at the Turks
     m += [(L['k9'], light('10', True)), (E['o9'] + 2.0, light('10', False)),                                 # the sun
-          (L['m4'], servo('2', 90, 2500)), (L['m4'], servo('3', 89, 800)), (E['k7'] + 1.0, light('5', False))]
+          (L['m4'], servo('2', 90, 2500)), (L['m4'], servo('3', 89, 800)), (E['k18'] + 1.0, light('5', False))]
     return m
 
 
@@ -149,9 +149,9 @@ def dragomir():
         if not speaking(4, t):
             m.append((t, servo('1', rnd.choice([377, 382, 386, 392, 396, 401]), 1900)))
         t += rnd.uniform(3.5, 5.5)
-    for lid in ('k2', 'k3', 'k6', 'k11', 'k10', 'k12', 'k13', 'k9'):  # the magic box opens on every remark
+    for lid in ('k2', 'k16', 'k17', 'k10', 'k12', 'k13', 'k9', 'k18'):  # the magic box opens on every remark
         m += [(L[lid], servo('3', 42, 250)), (E[lid] + 0.8, servo('3', 20, 400))]
-    m += [(E['k7'] + 0.5, servo('1', 389, 1500)), (E['k7'] + 0.5, servo('3', 20, 400))]
+    m += [(E['k18'] + 0.5, servo('1', 389, 1500)), (E['k18'] + 0.5, servo('3', 20, 400))]
     return m
 
 
@@ -167,14 +167,14 @@ def renfield():
         if ln['id'] in ('r11', 'r12', 'r13', 'r14'):
             continue
         m += sweep('7', ln['start'], ln['end'], 60, 125, PEN_EVERY, 250)
-    for lid in ('o2', 'o4', 'o6'):  # taking down the Count's every word
+    for lid in ('o1', 'o4', 'o6'):  # taking down the Count's every word
         m += sweep('7', L[lid] + 0.5, E[lid], 75, 110, PEN_EVERY + 0.3, 350)
     t = 8.0
     while t < L['r11'] - 3:  # he never sits still: a twitch of the pen between lines
         if not speaking(6, t):
             m.append((t, servo('7', rnd.choice([70, 85, 100, 115]), 300)))
         t += rnd.uniform(4, 7)
-    for t in (L['r1'] + 0.2, L['r3'] + 0.1, L['r10'] + 0.5, E['r6'] - 1.5):
+    for t in (L['r3'] + 0.1, L['r6'] + 0.5, E['r6'] - 1.5):
         m.append((t, motor('1', 'forward', 70, 500)))
     # THE MASTER: shake bursts and a wild pen from his shriek until the Count says his name
     t = L['r11']
@@ -227,7 +227,7 @@ def groundbreaker():
     """His new turn motor, operator window 1500 ms at 50% either way from center: every turn is
     an out-and-back pair of equal length, so he always comes home facing forward."""
     m = []
-    cues = [L['k2'], L['k3'], L['r11'] + 0.5, E['r14'] + 0.5, L['k6'], L['k9'], E['k7'] + 0.5]
+    cues = [L['k2'], L['k16'], L['r11'] + 0.5, E['r14'] + 0.5, L['k17'], L['k9'], E['k18'] + 0.5]
     for k, t in enumerate(cues):
         first, back = ('forward', 'reverse') if k % 2 == 0 else ('reverse', 'forward')
         m += [(t, motor('1', first, 50, 700)), (t + 2.5, motor('1', back, 50, 700))]
@@ -244,7 +244,11 @@ EXTRA_AUDIO = {3: [{'type': 'audio', 'audioId': 'nosferatu-groundbreaker-score.m
 
 def part_scene(cid, name, slug, jaw, moves):
     lag = LAG.get(cid, 0)
-    steps = [{'type': 'audio', 'audioId': f'nosferatu-part-{slug}.mp3', 'volume': 100, 'jawSync': jaw, 'concurrent': True}] if slug else []
+    # No jaw servo (PumpkinHead, Renfield): their LED eyes follow the voice instead (ledSync)
+    voice = {'type': 'audio', 'audioId': f'nosferatu-part-{slug}.mp3', 'volume': 100, 'jawSync': jaw, 'concurrent': True}
+    if not jaw:
+        voice['ledSync'] = True
+    steps = [voice] if slug else []
     steps += [dict(x) for x in EXTRA_AUDIO.get(cid, [])]
     for t, step in sorted(moves, key=lambda mv: mv[0]):
         steps.append({'type': 'wait', 'untilMs': max(0, int(round(t * 1000)) + lag)})

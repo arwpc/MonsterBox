@@ -81,7 +81,14 @@ describe('fleet-event conductor files', function () {
   it('one conductor per event in events.json, ids unique', function () {
     const ids = files.map(f => JSON.parse(fs.readFileSync(path.join(CONDUCTORS, f), 'utf8')).id);
     expect(new Set(ids).size).to.equal(ids.length);
-    expect(ids.map(Number).sort()).to.deep.equal(events.map(e => Number(e.sceneId)).sort());
+    // Events with a "node" are that node's own scenes (the Slipknot and Nosferatu conductors live on
+    // Groundbreaker, built from show assets that are not in git), so only local events have a file here.
+    expect(ids.map(Number).sort()).to.deep.equal(events.filter(e => !e.node).map(e => Number(e.sceneId)).sort());
+  });
+
+  it('a node-hosted event names a node in the fleet registry', function () {
+    const registry = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'animatronics.json'), 'utf8')).animatronics.map(a => a.name);
+    for (const e of events.filter(ev => ev.node)) expect(registry).to.include(e.node);
   });
 
   for (const f of files) {

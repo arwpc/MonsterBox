@@ -259,6 +259,25 @@ async function executeAudioStep(step, characterId, emit) {
     }
   }
 
+  // A character with LED eyes but no jaw servo never reaches the jaw path above, so a scene's
+  // speech left its eyes dark (PumpkinHead and Renfield in the Nosferatu show). Opt in per step
+  // with ledSync:true: drive the ring from the same audio, as the conversation route does. The
+  // analysis is awaited, like the jaw path's, so eyes and voice start together; the eyes only
+  // react where the character's own LED speech sync is switched on.
+  if (step.ledSync === true) {
+    try {
+      const { default: ledAnimationService } = await import('../ledAnimationService.js');
+      const ledBuffer = await fs.readFile(filename);
+      const ledType = path.extname(filename).toLowerCase() === '.wav' ? 'audio/wav' : 'audio/mpeg';
+      const led = await ledAnimationService.driveLedFromBuffer(characterId, ledBuffer, ledType);
+      if (led && !led.success && led.message !== 'no LED ring') {
+        console.warn(`Scene audio LED sync (character ${characterId}) not started: ${led.message}`);
+      }
+    } catch (ledErr) {
+      console.warn('Scene audio LED sync failed:', ledErr.message);
+    }
+  }
+
   // Same wrapper and arguments as the speaker controller's play(), but with a
   // timeout sized to this clip (see deriveAudioTimeoutMs) instead of the 30 s
   // wrapper default that killed every longer track mid-play.

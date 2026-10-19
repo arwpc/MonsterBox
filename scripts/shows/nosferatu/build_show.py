@@ -34,7 +34,7 @@ MUSIC = {
 XF = 4.0
 ACT_TITLE_S = 5.0     # title card and music alone before an act's first line
 ACT_TAIL_S = 4.0      # after an act's last line, before the next act starts
-OPEN_S = 6.0          # wind, thunder and wolves before the Knight's first word
+OPEN_S = 3.0          # wind, thunder and wolves before the Knight's first word (v3: shorter opening)
 # key: (lead s reserved before the next line, seconds played, gain dB, offset s after the line ends)
 SFX = {
     'wolves': (4.0, 9.0, -4, 0.0), 'coach': (4.0, 8.0, -5, 1.0), 'door': (2.5, 6.0, -3, 0.0),

@@ -21,6 +21,12 @@ W, H, FPS = 1280, 720, 30
 PREROLL = 3.0
 XF = 1.2  # crossfade seconds
 STRIP = REEL == 'g3'
+# Operator 2026-10-18: the Goblins' screens are seen through the windows from outside, so every
+# reel reads mirror-reversed; flip on encode so the titles read the right way round.
+MIRROR = True
+# Goblin 1 (the showcase screen) was "barely visible" at night: lift it on encode.
+GRADE = {'g1': "curves=all='0/0 0.12/0.32 0.40/0.72 1/1',eq=saturation=1.2"}  # lifts shadows, keeps black
+VF = ','.join(f for f in (('hflip' if MIRROR else ''), GRADE.get(REEL, '')) if f)
 CW = 406 if STRIP else W
 TL = json.load(open(f'{SHOW}/timeline.json'))
 TOTAL = TL['total']
@@ -28,12 +34,13 @@ LINE = {ln['id']: ln for ln in TL['lines']}
 ACTS = TL['acts']
 
 # which picture each line cues (held until the next cue)
-SHOTS = [('castle', 0.0), ('dinner', 'o1'), ('contract', 'r2'), ('dinner', 'r3'), ('contract', 'r4b'),
-         ('locket', 'o4'), ('castle', 'o6'),
-         ('ship', ACTS[1]['start']), ('pump', 'r10'), ('weed', 'p3'), ('town', 'k4'),
+SHOTS = [('castle', 0.0), ('dinner', 'o1'), ('contract', 'r3'), ('locket', 'o4'),
+         ('shadow', 'm10'),  # v3: Mina calls to him across the sea, and he answers
+         ('castle', 'o6'),
+         ('ship', ACTS[1]['start']), ('town', 'k4'),
          ('shadow', 'r11'),  # the Master arrives: Renfield's frenzy, and his end
-         ('grave', 'k8'), ('town', 'k5'),
-         ('shadow', ACTS[2]['start']), ('turks', 'o11'), ('shadow', 'm5'), ('dawn', 'k9')]
+         ('grave', 'k10'), ('weed', 'p4'),
+         ('shadow', ACTS[2]['start']), ('weed', 'p5'), ('shadow', 'm5'), ('dawn', 'k9')]
 TAKES = {'g1': [1, 4], 'g2': [2, 3], 'g3': [3, 1]}[REEL]  # a long shot changes take halfway
 AVAIL = {'turks': [1, 2], 'weed': [1]}
 INDOOR = {'dinner', 'contract', 'locket', 'shadow'}
@@ -244,7 +251,7 @@ if '--stills' in sys.argv:  # contact frames for a quick look: OUT is a .jpg
 total = PREROLL + TOTAL + 1.0
 nframes = int(total * FPS)
 enc = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(FPS),
-                        '-i', '-', '-c:v', 'libx264', '-profile:v', 'high', '-level', '4.0', '-preset', 'medium',
+                        '-i', '-'] + (['-vf', VF] if VF else []) + ['-c:v', 'libx264', '-profile:v', 'high', '-level', '4.0', '-preset', 'medium',
                         '-b:v', '2500k', '-maxrate', '3500k', '-bufsize', '5000k', '-g', str(2 * FPS), '-keyint_min', str(2 * FPS),
                         '-sc_threshold', '0', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', OUT], stdin=subprocess.PIPE)
 black = np.zeros((H, W, 3), np.uint8)

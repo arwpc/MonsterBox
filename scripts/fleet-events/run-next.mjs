@@ -275,11 +275,23 @@ async function main() {
       await sleep(retry.delayMs);
     }
 
-    log(`playing ${event.sceneId} ${event.name}${DRY ? ' [DRY RUN]' : ''} via ${BASE}`);
+    // An event may live on another node's character ({"node": "Groundbreaker"} in events.json: the
+    // Slipknot and Nosferatu conductors are Groundbreaker's scenes). Play it there, through that
+    // node's own scene API; the release and Goblin clean-up below still run from here.
+    const host = event.node ? nodes.find((n) => String(n.name).toLowerCase() === String(event.node).toLowerCase()) : null;
+    if (event.node && !host) {
+      log(`refused: ${event.sceneId} ${event.name} lives on ${event.node}, which is not in the fleet registry`);
+      record(state, { at: new Date().toISOString(), sceneId: event.sceneId, name: event.name, status: 'failed', error: `node ${event.node} unknown` });
+      return 0;
+    }
+    const playUrl = host
+      ? nodeUrl(host, `/scenes/api/${event.sceneId}/play${DRY ? '?dryRun=1' : ''}`)
+      : `${BASE}/scenes/api/${event.sceneId}/play${DRY ? '?dryRun=1' : ''}`;
+    log(`playing ${event.sceneId} ${event.name}${DRY ? ' [DRY RUN]' : ''} via ${host ? `${host.name} (${host.ip})` : BASE}`);
     const started = Date.now();
     let outcome;
     try {
-      const r = await axios.post(`${BASE}/scenes/api/${event.sceneId}/play${DRY ? '?dryRun=1' : ''}`, {}, { timeout: PLAY_TIMEOUT });
+      const r = await axios.post(playUrl, {}, { timeout: PLAY_TIMEOUT });
       const sum = summarize(r.data?.result);
       // The conductor ran to its end (every fleet step is non-fatal, and a cast to an offline Goblin or a
       // skipped busy node is a warning, not a lost show). 'failed' is reserved for a play request that did not
