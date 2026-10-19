@@ -155,15 +155,20 @@ def dragomir():
     return m
 
 
+# Renfield's pen is a GPIO servo: each command spawns servo_cli and holds GPIO 26 for 0.4-0.6 s
+# (measured 2026-10-18, p90 1.4 s); strokes closer than that failed with GPIO busy.
+PEN_EVERY = 0.7
+
+
 def renfield():
     m = []
     dead = E['r14']
     for ln in lines_of(6):  # furious scribbling whenever he talks
         if ln['id'] in ('r11', 'r12', 'r13', 'r14'):
             continue
-        m += sweep('7', ln['start'], ln['end'], 60, 125, 0.25, 180)
+        m += sweep('7', ln['start'], ln['end'], 60, 125, PEN_EVERY, 250)
     for lid in ('o2', 'o4', 'o6'):  # taking down the Count's every word
-        m += sweep('7', L[lid] + 0.5, E[lid], 75, 110, 0.6, 350)
+        m += sweep('7', L[lid] + 0.5, E[lid], 75, 110, PEN_EVERY + 0.3, 350)
     t = 8.0
     while t < L['r11'] - 3:  # he never sits still: a twitch of the pen between lines
         if not speaking(6, t):
@@ -176,13 +181,22 @@ def renfield():
     while t < L['o12'] - 0.4:
         m.append((t, motor('1', 'forward', 80, 600)))
         t += 1.1
-    m += sweep('7', L['r11'], L['o12'] - 0.3, 30, 150, 0.15, 120)
+    m += sweep('7', L['r11'], L['o12'] - 0.3, 30, 150, PEN_EVERY, 250)
     m.append((L['o12'], servo('7', 90, 300)))                                       # "Renfield." - he freezes
-    m += sweep('7', L['r13'], E['r13'], 80, 100, 0.3, 200)                          # "he said my name"
+    m += sweep('7', L['r13'], E['r13'], 80, 100, PEN_EVERY, 250)                    # "he said my name"
     m += [(L['o13'] + 0.5 + k * 0.9, motor('1', 'forward', 40, 200)) for k in range(5)]  # trembling at "be still"
     m += [(L['r14'] + 0.3, motor('1', 'forward', 90, 900)),                         # the last gasp
           (E['r14'], servo('7', 10, 2500))]                                         # and the pen falls
-    return [(t, st) for t, st in m if t <= dead + 3.0]                              # then nothing: he is still
+    out, last_pen = [], -9.0
+    for t, st in sorted(m, key=lambda mv: mv[0]):
+        if t > dead + 3.0:                                                          # then nothing: he is still
+            continue
+        if st.get('partId') == '7' and st['type'] == 'servo':
+            if t - last_pen < PEN_EVERY - 0.05:                                     # never two pen strokes inside one command
+                continue
+            last_pen = t
+        out.append((t, st))
+    return out
 
 
 def pumpkinhead():

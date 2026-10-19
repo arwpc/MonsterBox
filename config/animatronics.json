@@ -55,8 +55,8 @@
       "characterId": 5,
       "agentId": "agent_4201k6s9y384f9v9hqmg67ygc645",
       "defaultSceneId": 1,
-      "sinkVolume": 0.95,
-      "_sinkVolume": "0.95 since 2026-10-18 evening, after his ReSpeaker XVF3800 was flashed to Seeed firmware v2.1.1 48k2ch (48 kHz playback; the stock v2.0.6 plays at 16 kHz, which cut his music above 8 kHz: 'half the volume, distorted'). On the new firmware 30 s of the Slipknot song at 0.85 AND 1.00 tripped no USB over-current; 0.95 is the operator's own pick. On v2.0.6 at 1.00 the array tripped the Pi 4's USB over-current sense mid-sentence; if trips return (`dmesg | grep -c over-current` across loud playback), drop to 0.85 or move the array to a powered hub."
+      "sinkVolume": 0.85,
+      "_sinkVolume": "0.85 (2026-10-18, late): at 0.95 on the 48 kHz firmware he tripped USB over-current once in the Nosferatu finale (dmesg 20:02:41), which resets the array mid-show. 0.85 has never tripped on either firmware. 0.95 since 2026-10-18 evening, after his ReSpeaker XVF3800 was flashed to Seeed firmware v2.1.1 48k2ch (48 kHz playback; the stock v2.0.6 plays at 16 kHz, which cut his music above 8 kHz: 'half the volume, distorted'). On the new firmware 30 s of the Slipknot song at 0.85 AND 1.00 tripped no USB over-current; 0.95 is the operator's own pick. On v2.0.6 at 1.00 the array tripped the Pi 4's USB over-current sense mid-sentence; if trips return (`dmesg | grep -c over-current` across loud playback), drop to 0.85 or move the array to a powered hub."
     },
     {
       "id": 6,
