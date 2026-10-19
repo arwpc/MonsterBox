@@ -24,11 +24,13 @@ SLUG = {1: 'pumpkinhead', 2: 'mina', 3: 'orlok', 4: 'dragomir', 6: 'renfield'}
 # before the act starts is dropped. after=True: the segment starts 4 s before the previous one
 # ends and is stretched (ratio=None) to run to the act's end. Joins crossfade over 4 s.
 MUSIC = {
-    1: [dict(cue='act1-4', ratio=1.35, align=(75.0, 'o6'))],                    # the build peaks into the monologue
-    2: [dict(cue='act2-3', ratio=1.0, src=(0, 62), align=(60.0, 'k4')),       # the storm ends as the ship runs aground
+    1: [dict(cue='act1-4', ratio=1.35, align=(75.0, 'o6')),                    # the build peaks into the monologue
+        dict(cue='act1-2', lead=True, gain_db=-3)],                             # a quiet bed from the first word until it
+    2: [dict(cue='act2-3', ratio=1.2, src=(0, 62), align=(60.0, 'k4')),       # the storm ends as the ship runs aground
         dict(cue='act2-2', ratio=None, after=True)],                            # then a slow build under the plague town
-    3: [dict(cue='act3-1', ratio=0.85, align=(118.0, 'r9')),                    # the swell lands on "the sun is coming"
+    3: [dict(cue='act3-1', ratio=1.05, align=(118.0, 'k9')),                    # the swell lands on the Knight's "the sun is coming"
         dict(cue='act3-4', ratio=None, src=(118, 150), after=True)]}           # and a quiet tail for the farewell
+# lead=True: fills the act from its start until the anchored segment, crossfading into it
 XF = 4.0
 ACT_TITLE_S = 5.0     # title card and music alone before an act's first line
 ACT_TAIL_S = 4.0      # after an act's last line, before the next act starts
@@ -116,7 +118,10 @@ duck = np.convolve(speech, np.ones(k) / k, mode='same')  # 350 ms ramps
 for a in acts:
     a['music'] = []
     prev_end = None
+    has_lead = any(sg.get('lead') for sg in MUSIC[a['act']])
     for sg in MUSIC[a['act']]:
+        if sg.get('lead'):
+            continue  # placed once the anchored segment's start is known, below
         s0, s1 = sg.get('src', (0, None))
         if sg.get('after'):
             start = prev_end - XF
@@ -141,12 +146,24 @@ for a in acts:
         stop = a['end'] + 3.0
         if start + len(m) / SR > stop:
             m = m[:int((stop - start) * SR)]
-        m = fade(m, XF if prev_end is not None else 0.5, XF if sg is not MUSIC[a['act']][-1] else 3.0)
+        last = sg is [x for x in MUSIC[a['act']] if not x.get('lead')][-1]
+        m = fade(m, XF if (prev_end is not None or has_lead) else 0.5, 3.0 if last else XF)
         i0 = int(start * SR)
         seg = m * (1 - 0.65 * duck[i0:i0 + len(m)])[:len(m), None]  # about -9 dB under speech
         put(score, start, seg)
         prev_end = start + len(m) / SR
         a['music'].append(dict(cue=sg['cue'], ratio=round(ratio, 3), start=round(start, 2), end=round(prev_end, 2)))
+    for sg in [x for x in MUSIC[a['act']] if x.get('lead')]:
+        main_start = a['music'][0]['start']
+        if main_start - a['start'] < 2.0:
+            continue
+        length = main_start + XF - a['start']
+        m = load(f"{SHOW}/music/{sg['cue']}.mp3", af=f"atrim=0:{length:.2f},asetpts=PTS-STARTPTS")
+        m *= db(-16 + sg.get('gain_db', 0)) / rms(m)
+        m = fade(m, 0.5, XF)
+        i0 = int(a['start'] * SR)
+        put(score, a['start'], m * (1 - 0.65 * duck[i0:i0 + len(m)])[:len(m), None])
+        a['music'].insert(0, dict(cue=sg['cue'], lead=True, start=round(a['start'], 2), end=round(a['start'] + len(m) / SR, 2)))
 
 # wind under the whole show, looped with a crossfade, ducked further under speech
 w = load(f'{SHOW}/sfx/wind.mp3')

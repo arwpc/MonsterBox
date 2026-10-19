@@ -144,14 +144,22 @@ def save_scene(cid, scene):
 
 def main():
     part_ids = {}
-    for cid, slug in SLUG.items():
+    # Groundbreaker (5) has a part too since v2: his turn motor, no voice track
+    for cid in list(SLUG) + [5]:
         name = REG[cid]['name']
         log(f'== {name} (char {cid}, {REG[cid]["ip"]})')
         scene = json.load(open(f'{SHOW}/scenes/part-{cid}.json'))
         if not DRY:
-            aid = audio_id(upload(cid, f'{SHOW}/audio/nosferatu-part-{slug}.mp3', 'audioFiles', '/audio-library/api/upload'))
-            scene['steps'][0]['audioId'] = aid
-            log(f'  audio uploaded as {aid}')
+            # Every file a part plays (Orlok carries the score under his voice), uploaded once per node
+            uploaded = {}
+            for st in scene['steps']:
+                if st['type'] != 'audio':
+                    continue
+                f = st['audioId']
+                if f not in uploaded:
+                    uploaded[f] = audio_id(upload(cid, f'{SHOW}/audio/{f}', 'audioFiles', '/audio-library/api/upload'))
+                    log(f'  {f} uploaded as {uploaded[f]}')
+                st['audioId'] = uploaded[f]
         part_ids[name] = save_scene(cid, scene)
         DRY_PART_IDS.add(part_ids[name])
 

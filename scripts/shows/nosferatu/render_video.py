@@ -30,8 +30,10 @@ ACTS = TL['acts']
 # which picture each line cues (held until the next cue)
 SHOTS = [('castle', 0.0), ('dinner', 'o1'), ('contract', 'r2'), ('dinner', 'r3'), ('contract', 'r4b'),
          ('locket', 'o4'), ('castle', 'o6'),
-         ('ship', ACTS[1]['start']), ('town', 'k4'), ('pump', 'r10'), ('weed', 'p3'), ('grave', 'k8'), ('town', 'k5'),
-         ('shadow', ACTS[2]['start']), ('turks', 'o11'), ('shadow', 'm5'), ('dawn', 'r9')]
+         ('ship', ACTS[1]['start']), ('pump', 'r10'), ('weed', 'p3'), ('town', 'k4'),
+         ('shadow', 'r11'),  # the Master arrives: Renfield's frenzy, and his end
+         ('grave', 'k8'), ('town', 'k5'),
+         ('shadow', ACTS[2]['start']), ('turks', 'o11'), ('shadow', 'm5'), ('dawn', 'k9')]
 TAKES = {'g1': [1, 4], 'g2': [2, 3], 'g3': [3, 1]}[REEL]  # a long shot changes take halfway
 AVAIL = {'turks': [1, 2], 'weed': [1]}
 INDOOR = {'dinner', 'contract', 'locket', 'shadow'}
@@ -107,7 +109,7 @@ def fog_texture():
 FOG = fog_texture()
 THUNDER = [s['start'] for s in TL['sfx'] if s['key'] == 'thunder']
 HEART = [s['start'] for s in TL['sfx'] if s['key'] == 'heartbeat']
-DAWN_T = LINE['r9']['start']
+DAWN_T = LINE['k9']['start']  # the Knight cries the dawn (v2; Renfield is dead by Act III)
 # extra lightning in the storm shots, deterministic
 STORM = sorted(THUNDER + [t for t in np.arange(8, 140, 1.0) if rng.random() < 0.035]
                + [t for t in np.arange(144, 176, 1.0) if rng.random() < 0.08])

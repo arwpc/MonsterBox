@@ -63,29 +63,43 @@ def sweep(part, t0, t1, lo, hi, every, ms, k=0):
     return out
 
 
+def arm_gestures(cues, gap=4.4):
+    """Right-arm extends on the given (time, hold) cues, dropping any that would start
+    before the previous extend+retract has finished: the actuator must never overlap itself."""
+    out, free_at = [], -1.0
+    for t, hold in sorted(cues):
+        if t < free_at:
+            continue
+        out += [(t, act_('1', 'extend', 1500)), (t + max(hold, 1.6), act_('1', 'retract', 2200))]
+        free_at = t + max(hold, 1.6) + 2.2 + 0.3
+    return out
+
+
 def orlok():
     m = []
-    for ln in lines_of(3):  # he turns his head slowly as he speaks
-        m += sweep('15', ln['start'] + 0.3, ln['end'], 82, 98, 3.2, 1800)
+    for ln in lines_of(3):  # wider, quicker turns while he speaks, the Hand glowing on every line
+        m += sweep('15', ln['start'] + 0.2, ln['end'], 72, 108, 2.2, 1300)
+        if ln['id'] != 'o9':
+            m += [(ln['start'], light('8', True)), (ln['end'] + 0.3, light('8', False))]
     t = 4.0
-    while t < TOTAL - 6:  # and drifts while he listens
+    while t < TOTAL - 6:  # and he never quite settles while he listens
         if not speaking(3, t):
-            m.append((t, servo('15', rnd.choice([85, 88, 92, 95]), 2600)))
-        t += rnd.uniform(6.5, 9.5)
-    m += [(L['o1'] + 0.5, act_('1', 'extend', 1500)), (L['o1'] + 4.0, act_('1', 'retract', 2200))]  # "come in freely"
-    m += [(L['o3'] + 3.5, act_('1', 'extend', 1500)), (E['o3'] + 1.0, act_('1', 'retract', 2200))]  # "give me your hand"
-    m += [(L['o5'] + 5.0, act_('1', 'extend', 1500)), (E['o5'] + 0.5, act_('1', 'retract', 2200))]  # "I shall come"
-    m += [(L['o6'], light('8', True)), (L['o6'] + 2.0, act_('1', 'extend', 1500)),
-          (E['o6'] - 1.0, act_('1', 'retract', 2200)), (E['o6'] + 3.0, light('8', False))]           # the monologue
-    m += [(L['o10'], light('8', True)), (E['o10'] + 0.5, light('8', False))]
-    m += [(L['o11'] + 1.0, act_('1', 'extend', 1500)), (L['o11'] + 9.0, act_('1', 'retract', 2200))]  # the Turks
-    m += [(L['o8'] + 3.0, act_('1', 'extend', 1500)), (E['o8'] + 0.5, act_('1', 'retract', 2200))]    # reaching for Mina
+            m.append((t, servo('15', rnd.choice([70, 78, 86, 94, 102, 110]), 1800)))
+        t += rnd.uniform(3.5, 5.5)
+    m += arm_gestures([(L['o1'] + 0.5, 3.0),    # "come in freely"
+                       (L['o3'] + 1.5, 2.5),    # "give me your hand"
+                       (L['o5'] + 2.5, 2.0),    # "I shall come"
+                       (L['o6'] + 2.0, 6.0),    # the monologue
+                       (L['o13'] + 0.4, 4.5),   # "now... be still"
+                       (L['o15'] + 0.3, 2.5),   # "everything is offered"
+                       (L['o11'] + 1.0, 6.0),   # the Turks
+                       (L['o8'] + 1.5, 3.0)])   # reaching for Mina
     # dawn: the Hand gutters, his head thrashes, his arm flails up and falls
     t = L['o9']
     for k in range(10):
         m.append((t + k * 0.4, light('8', k % 2 == 0)))
     m.append((t + 4.2, light('8', False)))
-    m += [(L['o9'] + 0.3 + k * 0.55, servo('15', 76 if k % 2 else 104, 450)) for k in range(7)]
+    m += [(L['o9'] + 0.3 + k * 0.55, servo('15', 72 if k % 2 else 108, 450)) for k in range(7)]
     m += [(L['o9'] + 0.5, act_('1', 'extend', 1200, 70)), (L['o9'] + 5.0, act_('1', 'retract', 2600, 35)),
           (L['o9'] + 6.0, servo('15', 80, 3000)), (E['k7'] + 0.5, servo('15', 90, 1500))]
     return m
@@ -93,26 +107,35 @@ def orlok():
 
 def mina():
     m = []
-    t = 8.0
     a3 = ACT[3]['start']
-    while t < a3 - 4:  # Acts I-II: she sleeps, her eyes wander now and then
-        m.append((t, servo('3', rnd.choice([62, 75, 104, 116]), 500)))
-        m.append((t + 1.6, servo('3', 89, 500)))
-        t += rnd.uniform(10, 16)
-    m += [(L['r5'] + 0.2, servo('3', 64, 300)), (L['r5'] + 0.4, servo('2', 104, 900)),            # her name
+    t = 6.0
+    while t < a3 - 4:  # Acts I-II: she sleeps restlessly, eyes wandering, head stirring
+        if not (L['m6'] - 2 <= t <= E['m6'] + 3):
+            m.append((t, servo('3', rnd.choice([58, 66, 75, 104, 112, 120]), 450)))
+            m.append((t + 1.4, servo('3', 89, 450)))
+            if rnd.random() < 0.45:
+                m.append((t + 0.6, servo('2', rnd.choice([84, 96, 102]), 1600)))
+        t += rnd.uniform(5, 8)
+    m += [(L['m6'], servo('2', 104, 1200)), (L['m6'] + 0.4, servo('3', 70, 350)),                      # she stirs: who is calling?
+          (L['m6'] + 1.6, servo('3', 110, 350)), (E['m6'] + 1.0, servo('2', 90, 1800)), (E['m6'] + 1.2, servo('3', 89, 500))]
+    m += [(L['r5'] + 0.2, servo('3', 64, 300)), (L['r5'] + 0.4, servo('2', 104, 900)),                   # her name
           (L['o5'] + 0.3, servo('3', 60, 300)), (E['o5'] + 2.0, servo('3', 89, 700)), (E['o5'] + 2.2, servo('2', 90, 1500))]
     # Act III: the door draws partway shut, the rose lights, and she rises as she speaks
     m += [(a3 + 0.5, act_('4', 'retract', 2500, 95)), (L['k6'] + 5.0, light('5', True)),
           (L['m1'] - 2.5, act_('4', 'extend', 3500, 95))]
     for ln in LINES:
-        if ln['act'] != 3 or ln['start'] < L['m1']:
+        if ln['act'] != 3 or ln['start'] < L['m1'] or ln['id'] in ('o9', 'm4', 'k7'):
             continue
-        if ln['cid'] == 2:
-            m += [(ln['start'], servo('2', 100, 1400)), (ln['start'] + 0.2, servo('3', 89, 400))]
-        elif ln['cid'] == 3:
-            m += [(ln['start'] + 0.3, servo('2', 96, 1800)), (ln['start'] + 0.5, servo('3', 70, 600))]
-    m += [(L['o11'] + 3.0, servo('3', 120, 700)), (L['o11'] + 9.0, servo('3', 89, 700))]           # she looks at the Turks
-    m += [(L['r9'], light('10', True)), (E['o9'] + 2.0, light('10', False)),                         # the sun
+        if ln['cid'] == 2:    # she speaks: head up and forward, eyes steady, a small turn mid-line
+            m += [(ln['start'], servo('2', 108, 1100)), (ln['start'] + 0.2, servo('3', 89, 350))]
+            if ln['dur'] > 2.5:
+                m.append((ln['start'] + ln['dur'] / 2, servo('2', 100, 1200)))
+        elif ln['cid'] == 3:  # he speaks: she turns to him
+            m += [(ln['start'] + 0.2, servo('2', 96, 1400)), (ln['start'] + 0.4, servo('3', 68, 450))]
+        else:                 # a comment from the yard: her eyes flick toward it, then back
+            m += [(ln['start'] + 0.3, servo('3', 118, 350)), (ln['end'] - 0.2, servo('3', 89, 450))]
+    m += [(L['o11'] + 3.0, servo('3', 120, 700)), (L['o11'] + 9.0, servo('3', 89, 700))]                   # she looks at the Turks
+    m += [(L['k9'], light('10', True)), (E['o9'] + 2.0, light('10', False)),                                 # the sun
           (L['m4'], servo('2', 90, 2500)), (L['m4'], servo('3', 89, 800)), (E['k7'] + 1.0, light('5', False))]
     return m
 
@@ -120,60 +143,95 @@ def mina():
 def dragomir():
     m = []
     for ln in lines_of(4):  # the herald scans the crowd as he speaks
-        m += sweep('1', ln['start'] + 0.2, ln['end'], 380, 398, 3.0, 1500)
+        m += sweep('1', ln['start'] + 0.2, ln['end'], 380, 398, 1.8, 1100)
     t = 3.0
-    while t < TOTAL - 4:  # and keeps watch between his lines
+    while t < TOTAL - 4:  # and keeps watch between his lines, inside the 374-404 neck window
         if not speaking(4, t):
-            m.append((t, servo('1', rnd.choice([377, 383, 395, 401]), 2600)))
-        t += rnd.uniform(6, 9)
-    for lid in ('k2', 'k3', 'k6'):  # "Act the ..." opens the magic box
-        m += [(L[lid], servo('3', 42, 250)), (E[lid] + 1.0, servo('3', 20, 400))]
+            m.append((t, servo('1', rnd.choice([377, 382, 386, 392, 396, 401]), 1900)))
+        t += rnd.uniform(3.5, 5.5)
+    for lid in ('k2', 'k3', 'k6', 'k11', 'k10', 'k12', 'k13', 'k9'):  # the magic box opens on every remark
+        m += [(L[lid], servo('3', 42, 250)), (E[lid] + 0.8, servo('3', 20, 400))]
     m += [(E['k7'] + 0.5, servo('1', 389, 1500)), (E['k7'] + 0.5, servo('3', 20, 400))]
     return m
 
 
 def renfield():
     m = []
+    dead = E['r14']
     for ln in lines_of(6):  # furious scribbling whenever he talks
+        if ln['id'] in ('r11', 'r12', 'r13', 'r14'):
+            continue
         m += sweep('7', ln['start'], ln['end'], 60, 125, 0.25, 180)
     for lid in ('o2', 'o4', 'o6'):  # taking down the Count's every word
         m += sweep('7', L[lid] + 0.5, E[lid], 75, 110, 0.6, 350)
-    for t in (L['r1'] + 0.2, L['r3'] + 0.1, L['r10'] + 0.5, E['r6'] - 1.5, L['r9'], L['r9'] + 1.4):
+    t = 8.0
+    while t < L['r11'] - 3:  # he never sits still: a twitch of the pen between lines
+        if not speaking(6, t):
+            m.append((t, servo('7', rnd.choice([70, 85, 100, 115]), 300)))
+        t += rnd.uniform(4, 7)
+    for t in (L['r1'] + 0.2, L['r3'] + 0.1, L['r10'] + 0.5, E['r6'] - 1.5):
         m.append((t, motor('1', 'forward', 70, 500)))
-    m.append((TOTAL - 1.5, servo('7', 90, 300)))
-    return m
+    # THE MASTER: shake bursts and a wild pen from his shriek until the Count says his name
+    t = L['r11']
+    while t < L['o12'] - 0.4:
+        m.append((t, motor('1', 'forward', 80, 600)))
+        t += 1.1
+    m += sweep('7', L['r11'], L['o12'] - 0.3, 30, 150, 0.15, 120)
+    m.append((L['o12'], servo('7', 90, 300)))                                       # "Renfield." - he freezes
+    m += sweep('7', L['r13'], E['r13'], 80, 100, 0.3, 200)                          # "he said my name"
+    m += [(L['o13'] + 0.5 + k * 0.9, motor('1', 'forward', 40, 200)) for k in range(5)]  # trembling at "be still"
+    m += [(L['r14'] + 0.3, motor('1', 'forward', 90, 900)),                         # the last gasp
+          (E['r14'], servo('7', 10, 2500))]                                         # and the pen falls
+    return [(t, st) for t, st in m if t <= dead + 3.0]                              # then nothing: he is still
 
 
 def pumpkinhead():
-    """The weed: an occasional sway, restless through Act II, creeping hard on his own line."""
+    """The weed: restless all night, creeping hard on his own lines (motor at 40% or less)."""
     m, k = [], 0
-    t = 10.0
+    own = [ln for ln in lines_of(1)]
+    t = 8.0
     while t < TOTAL - 4:
-        if L['p3'] - 1 <= t <= E['p3']:
-            t = E['p3'] + 1
+        if any(ln['start'] - 1 <= t <= ln['end'] for ln in own):
+            t = max(ln['end'] for ln in own if ln['start'] - 1 <= t <= ln['end']) + 1
             continue
-        act2 = ACT[2]['start'] <= t < ACT[2]['end']
-        m.append((t, motor('1', 'reverse' if k % 2 else 'forward', 35 if act2 else 30, 450)))
+        late = t >= ACT[2]['start']
+        m.append((t, motor('1', 'reverse' if k % 2 else 'forward', 35 if late else 30, 450)))
         k += 1
-        t += rnd.uniform(6, 9) if act2 else rnd.uniform(13, 18)
-    t = L['p3'] + 0.5
-    while t < E['p3']:
-        m.append((t, motor('1', 'reverse' if k % 2 else 'forward', 40, 600)))
-        k += 1
-        t += 2.2
+        t += rnd.uniform(5, 8) if late else rnd.uniform(8, 12)
+    for ln in own:
+        t = ln['start'] + 0.4
+        while t < ln['end']:
+            m.append((t, motor('1', 'reverse' if k % 2 else 'forward', 40, 600)))
+            k += 1
+            t += 1.6
     if k % 2:  # end where he started
         m.append((TOTAL - 2.0, motor('1', 'reverse', 30, 450)))
     return m
 
 
+def groundbreaker():
+    """His new turn motor, operator window 1500 ms at 50% either way from center: every turn is
+    an out-and-back pair of equal length, so he always comes home facing forward."""
+    m = []
+    cues = [L['k2'], L['k3'], L['r11'] + 0.5, E['r14'] + 0.5, L['k6'], L['k9'], E['k7'] + 0.5]
+    for k, t in enumerate(cues):
+        first, back = ('forward', 'reverse') if k % 2 == 0 else ('reverse', 'forward')
+        m += [(t, motor('1', first, 50, 700)), (t + 2.5, motor('1', back, 50, 700))]
+    return m
+
+
 PARTS = {3: ('Orlok', 'orlok', True, orlok), 2: ('Mina', 'mina', True, mina),
          4: ('Sir Dragomir', 'dragomir', True, dragomir), 6: ('Renfield', 'renfield', False, renfield),
-         1: ('PumpkinHead', 'pumpkinhead', False, pumpkinhead)}
+         1: ('PumpkinHead', 'pumpkinhead', False, pumpkinhead), 5: ('Groundbreaker', None, False, groundbreaker)}
+# Orlok also plays the score at half volume, on the same scene clock as his voice (operator 2026-10-18),
+# as its own audio step so his jaw keeps following only his voice
+EXTRA_AUDIO = {3: [{'type': 'audio', 'audioId': 'nosferatu-groundbreaker-score.mp3', 'volume': 50, 'jawSync': False, 'concurrent': True}]}
 
 
 def part_scene(cid, name, slug, jaw, moves):
     lag = LAG.get(cid, 0)
-    steps = [{'type': 'audio', 'audioId': f'nosferatu-part-{slug}.mp3', 'volume': 100, 'jawSync': jaw, 'concurrent': True}]
+    steps = [{'type': 'audio', 'audioId': f'nosferatu-part-{slug}.mp3', 'volume': 100, 'jawSync': jaw, 'concurrent': True}] if slug else []
+    steps += [dict(x) for x in EXTRA_AUDIO.get(cid, [])]
     for t, step in sorted(moves, key=lambda mv: mv[0]):
         steps.append({'type': 'wait', 'untilMs': max(0, int(round(t * 1000)) + lag)})
         steps.append(dict(step, concurrent=True))
