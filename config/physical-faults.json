@@ -69,16 +69,6 @@
         }
       }
     },
-    "5": {
-      "_note": "Groundbreaker. Part 1's 12 V motor rail died DURING testing on 2026-08-30/31; the acoustic signature indicated current flowing with no rotation, i.e. a mechanical STALL. Pi-side control was proven good. Do not drive until the wiper mechanism is turned by hand through full travel and the jam cleared.",
-      "parts": {
-        "1": {
-          "status": "broken",
-          "reason": "Groundbreaker wiper motor (BTS7960) — 12 V rail DEAD, motor suspected mechanically STALLED. It failed mid-test 2026-08-30/31. A stalled motor cooks until the fuse opens, and PWM outlives the process. His defaultSceneId (scene 1) opens by driving this part, so an unattended fleet queue loop will stall it repeatedly.",
-          "since": "2026-08-31"
-        }
-      }
-    },
     "6": {
       "_note": "Renfield. Shake motor (part 1, Cytron MDD10A-class, DIR=26 PWM=13) WIRED and operator-confirmed 2026-09-26; its NOT-WIRED entry (2026-08-30) was cleared that day. /dev/i2c-1 exists on his Pi 5 since 2026-09-01. Nothing listed is damaged.",
       "parts": {}
