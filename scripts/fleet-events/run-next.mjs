@@ -17,6 +17,7 @@
  *   node scripts/fleet-events/run-next.mjs --force         # ignore quiet hours and busy nodes (rehearsal)
  *   node scripts/fleet-events/run-next.mjs --status        # print the rotation state and exit
  *   node scripts/fleet-events/run-next.mjs --release-only  # just send event-release to every node (ops)
+ *   node scripts/fleet-events/run-next.mjs --moment scripts/yard-theater/moments/x.json   # a perform.mjs moment, same interrupt/hand-back
  *   node scripts/fleet-events/run-next.mjs --base http://localhost:3100   # another listener (default https://localhost:3000)
  *
  * This is a client of the running MonsterBox (no application code imported), like scripts/yard-theater/perform.mjs,
@@ -27,6 +28,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, renameS
 import { dirname, join, resolve, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import https from 'node:https';
+import { spawn } from 'node:child_process';
 import axiosMod from 'axios';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -76,7 +78,8 @@ function nextEvent(state) {
   if (!events.length) throw new Error('events.json has no events');
   const wanted = opt('--event', null);
   if (wanted) {
-    const e = events.find((x) => String(x.sceneId) === String(wanted));
+    // `scheduled` events have their own cron line (the hourly story) and stay out of the rotation
+    const e = [...events, ...(cfg.scheduled || [])].find((x) => String(x.sceneId) === String(wanted));
     return e || { sceneId: Number(wanted), name: `scene ${wanted}` };
   }
   const idx = events.findIndex((e) => e.sceneId === state.lastSceneId);
@@ -159,6 +162,63 @@ async function nodeBusy(n) {
 async function anyNodeBusy(nodes) {
   const checks = await Promise.all(nodes.filter((n) => n.online).map(async (n) => ({ n, why: await nodeBusy(n) })));
   return checks.filter((c) => c.why).map((c) => `${c.n.name}: ${c.why}`);
+}
+
+// ------------------------------------------------ interrupt, and hand back to lurk
+// Operator 2026-10-23: a scheduled event interrupts whatever each animatronic is doing (a guest
+// conversation included), plays in full, and then hands every animatronic back to lurk mode, armed and
+// ready to interact. events.json `interrupt: true` turns this on for every event this runner plays.
+const INTERRUPT = cfg.interrupt === true;
+// The console node (hardware "none") conducts and plays nothing; it is never interrupted or put in lurk.
+const CONSOLE_IDS = (() => {
+  try {
+    const raw = JSON.parse(readFileSync(join(ROOT, 'config', 'animatronics.json'), 'utf8'));
+    return new Set((raw.animatronics || []).filter((a) => a.hardware === 'none').map((a) => String(a.characterId ?? a.id)));
+  } catch { return new Set(); }
+})();
+const performers = (nodes) => nodes.filter((n) => n.online && !CONSOLE_IDS.has(String(n.characterId)));
+
+/** End any live agent session, stop any scene queue loop, and hold each node's lurk services for the show. */
+async function interruptAll(nodes, reason) {
+  const results = await Promise.all(performers(nodes).map(async (n) => {
+    const did = [];
+    for (const [label, path, body] of [
+      ['conversation ended', '/conversation/api/sleep', {}],
+      ['queue stopped', '/scenes/api/queue/stop', {}],
+      ['held', '/conversation/api/lurk/event-hold', { characterId: n.characterId, reason, maxMs: PLAY_TIMEOUT + 120000 }]]) {
+      try {
+        await axios.post(nodeUrl(n, path), body, { timeout: 10000 });
+        did.push(label);
+      } catch (err) {
+        did.push(`${label} FAILED (${err.response?.status || err.code})`);
+      }
+    }
+    return `${n.name}: ${did.join(', ')}`;
+  }));
+  for (const line of results) log('  interrupt →', line);
+}
+
+/** After the release, put every animatronic back in lurk mode (armed, lurking, ready for the next guest). */
+async function lurkAll(nodes) {
+  const results = await Promise.all(performers(nodes).map(async (n) => {
+    try {
+      const r = await axios.post(nodeUrl(n, '/conversation/api/lurk-mode'), { enabled: true }, { timeout: 15000 });
+      return `${n.name}: lurk on${r.data?.state ? ` (${r.data.state})` : ''}`;
+    } catch (err) {
+      return `${n.name}: lurk on FAILED (${err.response?.status || err.code})`;
+    }
+  }));
+  for (const line of results) log('  lurk →', line);
+}
+
+/** A yard-theater moment (scripts/yard-theater/perform.mjs) as a child of this runner, so it shares the lock. */
+function performMoment(file) {
+  return new Promise((done) => {
+    const child = spawn(process.execPath, [join(ROOT, 'scripts', 'yard-theater', 'perform.mjs'), abs(file), '--base', BASE, ...(DRY ? ['--dry-run'] : [])],
+      { cwd: ROOT, stdio: ['ignore', 'inherit', 'inherit'] });
+    child.on('exit', (code) => done(code));
+    child.on('error', (err) => { warn('perform.mjs failed to start:', err.message); done(-1); });
+  });
 }
 
 /** Belt and braces after a show: every node is told the event is over, whether or not the conductor got there. */
@@ -252,7 +312,8 @@ async function main() {
 
   if (flag('--release-only')) { await releaseAll(nodes, 'fleet-events release-only'); return 0; }
 
-  const event = nextEvent(state);
+  const momentFile = opt('--moment', null);
+  const event = momentFile ? { sceneId: null, name: `moment ${momentFile}` } : nextEvent(state);
   if (inQuietHours() && !FORCE) {
     log(`refused: quiet hours (${cfg.quietHours.start}–${cfg.quietHours.end}); next would be ${event.sceneId} ${event.name}`);
     record(state, { at: new Date().toISOString(), sceneId: event.sceneId, status: 'refused-quiet' });
@@ -266,6 +327,7 @@ async function main() {
     const retry = cfg.busyRetry || { attempts: 3, delayMs: 300000 };
     for (let attempt = 1; ; attempt++) {
       const busy = FORCE ? [] : await anyNodeBusy(nodes);
+      if (busy.length && INTERRUPT) { log(`interrupting (${busy.join('; ')})`); break; }
       if (!busy.length) break;
       log(`busy (${busy.join('; ')}) — ${attempt < retry.attempts ? `waiting ${Math.round(retry.delayMs / 1000)} s` : 'giving up until the next slot'}`);
       if (attempt >= retry.attempts) {
@@ -278,6 +340,20 @@ async function main() {
     // An event may live on another node's character ({"node": "Groundbreaker"} in events.json: the
     // Slipknot and Nosferatu conductors are Groundbreaker's scenes). Play it there, through that
     // node's own scene API; the release and Goblin clean-up below still run from here.
+    if (INTERRUPT && !DRY) await interruptAll(nodes, event.name);
+    if (momentFile) {
+      log(`performing ${momentFile}${DRY ? ' [DRY RUN]' : ''}`);
+      const started = Date.now();
+      const code = await performMoment(momentFile);
+      const outcome = { status: code === 0 ? 'played-moment' : 'failed-moment', elapsedMs: Date.now() - started };
+      log(`${outcome.status} in ${Math.round(outcome.elapsedMs / 1000)} s`);
+      if (!DRY) {
+        await releaseAll(nodes, `fleet-events ${event.name} ${outcome.status}`);
+        if (INTERRUPT) await lurkAll(nodes);
+      }
+      record(state, { at: new Date().toISOString(), sceneId: null, name: event.name, dryRun: DRY, ...outcome });
+      return code === 0 ? 0 : 1;
+    }
     const host = event.node ? nodes.find((n) => String(n.name).toLowerCase() === String(event.node).toLowerCase()) : null;
     if (event.node && !host) {
       log(`refused: ${event.sceneId} ${event.name} lives on ${event.node}, which is not in the fleet registry`);
@@ -308,6 +384,7 @@ async function main() {
 
     if (!DRY) {
       await releaseAll(nodes, `fleet-events ${event.sceneId} ${outcome.status}`);
+      if (INTERRUPT) await lurkAll(nodes);
       await goblinStatus();
     }
     record(state, { at: new Date().toISOString(), sceneId: event.sceneId, name: event.name, dryRun: DRY, ...outcome });

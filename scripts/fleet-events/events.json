@@ -6,7 +6,8 @@
     "quietHours: the runner refuses to start a show between start and end (local time, America/Chicago on every Pi).",
     "busyRetry: when any node reports a live guest conversation, wait delayMs and look again, up to attempts times.",
     "playTimeoutMs: how long one conductor may run before the runner gives up on it and releases every node.",
-    "An event with \"node\" is that node's scene (its own scene id), played through that node's scene API; the Slipknot and Nosferatu conductors are Groundbreaker's (operator 2026-10-18: both shows run from Alpha's scheduled events)."
+    "`scheduled`: events with their own cron line, outside the rotation (`run-next.mjs --event <id>`). An entry with \"node\" is that node's scene, played through that node's scene API: the Nosferatu (hourly) and Slipknot (disabled) conductors are Groundbreaker's.",
+    "`interrupt`: (operator 2026-10-23) every event this runner plays, moments included (--moment), ends any guest conversation, stops scene queues and holds every animatronic's lurk first, plays in full, then releases and puts every animatronic back in lurk mode, armed. One lock for all of them, so two scheduled events can never overlap."
   ],
   "events": [
     {
@@ -20,16 +21,6 @@
     {
       "sceneId": 103,
       "name": "One Song for Warner Castle"
-    },
-    {
-      "sceneId": 19,
-      "name": "Slipknot: Virus of Life",
-      "node": "Groundbreaker"
-    },
-    {
-      "sceneId": 20,
-      "name": "Nosferatu: A Tribute in Three Acts",
-      "node": "Groundbreaker"
     }
   ],
   "quietHours": {
@@ -42,5 +33,18 @@
   },
   "playTimeoutMs": 720000,
   "stateFile": "data/fleet-events-state.json",
-  "lockFile": "data/fleet-events.lock"
+  "lockFile": "data/fleet-events.lock",
+  "scheduled": [
+    {
+      "sceneId": 20,
+      "name": "Nosferatu: A Tribute in Three Acts",
+      "node": "Groundbreaker"
+    },
+    {
+      "sceneId": 19,
+      "name": "Slipknot: Virus of Life",
+      "node": "Groundbreaker"
+    }
+  ],
+  "interrupt": true
 }

@@ -88,7 +88,8 @@ describe('fleet-event conductor files', function () {
 
   it('a node-hosted event names a node in the fleet registry', function () {
     const registry = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'animatronics.json'), 'utf8')).animatronics.map(a => a.name);
-    for (const e of events.filter(ev => ev.node)) expect(registry).to.include(e.node);
+    const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts', 'fleet-events', 'events.json'), 'utf8'));
+    for (const e of [...events, ...(cfg.scheduled || [])].filter(ev => ev.node)) expect(registry).to.include(e.node);
   });
 
   for (const f of files) {
