@@ -1,0 +1,3741 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Aaron Warner">
+      
+      
+        <link rel="canonical" href="https://arwpc.github.io/MonsterBox/development/missions/2026-10-castle-tuning/recon-scenes-tests/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>MonsterBox scenes / poses / executor / test-coupling recon - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#monsterbox-scenes-poses-executor-test-coupling-recon" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MonsterBox scenes / poses / executor / test-coupling recon
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directory Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ / Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Character Sheets
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Character Sheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_mina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mina
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_sir_dragomir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sir Dragomir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_groundbreaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/PUMPKINHEAD_COMPLETE_PARTS_LIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead Parts List
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/GROUNDBREAKER_SETUP_INSTRUCTIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/GROUNDBREAKER_INSTALLATION_PACKAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronic Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSH Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/NODE-DISCOVERY-VALIDATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/HEAD-TRACKING-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/LINEAR_ACTUATOR_CALIBRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linear Actuator Calibration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/STT_TUNING_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STT Tuning Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/Noisy_Environment_Preset_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Noisy Environment Preset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/CENTRALIZED-PORT-MANAGEMENT-SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/PORT-MANAGEMENT-INTERFACE-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/HTTPS_DEPLOYMENT_HANDOFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTPS Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/secure-remote-access-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Secure Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/AUDIO-MICROPHONE-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audio & Microphone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ECHO-SUPPRESSION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Echo Suppression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/SCENE-CONCURRENCY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scene Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Log Collection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/head-tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/ORLOK_BTS7960_WIRING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok BTS7960 Wiring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/legacy_hardware_config_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Hardware Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs TTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/ELEVENLABS_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs Full Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/MJPG-STREAMER-INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MJPG-Streamer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/GOBLIN_VIDEO_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Video
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/Hardware-Integration-Layer-Interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Layer Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/api-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V9-RETROSPECTIVE-AND-ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Retrospective & Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V9-PERSONA-REVIEWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Persona Reviews
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../GESTURE-ENGINE-SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gesture Engine Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../NODE-DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery (mDNS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orchestration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ai-integration-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Integration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../AI-Management-Feature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Management Feature
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../goblin-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../middleware-audit-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Middleware Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Setup Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/api-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/conversation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conversation Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/DEEP-TESTING-FRAMEWORK-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Testing Framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/KNOWN-BUGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known Bugs & Open Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/head-tracking-troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronics Workshop
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Animatronics Workshop
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Familiarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simple Steps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hands-On Activities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Final Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_19" >
+        
+          
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../v6-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Audit Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../v6-final-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Final Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="monsterbox-scenes-poses-executor-test-coupling-recon">MonsterBox scenes / poses / executor / test-coupling recon</h1>
+<h2 id="provenance-and-limits">Provenance and limits</h2>
+<ul>
+<li>Run on the Orlok node (hostname <code>orlok</code>, 192.168.8.120), repo <code>/home/remote/MonsterBox</code>, HEAD <code>86c9bb0e</code> (v10.6.0). The working tree carries uncommitted Orlok data: <code>data/character-3/scenes.json</code> (+5 Lurk scenes, ids 112-116), <code>super-powers.json</code>, <code>data/audio-library/library.json</code>, <code>data/goblins.json</code>, and an untracked <code>data/character-3/lurk-scenes-state.json</code>.</li>
+<li>Strictly read-only. Besides reading source I ran <code>node scripts/validate-schemas.mjs</code> (passes, all 6 characters), a pure call to <code>validateQueueDefinition</code>, and GET-only requests to this node's :3100 listener, to peer nodes (<code>https://&lt;ip&gt;:3000</code>) and to Goblins via the node API. I also read the running service's <code>/proc/&lt;pid&gt;/environ</code>. Nothing was written, restarted or played.</li>
+<li><strong>The requested report file was NOT written.</strong> This agent has no write tool and its role forbids creating files. This message is the full report; persist it to <code>/tmp/claude-1000/-home-remote-MonsterBox/26c4c0b3-31c7-4df4-abb0-d653712a3390/scratchpad/recon-scenes-tests.md</code> yourself if you want the file.</li>
+<li>Evidence tags: [src] read in source, [data] read in a data file, [live] read-only GET against a running node, [ran] read-only script/function run, [inferred] reasoned from code, not executed.</li>
+</ul>
+<hr />
+<h2 id="0-headline-findings-these-change-the-plan">0. Headline findings (these change the plan)</h2>
+<ol>
+<li><strong>The repo copy is not the fleet.</strong> Peer <code>scenes.json</code>/<code>poses.json</code> are node-local (excluded from deploy). [live] Groundbreaker (char 5) has 5 scenes and 1 pose; the repo copy has 1 scene and 0 poses. Renfield (char 6) has 5 scenes; the repo copy has 4. Mina (192.168.8.140) did not answer ping or HTTPS during this run. Pull each node's own files before wiping anything.</li>
+<li><strong>Locks are on chars 1 (PumpkinHead) and 4 (Sir Dragomir)</strong>: <code>/home/remote/MonsterBox/config/character-locks.json:4</code> and <code>:30</code>. <code>docs/development/CHARACTER-CONFIG-LOCKS.md</code> says 1 and 6, which is stale (Renfield was unlocked in commit <code>e1ad0670</code>). <strong>The scenes and poses routes do NOT answer HTTP 423.</strong> A locked write throws <code>CharacterConfigLockedError</code> (status 423) in <code>writeJsonAtomic</code>, but <code>routes/scenes/api.js</code> catches everything as HTTP 500. <code>controllers/posesController.js</code> returns 400 on create/update and 500 on delete. Only the jaw, LED, calibration, parts, movement and audio-loop routes map it to 423. Detect a lock by the message text "is LOCKED".</li>
+<li><strong>Scenes, poses, gestures and queue/template files are excluded from <code>deploy-to-animatronic.sh</code> for every character</strong> (confirmed, with more excluded than you listed). A locked character's whole <code>data/character-N/</code> is also excluded. <code>scripts/bringup-animatronic.sh</code> is the one script that does NOT exclude <code>scenes.json</code> (details in section 5). The only HTTP ingest is <code>POST /scenes/api/import</code>, which merges, validates nothing and deletes nothing. Poses have no bulk endpoint.</li>
+<li><strong>Scene ids stored outside scenes.json will dangle or silently re-bind</strong> (full list in section 3). Lurk rotations are live and running on 4 nodes. <code>POST /scenes/api</code> assigns <code>max+1</code>, so ids restart at 1 after a full delete. Chars 5 and 6 lurk rotations are <code>["1".."5"]</code> and would silently start playing the new scenes with those ids.</li>
+<li><strong>Dashboard "Loop All" is broken as shipped.</strong> <code>public/js/dashboard.js:1953</code> posts <code>scenes:[{sceneId}]</code>, but <code>validateQueueDefinition</code> only reads <code>scene_id</code> or <code>id</code>. [ran] <code>{"sceneId":5}</code> throws "scene_id is required for each item" (HTTP 400), and the UI ignores the response. CLAUDE.md:104 and docs/api/api-documentation.md:83 document the same wrong shape. Studio, legacy scenes.ejs and lurk use <code>scene_id</code> and work.</li>
+<li><strong>An <code>audio</code> step on the non-jaw path is killed at 30 s</strong> (<code>runWrapper</code> default timeout). Recorded in this node's <code>data/scene-analytics.json</code>: scenes 111 and 113 failed with "Hardware command timed out after 30000ms" (2026-10-05, 10-09, 10-10). Only clips under about 28 s are safe (list in section 8).</li>
+<li><strong>Steps on physically broken parts are silently skipped and counted as success.</strong> Orlok parts 2, 3, 4, 5; Groundbreaker part 1; PumpkinHead part 5 (PIR). Details in 2.5.</li>
+<li><strong>dryRun is not a validator.</strong> It returns success for any step, including unknown types and missing fields. The 3100 listener runs <code>NODE_ENV=production</code> with <code>MB_TEST_MODE</code> unset [live /proc], so only <code>?dryRun=1</code> makes <code>/play</code> safe there.</li>
+<li><strong>Test hazards that activate with valid ids</strong> (section 7): <code>tests/system/orchestration.test.js:343</code> really fans out <code>start-all-queue-loops</code> against the live listener. <code>defaultSceneId</code> is valid today on Orlok, Groundbreaker and Renfield. The browser suite's "play first scene tile" fires a real show.</li>
+<li><strong>sayThis never caches TTS.</strong> Every play is a live ElevenLabs call. Recorded <code>quota_exceeded</code> failures make lines silently vanish (non-fatal).</li>
+<li><strong>Poses carry no audio.</strong> The Pose Editor's "audio" option only writes text into <code>notes</code> (<code>public/js/poses-editor.js:~506-512</code>); <code>poseEngine</code> has no audio code. CLAUDE.md claims otherwise.</li>
+<li><strong>Unlocking char 1 breaks <code>tests/unit/character-config-lock.test.js:36</code> and <code>:75</code></strong> unless it is relocked or re-fingerprinted afterwards.</li>
+</ol>
+<hr />
+<h2 id="1-data-model">1. Data model</h2>
+<h3 id="11-homeremotemonsterboxconfigschemasscenesschemajson-src">1.1 <code>/home/remote/MonsterBox/config/schemas/scenes.schema.json</code> [src]</h3>
+<ul>
+<li>Root: array (line 5). Scene requires <code>id</code> and <code>name</code> (line 8). <code>id</code> is string|number (10), <code>name</code> is string (11), <code>steps</code> is an optional array (12-42).</li>
+<li>Step requires only <code>type</code> (16). Enum (18-39), 17 values: <code>servo, motor, linear-actuator, linear_actuator, light, led, audio, sayThis, askAI, goblin-video, wait, delay, sensor, pose, hardware, jaw-animation, head-tracking</code>.</li>
+<li>No other step field is declared and there is no <code>additionalProperties</code> rule. Field names are defined only by the executor and the Studio.</li>
+<li>The validator is a hand-rolled subset, <code>/home/remote/MonsterBox/services/schemaValidator.js:34-98</code>: anyOf, oneOf, type (arrays allowed), enum, pattern, required, properties, items. Files: <code>:10-17</code>. A missing file counts as valid (<code>:100-103</code>). The <code>scenes</code> rules are not enforced at runtime, only by <code>validate:schemas</code>, pact and the gate.</li>
+<li>Enum versus dispatcher mismatches (<code>/home/remote/MonsterBox/services/scenes/sceneExecutor.js:876-922</code>):</li>
+<li><code>linear_actuator</code> (underscore) is schema- and pact-valid but has no <code>case</code>. At runtime it throws "Unknown step type" and, not being in <code>NON_FATAL_STEP_TYPES</code>, aborts the scene.</li>
+<li><code>goblin</code> and <code>part</code> are dispatched but not in the schema (pact rejects them too).</li>
+<li>A step with no <code>type</code> but a <code>poseId</code> dispatches as a pose (<code>:838</code>), but the schema requires <code>type</code>.</li>
+</ul>
+<h3 id="12-homeremotemonsterboxconfigschemasposesschemajson-src">1.2 <code>/home/remote/MonsterBox/config/schemas/poses.schema.json</code> [src]</h3>
+<ul>
+<li>Root object. Required: <code>characterId</code> (number) and <code>poses</code> (array) (line 6). <code>templates</code> is an optional object.</li>
+<li>Pose item required: <code>id</code> (string|number), <code>name</code> (string), <code>parts</code> (array, no item schema) (13-14).</li>
+<li>Optional: <code>category</code>, <code>description</code>, <code>notes</code> (strings); <code>concurrent</code> (bool); <code>tags</code> (string[]); <code>weight</code>, <code>holdVariance</code>, <code>jitterDeg</code>, <code>transitionDurationMs</code> (numbers); <code>transitionProfile</code> enum <code>linear|ease_in|ease_out|ease_in_out|overshoot|bounce</code>; <code>created</code>, <code>modified</code> (strings).</li>
+<li>The part shape is enforced only by <code>validatePose</code> at <code>/home/remote/MonsterBox/services/poses/poseRepository.js:211-233</code>: <code>name</code> is a string, <code>parts</code> is a non-empty array, and each part has numeric <code>partId</code>, string <code>type</code> and object <code>target</code>.</li>
+</ul>
+<h3 id="13-type-conventions-data-verified-across-all-6-characters">1.3 Type conventions [data, verified across all 6 characters]</h3>
+<ul>
+<li>Scene <code>partId</code>: 53 of 53 are strings. Pose <code>partId</code>: 65 of 65 are numbers. <code>parts.json</code> ids are all strings.</li>
+<li>Scene ids: 25 of 25 are numbers. Scene <code>poseId</code>: 19 numbers and 1 string (scene 108 uses <code>"1"</code>).</li>
+<li>Executor calls use <code>String(partId)</code>. Calibration and position stores use <code>parseInt(partId)</code>, so part ids must be integer-like.</li>
+<li><strong>Scene ids must be positive integers.</strong> Every route and service uses <code>parseInt</code> (e.g. <code>/home/remote/MonsterBox/services/scenes/scenesService.js:64,70</code>; <code>routes/scenes/api.js:50,302</code>). A non-numeric id never matches. <code>sceneId</code> 0 fails <code>if (!sceneId)</code>.</li>
+<li><strong>Pose ids must be real numbers.</strong> <code>getPose</code> uses strict <code>===</code> (<code>poseRepository.js:93</code>) against <code>parseInt(step.poseId)</code>. A string id in poses.json never resolves.</li>
+</ul>
+<h3 id="13b-other-per-character-and-global-files">1.3b Other per-character and global files</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Holds scene/pose ids</th>
+<th>Deploy-excluded? (<code>deploy-to-animatronic.sh</code> line)</th>
+<th>Locked?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data/character-N/scenes.json</code></td>
+<td>scene ids (top-level array)</td>
+<td>yes, 176</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>data/character-N/poses.json</code> (<code>{characterId, poses[], templates}</code>)</td>
+<td>pose ids</td>
+<td>yes, 166</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>gestures.json</code> (only char 3 has one: <code>{version,_comment,gestures[7]}</code>; steps use string <code>partId</code>, <code>target</code>/<code>level</code>, <code>delayMs</code>, <code>durationMs</code>, <code>easing</code>; read by <code>services/gestureEngineService.js</code>, not by scenes)</td>
+<td>part ids; engine also accepts <code>step.pose</code></td>
+<td>yes, 177</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>scene-queues.json</code> (<code>{queue_id,name,mode,scenes:[{scene_id,lifecycle}]}</code>)</td>
+<td>scene_id strings</td>
+<td>yes, 178</td>
+<td>yes (<code>queueLibrary.js:104</code>)</td>
+</tr>
+<tr>
+<td><code>scene-queue-templates.json</code> (<code>{id,name,items:[{id,name}]}</code>)</td>
+<td>scene ids</td>
+<td>yes, 179</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>lurk-scenes-state.json</code></td>
+<td><code>sceneIds</code> (strings)</td>
+<td>yes via <code>*-state.json</code> (171)</td>
+<td><strong>no</strong> (runtime state)</td>
+</tr>
+<tr>
+<td><code>callout-state.json</code></td>
+<td>none (callouts only yield to a running queue)</td>
+<td>yes (171)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>data/scene-analytics.json</code> (global; usage keyed <code>&lt;char&gt;_&lt;sceneId&gt;</code>; 150 executions here)</td>
+<td>scene ids</td>
+<td>yes, 187</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>config/animatronics.json</code> <code>defaultSceneId</code></td>
+<td>scene ids</td>
+<td><strong>not excluded; travels with every deploy</strong></td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>data/scene-templates.json</code> (global, 6 legacy templates using step types <code>pause</code>, <code>sound</code>, <code>voice</code> that the executor does not dispatch)</td>
+<td>none</td>
+<td>not excluded</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<p>No <code>scene-queues.json</code> or <code>scene-queue-templates.json</code> exists at the canonical path. Two legacy nested files exist and are git-tracked: <code>data/character-3/character-3/scene-queues.json</code> (one saved queue "Test Story 1" pointing at scene_ids "26" and "24", already dangling) and <code>data/character-5/character-5/scene-queues.json</code> (<code>[]</code>). <code>loadQueues</code> falls back to the nested path (<code>queueLibrary.js:88-100</code>).</p>
+<hr />
+<h2 id="2-the-scene-executor">2. The scene executor</h2>
+<p>Main file: <code>/home/remote/MonsterBox/services/scenes/sceneExecutor.js</code>. Every scene run goes through <code>executeScene</code> (<code>:994</code>), called from the queue, <code>/play</code>, <code>/play-stream</code>, armed mode and cron-driven <code>/play</code>.</p>
+<h3 id="21-step-reference-field-names-exactly-as-read-required">2.1 Step reference (field names exactly as read; <code>*</code> = required)</h3>
+<table>
+<thead>
+<tr>
+<th>type (impl lines)</th>
+<th>Fields consumed</th>
+<th>Timing / blocking</th>
+<th>Errors</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>servo</code> (410-434)</td>
+<td><code>partId*</code>; <code>angle*</code> (real degrees, e.g. 372-406 on the knight's 900° head); <code>duration</code> (default 1000); <code>usePreset</code> + <code>presetName</code> (<code>__MIN__</code>, <code>__MAX__</code> or a named preset from the node-local calibration store, 47-99)</td>
+<td>PCA9685 servos: the daemon call sends no duration (<code>hardwareService/index.js:1105</code>), so the step returns on ack and does <strong>not</strong> wait for travel. GPIO servo (Renfield's pen): blocks <code>max(150,duration)</code> ms (<code>index.js:1203</code>). A calibration <code>capability.invert</code> mirrors the angle (<code>index.js:2341-2354</code>)</td>
+<td>non-fatal</td>
+</tr>
+<tr>
+<td><code>motor</code> (436-501)</td>
+<td><code>partId*</code>; <code>direction</code> (default <code>forward</code>; <code>cw/fwd</code> and <code>ccw/rev/reverse/back/backward</code> are normalized by <code>motor.control</code>, <code>index.js:303-312</code>); <code>speed</code> (default 50); <code>duration</code> (default 1000); presets</td>
+<td>Blocks for <code>duration</code> (python wrapper, 30 s cap). If a calibration profile has <code>bounds.minP/maxP</code> and <code>motion.bins</code>, the executor clamps <code>duration</code> using a persisted position estimate (450-488). That clamp can reach 0 ("Duration must be positive. Got 0", analytics 2026-09-04)</td>
+<td>non-fatal</td>
+</tr>
+<tr>
+<td><code>linear-actuator</code> (503-574)</td>
+<td><code>partId*</code>; <code>direction</code> (<code>extend</code> default, <code>retract</code>); <code>speed</code> (default 50); <code>duration</code> (default 1000); presets</td>
+<td>Calls <code>extend</code>/<code>retract</code> (not <code>jog</code>). Same blocking, clamp and 30 s cap</td>
+<td>non-fatal</td>
+</tr>
+<tr>
+<td><code>light</code> / <code>led</code> (576-587)</td>
+<td><code>partId*</code>; <code>state</code> (<strong>only the literal <code>'on'</code> turns on; anything else, including <code>toggle</code>, turns off</strong>); <code>brightness</code> (default 100); <code>duration</code> (default 0)</td>
+<td>GPIO relay lamps (e.g. Orlok part 8): <code>duration &gt; 0</code> blocks that long and then turns <strong>off</strong>; 0 latches <strong>on</strong> and returns (<code>scripts/light_control.py:41-46</code>). PCA9685 and neopixel ignore <code>duration</code>. <code>led_ring</code> parts have no controller (<code>HARDWARE_CONTROLLERS</code> has no <code>led_ring</code>), so scenes cannot address them; they react to speech via jaw/LED sync</td>
+<td>non-fatal</td>
+</tr>
+<tr>
+<td><code>audio</code> (183-214)</td>
+<td><code>audioId*</code> (library id, <strong>or</strong> bare filename with extension, <strong>or</strong> a path starting <code>/</code> or <code>./</code>; see 2.3); <code>volume</code> (default 100; <strong>ignored on the jaw-sync path</strong>); <code>jawSync</code> (default true; <code>false</code> bypasses the jaw). No device field: the sink comes from the speaker part (<code>findSpeakerDeviceForCharacter</code>, 36-42, which only matches a speaker part carrying <code>characterId</code>; chars 2 and 4 lack it, so they use <code>default</code>)</td>
+<td>Blocks until playback ends. Non-jaw path: <code>speaker_cli.py play</code> waits (<code>proc.wait()</code>, python_wrappers/speaker_cli.py:170/178/215/235) under the 30 s <code>runWrapper</code> timeout. Jaw path: blocks for the analyzed duration, no 30 s cap</td>
+<td>non-fatal</td>
+</tr>
+<tr>
+<td><code>sayThis</code> (238-279)</td>
+<td><code>text</code> (or <code>say</code>)*; <code>voiceId</code> (optional override). Nothing else (no volume)</td>
+<td>Live ElevenLabs TTS, then jaw-synced playback if the character's jaw is enabled with a servo, else one-shot <code>mpg123</code>/<code>pw-play</code>. Blocks until audio ends (bounded 15 s-300 s by clip length, <code>serverPlaybackService.js:46-...</code>). Logged to the speech log</td>
+<td>non-fatal; a TTS failure (e.g. <code>quota_exceeded</code>) throws, is recorded, and the line is silent</td>
+</tr>
+<tr>
+<td><code>askAI</code> (281-342)</td>
+<td><code>question</code> (or <code>text</code>)*; <code>voiceId</code></td>
+<td>Asks the character's ElevenLabs agent (live session or a one-shot socket, <code>elevenLabsWebSocketService.js:2629</code>) for an LLM reply. Falls back to canned "I heard your question..." if no agent or reply. The reply is then TTS'd and played like <code>sayThis</code>. Non-deterministic content</td>
+<td>non-fatal</td>
+</tr>
+<tr>
+<td><code>goblin-video</code> (344-408; alias <code>goblin</code>)</td>
+<td><code>goblinId*</code> (registry id from <code>data/goblins.json</code>); <code>videoId*</code> (<strong>a filename on that Goblin's own disk</strong>, exact match, spaces included); <code>loop</code> (bool, default false; legacy <code>options.loop</code> also read); <code>requireLock</code> (bool)</td>
+<td>Does not wait for the clip to end; returns after about 1.5 s plus HTTP (see 2.4)</td>
+<td>non-fatal for <code>goblin-video</code>; the alias <code>goblin</code> is <strong>fatal</strong></td>
+</tr>
+<tr>
+<td><code>wait</code> / <code>delay</code> (230-236)</td>
+<td><code>duration</code> or <code>durationMs</code> (ms, default 0). <code>delay</code> is a Studio-era alias</td>
+<td>Plain <code>setTimeout</code>, no cap</td>
+<td>both are in no non-fatal set (can't really fail)</td>
+</tr>
+<tr>
+<td><code>sensor</code> (590-681)</td>
+<td><code>sensorId</code> or <code>partId</code>* (part type must be <code>motion_sensor</code> with a <code>pin</code>); <code>waitForMotion</code> (default false); <code>timeout</code> (default 30000, polled every 500 ms); <code>threshold</code> (bool compared to <code>motionDetected</code>)</td>
+<td>Waits up to <code>timeout</code></td>
+<td><strong>fatal</strong>: a timeout aborts the scene</td>
+</tr>
+<tr>
+<td><code>pose</code> (173-181)</td>
+<td><code>poseId*</code> (<code>parseInt</code>); <code>options</code> (passed through to <code>poseEngine</code>: <code>jitter:false</code>, <code>jitterDeg</code>, <code>transitionDurationMs</code>, <code>skipHealthCheck</code>, <code>allowBrokenParts</code>)</td>
+<td>See 2.6</td>
+<td>non-fatal</td>
+</tr>
+<tr>
+<td><code>hardware</code> (683-758)</td>
+<td>Legacy: <code>action</code> (<code>move_servo</code>, <code>move_motor</code>, <code>move_actuator</code>, <code>turn_light</code>/<code>set_light</code>, or any other action passed straight to <code>controlPart</code>); <code>params</code> (<code>partId</code>/<code>channel</code>, <code>position</code>/<code>angle</code>, <code>duration</code>, <code>speed</code>, <code>direction</code>, <code>state</code>, <code>brightness</code>)</td>
+<td>Quirks: <code>move_servo</code> falls back to the hard-coded part <code>'63'</code>; <code>move_actuator</code> ignores <code>position</code>. Avoid</td>
+<td>non-fatal</td>
+</tr>
+<tr>
+<td><code>jaw-animation</code> (760-787)</td>
+<td><code>action</code> (<code>enable</code> default; anything else is a no-op "disable")</td>
+<td><strong>Only reads the jaw config and pre-warms the daemon</strong>; it never toggles anything. Jaw follows speech and audio automatically whenever the jaw config is enabled</td>
+<td>always returns success (warning if unconfigured)</td>
+</tr>
+<tr>
+<td><code>head-tracking</code> (789-834)</td>
+<td><code>action</code> (<code>start</code> default, or <code>stop</code>); <code>webcamId</code> (default <code>webcam-auto</code>); <code>params</code></td>
+<td>Calls <code>startMotionTracking</code>/<code>stopMotionTracking</code> with a mock req/res. <code>start</code> stays on after the scene ends</td>
+<td>always returns success (warning on failure)</td>
+</tr>
+<tr>
+<td><code>part</code> (216-228)</td>
+<td><code>partId*</code>, <code>action*</code>, <code>params</code></td>
+<td>Direct <code>controlPart</code>. Not in the schema</td>
+<td>fatal</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-concurrent-lines-947-992">2.2 <code>concurrent</code> (lines 947-992)</h3>
+<ul>
+<li>Truthy <code>step.concurrent</code> fires the step and does not await it (<code>emit concurrent-started</code>). <strong>All following steps proceed immediately</strong>, not just the next one. Consecutive concurrent steps all run in parallel.</li>
+<li>Sequential steps are awaited in order.</li>
+<li>After the loop, <code>Promise.allSettled</code> waits for every background step, so a trailing concurrent audio step holds the scene open until it settles (up to its 30 s timeout).</li>
+<li>A concurrent failure never throws. It is pushed as <code>{success:false,error,index,stepType}</code> (<code>:961-967</code>) and shows up in the scene result.</li>
+<li>If a fatal sequential step throws, <code>executeScene</code> rethrows (<code>:1040-1059</code>) and background steps already launched are not awaited. They keep running.</li>
+<li>Nothing can abort a running scene: <code>armedModeService.js:207</code> itself notes Node can't abort an in-flight <code>executeScene</code>. Queue <code>stop</code>, <code>skip</code> and <code>emergency-stop</code> only prevent the next scene.</li>
+<li>There is no scene-level or step-level timeout, only the per-subprocess ones below.</li>
+</ul>
+<h3 id="23-how-audio-and-tts-play">2.3 How audio and TTS play</h3>
+<ul>
+<li><strong>Library resolution</strong> (<code>resolveAudioFile</code>, 145-171): a path beginning <code>/</code> or <code>./</code> is used as given. Otherwise the root <code>data/audio-library/library.json</code> is searched for <code>id === audioId</code> and <code>files/&lt;filename&gt;</code> is used. If there is no id match, <code>files/&lt;audioId&gt;</code> is tried directly. So both <code>"04 - Windstorm &amp; Thunder"</code> (the library id) and <code>"04 - Windstorm &amp; Thunder.mp3"</code> (the filename) work. The Studio writes <code>s.filename || s.id</code> (<code>views/scenes/studio.ejs:1060-1070</code>).</li>
+<li>Mina's scene 100 uses <code>audioFile</code> (not <code>audioId</code>), so its audio step has always thrown "audio.step requires audioId" (non-fatal) [data + src].</li>
+<li><strong>TTS</strong>: <code>getTTSConfigForCharacter</code> (all six characters use <code>eleven_v3</code>, so audio tags like <code>[whispers]</code> are honored) then <code>elevenLabsTTSService.generateSpeech</code> (<code>services/elevenLabsTTSService.js:172-250</code>). The buffer stays in memory. <strong>No disk cache anywhere</strong> (grep for any TTS cache found nothing). <code>os.tmpdir()/mb_tts_*</code> is written only in the last-resort speaker_cli fallback (<code>serverPlaybackService.js:122-128,737</code>) and never cleaned. Every play repeats the API call.</li>
+<li>In <code>MB_TEST_MODE=1</code>, <code>generateSpeech</code> returns a stub and playback is simulated (<code>serverPlaybackService.js:~527-541</code>), but queue-run scenes ignore test mode because they pass no options (<code>sceneQueue.js:143,154,161</code>).</li>
+<li><strong>Jaw state</strong>: enabled with a servo on Dragomir (jaw part 2) [live], and on Mina per the repo copy (jaw part 1; Mina unreachable). Disabled on Orlok [live and repo], char 1 and char 6 (no jaw servo), and char 5 (no <code>super-powers.json</code> in the repo; [live] jaw off).</li>
+<li><code>playWithJawSync</code> (<code>services/jawAnimationSuperPowerService.js:1553-1722</code>) pre-analyzes the whole clip with ffmpeg, starts the one-shot player un-awaited, and resolves when the jaw timeline finishes. <strong>An <code>audio</code> step on a jaw-enabled character is jaw-animated unless <code>jawSync:false</code></strong>, which includes music beds.</li>
+</ul>
+<h3 id="24-goblin-video">2.4 <code>goblin-video</code></h3>
+<p>Implementation: <code>/home/remote/MonsterBox/services/goblinManagerService.js</code>.
+- <code>goblinId</code> must be a registry id. <code>data/goblins.json</code> has <code>goblin-192-168-8-40</code> (Goblin 1, offline), <code>-106</code> (Goblin 2, online), <code>-14</code> (Goblin 3, online), <code>-244</code> (Goblin 4, Pi 3B, offline). <code>config/animatronics.json</code> <code>goblins[]</code> (<code>chestwound</code> .160, <code>goblin2</code> .161) are phantom devices that tests say do not exist.
+- <code>getGoblin</code> is checked, then <code>playVideoOnGoblin</code> (713-733). <code>_onlineGoblin</code> (509-520) pings before declaring a Goblin offline.
+- Presence check: <code>GET /media</code>, then a 60 s <code>/api/videos/scan</code> fallback (632-641). A missing file returns <code>notOnGoblin</code> ("deploy it first").
+- <strong>Non-loop (default):</strong> <code>POST /api/video/play-immediate {filename, returnToQueue:true}</code>, then sleep 1.5 s and <code>GET /playback-status</code> (<code>_confirmPlaying</code>, 830-844). Success requires <code>mpvRunning &amp;&amp; currentVideo === filename</code>. The Goblin then returns to its own queue. The step does not wait for the clip to end, so add a <code>wait</code>. A real recorded failure: "Goblin accepted Skullfire.mp4 but mpv is showing Hugeskelly.mp4" (scene 113, 2026-10-09).
+- <strong><code>loop:true</code>:</strong> <code>/stop-all</code>, <code>/queue/clear</code>, <code>/queue/add</code>, <code>/queue/start {loopMode:'queue'}</code> (742-768). It replaces the Goblin's whole queue and stays until something stops it.
+- Which files exist [live]: Goblins 2 and 3 each list the same 72 files: 38 numbered <code>NNN Jb Hd.mp4</code>, 17 <code>Pha &lt;Creature&gt; &lt;Name&gt; Win H.mp4</code>, and <code>Batattack, Bigskull, Firepumpkin, Floatinglady, Greenskull, Hugeskelly, Monstergoop, Moon, Sauron, Scary Face, Skellycrawler, Skellyskrape, Skullfire, Skullfloor, Stumblingelectricsman</code> (.mp4). Goblin 3 has its own looping queue (<code>Hugeskelly.mp4</code>); Goblin 2's queue is empty.
+- Goblins 1 and 4 are offline and were not queried.
+- The Studio lists a Goblin's real files through <code>GET /video-library/api/goblins/:id/videos</code> (<code>studio.ejs:1132-1148</code>).</p>
+<h3 id="25-hardware-errors-fault-skipping-dry-run">2.5 Hardware errors, fault skipping, dry run</h3>
+<ul>
+<li><code>controlPart</code> (<code>services/hardwareService/index.js:2146-2406</code>) <strong>never throws</strong>; it returns <code>{success:false,error}</code> for: part not found, no controller, unsupported action, wrapper failure, or servo-daemon channel denial (<code>deniedByPhysicalFaults</code>). Step functions throw when <code>!r.success</code>.</li>
+<li>Sequential steps in <code>NON_FATAL_STEP_TYPES</code> (<code>sceneExecutor.js:937-945</code>: servo, motor, linear-actuator, light, led, pose, hardware, jaw-animation, head-tracking, goblin-video, audio, sayThis, askAI) are caught, logged, emitted as <code>step-failed</code> and recorded. Anything else is <strong>fatal</strong>: sensor, wait, delay, part, goblin, unknown or <code>linear_actuator</code>.</li>
+<li>Scene <code>success</code> is false if any recorded result has <code>success:false</code>. The queue and lurk ignore it.</li>
+<li><code>/scenes/api/:id/play</code> returns <code>success:true</code> at the HTTP level regardless of <code>result.success</code> (<code>api.js:394</code>).</li>
+<li><strong>Physical-fault skip</strong> (<code>:861-874</code>): if <code>step.partId</code> is listed <code>status:"broken"</code> in <code>/home/remote/MonsterBox/config/physical-faults.json</code> (checked via <code>getPhysicalFault</code>), the step is skipped with <code>{success:true,skipped:true}</code>. This counts as success and emits <code>status:'skipped'</code>. It applies only to steps carrying <code>partId</code> and not in dryRun. The pose engine also drops those parts (<code>poseEngine.js:72-95</code>), and the servo daemon vetoes their configured channels.</li>
+<li>Current list: char 1 part 5 (PIR); char 3 parts 2 (Left Arm), 3 (Bow), 4 (Elbow), 5 (Forearm); char 5 part 1 (wiper motor). Char 6 has none.</li>
+<li>Repo-copy scenes affected: Orlok 109 steps 3 and 6 (part 3), 102 step 1 (part 3), 107 step 0 (part 2); Groundbreaker scene 1 step 0.</li>
+<li>Orlok poses touching a broken part: 1, 6, 20, 23, 26, 32 (all part 4).</li>
+<li>Per-part software safety limits are retired (<code>config/hardware-safety.json</code> has <code>"characters": {}</code>), so nothing is clamped or refused except the faults above.</li>
+<li>dryRun (<code>:839-849</code>) returns success for <strong>every</strong> step type with no validation. Only <code>wait</code> sleeps <code>min(d,50)</code> ms. Analytics are skipped. <code>/play</code> forces dryRun only when the server process has <code>MB_TEST_MODE=1</code>. <code>/play-stream</code>, <code>/test-step</code> and every queue path honor only <code>?dryRun=1</code> or nothing.</li>
+</ul>
+<h3 id="26-pose-steps">2.6 <code>pose</code> steps</h3>
+<p><code>executePoseStep</code> does <code>parseInt(step.poseId)</code> and <code>poseEngine.executePose({characterId, poseId, options})</code>. The pose is loaded from <code>data/character-&lt;that character&gt;/poses.json</code> (<code>poseRepository.getPose</code>, strict <code>===</code>). Poses are never resolved by name. A missing pose returns <code>{success:false,error:"Pose N not found for character C"}</code>, so the step throws and is recorded (non-fatal).</p>
+<p><code>poseEngine.js:20-284</code>:
+- Servo parts with <code>target.angleDeg</code> go in one batch. With <code>transitionDurationMs &gt; 0</code> (pose field or <code>options</code>) they are eased at about 50 Hz through <code>transitionEngine</code> using <code>transitionProfile</code>, and the step blocks for that duration (<code>:115-125</code>). Without it, <code>batchMoveServos</code> sends targets once and returns.
+- Other parts run concurrently, each blocking for its own duration: linear_actuator <code>target.{direction|distance,speed,durationMs|duration}</code> through <code>jog</code>; motor <code>{speed,direction,duration}</code>; light/led <code>{action|state,brightness,duration}</code>.
+- Servo <code>target.continuous</code> is supported. Any other part type returns "Unsupported part type" for that part.
+- Per-pose <code>jitterDeg</code> is clamped inside the calibrated window, with <code>MAX_JITTER_DEG = 15</code> (<code>options.jitter:false</code> disables it).
+- Overall <code>success</code> requires zero failed parts; if all parts are dropped as broken it still reports success with 0 executed.
+- No part of the pose engine or executor calls <code>claimServo</code> (grep found nothing in <code>services/scenes</code> or <code>services/poses</code>), although idle, head-tracking and speech co-expression comments say they yield to <code>PRIORITY.SCENE</code>. I found no mechanism by which a running scene holds a servo against them.</p>
+<hr />
+<h2 id="3-queue-loop-lurk-schedules-and-every-store-of-scene-ids">3. Queue, loop, lurk, schedules, and every store of scene ids</h2>
+<h3 id="31-queue-homeremotemonsterboxservicesscenesscenequeuejs-queuelibraryjs">3.1 Queue (<code>/home/remote/MonsterBox/services/scenes/sceneQueue.js</code>, <code>queueLibrary.js</code>)</h3>
+<ul>
+<li>The queue is in-memory per character and resets on restart (<code>sceneQueue.js:4-24</code>). Modes are <code>sequential</code> and <code>loop_queue</code>. In loop mode an empty queue refills from <code>originalItems</code> (<code>:180-182</code>). Between iterations of the lifecycle loops there is a 250 ms floor (<code>:127</code>).</li>
+<li><code>POST /scenes/api/queue/start-config</code> (<code>routes/scenes/api.js:157-166</code>) calls <code>validateQueueDefinition</code> (<code>queueLibrary.js:63-86</code>). It requires at least one scene (400 otherwise). Each item is <code>{scene_id}</code> or <code>{id}</code>, with an optional <code>lifecycle</code> of <code>run_once</code>, <code>run_for_duration {duration}</code> or <code>loop_until_disabled {max_duration}</code>, both capped at 48 h (<code>:42-61</code>). <code>startWithConfig</code> (<code>sceneQueue.js:239-267</code>) loads <strong>that character's</strong> scenes. Ids not found are <strong>silently skipped</strong>. If none match, the loop exits immediately.</li>
+<li><code>enqueue</code> (<code>:47-55</code>) and <code>insertPriority</code> (<code>:110-117</code>), and <code>queueTemplates.enqueueTemplate</code>, call <code>loadScenes()</code> with <strong>no characterId</strong>, which means the node's selected character.</li>
+<li><code>/queue/reorder</code> reorders in-memory queue indices; <code>/scenes/api/reorder</code> (<code>api.js:278-297</code>) persists library order into scenes.json (lock-aware write). The dashboard calls the latter on every drag (<code>dashboard.js:1895-1902</code>) and the one-tap deck lists scenes in file order.</li>
+<li>A scene that throws does not stop the queue (<code>:195-203</code>). <code>stop</code>/<code>skip</code> are checked only between scenes.</li>
+<li>Fleet "Start Loops": <code>orchestrationService.startAllQueueLoops</code> (<code>services/orchestrationService.js:620-679</code>, <code>defaultSceneId</code> at 631) POSTs <code>/scenes/api/queue/clear</code>, then <code>/enqueue {sceneId: defaultSceneId}</code>, then <code>/start {mode:'loop_queue'}</code> per controllable node. It uses <code>axiosHttps</code> directly rather than <code>httpNode</code>, so the egress test-mode guard at <code>:139</code> does not cover it. Per <code>config/animatronics.json:11,23,34,45,56,68</code>: PumpkinHead null, Mina 1, Orlok 109, Dragomir 1, Groundbreaker 1, Renfield 1. <strong>Dragomir's id 1 is already dangling</strong> (his scenes are 401-403).</li>
+<li>A running queue silences callouts, background music and lurk scenes (all gate on <code>queueRunning</code>).</li>
+<li><code>scripts/start-all-loops.sh</code> hard-codes ids (Dragomir 9, Groundbreaker 9007, PumpkinHead 2, local 29). None exist now.</li>
+</ul>
+<h3 id="32-lurk-scenes-homeremotemonsterboxserviceslurksceneservicejs">3.2 Lurk scenes (<code>/home/remote/MonsterBox/services/lurkSceneService.js</code>)</h3>
+<ul>
+<li>State file <code>data/character-N/lurk-scenes-state.json</code> <code>{enabled, sceneIds[], intervalMs (60 s-24 h, default 240000), jitterPct, quietHours {23:00-08:00}}</code> (<code>:31-74</code>). <code>sceneIds</code> are normalized to strings (max 50).</li>
+<li><code>playNext</code> picks <code>nextSceneId</code> round-robin (<code>:123-127</code>, <code>:337</code>), then <code>playScene</code> calls <code>queue.startWithConfig(charId, {mode:'sequential', scenes:[{scene_id}]})</code> (<code>:202-209</code>). A missing id gives <code>success:false</code>, reason <code>scene-missing</code> (<code>:340-346</code>) and the rotation moves on.</li>
+<li>Gates (<code>:107-120</code>): enabled, has scenes, quiet hours, mute, lurking (lurk mode or PIR watcher armed), no guests, no conversation, no callout, no queue running, no recent audio.</li>
+<li>Endpoints, all working on locked characters: <code>GET</code>/<code>POST /conversation/api/lurk-scenes</code> and <code>POST .../lurk-scenes/test</code> (<code>routes/conversation.js:1536,1548,1564</code>). Boot apply at <code>server.js:1152</code>.</li>
+<li>[live] right now: char 1 disabled <code>[]</code>; char 3 enabled <code>["112","113","114","115","116","111"]</code> (running, last 113); char 4 enabled <code>["401","402","403"]</code> (running); char 5 enabled <code>["1".."5"]</code>; char 6 enabled <code>["1".."5"]</code>; char 2 unreachable. All queues idle. Repo: only <code>data/character-3/lurk-scenes-state.json</code> exists, untracked.</li>
+</ul>
+<h3 id="33-everything-that-stores-or-dials-scene-ids-outside-scenesjson">3.3 Everything that stores or dials scene ids outside scenes.json</h3>
+<ul>
+<li><code>lurk-scenes-state.json</code> per node (above). Node-local, deploy-excluded; update through the lurk endpoint (works while locked).</li>
+<li><code>config/animatronics.json</code> <code>defaultSceneId</code> (deploys; read by fleet Start Loops; merged into node discovery at <code>services/nodeDiscoveryService.js:247</code>).</li>
+<li><code>scene-queues.json</code> and <code>scene-queue-templates.json</code> (none canonical; the legacy "Test Story 1" above).</li>
+<li>Cron "scene" actions: <code>services/scheduleService.js:226-232</code> builds <code>curl -sk -X POST https://localhost:3000/scenes/api/&lt;id&gt;/play?characterId=&lt;n&gt;</code> in the managed crontab block; the form lists the current character's scenes (<code>routes/scheduleRoutes.js:84</code>). <strong>Orlok's crontab has no scene action</strong>: only <code>@reboot start-audio.sh</code>, the Dusk Ceremony (<code>30 18 31 10</code>), Thomas (<code>47 20 31 10</code>) and the night-memory harvest (<code>0 2 1 11</code>). Peer crontabs were not read.</li>
+<li>Dusk ceremony (<code>scripts/yard-theater/moments/dusk-ceremony.json</code>, <code>perform.mjs</code>): drives the orchestration <code>say</code> and <code>play-audio</code> endpoints by node id and audio <strong>filename</strong> (resolved to each node's <code>audioId</code>). <strong>No scene ids.</strong> It wants <code>dusk-theme.mp3</code>, which is not in <code>data/audio-library/files</code> or <code>library.json</code>; the README says those steps skip.</li>
+<li>Armed mode: in-memory playlist (<code>armedModeService.js</code>), nothing persisted.</li>
+<li><code>data/scene-analytics.json</code>: runtime, gitignored, keyed by id. Reused ids inherit old counters.</li>
+<li>"Goblin weaves": <strong>not found</strong> anywhere in code, data or docs (one unrelated prose hit in a conversation sample). Goblin playlists (<code>data/goblin-playlists.json</code>, <code>goblin/playlists/*.json</code>) reference video filenames and goblin ids only (the former uses a stale id <code>goblin-three</code>), no scene ids.</li>
+<li>Not found: callouts, ElevenLabs agent configs (<code>config/elevenlabs</code>), UI code and <code>manual-controls-layout.json</code> hold no scene ids. Poses referenced from <code>super-powers.json</code>: none (<code>followOrders.commands</code> are empty, but pose NAMES, categories and tags are matched live by follow-orders, <code>followOrdersSuperPowerService.js:152</code>).</li>
+<li>Other consumers of poses.json beyond scenes: idle loop (<code>services/movement/poseLibrary.js:143-180</code>, <strong>only poses tagged <code>idle</code></strong>, uses <code>weight</code>, <code>holdVariance</code>, <code>transitionDurationMs</code>), random poses (<code>services/randomPoseService.js:133-160</code>, categories <code>subtle|moderate|idle</code>), follow-orders and the gesture engine (<code>step.pose</code>). With zero poses these are silent no-ops. Orlok's idle loop is currently disabled in <code>movement-config.json</code>.</li>
+</ul>
+<hr />
+<h2 id="4-save-paths">4. Save paths</h2>
+<h3 id="scenes-homeremotemonsterboxroutesscenesapijs">Scenes (<code>/home/remote/MonsterBox/routes/scenes/api.js</code>)</h3>
+<ul>
+<li><strong>Create</strong> <code>POST /scenes/api</code> (<code>:312-328</code>): requires <code>name</code> only (400 otherwise). Steps are accepted unvalidated. id = <code>max(parseInt id)+1</code>, computed under a per-file lock (<code>scenesService.mutateScenes</code>, <code>scenesService.js:51-59</code>). A client <code>id</code> is ignored. Adds <code>created</code>. After a full delete ids restart at 1.</li>
+<li><strong>Update</strong> <code>PUT /:id</code> (<code>:330-345</code>): replaces <code>name</code> and <code>steps</code> only, sets <code>updated</code>. <strong>Delete</strong> <code>DELETE /:id</code> (<code>:347-359</code>), 404 if missing.</li>
+<li><strong>Import</strong> <code>POST /import</code> (<code>:526-561</code>), see section 5. Others: <code>duplicate</code> (480-505), <code>from-template</code> (451-478, copies legacy template steps verbatim), <code>test-step</code> (361-379, <strong>real hardware unless <code>?dryRun=1</code></strong>).</li>
+<li>All writes go <code>scenesService.saveScenes</code> then <code>writeJsonAtomic</code> (atomic temp-file rename, lock-aware, <code>services/atomicStore.js:26-40</code>). The target is <code>data/character-&lt;id&gt;/scenes.json</code> where the id comes from <code>?characterId=</code> first, then params, then the selected character (<code>services/characterContext.js:55-68</code>). Any digit string is accepted, so any node can write any <code>character-N</code> dir on its own disk.</li>
+<li><strong>Route shadowing [src, not executed]:</strong> <code>GET /:id</code> is registered at <code>:300</code>, before <code>GET /templates</code> (<code>:442</code>), <code>GET /export</code> (<code>:508</code>) and <code>GET /analytics</code> (<code>:564</code>). Those three would be matched by <code>/:id</code> (<code>parseInt</code> gives NaN) and return 404 "Scene not found". <code>analytics/popular</code> and <code>analytics/:sceneId</code> are reachable.</li>
+<li>The Studio uses: <code>POST /scenes/api</code>, <code>PUT /:id</code>, <code>DELETE</code>, <code>/:id/play</code>, <code>/queue/*</code>, <code>/queue/library</code>, <code>/queue/start-config</code> (with <code>scene_id</code>), <code>/test-step</code>, plus <code>/setup/poses/api/poses</code> for the pose list.</li>
+<li>The Studio writes (<code>views/scenes/studio.ejs:953-1245</code>): <code>partId</code> (string), <code>usePreset</code>, <code>presetName</code>, <code>angle</code>, <code>duration</code>, <code>direction</code>, <code>speed</code>, <code>state</code>, <code>brightness</code>, <code>audioId</code>, <code>volume</code>, <code>text</code>, <code>question</code>, <code>poseId</code> (a <strong>string</strong> from the <code>&lt;select&gt;</code>), <code>goblinId</code>, <code>videoId</code>, <code>loop</code>, <code>action</code>, <code>timeout</code>, <code>concurrent</code>. Defaults on add (<code>:1248-1265</code>): servo angle 90/1000, motor forward/50/1000, actuator extend/75/3000, light on/100, wait 1000, sensor timeout 5000 + <code>waitForMotion:true</code>, audio volume 80, goblin <code>loop:false</code>.</li>
+</ul>
+<h3 id="poses">Poses</h3>
+<ul>
+<li>Pose Editor <code>/poses/editor</code> (<code>routes/poses/index.js:20-33</code>) saves through <code>POST /poses</code> (201) and <code>PUT /poses/:id</code> (<code>poses-editor.js:524-538</code>).</li>
+<li><code>/setup/poses/api/poses[...]</code> is the same controller (<code>routes/setup/poses.js:15-22</code>). Execute: <code>POST /poses/:id/execute</code> or <code>/setup/poses/api/poses/:id/test</code>.</li>
+<li><code>controllers/posesController.js</code>: <code>validatePose</code> first (400 on failure, <code>:77-101</code>). Id assignment in <code>poseRepository.addPose</code> (<code>:102-124</code>): <code>{id: max+1, ...poseData, created}</code>. <strong>The spread comes after <code>id</code>, so a client-supplied <code>id</code> overrides the assigned id, and uniqueness is not checked.</strong> Update keeps the id (<code>:143-148</code>). Delete is by id and does not touch scenes that reference it.</li>
+<li>Editor payload: <code>{name, category (default 'custom'), description, concurrent, parts:[{partId:Number, type, target}], transitionDurationMs?, transitionProfile?, jitterDeg? (max 15), notes?}</code>. Targets: servo <code>{angleDeg}</code>; motor and linear_actuator <code>{direction,speed,duration}</code>; light <code>{state,brightness}</code> (<code>poses-editor.js:358-405</code>).</li>
+<li>Hand-authored fields the editor never writes: <code>tags</code>, <code>weight</code>, <code>holdVariance</code>.</li>
+<li>Templates: <code>getTemplates</code> merges defaults <code>elbow</code> and <code>head</code> with the file's <code>templates</code>, so <code>/poses/templates</code> is never empty (<code>poseRepository.js:19-38,181-193</code>).</li>
+</ul>
+<h3 id="lock-behavior-at-these-routes">Lock behavior at these routes</h3>
+<ul>
+<li>Locked write gives scenes: <strong>HTTP 500</strong> with <code>{success:false,error:"&lt;Name&gt; (character N) is LOCKED — configuration is frozen and writing scenes.json was refused. Reason: ... Unlock deliberately with: node scripts/character-lock.mjs unlock N"}</code>. Poses: create and update <strong>400</strong>, delete <strong>500</strong>.</li>
+<li>The unit test pins 423 only on the thrown error object (<code>character-config-lock.test.js:83-93</code>).</li>
+<li>Escape hatch <code>MB_ALLOW_LOCKED_CHARACTER_WRITES=1</code> exists, but <code>tests/helpers/lockAware.js</code> records that it once wiped a locked <code>parts.json</code> from 233 to 5 lines.</li>
+<li>Lock CLI (<code>scripts/character-lock.mjs</code>): <code>status</code>, <code>lock</code>, <code>refresh</code>, <code>unlock</code>, <code>verify</code> (reports drift, never fails). The lock list is read from <strong>each node's own</strong> <code>config/character-locks.json</code> (mtime-cached), and that file is <strong>not</strong> deploy-excluded, so an unlock done on one node does not unlock another, and a later deploy can restore the old list.</li>
+</ul>
+<hr />
+<h2 id="5-how-scenes-travel-between-nodes">5. How scenes travel between nodes</h2>
+<h3 id="51-homeremotemonsterboxscriptsdeploy-to-animatronicsh-rsync-avz-delete-line-162">5.1 <code>/home/remote/MonsterBox/scripts/deploy-to-animatronic.sh</code> (rsync <code>-avz --delete</code>, line 162)</h3>
+<ul>
+<li><strong>Excluded (lines 163-204):</strong></li>
+<li>Locked characters' whole dirs (<code>data/character-&lt;id&gt;/</code>, 150-160, built from <code>config/character-locks.json</code> on the DEPLOYER, currently 1 and 4).</li>
+<li>Per character: <code>parts.json</code> (165), <code>poses.json</code> (166), <code>servo_calibrations.json</code> (167), <code>super-powers.json</code> (168), <code>lurk-mode-state.json</code>, <code>motion-armed-state.json</code> and any <code>*-state.json</code> (169-171), <code>microphones.json</code>, <code>audio-config.json</code>, <code>ai_agent_state.json</code> (172-174), <code>movement-config.json</code> (175), <strong><code>scenes.json</code> (176), <code>gestures.json</code> (177), <code>scene-queues.json</code> (178), <code>scene-queue-templates.json</code> (179)</strong>.</li>
+<li>Global: <code>data/calibration_profiles.json</code>, <code>actuator-positions.json</code>, <code>speaker-state.json</code>, <code>monsterbox.pid</code>, <code>manual-nodes.json</code>, <code>startup-health.json</code>, <code>performance-history.json</code>, <code>scene-analytics.json</code> (180-187), <code>config/app-config.json</code> (188), <code>/data/ai-config/</code>, <code>/certs/</code>, <code>.git</code>, logs and similar.</li>
+<li><code>--delete</code> does not remove excluded files on the receiver.</li>
+<li><strong>Not excluded, so they travel:</strong> <code>data/audio-library/**</code> (files and <code>library.json</code>), <code>data/video-library/**</code>, <code>data/goblins.json</code>, <code>data/goblin-playlists.json</code>, <code>data/scene-templates.json</code>, <code>data/characters.json</code>, <code>config/animatronics.json</code> (including <code>defaultSceneId</code>), <code>config/character-locks.json</code>, <code>config/physical-faults.json</code>, <code>config/hardware-safety.json</code>. Per character: <code>ai-config/</code>, <code>images/</code>, <code>models/</code>, <code>linear_actuator_calibrations.json</code>, <code>servos.json</code>, <code>simple_calibrations.json</code>, <code>manual-controls-layout.json</code>, and the nested legacy <code>character-N/character-N/</code> files.</li>
+<li>While a character is unlocked on the deployer, a deploy would also push those not-excluded per-character files (TTS config, images, models, calibration stubs) over the node's.</li>
+<li>Audio assets must exist in the deployer's <code>data/audio-library/files/</code> to arrive, and a node-only upload is deleted by the next deploy (<code>--delete</code>).</li>
+<li><code>scripts/deploy-all.sh:36-66</code> just enumerates <code>config/animatronics.json</code> nodes that have an <code>ip</code> and runs this script per node in parallel. It is the only <code>deploy-all.*</code> file. <code>npm run deploy:all</code> maps to it (<code>package.json:75</code>).</li>
+<li><code>scripts/bringup-animatronic.sh:59-65</code> is different. It uses <code>--delete</code> and excludes only <code>parts.json</code>, <code>poses.json</code> and <code>servo_calibrations.json</code>. It <strong>would push the deployer's <code>scenes.json</code>, <code>gestures.json</code>, queue files, <code>super-powers.json</code> and <code>movement-config.json</code></strong>, and does not honor locks. Treat it as a hazard, or a deliberate push route.</li>
+</ul>
+<h3 id="52-ways-to-get-new-scenes-onto-a-node">5.2 Ways to get new scenes onto a node</h3>
+<ul>
+<li><code>POST https://&lt;node&gt;:3000/scenes/api/import[?characterId=N]</code> with <code>{scenes:[...], overwrite?:bool}</code> (<code>routes/scenes/api.js:526-561</code>). It matches existing scenes by <code>parseInt(id)</code>. With <code>overwrite:true</code> it replaces matching ids; otherwise it skips them. Unmatched scenes are appended as given (ids preserved). <strong>It deletes nothing, validates nothing (not even <code>id</code>, <code>name</code> or step types), and a scene with no id is appended without one.</strong> A wholesale replace is therefore per-scene <code>DELETE /scenes/api/:id</code> followed by <code>POST /import</code>.</li>
+<li><code>GET /scenes/api/export</code> is shadowed by <code>/:id</code> (per code order, not executed), so there is no working export route.</li>
+<li>Poses: no import or bulk endpoint. Use <code>POST /poses</code> per pose (id is <code>max+1</code> unless you pass <code>id</code>; see section 4), or copy the file.</li>
+<li>Direct file copy (scp/rsync of <code>scenes.json</code> and <code>poses.json</code> into <code>data/character-N/</code> on the node) works without a restart, since scenes and poses are read from disk per request (<code>scenesService.loadScenes</code>, <code>poseRepository.loadPoses</code>, <code>poseLibrary.loadPoses</code>; no caching found). It bypasses the lock (<code>lock:verify</code> will show drift).</li>
+<li>Locked chars 1 and 4: unlock on that node's own lock file, write, then <code>refresh</code> or relock and commit. Lurk rotations can still be updated while locked. Background music is <code>POST /api/audio-loop/background[?characterId=N]</code> (<code>routes/api/audioLoopRoutes.js:215-237</code>, answers 423 when locked).</li>
+<li>No orchestration endpoint ingests scenes (<code>/api/orchestration/*</code>: <code>update-config</code> and <code>deploy-code</code> are broadcasts with no scene payload).</li>
+<li>There is no <code>/scenes/api</code> bulk "replace" and no character-level import/clone route (<code>routes/setup/characters.js</code>).</li>
+</ul>
+<hr />
+<h2 id="6-current-inventory-repo-copy-this-nodes-working-tree-with-live-drift">6. Current inventory (repo copy, this node's working tree) with live drift</h2>
+<h3 id="scenes-25-in-the-repo-copy">Scenes (25 in the repo copy)</h3>
+<ul>
+<li><strong>Char 1 PumpkinHead (locked): 0 scenes.</strong> (<code>[]</code>; a 2026-09-07 changelog entry records an earlier deliberate erase.)</li>
+<li><strong>Char 2 Mina: 4.</strong> 1 "Coffin Awakening" (linear-actuator part 4 x2, sayThis, servo x2); 2 "Interactive Conversation" [askAI]; 3 "Full Performance Spectacular" [askAI x2; light part 5, actuator part 4 8500 ms]; 100 "Halloween Audio Loop - Coffin" [audio step uses <code>audioFile</code>, so it never plays; then delay 277000; scene-level <code>loop:true</code> is read by nothing]. Mina's live copy was unreachable.</li>
+<li><strong>Char 3 Orlok: 13 (file order).</strong></li>
+<li>109 "A Blessing" [askAI; actuator part 3 x2 skipped as broken; jaw-animation; sayThis x2].</li>
+<li>110 "Kiley's Jump" [audio "04 - Windstorm &amp; Thunder.mp3" concurrent; actuator part 1 10000 ms].</li>
+<li>102 "Linear Actuator Test" [part 3 skipped].</li>
+<li>103 "Audio &amp; Light Test" [audio "07 - The Coffin.mp3"].</li>
+<li>104 "AI Voice Test - Say This &amp; Ask AI" [askAI].</li>
+<li>107 "Left Arm &amp; Goblin Video Test" [part 2 skipped; goblin-video <code>goblin-192-168-8-14</code> with <strong>no videoId, so it throws</strong>].</li>
+<li>108 "Pose Test" [pose "1"].</li>
+<li>111 "Arc 1" [audio x2 (Windstorm 233 s, Snarling Werewolves 125 s: both exceed 30 s); servo <code>usePreset __MIN__/__MAX__</code>; actuator 13000 ms x2; light x3].</li>
+<li>112 "Lurk: The Count Wakes" [poses 31,30,28,35].</li>
+<li>113 "Lurk: Fire of Wallachia" [audio Windstorm; poses 21,27,28,22; goblin <code>goblin-192-168-8-14</code>/<code>Skullfire.mp4</code>].</li>
+<li>114 "Lurk: The Moon Spell" [poses 7,21,27,28,22; goblin <code>-106</code>/<code>Moon.mp4</code>].</li>
+<li>115 "Lurk: Roll Call of the Castle" [poses 17,18,19].</li>
+<li>116 "Lurk: The Invitation" [poses 33,25,35].</li>
+<li><strong>Char 4 Sir Dragomir (locked): 3.</strong> 401 "Riddle of the Magic Box - The Clock", 402 "... The Piano", 403 "... The Candle" (each 10 steps: jaw-animation, servo x5 on part 1 head at 372/406° and part 3 box at 20/174°, sayThis x3, wait 9000).</li>
+<li><strong>Char 5 Groundbreaker: 1 in repo.</strong> 1 "Groundbreaker Insult Loop" [motor part 1 100% 2000 ms concurrent (<strong>part broken, skipped</strong>), sayThis, wait 30000]. <strong>Live: 5</strong>: 1 "Lurk: Hello Down There", 2 "Lurk: Skull Friend" (goblin <code>-14</code>/<code>Bigskull.mp4</code>), 3 "Lurk: Rock War", 4 "Lurk: Costume Parade", 5 "Lurk: Castle Friends".</li>
+<li><strong>Char 6 Renfield: 4 in repo.</strong> 1 "Lurk: Scribbling Transactions" (servo part 7 x4, motor part 1), 2 "Lurk: The Gifts", 3 "Lurk: Giggle and Shake", 4 "Lurk: Correspondence". <strong>Live: 5</strong>: adds 5 "Lurk: Permit for a Bonfire" (jaw-animation, sayThis x3, servo x3, motor, goblin <code>-14</code>/<code>Firepumpkin.mp4</code>).</li>
+</ul>
+<p>Scenes using askAI: Mina 2 and 3; Orlok 104 and 109. Scenes using audio: Mina 100; Orlok 103, 110, 111, 113. Scenes using goblin-video: Orlok 107, 113, 114 (live: char 5 scene 2, char 6 scene 5). Scenes using pose: Orlok 108, 112-116.</p>
+<h3 id="poses-43-in-repo">Poses (43 in repo)</h3>
+<ul>
+<li><strong>Char 1: 2.</strong> 1 "Body Sway (left)", 2 "Body Sway (right)" (motor part 1; the lock reason says motor above 40% browns out his Pi).</li>
+<li><strong>Char 2: 6.</strong> 1 Rest, 2 Listening At The Wall, 3 Speaking Softly, 4 Whisper, 5 The Long Breath, 6 Startled (servo parts 1 and 2).</li>
+<li><strong>Char 3: 35</strong> (parts used: head servo 15, right-arm actuator 1, elbow servo 4 (broken), lamp 8). 1 Neutral Standing[15,4,8]; 2 Glance Left; 3 Glance Right; 4 Arm Raise Slight[1,15]; 5 Forearm Twist; 6 Menacing Lean[15,4]; 7 Slow Scan; 8 Hand Glow[8,15]; 9 Idle Drift Left; 10 Idle Drift Right; 11 Idle Settle Center; 12 Idle Watch Left; 13 Idle Watch Right; 14 Idle Micro Twitch; 15 Idle Long Stare Left; 16 Idle Long Stare Right; 17 Slow Turn — Seek Left; 18 Slow Turn — Seek Right; 19 Snap to Center; 20 Menacing Lean Deep[15,4]; 21 Arm Raise Full[15,1]; 22 Arm Lower[15,1]; 23 Elbow Home[4]; 24 Right Arm Reach[1,15]; 25 Right Arm Withdraw[1,15]; 26 Startle Recoil[15,4]; 27 Hand of Azura On[8]; 28 Hand of Azura Off[8]; 29 Lamp Accent Flash[8]; 30 Lurking Glow[15,8]; 31 Fragment — Notice and Turn; 32 Fragment — Rise and Point[15,4]; 33 Fragment — Reach for the Guest[1,15]; 34 Fragment — Recede to Shadow[15,8,1]; 35 Neutral Home (Head). (Unbracketed poses are servo 15 only.)</li>
+<li><strong>Chars 4 and 6: 0</strong> (<code>{characterId, poses:[], templates:{}}</code>). <strong>Char 5: 0 in repo; live 1</strong> (id 1 "elbow - Half Bend", servo part 1, which is actually that node's motor part).</li>
+</ul>
+<h3 id="parts-all-partsjson-ids-are-strings-scenes-can-drive-servo-motor-linear_actuator-lightled-and-read-motion_sensor">Parts (all <code>parts.json</code> ids are strings; scenes can drive servo, motor, linear_actuator, light/led and read motion_sensor)</h3>
+<ul>
+<li><strong>1:</strong> motor 1 Body Shakes (MDD10A); led_ring 9 eyes (speech-reactive only); PIR 5 broken; speaker 7, mic 8, webcam 6.</li>
+<li><strong>2:</strong> servo 1 Jaw (ch11), 2 Neck (ch7), 3 Eye (ch3); light 10 laser (PCA ch15), 5 Burning Rose (GPIO 16); linear_actuator 4 Coffin Door; PIR 9.</li>
+<li><strong>3:</strong> linear_actuator 1 Right Arm (working), 2 Left Arm (broken), 3 Bow (broken); servo 4 Elbow (broken), 5 Forearm (broken), 10 Jaw (ch3), 15 Head (ch0); light 8 Hand of Azura (relay, GPIO 16); PIR 14.</li>
+<li><strong>4:</strong> servo 1 Head (multi-turn, <code>rotationRangeDeg</code> 900, ch7), 2 Jaw (ch3), 3 Magic Box (ch11); PIR 7.</li>
+<li><strong>5:</strong> motor 1 (BTS7960, broken); webcam, speaker, mic only. No <code>super-powers.json</code> in repo.</li>
+<li><strong>6:</strong> motor 1 shake (BTS7960); servo 7 Writing Pen (GPIO 26, range 180); led_ring 5 eye rings (speech-reactive only); PIR 6.</li>
+</ul>
+<hr />
+<h2 id="7-test-coupling">7. Test coupling</h2>
+<h3 id="71-what-the-validators-do-with-new-scene-files">7.1 What the validators do with new scene files</h3>
+<ul>
+<li><code>npm run validate:schemas</code> ([ran] passes now): scenes.json must be an array. Each scene needs <code>id</code> (string|number) and <code>name</code>. If <code>steps</code> exists it must be an array of objects whose <code>type</code> is in the 17-value enum. No other field is checked. poses.json must be an object with numeric <code>characterId</code> and an array <code>poses</code>; items need <code>id</code>, <code>name</code>, <code>parts</code> (array). <code>transitionProfile</code> is checked against its enum if present. A missing file passes. <code>[]</code> passes.</li>
+<li>Pact (<code>/home/remote/MonsterBox/tests/pact/character-contract.test.mjs</code>): iterates <code>data/characters.json</code>. <code>:37-42</code> <code>KNOWN_STEP_TYPES</code> is the same 17 types (it lacks <code>goblin</code> and <code>part</code>); <code>:98-108</code> fails on any other type; <code>:110-114</code> requires <code>poses.characterId === registry id</code>. It also asserts parts and ai-config invariants.</li>
+<li>Gate (<code>scripts/gate.mjs</code>): validate:schemas, audit:resolver, audit:independence, audit:design-system, test:smoke (= unit), test:pact.</li>
+<li><strong>Neither validator nor pact checks that referenced pose ids, part ids, audio ids, goblin ids or videos exist; that a part is not on the broken list; field spelling (<code>audioFile</code> passes); clip length; <code>linear_actuator</code> dispatchability; integer ids; or <code>steps</code> presence.</strong> A scene set can pass every gate and still fail at runtime. No test cross-references scene steps to poses or parts, and the only data-driven checks are the pact ones above.</li>
+<li><code>audit:independence</code> (<code>scripts/audit-character-independence.mjs:30-36</code>, ratchet against <code>tests/baseline/character-independence-allowlist.json</code>, 22 entries, may only shrink) fails any NEW <code>.js</code>/<code>.mjs</code>/<code>.ejs</code> containing <code>orlok</code> (case-insensitive), <code>characterId: 3</code>, <code>char_id: 3</code>, the node IPs .120/.130/.140/.150/.200, or <code>=== 'Orlok|Mina|PumpkinHead|Sir Dragomir|Groundbreaker'</code>. New per-character tests must loop over the registry like the pact suite. JSON data is not scanned.</li>
+</ul>
+<h3 id="72-tests-that-read-real-scenepose-data-or-hit-live-scenepose-apis">7.2 Tests that read real scene/pose data or hit live scene/pose APIs</h3>
+<table>
+<thead>
+<tr>
+<th>file:line</th>
+<th>assumption</th>
+<th>effect of wholesale replacement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit/pose-jitter-health.test.js:302-314</code></td>
+<td>loads every character's real <code>poses.json</code> and <code>evaluatePoseHealth</code>s each pose without throwing</td>
+<td>new poses must be structurally valid (<code>partId</code>, <code>type</code>, <code>target</code>); empty passes</td>
+</tr>
+<tr>
+<td><code>tests/unit/movement.test.js:739-790</code></td>
+<td>real char 3 idle-tagged poses; every assertion is guarded by <code>poses.length &gt; 0</code>; <code>pose.weight &gt; 0</code></td>
+<td>passes if char 3 has no idle poses; poses tagged <code>idle</code> need weight &gt; 0</td>
+</tr>
+<tr>
+<td><code>tests/unit/gesture-engine.test.js:300-402</code></td>
+<td>real <code>data/character-3/gestures.json</code> (gestures, not scenes/poses; steps use <code>partId</code>)</td>
+<td>unaffected unless gestures change</td>
+</tr>
+<tr>
+<td><code>tests/system/ai-motion.test.js:65,83-112</code></td>
+<td>builds its fixture from the first two poses of the selected character; with 0 poses the fixture is null; with poses it writes and deletes a gestures.json capability</td>
+<td>activates for chars with poses; the capability write is a lock-refused config write on locked chars</td>
+</tr>
+<tr>
+<td><code>tests/system/dashboard-api.test.js:249-264</code></td>
+<td><code>GET /scenes/api/</code> returns an array; <code>scenes[0]</code> has <code>id</code>, <code>name</code>, <code>steps</code> (array)</td>
+<td>every new scene needs a <code>steps</code> array</td>
+</tr>
+<tr>
+<td><code>tests/system/dashboard-api.test.js:266-276</code></td>
+<td><code>if scenes.length &gt; 1</code>, POST <code>/scenes/api/reorder</code> with the listed ids and expect 200; it writes scenes.json</td>
+<td>char 1 has 0 scenes, so this is skipped today; 10 new scenes activate it and on a locked node it returns 500, failing. Same on Dragomir's node today (3 scenes, locked)</td>
+</tr>
+<tr>
+<td><code>tests/system/dashboard-api.test.js:294-299</code>, <code>tests/basic.test.js:48-57</code>, <code>tests/system/follow-orders.test.js:140-144</code></td>
+<td>poses list is an array</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>tests/basic.test.js:69-112</code></td>
+<td>creates and deletes a pose from the first template with a hard-coded <code>partId:'30'</code>; skipped via <code>skipIfLocked</code></td>
+<td>none (templates are never empty)</td>
+</tr>
+<tr>
+<td><code>tests/browser/scene-concurrency.spec.js:19-47</code></td>
+<td>plays <code>scenes[0]</code> (<strong>first in file order</strong>) with <code>?dryRun=1</code>; skips if no scenes</td>
+<td>char 1 goes from skip to run (dry only)</td>
+</tr>
+<tr>
+<td><code>tests/browser/scenes.spec.js:145-175</code></td>
+<td>Play button starts disabled; clicking the first <code>.scene-item</code>/<code>[data-scene-id]</code> enables it</td>
+<td>needs scenes to render <code>.scene-item</code>/<code>data-scene-id</code></td>
+</tr>
+<tr>
+<td><code>tests/browser/actual-usage-testing.spec.js:196-226</code></td>
+<td>clicks <code>#btnLoopAll</code> (a no-op today because of the 400, see 0.5), then clicks the <strong>first scene tile, which POSTs <code>/scenes/api/:id/play</code> without <code>dryRun</code></strong> (<code>public/js/dashboard-v2.js:177</code>). Its comment says the server runs it dry under <code>MB_TEST_MODE</code>, but the recommended <code>MB_USE_RUNNING_SERVER=1 BASE_URL=:3100</code> target is not in test mode</td>
+<td>a real show plays on the node under test. If someone fixes the Loop All payload, <code>#btnLoopAll</code> also starts a real loop (queue ignores test mode)</td>
+</tr>
+<tr>
+<td><code>tests/browser/exhaustive-system-test.spec.js:298-330, 544-571</code></td>
+<td>Loop All and Stop click (<code>:318</code>); <strong>scene CRUD</strong>: POST <code>/scenes/api/</code> with a wait step, PUT, DELETE, each <code>expect 200</code>. <code>:3.3</code> posts a pose with <code>parts:{}</code> (400, status only logged)</td>
+<td>fails on locked nodes (500). Create-then-delete reuses ids</td>
+</tr>
+<tr>
+<td><code>tests/browser/studio-goblin-step.spec.js:19-75</code></td>
+<td>needs an online Goblin; creates scene "ZZ Studio Goblin Step <ts>" through the Studio, saves, reloads, deletes it</td>
+<td>fails on locked nodes; reuses ids; asserts the saved step shape <code>{type:'goblin-video', goblinId, videoId, loop:false}</code></td>
+</tr>
+<tr>
+<td><code>tests/browser/mcp-comprehensive.spec.js:238-250,320-324,447-472</code></td>
+<td>pose editor form fill only (no save); scenes API log; deck and Loop All presence</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>tests/browser/panel-sortable.spec.js:144-190</code>, <code>conversation-refactor.spec.js:130-165</code></td>
+<td>deck tabs show tiles or an honest empty state</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>tests/unit/character-config-lock.test.js:36-43, 45-52, 75-81, 83-93</code></td>
+<td>char 1 <strong>must</strong> be locked; every other unlocked; <code>assertConfigPathWritable</code> refuses char-1 <code>scenes.json</code>/<code>poses.json</code>; the error carries status 423</td>
+<td>unlocking char 1 without relocking fails 36 and 75</td>
+</tr>
+<tr>
+<td><code>tests/system/orchestration.test.js:343-348</code></td>
+<td><code>POST /start-all-queue-loops</code> expects 200</td>
+<td><strong>real fleet fan-out</strong> against the :3100 listener (service env has no <code>MB_TEST_MODE</code>; route guard at <code>orchestrationRoutes.js:490</code>). KNOWN-BUGS documents that only the "Scene not found" data mismatch prevented real playback before. After replacement, valid <code>defaultSceneId</code>s mean the test truly starts loops, and the next test truly stops them</td>
+</tr>
+</tbody>
+</table>
+<h3 id="73-executor-source-pinned-and-synthetic-tests-not-tied-to-scene-data">7.3 Executor-source-pinned and synthetic tests (not tied to scene data)</h3>
+<ul>
+<li>Source regex pins: <code>tests/unit/scene-step-resilience.test.js:19-52</code> (NON_FATAL set contents, the try/catch shape, <code>sceneSuccess</code>), <code>tests/unit/fleet-honesty.test.js:55-108</code> (<code>start(characterId, options={})</code>, loop refill, queue try/catch, NON_FATAL), <code>tests/unit/atomic-json-writers.test.js:50-60</code> (<code>recordSceneExecution</code>), <code>tests/unit/pose-engine-targets.test.js</code> (poseEngine key handling), <code>tests/unit/multiturn-editor-range.test.js:77-110</code> (reads <code>studio.ejs</code>). These break if the executor or Studio source is edited, not if data is replaced.</li>
+<li>Synthetic: <code>tests/unit/lurk-scenes.test.js:36-112</code> (ids <code>10</code>, <code>11</code>, <code>gone</code>), <code>tests/unit/queue-library-path.test.js</code> (character 99017), <code>tests/unit/goblin-orchestration-targets.test.js:96-130</code> (stubbed manager, pins <code>loop</code> default false and <code>returnToQueue</code>), <code>tests/unit/background-music.test.js</code>, <code>tests/unit/callouts.test.js</code>, <code>tests/system/scenes.test.js</code> (inline scenes through <code>bulletproofExecutor</code>, which <strong>no production code uses</strong>; plus <code>:91-106</code> reads <code>data/scene-templates.json[0].id/steps</code>), <code>tests/system/animation-studio.test.js:22-109</code> (<code>executeStep</code> with char 3 for jaw-animation and head-tracking, plus "unknown step type must throw").</li>
+<li>Old names and ids appear only as inline fixtures: <code>tests/unit/order-matcher.test.js:37-40,175-190</code> (pose ids 1/21/22 "Neutral Standing", "Arm Raise Full", "Arm Lower"), <code>follow-orders-arm-phrasing.test.js:158</code> (31), <code>body-role-interpreter.test.js:207</code> (7), <code>body-state.test.js:84</code>. No assertion on a scene or pose count exists anywhere; counts are only logged or used as <code>&gt; 0</code>/<code>&gt; 1</code> guards. <code>tests/ai/*</code> has no scene or pose coupling.</li>
+<li><code>scripts/clean-test-artifacts.js:47-51</code> deletes scenes and poses whose name matches <code>/^Test/i</code>, <code>/Playwright/i</code> or <code>/^PW\b/i</code> in kept characters. Avoid those names.</li>
+</ul>
+<h3 id="74-testshardware-coverage-today">7.4 <code>tests/hardware/</code> coverage today</h3>
+<p><code>continuous-servo-calibration.test.js</code> and <code>linear-actuator-calibration.test.js</code> exercise the unified calibration API against throwaway stores and command no motion. <code>microphone-crud-mocha.test.js</code> enumerates inputs and levels via <code>/setup/audio/api</code> (hard-coded 127.0.0.1:3100). <code>stepper.test.js</code> skips unless the character has a stepper part. <code>test-hardware-timing.js</code> is a stale standalone script (it only runs when invoked directly, and calls a non-existent <code>/api/scenes/execute-step</code>). There is <strong>no hardware test of scene or pose execution</strong>.</p>
+<h3 id="75-environment-facts-for-running-suites">7.5 Environment facts for running suites</h3>
+<ul>
+<li>The service (pid 1018) runs <code>NODE_ENV=production</code>, <code>PORT=3000</code>, no <code>MB_TEST_MODE</code> [live /proc]. The always-on :3100 listener is the same app, so <code>MB_TEST_MODE</code> set on the mocha client does not protect real hardware or fleet fan-out.</li>
+<li>Browser tests and system tests write the node's real <code>data/character-&lt;selected&gt;/scenes.json</code> and <code>poses.json</code> (no sandbox); <code>tests/setup.js</code> sandboxes only the calibration and actuator-position files.</li>
+</ul>
+<hr />
+<h2 id="8-audio-library-and-tts">8. Audio library and TTS</h2>
+<ul>
+<li>Files: <code>/home/remote/MonsterBox/data/audio-library/files/</code> (80 mp3s, all on disk) and <code>/home/remote/MonsterBox/data/audio-library/library.json</code> (<code>{version,created,lastModified,totalFiles,totalSize,categories,tags,audio[80]}</code>). Entry keys: <code>id, title, description, filename, originalFilename, format, duration, fileSize, sampleRate, channels, bitrate, tags, category, artist, album, genre, year, uploadedAt, lastModified, waveformGenerated, favorite, playCount, lastPlayed</code>. <code>data/audio-library/backup/</code> and <code>waveforms/</code> also exist.</li>
+<li>Registration: <code>audioLibraryService.rescanLibrary()</code> (<code>services/audioLibraryService.js:109-232</code>, run on service init) adds any file in <code>files/</code> with <code>id = base filename without extension</code> and category <code>other</code>, or a genre-derived one. Uploads go through <code>POST /audio-library/api/upload</code> (multipart <code>audioFiles</code>, up to 10; <code>routes/audioLibrary.js:123</code>). <code>GET /api/sounds</code> feeds the Studio and deck (<code>id, title, filename, duration, format</code>). <code>rescan</code> is a service-start behavior; I did not find an HTTP rescan endpoint.</li>
+<li>Id versus filename: scenes may use either, and an absolute or <code>./</code> path; the Studio saves the filename. The orchestration <code>play-audio</code> endpoint and the yard-theater scripts require the library <code>audioId</code> (README of yard-theater). 38 unique tracks sit behind 80 entries (many UUID duplicates of the numbered tracks).</li>
+<li>Music: there is <strong>no music flag</strong>. All entries are category <code>other</code> (one carries tags <code>yard-theater/halloween</code>), although <code>categories</code> lists <code>music</code>. Background music is configured per character in <code>super-powers.json</code> <code>backgroundMusic {enabled, tracks[audio ids or filenames], volume (default 35), shuffle, resumeDelayMs, quietHours}</code> (<code>services/backgroundMusicService.js</code>; Orlok has 8 tracks, <code>super-powers.json:169</code>). It pauses for conversations, any running scene queue, other audio, mute and quiet hours. Edit it with <code>POST /api/audio-loop/background</code>. A scene <code>audio</code> step is the only scene-side playback, hence the 30 s limit.</li>
+<li><strong>Clips safe for an <code>audio</code> step on a non-jaw node (under 28 s):</strong> Thomas Whisper 1.2 s; Replica Studios Audio 2.0/5.0/25.1 s (ids <code>6700e722-…</code>, <code>54ef9d8c-…</code>, <code>ba5adb09-…</code>); old wardrobe door squeaking 3.3 s; rake jumpscare 3.3 s; castle thunder 3.9 s; creepy evil laughter 4.6 s; So Many Screams 5.7 s; spooky ghost uuuh 6.1 s; suspenseful violin 7.4 s; Introductions Igor 9.5 s; distant vibrating 10.6 s; Don't Leave Now 11.8 s; Something To Show You 12.1 s; creepy piano 12.9 s; Introductions One Good Eye 13.8 s; Introductions Good Evening 16.1 s. Everything else is 33-277 s (ambiences and the numbered 04-12 tracks), which will time out, except through the jaw-sync path on jaw-enabled characters (then the jaw animates to it).</li>
+<li>sayThis cache: <strong>none</strong> (see 2.3). Voices: <code>data/character-N/ai-config/tts-config.json</code>, all <code>eleven_v3</code> with <code>speed</code> values 0.75-1.05 that the code says v3 does not honor. Recorded <code>quota_exceeded</code> failures (credits exhausted) appear in analytics on 2026-08-19 and 2026-09-26.</li>
+</ul>
+<hr />
+<h2 id="9-doc-drift-and-items-not-verified">9. Doc drift and items not verified</h2>
+<ul>
+<li>CLAUDE.md:99 says <code>GET /api/parts</code> returns a raw array; [live] it returns <code>{success, parts}</code>. CLAUDE.md:104 and <code>docs/api/api-documentation.md:83</code> document the <code>{sceneId}</code> start-config shape that the server rejects. <code>CHARACTER-CONFIG-LOCKS.md</code> lists the wrong locks and says the app answers 423 for scene writes.</li>
+<li>Not read: Mina's live data (node unreachable); peers' crontabs and their <code>physical-faults</code>/<code>character-locks</code> copies; Goblin 1 and 4 file lists; the full ElevenLabs agent timeout path; <code>routes/api/orchestrationRoutes.js</code> beyond the routes listed; the <code>scripts/halloween-judges</code>, <code>fleet-audio</code>, <code>night-memory</code> and <code>bench</code> directories for scene-id use (grep over <code>scripts/</code> for <code>scenes/api</code>, <code>scene_id</code>, <code>sceneId</code> found only <code>start-all-loops.sh</code>).</li>
+<li>[inferred, not executed]: that a 30-second SIGKILL of the python wrapper leaves its <code>mpg123</code> child playing to the end of the file; that the Studio's <code>GET /templates</code>, <code>/export</code> and <code>/analytics</code> routes are unreachable; that the dashboard Loop All fails with HTTP 400 in the browser (the validation itself was run).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

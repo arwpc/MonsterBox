@@ -1,0 +1,3982 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Aaron Warner">
+      
+      
+        <link rel="canonical" href="https://arwpc.github.io/MonsterBox/development/missions/2026-10-castle-tuning/recon-conversation/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>MonsterBox conversation pipeline: recon for fleet-wide tuning - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#monsterbox-conversation-pipeline-recon-for-fleet-wide-tuning" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MonsterBox conversation pipeline: recon for fleet-wide tuning
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directory Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ / Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Character Sheets
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Character Sheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_mina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mina
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_sir_dragomir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sir Dragomir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_groundbreaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/PUMPKINHEAD_COMPLETE_PARTS_LIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead Parts List
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/GROUNDBREAKER_SETUP_INSTRUCTIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/GROUNDBREAKER_INSTALLATION_PACKAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronic Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSH Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/NODE-DISCOVERY-VALIDATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/HEAD-TRACKING-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/LINEAR_ACTUATOR_CALIBRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linear Actuator Calibration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/STT_TUNING_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STT Tuning Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/Noisy_Environment_Preset_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Noisy Environment Preset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/CENTRALIZED-PORT-MANAGEMENT-SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/PORT-MANAGEMENT-INTERFACE-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/HTTPS_DEPLOYMENT_HANDOFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTPS Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/secure-remote-access-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Secure Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/AUDIO-MICROPHONE-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audio & Microphone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ECHO-SUPPRESSION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Echo Suppression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/SCENE-CONCURRENCY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scene Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Log Collection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/head-tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/ORLOK_BTS7960_WIRING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok BTS7960 Wiring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/legacy_hardware_config_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Hardware Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs TTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/ELEVENLABS_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs Full Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/MJPG-STREAMER-INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MJPG-Streamer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/GOBLIN_VIDEO_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Video
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/Hardware-Integration-Layer-Interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Layer Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/api-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V9-RETROSPECTIVE-AND-ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Retrospective & Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V9-PERSONA-REVIEWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Persona Reviews
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../GESTURE-ENGINE-SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gesture Engine Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../NODE-DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery (mDNS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orchestration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ai-integration-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Integration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../AI-Management-Feature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Management Feature
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../goblin-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../middleware-audit-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Middleware Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Setup Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/api-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/conversation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conversation Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/DEEP-TESTING-FRAMEWORK-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Testing Framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/KNOWN-BUGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known Bugs & Open Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/head-tracking-troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronics Workshop
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Animatronics Workshop
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Familiarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simple Steps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hands-On Activities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Final Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_19" >
+        
+          
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../v6-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Audit Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../v6-final-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Final Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="monsterbox-conversation-pipeline-recon-for-fleet-wide-tuning">MonsterBox conversation pipeline: recon for fleet-wide tuning</h1>
+<p>I did not write <code>/tmp/claude-1000/-home-remote-MonsterBox/26c4c0b3-31c7-4df4-abb0-d653712a3390/scratchpad/recon-conversation.md</code>. This agent is read-only and can't create files, so please save this text there yourself.</p>
+<p><strong>Node and checkout.</strong> Node <code>orlok</code> (character 3), Pi 4B. Repo <code>/home/remote/MonsterBox</code> at HEAD <code>86c9bb0e</code> (v10.6.0). Date 2026-10-09. All paths below are relative to the repo unless absolute.</p>
+<p><strong>What I touched beyond reading code (all read-only):</strong>
+- Searched <code>/var/log/monsterbox.log</code>, its rotations, and <code>/var/log/monsterbox.err</code>.
+- Ran <code>ps</code>, <code>uptime</code> and <code>vcgencmd get_throttled</code>.
+- Read the systemd drop-ins.
+- Made 6 GETs to <code>https://localhost:3000/api/elevenlabs/agents/:id</code> to read the live agent configs (these use the node's own key).
+- Tried the claude.ai ElevenLabs connector. It returned 404, so it is connected to a different workspace.
+- Ran one web search against the ElevenLabs docs.</p>
+<p><strong>Caveat on CPU numbers.</strong> While I was working, Claude Code and its MCP servers used about 46% of one core on this Pi.</p>
+<hr />
+<h2 id="1-ownership-who-holds-which-socket-or-process">1. Ownership: who holds which socket or process</h2>
+<p><strong><code>services/elevenLabsWebSocketService.js</code></strong> (singleton, line 2889)
+- Owns every ElevenLabs ConvAI agent WebSocket: the persistent "headless" session, sessions started from a browser, and one-shot ask sockets.
+- Runs MonsterBox's own WS server on :8795 plus a secure one at <code>/ai-chat</code> (442-500).
+- Also owns the server mic loop, echo suppression, barge-in and agent-audio routing.</p>
+<p><strong><code>services/elevenLabsRealtimeSTTService.js</code></strong>
+- A separate Scribe v2 realtime STT socket (<code>wss://api.elevenlabs.io/v1/speech-to-text/realtime</code>, :39), pcm_16000, <code>commit_strategy=vad</code>.
+- Used by browser sessions only. Its transcripts go to the UI and Follow Orders, never to the agent.
+- Headless sessions set <code>useRealtimeSTT=false</code> (1453).</p>
+<p><strong><code>services/serverSTTListener.js</code></strong> (no WebSocket)
+- <code>startContinuousCapture</code> (723-845) is the long-lived mic process that feeds the agent loop.
+- <code>startSession</code> (72+) is the separate polled STT listener used by Follow Orders and <code>/api/elevenlabs/stt/listen</code>.</p>
+<p><strong><code>services/elevenLabsAgentService.js</code></strong> (REST only)
+- Agent CRUD (17-157), a static model list (162-193), and chat via simulate-conversation (276-349).
+- <code>createAgentTemplate</code>, <code>validateAgentConfig</code> and <code>testAgent</code> are referenced nowhere.</p>
+<p><strong><code>services/conversationService.js</code></strong>
+- Legacy HTTP pipeline: batch STT, then simulate-conversation, then TTS (8-63).
+- Nothing imports it except tests, so it is dead in production.</p>
+<p><strong><code>services/serverPlaybackService.js</code></strong>
+- Every speaker player:
+  - one persistent <code>pw-play</code> per character+device for PCM;
+  - one persistent <code>mpg123</code> per character for MP3;
+  - one-shot <code>pw-play</code>, <code>mpg123</code> and <code>ffmpeg|pw-play</code> players.
+- Also all the stop functions.</p>
+<h2 id="2-paths-from-microphone-to-agent-to-speaker">2. Paths from microphone to agent to speaker</h2>
+<h3 id="21-persistent-headless-agent-ai-mode">2.1 Persistent headless agent ("AI mode")</h3>
+<p><strong>Entry points</strong>
+- <strong><code>POST /conversation/api/ai-on</code></strong> (<code>routes/conversation.js:1015-1046</code>) calls <code>setAgentEnabledForCharacter</code> (<code>elevenLabsWebSocketService.js:1407-1473</code>).
+  - It also writes <code>ai_agent_state.json</code>, which is only a hint. <code>ai-status</code> reports the live session (1050-1078).
+- <strong>Dashboard AI toggle:</strong> <code>setServerAi</code> (<code>public/js/dashboard.js:1142</code>, handler 1196-1208), which polls ai-status every 3 s (1213).
+- <strong>Motion-mode PIR wake:</strong> <code>wakeOnMotion</code> (<code>conversation.js:1326-1363</code>) calls <code>setAgentForMotion(true)</code> (1272-1284), but only if <code>planWake().startAgent</code> (<code>calloutService.js:196-199</code>).
+  - Sleep runs <code>sleepOnMotion</code> (1366-1373), which turns the agent off.
+- <strong>Lurk mode:</strong> the server never starts the agent. Dashboard JS does it (<code>dashboard.js:296-303</code>, skipped in callout mode), so it needs a browser open.</p>
+<p><strong>Flow</strong>
+1. The agent ID comes from <code>data/characters.json</code> field <code>elevenLabsAgentId</code> (278-302).
+2. Fetch a signed URL (714-729), then open <code>new WebSocket(signed_url)</code> (733).
+3. On open, send <code>conversation_initiation_client_data</code> with <code>conversation_config_override: {}</code> (744-748). Nothing else is sent: no dynamic variables, no overrides.
+4. On <code>conversation_initiation_metadata</code> (853-904):
+   - mark the session ready;
+   - read the output format from <code>agent_output_audio_format</code> (862-872);
+   - start the mic loop (881-884);
+   - send a body-state <code>contextual_update</code> (889-894).</p>
+<p>Note: <code>_waitForAgentReady</code> resolves when the socket opens, not on this metadata (1385-1394), so the mic loop is also started at 1465. That second call does nothing (guard at 1841).
+5. <strong>Mic loop</strong> (<code>_startServerMicLoop</code>, 1838-2106):
+   - The device comes from the microphone part in parts.json (305-321).
+   - <code>startContinuousCapture</code> (2093) output is re-cut into 8000-byte / 250 ms frames (2090-2100).
+   - Each frame goes through <code>handleFrame</code> (1850-2065):
+     - RMS level (1865-1874);
+     - noise-floor tracking (1882-1886);
+     - echo floor and barge-in check (1894-1915);
+     - voice gate (1916-1937).
+   - Each frame is sent as <code>{user_audio_chunk: base64}</code>. It is real audio only when not suppressed and the gate is open; otherwise it is zeros of the same length (1948-1957).
+6. <strong>Agent events</strong> (843-1261):
+   - <code>audio</code> goes to playback (906-1093).
+   - <code>user_transcript</code> (1095-1145) feeds the Follow Orders hook, the speech log, LED "thinking" and the turn clock.
+   - <code>agent_response</code> (1147-1187).
+   - <code>ping</code>/<code>pong</code> (1189-1198).
+   - <code>conversation_end</code> (1200-1214).
+   - <code>interruption</code> calls <code>_bargeIn</code> (1216-1223).
+   - <code>client_tool_call</code> is answered immediately (1225-1250).
+7. <strong>Teardown:</strong> <code>_teardownHeadlessSession</code> (1479-1513) calls <code>endConversation</code>, which runs stopStream (1315), then calls stopStream again (1507).</p>
+<p><strong>No reconnect exists.</strong> The socket's <code>on('close')</code> (755-771) only marks the session inactive.</p>
+<h3 id="22-sessions-started-from-a-browser">2.2 Sessions started from a browser</h3>
+<p><strong>Which pages open them</strong></p>
+<table>
+<thead>
+<tr>
+<th>Page / script</th>
+<th>Lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dashboard chat</td>
+<td><code>dashboard.js:816-860</code></td>
+</tr>
+<tr>
+<td>AI Settings "autonomous" toggle</td>
+<td><code>public/js/ai-settings.js:336-345</code> and <code>614-642</code></td>
+</tr>
+<tr>
+<td>AI Settings STT test</td>
+<td><code>ai-settings-stt.js:981</code></td>
+</tr>
+<tr>
+<td>Other clients</td>
+<td><code>mic-panel.js</code>, <code>components/ai-chat-modal.js</code>, <code>websocket-chat.js</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Protocol</strong>
+- They connect to ws://host:8795 or wss://host/ai-chat.
+- They send <code>set_character</code>, <code>set_mic_source</code>, <code>set_audio_playback</code>, <code>set_speaker_part</code> and <code>start_conversation</code> (537-685).</p>
+<p><strong>Behaviour</strong>
+- Each opens its <strong>own</strong> agent socket, and its own server mic loop if the mic source is "server". Two agents can listen on one mic at once.
+- They also start Scribe realtime (556; settings at 1563-1572: 1.5 s silence, 0.4 threshold).
+- <code>browser_audio_chunk</code> (640-661) forwards browser mic audio to the agent, except while suppressed.</p>
+<h3 id="23-one-shot-ask-askagentquestion-2629-2646">2.3 One-shot ask: <code>askAgentQuestion</code> (2629-2646)</h3>
+<p><strong>If a live session exists</strong>, it uses it (2497-2512, preferring the headless one) via <code>_askOnLiveSession</code> (2529-2615):
+- sends <code>user_message</code> (2575);
+- 150 ms later sends a 500 ms zero frame to force the turn to commit (2586-2594). The constant is at 151; the comments at 143-150 still say "250ms"/"dithered", which is stale.
+- resolves after 1.5 s of quiet (141, 1268-1284) or a 30 s ceiling (138, 2597-2606).</p>
+<p><strong>Otherwise</strong> it opens a new socket via <code>_askAgentQuestionEphemeral</code> (2652-2886):
+- new signed URL and socket (2705-2724), empty override (2729-2732);
+- <code>_startAudioPlayback</code> starts as soon as the socket opens (2735);
+- the question is sent after metadata arrives (2747-2752).</p>
+<p>Audio is held per <code>event_id</code> until the matching <code>agent_response</code> says whether that turn is the greeting or the answer (2753-2766, 2778-2804, <code>isAnswerTurn</code> 126-129). So the <code>first_message</code> greeting is generated and thrown away. The log confirms the order: <code>Captured agent response</code> comes before <code>Starting pw-play</code> (e.g. monsterbox.log lines 106023-106024).</p>
+<p>There is no mic on this path. The socket closes only on the <strong>30 s timer</strong> (2866-2879) or when the server closes it. The caller is only answered in the close handler (2816-2858).</p>
+<h3 id="24-post-conversationapiask-ai-conversationjs800-929">2.4 <code>POST /conversation/api/ask-ai</code> (<code>conversation.js:800-929</code>)</h3>
+<ul>
+<li>Calls <code>askAgentQuestion</code> (848-852).</li>
+<li>Returns after the settle delay on a live session, or after the ~30 s close on the one-shot path.</li>
+<li>On an exception it falls back to TTS of an apology (876-915).</li>
+</ul>
+<h3 id="25-callouts-servicescalloutservicejs">2.5 Callouts (<code>services/calloutService.js</code>)</h3>
+<ul>
+<li><strong>Scheduler:</strong> <code>_schedule</code>/<code>_tick</code> (422-453). The gate <code>decideCallout</code> (174-183) blocks during any session (<code>hasActiveSession</code>, ws 1533-1541), a scene queue, recent playback, mute and quiet hours.</li>
+<li><strong>Speaking:</strong> <code>speak()</code> (311-324) calls <code>askAgentQuestion</code> (319). A callout never runs while a session is live, so it <strong>always takes the one-shot path</strong> (CHANGELOG.md:22-29: "bills up to ~30 s … hard timeout").</li>
+<li><strong>Prompt:</strong> at most <code>maxWords</code> (default 20) words (209-217).</li>
+<li><strong>PIR wake in callout mode</strong> opens no agent unless <code>aiOnWake</code> is set (196-199; <code>conversation.js:1342-1350</code>).</li>
+<li><strong>Orlok's settings</strong> (<code>data/character-3/callout-state.json</code>): enabled, 300 s interval, <code>aiOnWake: false</code>.</li>
+<li><strong>Rollout:</strong> CHANGELOG.md:20, 22-29 says callouts are on for Orlok, Sir Dragomir, Renfield, PumpkinHead and Groundbreaker.</li>
+<li><strong>API only</strong> (no UI): <code>conversation.js:1488-1530</code>.</li>
+</ul>
+<h3 id="26-scene-steps-servicesscenessceneexecutorjs">2.6 Scene steps (<code>services/scenes/sceneExecutor.js</code>)</h3>
+<ul>
+<li><strong><code>sayThis</code></strong> (238-279): <code>generateSpeech</code> (248) is a non-streaming <code>POST /v1/text-to-speech/{voice}</code> (<code>elevenLabsTTSService.js:214-241</code>, model eleven_v3 per tts-config). Then <code>playWithJawSync</code> (259) or <code>playAIOnCharacterSpeaker</code> (275). The step blocks until playback ends.</li>
+<li><strong><code>askAI</code></strong> (281-342): <code>askAgentQuestion</code> (295-299) already plays the agent's audio. The step then generates TTS of the same reply (314) and plays it <strong>again</strong> (325 or 338).</li>
+<li><strong>Orlok's lurk scenes</strong> 111-116 are all sayThis-based (<code>data/character-3/scenes.json</code>). <code>lurk-scenes-state.json</code> is enabled at 240 s.</li>
+</ul>
+<h3 id="27-tts-only-paths-that-look-like-ai">2.7 TTS-only paths that look like AI</h3>
+<ul>
+<li><strong>Orchestration "Ask AI"</strong> (<code>routes/api/orchestrationRoutes.js:976+</code>) proxies to the node's <code>/api/elevenlabs/agent-speak</code> (998). That route speaks the input text verbatim (<code>personalityText = text</code>, <code>elevenLabsApiRoutes.js:723-727</code>); no agent is involved. Its fallback is <code>generate-and-play</code> (590-688).</li>
+<li><strong><code>/conversation/api/say</code></strong> (585+).</li>
+</ul>
+<h3 id="28-audio-format-at-each-hop">2.8 Audio format at each hop</h3>
+<table>
+<thead>
+<tr>
+<th>Hop</th>
+<th>Format</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mic capture</td>
+<td>PCM s16le, 16 kHz, mono. Tries <code>python3 microphone_cli.py stream_raw</code> (PyAudio, ~20 ms reads) first, then parec (<code>--latency-msec=50</code>), ffmpeg, arecord</td>
+<td><code>serverSTTListener.js:724-750</code>; <code>python_wrappers/microphone_cli.py:201,256</code></td>
+</tr>
+<tr>
+<td>Node → agent</td>
+<td>250 ms (8000-byte) base64 frames; zeros when suppressed or gated</td>
+<td>ws 2090, 1948-1957</td>
+</tr>
+<tr>
+<td>Agent speech recognition</td>
+<td>scribe_realtime, input pcm_16000 (live config)</td>
+<td>agent side</td>
+</tr>
+<tr>
+<td>Agent → node</td>
+<td>base64 PCM s16le 16 kHz mono. pcm_16000 on all six live agents; first chunk 7580 B ≈ 237 ms (log)</td>
+<td>ws 862-872</td>
+</tr>
+<tr>
+<td>Live session → speaker</td>
+<td>each chunk goes to a persistent <code>pw-play [--raw] --format s16 --rate 16000 --channels 1 --volume 0.900 [--target sink] -</code></td>
+<td>ws 1030-1040; <code>serverPlaybackService.js:400-479</code></td>
+</tr>
+<tr>
+<td>One-shot ask → speaker</td>
+<td>up to 12 chunks grouped, same persistent pw-play at volume 1.0</td>
+<td>ws 2244-2275</td>
+</tr>
+<tr>
+<td>MP3 fallback</td>
+<td>persistent <code>mpg123 --quiet -o pulse -f &lt;scale&gt; -</code> with <code>PULSE_SINK</code></td>
+<td>playback 284-394</td>
+</tr>
+<tr>
+<td>One-shot TTS</td>
+<td>MP3 (<code>Accept: audio/mpeg</code>, no <code>output_format</code>). Played by a one-shot mpg123 (playback 615-661), or by ffmpeg pre-analysis plus a one-shot player in <code>playWithJawSync</code></td>
+<td>jaw 1580-1726</td>
+</tr>
+<tr>
+<td>Sink on Orlok</td>
+<td>logs show <code>device=default</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-turn-taking-and-interruption">3. Turn-taking and interruption</h2>
+<h3 id="31-knobs-in-our-code-elevenlabswebsocketservicejs">3.1 Knobs in our code (<code>elevenLabsWebSocketService.js</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Knob</th>
+<th>Value</th>
+<th>Line</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VOICE_ACTIVITY_RMS</code></td>
+<td>0.02</td>
+<td>29</td>
+<td>minimum level that can count as voice</td>
+</tr>
+<tr>
+<td><code>VOICE_GATE_MARGIN</code></td>
+<td>2.0</td>
+<td>38</td>
+<td>gate threshold = max(0.02, noise floor × 2) (1916-1919)</td>
+</tr>
+<tr>
+<td><code>MIC_GATE_HANGOVER_MS</code></td>
+<td>900</td>
+<td>43</td>
+<td>gate stays open 900 ms after the last voiced frame</td>
+</tr>
+<tr>
+<td><code>MB_MIC_VOICE_GATE</code> env</td>
+<td><code>'0'</code> turns gate off</td>
+<td>46</td>
+<td></td>
+</tr>
+<tr>
+<td><code>MB_BARGE_IN</code> env</td>
+<td><code>'0'</code> turns local barge-in off</td>
+<td>65</td>
+<td>see note below</td>
+</tr>
+<tr>
+<td><code>BARGE_IN_MARGIN</code></td>
+<td>2.2</td>
+<td>69</td>
+<td>threshold = max(0.05, echo floor × 2.2)</td>
+</tr>
+<tr>
+<td><code>BARGE_IN_RMS_FLOOR</code></td>
+<td>0.05</td>
+<td>73</td>
+<td>absolute minimum barge-in level</td>
+</tr>
+<tr>
+<td><code>BARGE_IN_FRAMES</code></td>
+<td>3 (~750 ms)</td>
+<td>78</td>
+<td>consecutive loud frames needed</td>
+</tr>
+<tr>
+<td><code>BARGE_IN_GRACE_MS</code></td>
+<td>700</td>
+<td>83</td>
+<td>no barge-in this early in a reply</td>
+</tr>
+<tr>
+<td><code>UTTERANCE_GAP_MS</code></td>
+<td>1200</td>
+<td>962</td>
+<td>gap that starts a new utterance</td>
+</tr>
+<tr>
+<td><code>TAIL_BUFFER_MS</code></td>
+<td>2500</td>
+<td>998</td>
+<td>mic stays zeroed 2.5 s after modelled playback end</td>
+</tr>
+<tr>
+<td>Post-barge-in discard window</td>
+<td>1200 ms</td>
+<td>2381</td>
+<td>agent audio dropped after a barge-in</td>
+</tr>
+<tr>
+<td><code>ASK_REPLY_TIMEOUT_MS</code> / <code>ASK_SETTLE_MS</code></td>
+<td>30000 / 1500</td>
+<td>138 / 141</td>
+<td>live-session ask ceiling and settle</td>
+</tr>
+<tr>
+<td><code>MB_WS_DEBUG</code></td>
+<td>—</td>
+<td>134</td>
+<td>per-message logging</td>
+</tr>
+<tr>
+<td><code>MB_STT_FILTER</code>, <code>MB_AUTOTUNE_ALLOW_SFX</code></td>
+<td>—</td>
+<td>1990, 2002</td>
+<td>batch STT fallback filters</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>MB_BARGE_IN</code> status by node</strong>
+- <strong>Orlok:</strong> confirmed set to 0 by <code>/etc/systemd/system/monsterbox.service.d/40-no-barge-in.conf</code>; <code>systemctl show</code> lists it.
+- <strong>Renfield:</strong> the same file per KNOWN-BUGS.md:1395-1397. I did not check his node.
+- <strong>Other drop-ins on Orlok:</strong> <code>10-priority.conf</code> sets Nice=-5 and CPUWeight=90.</p>
+<p><strong>STT settings page vs the agent path.</strong> The settings saved on that page (<code>vadThreshold</code> 0.045, <code>vadSilenceDuration</code> 1200, <code>utteranceAggregation</code>, filters) are <strong>not read by the agent path</strong>. They only feed <code>serverSTTListener.startSession</code> (95-110, 343-355) and the browser Scribe filters/language.</p>
+<h3 id="32-where-the-mic-is-gated-or-suppressed">3.2 Where the mic is gated or suppressed</h3>
+<p><strong>Suppression sources</strong>
+- <strong>Live agent audio:</strong> each chunk pushes suppression for the whole character out to <code>playbackEndsAtMs + 2500</code> (991-1008).
+- <strong>One-shot playback loop:</strong> now + duration + 1500 per batch (2291-2298).
+- <strong>One-shot players:</strong>
+  - <code>playAIOnCharacterSpeaker</code> and <code>playBufferOnCharacterSpeaker</code>: estimated length + 1000 (playback 511-526, 792-809);
+  - <code>playWithJawSync</code>: duration + 1000 (jaw 1604-1610);
+  - <code>/api/say</code>: <code>conversation.js:627</code>;
+  - Follow Orders acknowledgement: <code>followOrdersListener.js:170</code>.</p>
+<p><strong>While suppressed</strong>
+- The agent receives <strong>zeros</strong> (1951-1953).
+- Scribe and batch STT are skipped (1960, 1968).
+- Browser mic chunks are dropped (646-659).</p>
+<p><strong>Gate closed</strong> (no voice for 900 ms): zeros (1936-1953).</p>
+<p><strong>Only one thing reopens the mic early:</strong> barge-in, via <code>_clearMicSuppression</code> (2350-2362).</p>
+<h3 id="33-barge-in">3.3 Barge-in</h3>
+<ul>
+<li>It is only checked when the mic is suppressed, <code>MB_BARGE_IN</code> is on, and the character is speaking (1894).</li>
+<li>The echo floor tracks the <em>quietest</em> frame heard during suppression (1895-1897) and resets when suppression ends (1910-1915). The test function is <code>shouldBargeIn</code> (95-107).</li>
+<li><code>_bargeIn</code> (2376-2423), in order:</li>
+<li>discard window and clear queues;</li>
+<li><code>stopForCharacter</code>, a node-wide pkill;</li>
+<li>stop jaw and LEDs;</li>
+<li>reopen the mic;</li>
+<li>send <code>{type:'interruption'}</code> to any browser client.</li>
+<li>The agent's <code>interruption</code> event takes the same path (1216-1223).</li>
+<li>Manual: <code>POST /conversation/api/stop-speaking</code> (<code>conversation.js:979-988</code>). No UI calls it.</li>
+</ul>
+<h3 id="34-what-we-send-to-elevenlabs">3.4 What we send to ElevenLabs</h3>
+<ul>
+<li><strong>Session start:</strong> <code>conversation_initiation_client_data</code> with an empty override (745-748, 2729-2732).</li>
+<li><strong>Messages:</strong></li>
+<li><code>user_message</code> (828, 2575, 2749);</li>
+<li><code>user_audio_chunk</code> (652, 1955, 2591);</li>
+<li>an empty chunk as end-of-speech (2126-2133);</li>
+<li><code>pong</code>;</li>
+<li><code>contextual_update</code> with <code>context_id</code> (1757-1813);</li>
+<li><code>client_tool_result</code> (1242-1247).</li>
+<li><strong>What a client may override:</strong> the agents only allow <code>conversation.text_only</code> and, for some agents, <code>agent.language</code>. Turn, TTS, prompt, LLM and first_message cannot be overridden (<code>platform_settings.overrides</code> in the snapshots; the live turn override shows only soft-timeout message fields, set to false).</li>
+<li><strong>Consequence:</strong> turn-taking can only be changed on the agent itself.</li>
+</ul>
+<h3 id="35-agent-side-live-config-read-2026-10-09">3.5 Agent side (live config read 2026-10-09)</h3>
+<table>
+<thead>
+<tr>
+<th>Character</th>
+<th>turn timeout</th>
+<th>eagerness</th>
+<th>speculative</th>
+<th>soft timeout s (max fillers)</th>
+<th><code>interruption</code> in client_events</th>
+<th>temperature</th>
+<th>prompt chars</th>
+<th>TTS speed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PumpkinHead (1)</td>
+<td>5</td>
+<td>normal</td>
+<td>no</td>
+<td>2 (3)</td>
+<td><strong>no</strong></td>
+<td>1.0</td>
+<td>7465</td>
+<td>1.0</td>
+</tr>
+<tr>
+<td>Mina (2)</td>
+<td>6</td>
+<td>normal</td>
+<td>no</td>
+<td>2.5 (1)</td>
+<td><strong>no</strong></td>
+<td>1.0</td>
+<td>10272</td>
+<td>0.87</td>
+</tr>
+<tr>
+<td>Orlok (3)</td>
+<td>8</td>
+<td>normal</td>
+<td>yes</td>
+<td>2.5 (3)</td>
+<td><strong>no</strong></td>
+<td>0.83</td>
+<td>10235</td>
+<td>0.75</td>
+</tr>
+<tr>
+<td>Sir Dragomir (4)</td>
+<td>5</td>
+<td>eager</td>
+<td>no</td>
+<td>2 (3)</td>
+<td><strong>no</strong></td>
+<td>1.0</td>
+<td>10239</td>
+<td>0.9</td>
+</tr>
+<tr>
+<td>Groundbreaker (5)</td>
+<td>5</td>
+<td>eager</td>
+<td>no</td>
+<td>2 (3)</td>
+<td>yes</td>
+<td>0.7</td>
+<td>4445</td>
+<td>0.95</td>
+</tr>
+<tr>
+<td>Renfield (6)</td>
+<td>5</td>
+<td>eager</td>
+<td>yes</td>
+<td>1.5 (3)</td>
+<td>yes</td>
+<td>0.9</td>
+<td>9661</td>
+<td>1.05</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Same on all six</strong>
+- LLM gpt-oss-120b, <strong>max_tokens -1</strong>, <code>reasoning_effort</code> null.
+- RAG on, 20 chunks, 50,000 characters max.
+- Turn mode "turn", model turn_v2, no interruption ignore terms, <code>transcribe_on_disabled_interruptions: false</code>.
+- <code>vad.background_voice_detection: true</code>.
+- Speech recognition scribe_realtime, pcm_16000; output pcm_16000.
+- TTS eleven_v3_conversational with <strong><code>optimize_streaming_latency: 0</code></strong>.
+- <code>max_duration_seconds: 600</code>.</p>
+<p><strong>Drift from the committed snapshots</strong> (<code>config/elevenlabs/agents/*.json</code>, Aug 16-18)
+- <code>optimize_streaming_latency</code> went from 3 to 0 on all six. KNOWN-BUGS.md:2662-2668 says this was deliberate.
+- Prompts grew by about 2-2.5k characters on five agents; Groundbreaker's was rewritten shorter.
+- Groundbreaker's temperature went from 1.0 to 0.7.
+- Turn settings, <code>client_events</code>, <code>max_tokens</code> and RAG are unchanged.</p>
+<h2 id="4-playback-path">4. Playback path</h2>
+<h3 id="41-how-audio-reaches-the-speaker">4.1 How audio reaches the speaker</h3>
+<p><strong>Live session</strong>
+- Each chunk calls <code>writePcmStream</code> without waiting for the previous one (1032-1040), then <code>_ensurePcmStream</code> (400-444).
+- <code>_resolveDeviceId</code> then calls <code>getSpeakerDeviceForCharacter</code> (82-95), which re-reads <code>config/app-config.json</code> (<code>readConfig</code>, <code>configService.js:12-14</code>, no cache) and re-reads and parses <code>parts.json</code>. This happens for <strong>every chunk</strong>.
+- Then it writes to stdin and resolves on drain.
+- The persistent pw-play (key <code>pcm_&lt;char&gt;_&lt;device&gt;</code>) is never stopped between utterances.
+- The jaw is driven per chunk (1048-1050; jaw 1943-2009) and drained by a 50 ms timer (2011-2060).</p>
+<p><strong>One-shot ask</strong>
+- Chunks go into <code>audioBuffer</code>. <code>_startAudioPlayback</code> (2208-2311):
+  - waits for 3 chunks (2238-2241);
+  - groups up to 12 (2244-2250);
+  - waits on each write.
+- The jaw does <strong>not</strong> move during one-shot speech; it is only closed at the end (2306). The comment at <code>calloutService.js:304-310</code> says otherwise.</p>
+<p><strong>One-shot TTS players</strong>
+- <code>playAIOnCharacterSpeaker</code> (500-758) waits for the player to exit.
+- Its watchdog <code>_playbackTimeoutMs</code> (46-70) is max(15 s, 1.5 × estimated length + 5 s), capped at 300 s.</p>
+<h3 id="42-how-playback-is-stopped">4.2 How playback is stopped</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Lines</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stopPcmStream</code></td>
+<td>484-494</td>
+<td><code>stdin.end()</code> then SIGTERM immediately, with no drain</td>
+</tr>
+<tr>
+<td><code>stopStream</code></td>
+<td>760-775</td>
+<td>same treatment for the mpg123 stream, plus <code>stopPcmStream</code></td>
+</tr>
+<tr>
+<td><code>stopForCharacter</code></td>
+<td>871-892</td>
+<td><code>stopStream</code>, then <code>speaker_cli.py stop</code>, which runs <code>pkill -f pw-play</code>, <code>paplay</code>, <code>mpg123</code> and <code>aplay</code> across the whole node (<code>python_wrappers/speaker_cli.py:248-260</code>). Spawns Python every call</td>
+</tr>
+<tr>
+<td><code>stopAll</code></td>
+<td>894-919</td>
+<td>stops every stream</td>
+</tr>
+</tbody>
+</table>
+<p>The comment at ws 763 ("mpg123 flushes remaining data and exits cleanly") is wrong: SIGTERM follows immediately.</p>
+<h3 id="43-everything-that-can-end-speech-mid-utterance">4.3 Everything that can end speech mid-utterance</h3>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Lines</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local barge-in</td>
+<td>1906-1909, 2376-2423</td>
+<td>pkill of every player</td>
+</tr>
+<tr>
+<td>Agent <code>interruption</code> event (only Groundbreaker and Renfield send it)</td>
+<td>1216-1223</td>
+<td>same</td>
+</tr>
+<tr>
+<td>ElevenLabs closes the socket (600 s max duration, network drop, idle)</td>
+<td><code>on('close')</code> 755-771, stopStream at 765</td>
+<td>SIGTERM the shared pw-play</td>
+</tr>
+<tr>
+<td>AI toggled off, or PIR inactivity sleep</td>
+<td>1479-1513, 1309-1336; <code>conversation.js:1366-1373</code></td>
+<td>SIGTERM</td>
+</tr>
+<tr>
+<td>PIR inactivity timer (default 5 min, <code>conversation.js:1259</code>)</td>
+<td><code>lurkMotionWatcherService.js:130-134, 293-330</code></td>
+<td>only PIR motion or dashboard-typed chat/say resets it (<code>conversation.js:2073-2076</code>; <code>dashboard.js:509-512, 1113, 1785</code>); <strong>guest speech on the headless session does not</strong></td>
+</tr>
+<tr>
+<td>One-shot 30 s timer</td>
+<td>2866-2879, then the close handler waits 0.4 + 1.0 s and calls <code>stopPcmStream</code> (2816-2848)</td>
+<td>cuts any one-shot reply still playing about 31 s after the socket opened</td>
+</tr>
+<tr>
+<td>Browser client disconnects, or sends <code>set_speaker_part</code></td>
+<td>2139-2164, 622-630</td>
+<td>stops the character's <strong>shared</strong> pw-play, so it also kills headless speech</td>
+</tr>
+<tr>
+<td>Session reaper (browser sessions older than 1 h, or idle 5 min)</td>
+<td>354-436, then 765</td>
+<td>same</td>
+</tr>
+<tr>
+<td>Node-wide pkill callers</td>
+<td>see list below</td>
+<td>kills every player on the node</td>
+</tr>
+<tr>
+<td>Jaw queue cap of 400 frames (~20 s)</td>
+<td>jaw 1931, 2002-2003</td>
+<td>jaw stops moving on long replies; audio continues</td>
+</tr>
+<tr>
+<td>Speaker mute</td>
+<td>452</td>
+<td>silence, but reported as success</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Node-wide pkill callers</strong>
+- <code>GET /__audio/active-device</code> (<code>server.js:523-538</code>) — a diagnostic route that kills all audio.
+- <code>POST /api/audio/stop-all</code> (<code>server.js:621-627</code>; <code>routes/audioLibrary.js:523-526</code>).
+- <code>audioLoopService.js:281-287</code>, unless called with <code>ownOnly</code>.
+- <code>ledAnimationService.js:74</code>.
+- <code>routes/setup/jaw-animation.js:556</code>.
+- The panic route.</p>
+<h2 id="5-cpu-work-that-runs-alongside-speech">5. CPU work that runs alongside speech</h2>
+<p><strong>For every agent audio chunk (live session)</strong>
+- Parse the JSON message and decode the base64 twice (935, 1014).
+- Loop over all sessions to update suppression (1008).
+- Two disk reads plus JSON parsing inside <code>writePcmStream</code> (above).
+- Jaw RMS for every 50 ms slice (jaw 1987-2004).
+- When jaw and LED sync are both off — Orlok's current <code>super-powers.json</code> — and nothing is cached, <code>liveJawConfig</code> re-reads config from disk (jaw 226-262).
+- Forward the base64 audio to any browser client (1068-1077).
+- Once per turn, a random-pose servo sway (1086-1091).</p>
+<p><strong>Every 50 ms while speaking</strong>
+- Jaw servo command to the Python daemon (jaw 2015-2051; <code>jawServoDaemon.js:157-165</code>).
+- LED level update.
+- Head co-expression at 10 Hz (<code>speechExpressionService.js:57, 368</code>).</p>
+<p><strong>Every 250 ms mic frame</strong>
+- RMS loop, base64 encode and send (1865-1957).
+- Browser sessions only: Scribe send, or the batch STT fallback (ffmpeg filter plus HTTP every 2.5 s, 1968-2028).</p>
+<p><strong>Always-on processes</strong></p>
+<table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python3 microphone_cli.py stream_raw</code></td>
+<td>runs whenever a session exists</td>
+</tr>
+<tr>
+<td><code>mjpg_streamer</code> 320x240 @ 10 fps</td>
+<td>running now</td>
+</tr>
+<tr>
+<td>Head tracking: <code>scripts/motion_tracking_service.py</code> (OpenCV person detection)</td>
+<td>capped at 10 fps processing (668-678, 1073-1074). Measured at ~77% of a core per process on Sir Dragomir (<code>controllers/motionTrackingController.js:29-35</code>). Up to 25 status lines per second into Node (1065; controller 478-484). Not running on Orlok now; always-on for Dragomir (CHANGELOG.md:38)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Periodic</strong>
+- Background music checks every 1.5 s (<code>backgroundMusicService.js:47, 346</code>) and pauses during sessions.
+- A perf monitor runs <code>wpctl status</code> every 60 s (<code>server.js:1223-1236</code>).</p>
+<p><strong>Only while fleet or orchestration pages are open</strong>
+- The MJPEG relay and frame cache run inside the Node process (<code>mjpegRelay.js</code>, <code>mjpegFrameCache.js</code>; <code>orchestrationRoutes.js:12-13</code>).</p>
+<p><strong>One-shot TTS</strong>
+- <code>playWithJawSync</code> runs ffmpeg to pre-analyse every clip before it plays (jaw 1437, 1784).
+- It also pre-warms an mpg123 process it never uses (1624, 1696-1703).</p>
+<p><strong>Measured load on Orlok today</strong>
+- Perf log lines show load1 0.09-0.84; <code>throttled=0x0</code>.
+- KNOWN-BUGS.md:1392 recorded "not CPU: load 0.15-0.3" for Renfield's self-interruption.</p>
+<h2 id="6-agent-configuration">6. Agent configuration</h2>
+<p><strong>Where agent IDs live</strong>
+- <strong><code>data/characters.json</code> <code>elevenLabsAgentId</code></strong> is what the runtime uses (ws 278-302; <code>conversation.js:827-829</code>; <code>calloutService.js:313</code>; <code>sceneExecutor.js:292-293</code>). It is set on <code>/setup/characters</code>.
+- <strong><code>config/animatronics.json</code> <code>agentId</code></strong> is the orchestration roster; conversation code doesn't use it.
+- <strong>An optional <code>agent_id</code></strong> in <code>data/character-N/ai-config/tts-config.json</code> is read only by <code>aiPromptGeneratorService.js:338-368</code>.</p>
+<p><strong>Local snapshots, not synced automatically</strong>
+- <code>config/elevenlabs/agents/*.json</code> (Aug 16-18), <code>agents-pre-tuning/</code>, <code>kb-sources/</code>.
+- The README has a restore recipe (PATCH through the local API). The live agents have drifted from these (section 3.5).</p>
+<p><strong>What <code>elevenLabsAgentService</code> does</strong>
+- Agent CRUD: get, create, update (a PATCH that passes the body straight through), delete.
+- <code>getAvailableModels</code> is a static list (gpt-4o, gpt-4o-mini, claude-sonnet-4-6, gemini-2.0-flash) that doesn't include the live gpt-oss-120b.
+- The template (198-222) is never used.
+- <code>fastChatWithAgent</code>'s canned per-agent lines (354-447) are reachable only from the dead <code>conversationService</code>.</p>
+<p><strong>What our code writes to the agents: nothing automatically</strong>
+- Code never sets the agents' LLM, temperature, max_tokens, turn settings, <code>client_events</code> or TTS.
+- Those can only be changed through <code>PATCH /api/elevenlabs/agents/:id</code> (<code>elevenLabsApiRoutes.js:268-280</code>) or the ElevenLabs web app.
+- At runtime the code reads only <code>agent_output_audio_format</code> from the agent (862-872).</p>
+<p><strong>Local versus ElevenLabs-side settings</strong>
+- <strong>Local only:</strong>
+  - <code>tts-config.json</code>, which affects one-shot TTS only. The agents block TTS overrides (<code>aiConfigStore.js:176-185</code>; KNOWN-BUGS.md:2671-2675), and eleven_v3 ignores <code>speed</code> (<code>elevenLabsTTSService.js:11-21, 191-202</code>).
+  - <code>stt-config.json</code>, <code>callout-state.json</code>, <code>lurk-scenes-state.json</code>, <code>motion-armed-state.json</code>, <code>ai_agent_state.json</code>.
+  - <code>super-powers.json</code>: jaw, LED sync, head tracking, background music, AI motion, Follow Orders.
+  - The constants and env knobs in section 3.1.
+- <strong>ElevenLabs side only:</strong> prompt, first_message, LLM, temperature, max_tokens, RAG/knowledge base, turn settings and soft-timeout fillers, <code>client_events</code>, VAD, speech recognition, agent TTS (including <code>optimize_streaming_latency</code>), max duration, client overrides.</p>
+<p><strong>API key</strong> (<code>elevenLabsConfigService.getElevenLabsConfig</code>, 66-100)
+- Reads <code>/etc/monsterbox/elevenlabs.key</code> first. On Orlok it exists, mode 0600.
+- Otherwise <code>ELEVENLABS_API_KEY</code> from the environment, or from <code>.env</code> (parsed by hand, 22-60). This <code>.env</code> has no ElevenLabs key.
+- Base URL from <code>ELEVENLABS_BASE_URL</code> or the default. Timeout from <code>WEBSOCKET_TIMEOUT</code> (default 30000).
+- The WebSocket service reads the key lazily (346-349); <code>elevenLabsAgentService</code> reads it in its constructor (11).</p>
+<h2 id="7-ai-config-ui-for-scoping-a-later-ui-update">7. AI-config UI (for scoping a later UI update)</h2>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Files</th>
+<th>Backend</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/ai-settings</code> (overview + test chat)</td>
+<td><code>views/ai-settings/index.ejs</code>, <code>public/js/ai-settings.js</code></td>
+<td><code>aiSettingsRoutes.js:51-77, 126-185, 187-220</code></td>
+<td>its "autonomous" toggle opens a <strong>separate browser agent session</strong> (336-345, 614-642), not the headless AI mode</td>
+</tr>
+<tr>
+<td><code>/ai-settings/stt</code></td>
+<td><code>stt.ejs</code>, <code>ai-settings-stt.js</code> (presets 70/115; config 230/357/636; test socket 981)</td>
+<td><code>/api/elevenlabs/stt/config</code> 438-455, presets 456-490</td>
+<td>writes the <strong>selected</strong> character's <code>stt-config.json</code>; no effect on the agent path</td>
+</tr>
+<tr>
+<td><code>/ai-settings/tts</code></td>
+<td><code>tts.ejs</code>, <code>ai-settings-tts.js</code> (config 52/505; <code>conversationalMode</code> 91/282/398; link to the ElevenLabs agent page 408)</td>
+<td><code>/api/elevenlabs/tts/config</code> 492-508</td>
+<td>one-shot TTS only</td>
+</tr>
+<tr>
+<td><code>/ai-settings/agents</code></td>
+<td>—</td>
+<td>redirect, <code>aiSettingsRoutes.js:99-101</code></td>
+<td>agent UI was removed; the CRUD API remains (<code>elevenLabsApiRoutes.js:226-294</code>)</td>
+</tr>
+<tr>
+<td><code>/setup/characters</code></td>
+<td><code>views/setup/characters.ejs</code> (164, 398)</td>
+<td><code>/setup/characters/api/characters</code>, <code>GET /api/elevenlabs/agents</code></td>
+<td>assigns <code>elevenLabsAgentId</code></td>
+</tr>
+<tr>
+<td>Dashboard <code>/conversation</code></td>
+<td><code>views/conversation/index.ejs</code>, <code>showtime.ejs</code>, <code>public/js/dashboard.js</code>, <code>dashboard-v2.js</code></td>
+<td>ai-on/ai-status, lurk-mode, motion-sensor, say, speaker-mute, feature toggles</td>
+<td>AI toggle 1196-1208; lurk 281-310; chat 816-860</td>
+</tr>
+</tbody>
+</table>
+<p><strong>No UI at all for:</strong>
+- callouts (<code>conversation.js:1488-1530</code>) and lurk scenes (1536-1570). The dashboard only reads <code>calloutMode</code> (298-303).
+- stop-speaking.
+- the agent's prompt, LLM, turn settings and <code>client_events</code>.
+- the voice-gate and barge-in constants.</p>
+<hr />
+<h2 id="8-likely-causes-of-each-symptom-kept-separate-from-the-map">8. Likely causes of each symptom (kept separate from the map)</h2>
+<p><strong>Log evidence used below</strong> (Oct 3-4, <code>monsterbox.log.4.gz</code> and <code>.5.gz</code>, when Orlok ran headless sessions):
+- <strong>Barge-ins:</strong> 1,811 "Barge-in (guest)", and <strong>zero</strong> triggered by the agent.
+- <strong>Junk turns:</strong> 2,181 user transcripts were literally <code>...</code>; the next most common was <code>Yes.</code> (17).
+- <strong>Player exits:</strong> 1,691 of 1,902 persistent-player exits were code 1. KNOWN-BUGS.md:1385 attributes these kills/EPIPEs to barge-in. <code>monsterbox.err</code> has 1,525 <code>write EPIPE</code> lines for <code>pcm_3_default</code>.
+- <strong>Socket closes:</strong> 74 code 1005, <strong>29 code 1000 "Max call duration exceeded"</strong>, 17 code 1006, 1 code 1002 "No user message received for 60 seconds".
+- <strong>PIR sleeps:</strong> 126.
+- <strong>After the final Oct 4 restart</strong> (with <code>MB_BARGE_IN=0</code>): 0 barge-ins. 14 transcripts, some of which read like character speech ("You think you can command the weak?").
+- <strong>Since Oct 5:</strong> no headless sessions on Orlok, only one-shot callouts, and all player exits were code 0.</p>
+<h3 id="symptom-1-slow-to-respond">Symptom 1 — slow to respond</h3>
+<ul>
+<li><strong>One-shot path cost (high confidence).</strong> Each ask pays for a signed URL, a handshake, initiation, and generating a greeting that is then discarded, before the answer starts.</li>
+<li>KNOWN-BUGS.md:2595-2600 measured <strong>10-13 s</strong> from end of speech to reply audio, versus 2.4-3.6 s on a persistent session.</li>
+<li>The first sound is also held until the <code>agent_response</code> event arrives (2753-2766, 2790-2794).</li>
+<li>Callers block until the 30 s close (2816-2879): <code>/api/ask-ai</code>, scene <code>askAI</code>, and callouts' in-flight flag.</li>
+<li><strong>Deaf tail (medium-high).</strong> The mic sends zeros until 2.5 s after the modelled playback end (998, 1008, 1951-1953).</li>
+<li>Prompts end replies with a question (e.g. Orlok's prompt: "One question. End of every response.").</li>
+<li>So a guest who answers immediately is zeroed out. The agent then waits its <code>turn_timeout</code> (5-8 s) and plays fillers (1.5-2.5 s soft timeouts, up to 3).</li>
+<li><strong>Agent-side settings (medium, not isolated).</strong></li>
+<li><code>optimize_streaming_latency: 0</code> on all six.</li>
+<li>gpt-oss-120b, plus RAG pulling 20 chunks / 50k characters, plus ~10k-character prompts.</li>
+<li>"normal" eagerness on Orlok, Mina and PumpkinHead.</li>
+<li>Orlok's TTS speed is 0.75 and his prompt asks for stretched vowels.</li>
+<li><strong>Small local delays (low-medium).</strong> 250 ms framing (2090), and 900 ms of real (noisy) audio from the gate hangover before zeros start (43).</li>
+<li><strong>Instrumentation can't tell which part is slow (fix first).</strong></li>
+<li>In 2,291 turns, <code>transcript→first-audio</code> had a median of 3 ms: the agent's <code>user_transcript</code> arrives right before its audio.</li>
+<li><code>transcript→LLM-text</code> never logs (187).</li>
+<li>The "speech end" anchor, <code>_lastVoiceAtMs</code> (1922), is refreshed by any noise above the gate (median 254 ms, 90th percentile 20.5 s, max 262 s).</li>
+<li><strong><code>sayThis</code> latency.</strong> Non-streaming eleven_v3 TTS plus ffmpeg pre-analysis happen before the first sound (<code>sceneExecutor.js:248-275</code>; jaw 1580-1726).</li>
+</ul>
+<h3 id="symptom-2-replies-too-long-lecture-like">Symptom 2 — replies too long, lecture-like</h3>
+<ul>
+<li><strong>No hard length cap.</strong> <code>max_tokens: -1</code> on all six live agents.</li>
+<li><strong>Long-form prompts and settings.</strong></li>
+<li>Orlok's prompt asks for "two to four … clauses, around forty words" and stretched vowels, at speed 0.75.</li>
+<li>Renfield's caps at 40-50 words.</li>
+<li>Prompts are about 10k characters; RAG brings 20 lore chunks per turn; temperatures run 0.7-1.0.</li>
+<li><strong>Fillers add speech.</strong> Up to 3 soft-timeout fillers per generation.</li>
+<li><strong>Scene <code>askAI</code> speaks every answer twice</strong> (<code>sceneExecutor.js:295-299</code> and <code>314-338</code>).</li>
+<li><strong>Junk turns get full replies.</strong> The <code>...</code> turns above.</li>
+<li><strong>Plus scripted speech:</strong> callouts every ~5 min and sayThis lurk scenes every ~4 min.</li>
+</ul>
+<h3 id="symptom-3-hard-to-interrupt-wont-listen">Symptom 3 — hard to interrupt, won't listen</h3>
+<ul>
+<li><strong>Callout mode means no listening at all (high for Orlok).</strong></li>
+<li>A PIR wake opens no agent session (<code>calloutService.js:196-199</code>; <code>conversation.js:1342-1350</code>). Orlok has <code>aiOnWake: false</code>.</li>
+<li>CHANGELOG says this is on for five characters.</li>
+<li>Orlok has had zero headless sessions since Oct 5.</li>
+<li><strong>The agent can't hear the guest while the character speaks (high).</strong> It gets zeros during the reply and for 2.5 s after (1951-1953). Its own interruption model therefore never hears the guest, as the comment at 51-58 admits.</li>
+<li><strong>Agent-side interruption is off for four characters (high).</strong></li>
+<li><code>interruption</code> is missing from live <code>client_events</code> on PumpkinHead, Mina, Orlok and Sir Dragomir.</li>
+<li>ElevenLabs docs say it "must be selected" for interruptions to work.</li>
+<li><code>transcribe_on_disabled_interruptions</code> is false on all six; I couldn't find its exact meaning in the docs.</li>
+<li><strong>Local barge-in is either off or self-triggering (high).</strong></li>
+<li>It is off on Orlok (confirmed) and Renfield (per KNOWN-BUGS).</li>
+<li>Elsewhere, because the echo floor tracks the quietest frame, the character's own voice trips the 2.2× threshold (KNOWN-BUGS.md:1382-1397). It also needs about 1.45 s or more of loud speech before it fires.</li>
+<li><strong>Noise turns.</strong> The gate is 2× the noise floor. On Oct 4, room frames were 0.09-0.17 against a gate of 0.09, which produced the <code>...</code> turns. KNOWN-BUGS.md:2610-2619 also documents cross-talk between animatronics.</li>
+<li><strong>Deaf after 10 minutes (medium-high).</strong> After a 600 s max-duration close, nothing reopens the session (755-771, no reconnect). The PIR only wakes on a sleep-to-awake change (<code>lurkMotionWatcherService.js:293-310</code>), so a busy yard stays deaf.</li>
+<li><strong>Sleep mid-conversation.</strong> Guest speech doesn't reset the PIR inactivity timer, so sleep can tear down an active conversation.</li>
+</ul>
+<h3 id="symptom-4-speech-lags-or-cuts-off-mid-sentence">Symptom 4 — speech lags or cuts off mid-sentence</h3>
+<ul>
+<li><strong>Barge-in kills (high where enabled).</strong> Node-wide pkill (2391; <code>speaker_cli.py:248-260</code>). See the 1,691 code-1 exits above. Barge-in is still on for four of the six nodes by default.</li>
+<li><strong>Server close truncates queued audio.</strong> At 600 s, or on a network close, stopStream SIGTERMs the shared pw-play (765). 29 such closes on Oct 3-4.</li>
+<li><strong>PIR sleep or AI-off teardown</strong> does the same (1507, 1315).</li>
+<li><strong>One-shot 30 s close</strong> (2831-2848): replies still playing about 31 s after the socket opened are cut.</li>
+<li><strong>Stops have no drain.</strong> <code>stopPcmStream</code>/<code>stopStream</code> end stdin and SIGTERM back-to-back (488-489, 764-765).</li>
+<li><strong>Shared player killed by other sessions.</strong> A browser session disconnecting, changing speaker part, or being reaped kills the shared player (2151, 628, 354-436 → 765). The diagnostic <code>GET /__audio/active-device</code> pkills everything (<code>server.js:531</code>).</li>
+<li><strong>Possible chunk reordering (inferred from code, not observed).</strong> Un-awaited <code>writePcmStream</code> calls each do two async disk reads before writing (1032 → playback 456 → 82-95). This would sound like stutter rather than a clean cut.</li>
+<li><strong>Jaw/LED can lead the audio.</strong> On the live path the jaw starts as soon as a chunk arrives (jaw 2059), with no <code>audioLeadTimeMs</code> compensation, while audio waits on disk reads and pw-play spawn. This may be heard as "speech lags".</li>
+<li><strong>CPU is not the main cause on Orlok</strong> (low load). Head tracking at ~77% of a core per process on Dragomir, and the per-chunk disk I/O, are real but secondary.</li>
+</ul>
+<h2 id="9-not-verified-still-open">9. Not verified / still open</h2>
+<ul>
+<li>I didn't read peer nodes' local state (callout state, drop-ins, super-powers). Claims about other nodes come from CHANGELOG/KNOWN-BUGS.</li>
+<li>I couldn't find documentation for <code>transcribe_on_disabled_interruptions</code>.</li>
+<li>I didn't check whether the agent socket negotiates per-message compression (client <code>ws</code> ^8.18.3).</li>
+<li>There is no live turn-latency data on Orlok since Oct 4.</li>
+<li>The chunk-reordering and duplicate-player races are inferred from the code, not observed.</li>
+</ul>
+<p><strong>Source:</strong> ElevenLabs, "Conversation flow" (interruption must be a selected client event) — https://elevenlabs.io/docs/eleven-agents/customization/conversation-flow</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

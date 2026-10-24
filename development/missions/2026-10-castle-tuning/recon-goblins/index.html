@@ -1,0 +1,3948 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Aaron Warner">
+      
+      
+        <link rel="canonical" href="https://arwpc.github.io/MonsterBox/development/missions/2026-10-castle-tuning/recon-goblins/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Goblin video displays: read-only recon (MonsterBox repo plus live curl) - MonsterBox Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#goblin-video-displays-read-only-recon-monsterbox-repo-plus-live-curl" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="MonsterBox Documentation" class="md-header__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MonsterBox Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Goblin video displays: read-only recon (MonsterBox repo plus live curl)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="MonsterBox Documentation" class="md-nav__button md-logo" aria-label="MonsterBox Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MonsterBox Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/arwpc/MonsterBox" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    arwpc/MonsterBox
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Directory Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ / Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    License
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Character Sheets
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Character Sheets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_orlok/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_mina/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mina
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_pumpkinhead/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_sir_dragomir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sir Dragomir
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../character_groundbreaker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/PUMPKINHEAD_COMPLETE_PARTS_LIST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PumpkinHead Parts List
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/GROUNDBREAKER_SETUP_INSTRUCTIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../characters/GROUNDBREAKER_INSTALLATION_PACKAGE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Groundbreaker Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ANIMATRONIC-SETUP-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronic Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ANIMATRONIC-SSH-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SSH Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/NODE-DISCOVERY-VALIDATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/HEAD-TRACKING-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/LINEAR_ACTUATOR_CALIBRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Linear Actuator Calibration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/STT_TUNING_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    STT Tuning Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/Noisy_Environment_Preset_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Noisy Environment Preset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/CENTRALIZED-PORT-MANAGEMENT-SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/PORT-MANAGEMENT-INTERFACE-GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Port Management UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/HTTPS_DEPLOYMENT_HANDOFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTPS Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/secure-remote-access-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Secure Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/AUDIO-MICROPHONE-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audio & Microphone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/ECHO-SUPPRESSION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Echo Suppression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/SCENE-CONCURRENCY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scene Concurrency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../setup/MCP-LOG-COLLECTION-SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Log Collection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/gpio_assignments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GPIO Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/hardware_schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Schedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/head-tracking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/ORLOK_BTS7960_WIRING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orlok BTS7960 Wiring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../hardware/legacy_hardware_config_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Hardware Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/elevenlabs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs TTS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/ELEVENLABS_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ElevenLabs Full Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/MJPG-STREAMER-INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MJPG-Streamer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/GOBLIN_VIDEO_INTEGRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Video
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/Hardware-Integration-Layer-Interfaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Layer Interfaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/api-documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/routes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Routes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../api/API-TESTING-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V9-RETROSPECTIVE-AND-ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Retrospective & Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../V9-PERSONA-REVIEWS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v9.0 Persona Reviews
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../backend-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../GESTURE-ENGINE-SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gesture Engine Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../NODE-DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Discovery (mDNS)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ORCHESTRATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orchestration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ai-integration-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Integration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../AI-Management-Feature/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Management Feature
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../goblin-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Goblin Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../middleware-audit-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Middleware Audit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/MCP-SETUP-NOTES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Setup Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/authorization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authorization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/api-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/conversation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conversation Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/DEEP-TESTING-FRAMEWORK-SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Testing Framework
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../testing/reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_17" >
+        
+          
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/KNOWN-BUGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Known Bugs & Open Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/head-tracking-troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Head Tracking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Animatronics Workshop
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Animatronics Workshop
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/familiarization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Familiarization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/simple_steps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simple Steps
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/hands_on/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hands-On Activities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../animatronics/presentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Final Presentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_19" >
+        
+          
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../v6-audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Audit Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../v6-final-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v6 Final Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="goblin-video-displays-read-only-recon-monsterbox-repo-plus-live-curl">Goblin video displays: read-only recon (MonsterBox repo plus live curl)</h1>
+<p>Observed 2026-10-09 20:35 to 20:50 CDT (-05:00), repo HEAD <code>86c9bb0e</code> (v10.6.0), working tree dirty.</p>
+<p><strong>The scratchpad file was NOT written.</strong> This role is read-only (no Write tool, file creation prohibited). Please persist this message to <code>/tmp/claude-1000/-home-remote-MonsterBox/26c4c0b3-31c7-4df4-abb0-d653712a3390/scratchpad/recon-goblins.md</code> yourself.</p>
+<p><strong>Everything I did to the Goblins was a plain GET.</strong>
+- Calls: <code>/health</code>, <code>/playback-status</code>, <code>/queue</code>, <code>/media</code>.
+- ICMP ping to .40 and .244, local <code>ip neigh</code>, local <code>getent</code>.
+- No POST, no ssh, no restarts.
+- <code>data/goblins.json</code> mtime is unchanged (2026-10-09 16:24:51).
+- <code>GET /media</code> can refresh the device's 5-minute listing cache (<code>goblin/server.js:309-322</code>). That is a cheap directory stat, but not strictly zero-cost.</p>
+<p>Tags used below:
+- <code>[obs]</code> observed live.
+- <code>[read]</code> read in code or data.
+- <code>[doc]</code> stated in repo docs.
+- <code>[mem]</code> stated only in the operator memory note <code>~/.claude/projects/-home-remote-MonsterBox/memory/goblin-fleet-truth.md</code> (outside the repo).
+- <code>[inf]</code> my inference, not proven.</p>
+<hr />
+<h2 id="0-headline-findings">0. Headline findings</h2>
+<ol>
+<li><strong>No Goblin is showing video right now.</strong> Two answer HTTP and two are off the network.</li>
+<li>Goblin 3 (.14): up, one-clip queue, <code>playing:false</code>, <code>mpvRunning:false</code>.</li>
+<li>Goblin 2 (.106): up, EMPTY queue, nothing playing.</li>
+<li>Goblin 1 (.40) and Goblin 4 (.244): do not answer ARP, ping or TCP.</li>
+<li><strong>Goblin 1 is the operator's "most noticeable" display and it is the unit that is physically unreachable.</strong> Its last registry <code>lastSeen</code> is 2026-09-26T22:14Z. <code>[doc]</code> KNOWN-BUGS:2110-2123 and 2161-2167 record a stalled-boot history, an under-voltage flag, and a re-image on 09-26. It needs hands.</li>
+<li><strong>Orlok's log shows a fleet Emergency Stop before 20:01 CDT today.</strong> <code>/var/log/monsterbox.log:112171</code> reads <code>📡 Broadcasting to all Goblins: stop-video</code>. Nothing in the repo auto-resumes Goblin loops afterwards. The all-clear is a manual <code>POST /video-library/api/goblins/:id/resume</code>. This matches Goblin 3's state (queue intact, stopped) <code>[inf]</code>.</li>
+<li><strong>There is no usable Goblin playlist anywhere.</strong></li>
+<li><code>data/goblin-playlists.json</code> holds 69 test artefacts, all with <code>goblinId:"goblin-three"</code>, an id no registered Goblin has.</li>
+<li><code>GET /goblin-management/api/playlists</code> returns 69. <code>?goblinId=goblin-192-168-8-14</code> returns 0 <code>[obs]</code>.</li>
+<li>No page in the UI calls the playlist API (grep).</li>
+<li><code>goblin/playlists/*.json</code> are unused samples naming files that exist on no device.</li>
+<li><strong>The registry holds no display hints.</strong> <code>location</code> is <code>""</code> for all four. <code>description</code> is only <code>"TV label N · hostname goblinN · IP"</code>. The operator's placement and orientation notes are recorded nowhere in the repo. Not found.</li>
+<li><strong>The show library is 72 clips, identical on .14 and .106.</strong> The live <code>/media</code> names and bytes equal the 2026-09-25 gold manifest. All clips are landscape and none is portrait. 24 carry audio <code>[doc]</code>. Audio is OFF by default on the devices.</li>
+<li><strong>The MonsterBox video library is not the show library.</strong> It holds 5 files, 2 of them 4K, 1 of them a corrupt 16-byte fixture, and records no durations.</li>
+<li><strong>Scenes cast by <code>goblinId</code> (an IP-derived id) plus <code>videoId</code> (a device filename).</strong> There is no name-to-id resolver in the code.</li>
+<li>Three goblin-video steps exist, all in Orlok scenes (107, 113, 114).</li>
+<li>The scene 113 cast to Goblin 3 failed its device proof on 2026-10-08 (<code>/var/log/monsterbox.err:110722</code>).</li>
+<li><strong>The device queue code has a double-mpv race <code>[inf]</code>, consistent with the documented respawn storm <code>[doc]</code>.</strong> Details in section 7.</li>
+</ol>
+<hr />
+<h2 id="1-live-state-obs">1. Live state <code>[obs]</code></h2>
+<h3 id="per-unit-results">Per-unit results</h3>
+<table>
+<thead>
+<tr>
+<th>Unit</th>
+<th><code>/health</code></th>
+<th><code>/playback-status</code></th>
+<th><code>/queue</code></th>
+<th><code>/media</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>.14 Goblin 3</strong></td>
+<td>20:38:17, 200 in 0.115 s, <code>ok:true</code>, <code>uptime 368187.757</code> s</td>
+<td>20:38:37: <code>playing:false, currentVideo:null, mpvRunning:false</code>, <code>queue.playing:false</code></td>
+<td>20:38:38: one entry <code>Hugeskelly.mp4</code> (id 1791504339919, addedAt 2026-10-09T00:05:39.919Z, <strong>playCount 42680</strong>), <code>currentIndex 0</code>, <code>loopMode:"queue"</code>, <code>playing:false</code></td>
+<td>20:38:52: 72 files, 622,179,984 B, 1.31 s</td>
+</tr>
+<tr>
+<td><strong>.106 Goblin 2</strong></td>
+<td>20:38:17, 200 in 0.22 s, <code>uptime 24592.87</code> s</td>
+<td>20:38:37: <code>playing:false</code>, <code>mpvRunning:false</code></td>
+<td>20:38:38: <code>videos:[]</code>, <code>currentIndex 0</code>, <code>loopMode:"none"</code>, <code>playing:false</code> (default empty queue)</td>
+<td>20:38:54: 72 files, same bytes, 2.66 s</td>
+</tr>
+<tr>
+<td><strong>.40 Goblin 1</strong></td>
+<td>20:38:17 curl exit 7 after 3.06 s ("Couldn't connect")</td>
+<td>20:45:31 exit 7</td>
+<td>20:45:34 exit 7</td>
+<td>20:45:37 exit 7</td>
+</tr>
+<tr>
+<td><strong>.244 Goblin 4</strong></td>
+<td>20:38:17 curl exit 7 after 3.08 s</td>
+<td>20:45:40 exit 7</td>
+<td>20:45:43 exit 7</td>
+<td>20:45:46 exit 7</td>
+</tr>
+</tbody>
+</table>
+<h3 id="supporting-observations">Supporting observations</h3>
+<ul>
+<li><strong>Second sample at 20:45:49 and 20:45:50.</strong> Both online Goblins are unchanged. Uptimes advanced by wall-clock (.14: 368187.8 to 368640.2, .106: 24592.9 to 25045.7), so there was no restart. Hugeskelly <code>playCount</code> stayed at 42680, so nothing is respawning right now.</li>
+<li><strong>Service start times derived from uptime.</strong> .14's <code>goblin.service</code> started about 2026-10-05 14:20 CDT. .106's started about 2026-10-09 13:48 CDT.</li>
+<li><strong>.40 and .244 are off the network.</strong></li>
+<li><code>ip neigh</code> shows <code>FAILED</code> for both.</li>
+<li>Ping lost 2/2 at 20:39:05 (.40) and 20:39:08 (.244).</li>
+<li><code>goblin1.local</code> and <code>goblin4.local</code> give no mDNS answer. <code>goblin2.local</code> resolves to .106 and <code>goblin3.local</code> to .14.</li>
+<li>Orlok's own Wi-Fi is fine: the router (.1), .14 and .106 are all REACHABLE.</li>
+<li><strong>Board <code>GET https://localhost:3000/video-library/api/goblins/board</code> at 20:39:22.</strong> HTTP 200 in 0.64 s, <code>success:true, online:2</code>.</li>
+<li>Goblin 3 and Goblin 2: <code>online:true, playback.playing:false, mpvRunning:false</code>, 72 file entries each.</li>
+<li>Goblin 4 and Goblin 1: <code>status:"offline"</code>, <code>online:false</code>, <code>error:"Goblin N is not online"</code>.</li>
+<li>The board can persist a registry status transition to <code>data/goblins.json</code> (<code>pingGoblin</code> saves on offline→online, <code>goblinManagerService.js:864-867</code>). It did not, because nothing transitioned.</li>
+<li><strong><code>GET /goblin-management/api/goblins</code> at 20:49:08.</strong> Four goblins, online 2. In-memory <code>lastSeen</code> for the online pair is 2026-10-10T01:47:20Z.</li>
+<li><strong>Orlok context.</strong></li>
+<li><code>GET /conversation/api/lurk-scenes</code> at 20:48:10: lurk rotation is running with scenes [112, 113, 114, 115, 116, 111], about every 240 s plus 0-25%, quiet hours 23:00-08:00. The last result was <code>played:false, reason:"muted"</code> at 20:48:02.</li>
+<li><code>data/speaker-state.json</code> has <code>speakerMuted:true</code> (updated 19:52:12 CDT).</li>
+<li>Scenes 113 and 114 are the ones that cast to Goblins 3 and 2.</li>
+<li><strong>Emergency-stop evidence <code>[inf]</code>.</strong> The log lines near <code>monsterbox.log:112171</code> carry no timestamps. The stop precedes a chat session whose id decodes to 20:01:16 CDT. <code>emergencyStop()</code> with no node subset calls <code>broadcastToGoblins('stop-video')</code> (<code>orchestrationService.js:834-845</code>), which calls <code>stopGoblin()</code> and so device <code>/stop-all</code>. That sets <code>queue.playing=false</code> (persisted).</li>
+<li><strong>The Goblin 3 playCount is physically impossible for a healthy loop <code>[inf]</code>.</strong></li>
+<li>42,680 spawns in at most 25.5 h since the entry was created is one spawn per 2.2 s or faster. Hugeskelly is a 6.03 s clip.</li>
+<li>A healthy <code>--loop</code> counts 1. Even respawn-per-clip would cap near 15,300.</li>
+<li>So mpv was repeatedly dying a couple of seconds after spawn, the documented "MPV exited with code 2" storm (KNOWN-BUGS:2010-2013, 2199-2204).</li>
+<li>Possible causes, unproven: the TV off or on another input (an HDMI connector that is not connected makes mpv exit at spawn, as documented for Goblin 4), or a stale <code>queueManager</code> without the one-clip fix.</li>
+<li><strong><code>/var/log/monsterbox.err:110722</code></strong>, from 2026-10-08 about 20:45-21:03 CDT: <code>Background step 6 (goblin-video) failed: … Goblin accepted "Skullfire.mp4" but mpv is showing "Hugeskelly.mp4" — the file is probably unplayable</code>. That is scene 113's cast to Goblin 3.</li>
+</ul>
+<hr />
+<h2 id="2-registry-datagoblinsjson-98-lines">2. Registry <code>data/goblins.json</code> (98 lines)</h2>
+<table>
+<thead>
+<tr>
+<th>id (line)</th>
+<th>name</th>
+<th>endpoint</th>
+<th>registry status / lastSeen</th>
+<th>platform</th>
+<th>description</th>
+<th>settings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>goblin-192-168-8-40</code> (:3)</td>
+<td>Goblin 1</td>
+<td>http://192.168.8.40:3001</td>
+<td>offline / 2026-09-26T22:14:20.850Z</td>
+<td>unknown</td>
+<td>TV label 1 · hostname goblin1 · 192.168.8.40</td>
+<td>audio/video true, volume 80, autoLock false</td>
+</tr>
+<tr>
+<td><code>goblin-192-168-8-106</code> (:27)</td>
+<td>Goblin 2</td>
+<td>…106:3001</td>
+<td>online / 2026-10-09T21:24:50.507Z</td>
+<td>unknown</td>
+<td>TV label 2 · hostname goblin2 · …</td>
+<td>same</td>
+</tr>
+<tr>
+<td><code>goblin-192-168-8-14</code> (:51)</td>
+<td>Goblin 3</td>
+<td>…14:3001</td>
+<td>online / 2026-10-09T21:24:51.235Z</td>
+<td>unknown</td>
+<td>TV label 3 · hostname goblin3 · …</td>
+<td>same</td>
+</tr>
+<tr>
+<td><code>goblin-192-168-8-244</code> (:75)</td>
+<td>Goblin 4</td>
+<td>…244:3001</td>
+<td>offline / 2026-10-08T00:47:27.669Z</td>
+<td>raspberry-pi-3b</td>
+<td>TV label 4 · hostname goblin4 · … · Pi 3B Rev 1.2</td>
+<td>volume 100</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>All four have <code>capabilities:["video","audio"]</code>, <code>version "1.0.0"</code>, <code>location ""</code>, <code>lockedBy null</code>, and no <code>expectedOffline</code> flag.</li>
+<li>The file is tracked in git and dirty only from runtime churn. HEAD has Goblin 4 <code>online</code>.</li>
+<li><strong>Names equal TV labels equal hostnames.</strong> The operator set this on 2026-09-26 12:15, after two wrong inferred mappings. Repo guidance is "ask the operator, identify a unit by hostname" (KNOWN-BUGS:2124-2129). Confirm the position mapping with him before assigning content by position.</li>
+<li><strong>The registry is an in-memory Map loaded once.</strong> <code>loadGoblins()</code> forces every Goblin to <code>status:'offline'</code> at load (<code>goblinManagerService.js:147-173</code>, <code>:155</code>). A hand edit of the file needs a MonsterBox restart <code>[mem]</code>.</li>
+<li><strong>Stale phantom list.</strong> <code>config/animatronics.json:74</code> lists chestwound .160 and goblin2 .161. Orchestration now ignores it (<code>orchestrationService.js:194-204</code>).</li>
+<li><strong>IDs embed the IP.</strong> Re-addressing a Goblin changes its id and breaks scenes that name it.</li>
+<li><strong>Writers of the registry.</strong> <code>registerGoblin</code> (:186), <code>unregisterGoblin</code>, <code>updateGoblinSettings</code>, lock/unlock, the 30 s monitor, and <code>pingGoblin</code> on a transition. All use <code>writeJsonAtomic</code>.</li>
+</ul>
+<hr />
+<h2 id="3-code-map">3. Code map</h2>
+<h3 id="31-device-app-goblin-what-the-goblins-run">3.1 Device app (<code>goblin/</code>), what the Goblins run</h3>
+<p><strong>Deployed versus repo</strong>
+- The deployed <code>server.js</code> equals the repo <code>goblin/server.js</code> (byte-identical to the gold snapshot of .14, which I diffed).
+- <code>queueManager.js</code> differs by the post-snapshot one-clip-loop fix (<code>queueManager.js:121-126</code>). <code>mpvController.js</code> differs by the post-snapshot audio block (<code>:21-51</code>).
+- Which version each live device runs today is not determinable without ssh.
+- Everything in <code>goblin/server.js</code> is plain HTTP with no auth and CORS <code>*</code> (<code>:110-118</code>).
+- The repo <code>goblin/systemd/goblin.service</code> is <strong>not</strong> what runs. It points at an absent <code>src/server.js</code> (<code>:26</code>), has <code>WatchdogSec=60</code> (<code>:49</code>) and <code>MONSTERBOX_URL</code> pointing at Mina (<code>:16</code>).
+- The deployed unit is the "goblin-gold" unit, kept only in <code>backups/goblins-gold-2026-09-25/&lt;goblin&gt;/os/systemd/goblin.service</code>.
+  - <code>ExecStartPre=+/usr/local/bin/goblin-setup.sh</code> (:21)
+  - <code>ExecStart=/usr/bin/node /home/remote/goblin/server.js</code> (:22)
+  - <code>ExecStartPost=/usr/local/bin/goblin-autostart.sh</code> (:23)
+  - <code>Environment=GOBLIN_DRM_CONNECTOR=HDMI-A-1</code> (:14)
+  - <code>Restart=always RestartSec=5</code>, real-time scheduling
+- Same unit on all three, confirmed by diff.
+- <strong>The unit's <code>Environment=GOBLIN_MPV_EXTRA_ARGS=…</code> line (:20) is unquoted, so systemd keeps only its first token (<code>--no-config</code>).</strong> The gold journals log <code>Invalid environment assignment, ignoring: --no-audio</code>, <code>--no-osc</code> and the rest.
+  - So the <code>--no-audio</code> and tuning flags in that line are not in effect.
+  - Audio is governed only by <code>GOBLIN_AUDIO</code>.
+- Goblin 4 additionally has a drop-in <code>goblin.service.d/display-720p.conf</code> with <code>GOBLIN_DRM_MODE=1280x720</code> (KNOWN-BUGS:2014-2018).</p>
+<p><strong>HTTP API on :3001</strong> (<code>goblin/server.js</code>; port line 10)</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Request</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /health</code> (:136)</td>
+<td>–</td>
+<td><code>{ok:true, uptime, status:{videos[], currentIndex, currentVideo\|null, loopMode, playing, mpvRunning}}</code>. Here <code>mpvRunning = !!mpv.process</code> (:133).</td>
+</tr>
+<tr>
+<td><code>GET /playback-status</code> (:383), <code>GET /api/status</code> (:399)</td>
+<td>–</td>
+<td><code>{success, playing:!!mpv.currentVideo, currentVideo:&lt;string\|null&gt;, mpvRunning:!!mpv.process, queue:{videos,currentIndex,loopMode,playing}}</code>. <code>currentVideo</code> is a FULL PATH when the queue started it, e.g. <code>/home/remote/media/video/X.mp4</code>. It is the name as given when started by <code>/play-video</code> or play-immediate.</td>
+</tr>
+<tr>
+<td><code>GET /queue</code> (:179)</td>
+<td>–</td>
+<td><code>{success, queue:{videos,currentIndex,loopMode,playing}, currentVideo:&lt;queue entry object&gt;, mpvRunning}</code>. Entries are <code>{id:Date.now() string, filename, addedAt, playCount}</code>.</td>
+</tr>
+<tr>
+<td><code>GET /media</code> (:309)</td>
+<td>–</td>
+<td><code>{success, videos:[{filename, path, size, duration:0, resolution:'1280x720', fps:30}]}</code>. Recursive scan of <code>/home/remote/media/video</code> for <code>.mp4/.mov/.avi/.mkv</code> (regex :73). Cached 5 min. <strong>duration, resolution and fps are hard-coded placeholders</strong> (:78-84), not probed.</td>
+</tr>
+<tr>
+<td><code>GET /api/videos/scan</code> (:325)</td>
+<td>–</td>
+<td>Forced rescan: <code>{success, videos, count}</code>.</td>
+</tr>
+<tr>
+<td><code>POST /api/video/play-immediate</code> (:335)</td>
+<td><code>{filename, returnToQueue=false}</code></td>
+<td><code>{success, playing, interrupted, willReturnToQueue}</code>. <code>returnToQueue</code> only takes effect if <code>queue.playing</code> was true at call time (<code>wasPlaying</code>, :345-369). It sets <code>queue.playing=false</code>, plays once, and a one-shot <code>mpv.onEnd</code> sets <code>playing=true</code> and <code>playNext()</code> at the same <code>currentIndex</code>. The success flag returns right after spawn, before mpv can fail.</td>
+</tr>
+<tr>
+<td><code>POST /play-video</code> (:141)</td>
+<td><code>{filename, loop?}</code> or query <code>?filename=&amp;loop=true</code></td>
+<td><code>{success, nowPlaying}</code>. Bypasses the queue, with no file-exists check. <code>loop:true</code> runs mpv <code>--loop</code> forever.</td>
+</tr>
+<tr>
+<td><code>POST /stop-all</code> (:173)</td>
+<td>–</td>
+<td><code>{success}</code>. Calls <code>mpv.stop()</code> then <code>queue.stop()</code>.</td>
+</tr>
+<tr>
+<td><code>POST /queue/add</code> (:194)</td>
+<td><code>{filename, position?}</code> or query</td>
+<td><code>{success, video}</code>. <code>position</code> <code>'next'</code> inserts after the current entry; any other value appends.</td>
+</tr>
+<tr>
+<td><code>POST /queue/enqueue</code> (:216)</td>
+<td><code>{filename}</code></td>
+<td>Alias of add-at-end.</td>
+</tr>
+<tr>
+<td><code>POST /queue/enqueue-priority</code> (:230)</td>
+<td><code>{filename}</code></td>
+<td>Calls <code>add(…,'start')</code>. <code>'start'</code> is unrecognised, so it appends (documented bug, KNOWN-BUGS:2203). Then, if the queue is not playing, it starts with <code>loopMode:'none'</code>. Returns <code>{success, video, playing:true}</code>.</td>
+</tr>
+<tr>
+<td><code>DELETE /queue/remove/:id</code> (:251)</td>
+<td>–</td>
+<td><code>{success, removed}</code></td>
+</tr>
+<tr>
+<td><code>POST /queue/clear</code> (:256)</td>
+<td>–</td>
+<td>Stops (kills mpv) and empties: <code>{success}</code></td>
+</tr>
+<tr>
+<td><code>POST /queue/start</code> (:261)</td>
+<td><code>{loopMode?}</code> body or query, default <code>'none'</code>; valid <code>none\|single\|queue</code></td>
+<td><code>{success, status}</code>. Returns HTTP 500 <code>{error:'Queue is empty'}</code> if empty (<code>queueManager.js:97</code>).</td>
+</tr>
+<tr>
+<td><code>POST /queue/stop</code> (:277), <code>/queue/skip</code> (:282)</td>
+<td>–</td>
+<td><code>{success}</code>. Skip is a no-op if not playing.</td>
+</tr>
+<tr>
+<td><code>POST /queue/pause</code> (:287)</td>
+<td>–</td>
+<td>Same as stop: <code>{success, paused:true}</code></td>
+</tr>
+<tr>
+<td><code>POST /queue/resume</code> (:297)</td>
+<td>–</td>
+<td>Starts with the persisted loopMode: <code>{success, resumed:true}</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Not served by the device</strong> (not found in <code>server.js</code>):
+- No thumbnail, loop or resume endpoint. "Loop" is <code>/queue/start {loopMode}</code> or <code>/play-video {loop}</code>. Resume is <code>/queue/resume</code> or <code>/queue/start</code>.
+- No <code>/info</code>, <code>/status</code>, <code>/settings</code>, <code>/upload-video</code>, <code>/play-audio</code> or <code>/audio/*</code>. <code>goblin/README.md</code> is stale on this: it describes a Docker, upload and WebSocket design that was never built (KNOWN-BUGS:2182-2184).
+- Thumbnails are made by MonsterBox over ssh with ffmpeg on the device.
+- There is no volume control, and no temperature or throttle readout over HTTP.</p>
+<p><strong>Persistence and boot</strong>
+- Queue file: <code>/home/remote/goblin/queue.json</code>, shape <code>{videos[], currentIndex, loopMode, playing}</code> (<code>queueManager.js:15-18</code>).
+- Saves are debounced 75 ms and non-atomic (<code>:45-55</code>). A parse failure at load silently writes the default empty queue (<code>:35-43</code>).
+- Boot: <code>goblin-autostart.sh:5-18</code> (identical in repo and gold) sleeps 8 s, then retries up to 10 times (2 s apart) a <code>POST /queue/start {"loopMode":"queue"}</code>, until <code>/health</code> contains <code>"mpvRunning":true</code>. It then exits 0 and never retries.
+- <strong>An empty <code>queue.json</code> therefore means a blank screen on a "healthy" unit.</strong> This is documented for Goblin 2 (KNOWN-BUGS:2174-2176), observed now, and follows from <code>queueManager.js:97</code>.
+- Loop semantics (<code>queueManager.js:121-143</code>):
+  - <code>single</code>, or <code>queue</code> with exactly 1 video, runs one mpv <code>--loop</code> (the 2026-09-26 fix).
+  - A multi-clip <code>queue</code> respawns mpv per clip, with a black flash per respawn. <code>none</code> stops at the end.
+  - Values <code>sequential</code> and <code>continuous</code>, used by the docs and the <code>goblin/playlists</code> samples, are not understood by the device.</p>
+<p><strong>mpv</strong> (<code>mpvController.js:53-67</code>, <code>play</code> 101-170)
+- Args: <code>--vo=drm --hwdec=v4l2m2m-copy --fs</code>, audio args, <code>--video-sync=display-resample --interpolation=no --no-osc --no-osd-bar</code>, env extras, <code>--loop</code> if looping, <code>--drm-connector=$GOBLIN_DRM_CONNECTOR</code>, <code>--drm-mode=$GOBLIN_DRM_MODE</code> (:127-132).
+- Audio: <code>--no-audio</code> unless <code>GOBLIN_AUDIO=on</code> (:48-51). When on: <code>--audio=auto --ao=alsa --audio-device=alsa/sysdefault:CARD=&lt;hdmi card from /proc/asound/cards&gt;</code>.
+- <code>stop()</code> is SIGTERM only, with a 1 s wait (:172-209). The code comments warn that SIGKILL and killing a dead process caused kernel panics.
+- No rotation or portrait support: grep for <code>video-rotate</code>, <code>display_rotate</code> and <code>transpose</code> finds nothing in <code>goblin/</code>, <code>scripts/</code>, <code>backups/</code> or <code>docs/</code>.</p>
+<p><strong>Other device-side files</strong>
+- <code>goblin/goblin-pi.js</code> is an unused legacy launcher (<code>chestwound-window-1</code>).
+- <code>goblin/goblin-setup.sh:31-32</code> has live <code>pkill -f mpv</code> and <code>pkill -f vlc</code>. The deployed copies comment those two lines out. Never copy the repo's version to a Goblin.
+- <code>goblin-setup.sh:30</code> is <code>lsof -ti:3001 | xargs -r kill -9</code> (SIGKILL of the old server at each service start).</p>
+<h3 id="32-monsterbox-services">3.2 MonsterBox services</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role and key lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>services/goblinManagerService.js</code></td>
+<td>Registry plus all device calls.</td>
+</tr>
+<tr>
+<td></td>
+<td><code>sanitizeGoblinFilename</code> :50-55 (basename, strip control chars, reject dotfiles, must end <code>.mp4/.mov/.avi/.mkv</code>, regex :30).</td>
+</tr>
+<tr>
+<td></td>
+<td><code>rsyncToGoblin</code> :62-82: <code>rsync -t -s --partial --inplace --timeout=90 --stats -e "sshpass -e ssh -o StrictHostKeyChecking=no -o ConnectTimeout=8"</code> to <code>remote@host:/home/remote/media/video/&lt;name&gt;</code>.</td>
+</tr>
+<tr>
+<td></td>
+<td><code>grabFrameOnGoblin</code> :88-114 (ssh + ffmpeg on the device).</td>
+</tr>
+<tr>
+<td></td>
+<td><code>_onlineGoblin</code> :509-520 (pings before refusing).</td>
+</tr>
+<tr>
+<td></td>
+<td><code>listGoblinVideos</code> :537; <code>getGoblinThumbnail</code> :559-607.</td>
+</tr>
+<tr>
+<td></td>
+<td><code>getGoblinPlayback</code> :613-630 (normalises <code>currentVideo</code> to basename).</td>
+</tr>
+<tr>
+<td></td>
+<td><code>_isOnGoblin</code> :632-640 (<code>/media</code>, then a forced <code>/api/videos/scan</code> on a miss).</td>
+</tr>
+<tr>
+<td></td>
+<td><code>deployVideoToGoblin</code> :656-705.</td>
+</tr>
+<tr>
+<td></td>
+<td><code>playVideoOnGoblin</code> :713-735.</td>
+</tr>
+<tr>
+<td></td>
+<td><code>loopVideoOnGoblin</code> :742-772: <code>/stop-all</code>, <code>/queue/clear</code>, <code>/queue/add</code>, <code>/queue/start {loopMode:'queue'}</code>, then <code>_confirmPlaying</code> and requires <code>queue.loopMode==='queue'</code>. This replaces the Goblin's whole queue with one clip.</td>
+</tr>
+<tr>
+<td></td>
+<td><code>stopGoblin</code> :775-793.</td>
+</tr>
+<tr>
+<td></td>
+<td><code>resumeGoblinQueue</code> :802-828 (starts the Goblin's own queue in its carried loopMode; fails on an empty queue).</td>
+</tr>
+<tr>
+<td></td>
+<td><code>_confirmPlaying</code> :830-844 (sleep 1.5 s, then <code>mpvRunning &amp;&amp; currentVideo===filename</code>).</td>
+</tr>
+<tr>
+<td></td>
+<td><code>pingGoblin</code> :846-875; <code>startHeartbeatMonitor</code> :930-980.</td>
+</tr>
+<tr>
+<td><code>services/goblinPlaylistService.js</code></td>
+<td>Playlist CRUD plus <code>deployPlaylist</code> (:200-283). See section 4.</td>
+</tr>
+<tr>
+<td><code>services/goblinVideoService.js</code></td>
+<td>Thin axios wrapper. <code>scanGoblinVideos</code> :20-61 (<code>/api/videos/scan</code>), <code>playVideoImmediate</code> :142-173 (play-immediate, <strong>no proof or presence check</strong>), <code>getPlaybackStatus</code> :180-206 (<code>/api/status</code>), <code>stopPlayback</code> :213-239.</td>
+</tr>
+<tr>
+<td><code>services/goblinDeploymentService.js</code></td>
+<td>"Facehugger" SSH deploy (<code>deployToHost</code> :34-115): stops <code>monsterbox-goblin</code>, copies <code>goblin/src</code> and <code>server.js</code>, installs a NEW unit named <code>monsterbox-goblin</code> (:237-268, service name :27). <strong>Never aim it at an existing Goblin.</strong> It would create a second server on :3001, the same name as the crash-looping debris unit (KNOWN-BUGS:2185-2193).</td>
+</tr>
+<tr>
+<td><code>services/goblinService.js</code></td>
+<td>Dead legacy VLC and WebSocket design in CommonJS inside an ESM project. Nothing imports it (grep).</td>
+</tr>
+<tr>
+<td><code>services/videoLibraryService.js</code></td>
+<td>MonsterBox-side library, <code>data/video-library/</code> (:78-92). The <code>ffprobe</code> and <code>ffprobe-static</code> npm modules are not installed, so <code>extractVideoMetadata</code> returns <code>duration:0, resolution:'unknown'</code> for every upload (:322-347). <code>supportedFormats</code> includes <code>.wmv/.flv/.webm/.m4v</code> (:85), which <code>sanitizeGoblinFilename</code> rejects.</td>
+</tr>
+<tr>
+<td><code>services/orchestrationService.js</code></td>
+<td><code>goblins</code> getter over the registry :516-532. <code>broadcastToGoblins</code> :537-572 (optional <code>params.ids</code>). <code>executeOnGoblin</code> :582-614 (commands: <code>reboot</code>, <code>play-video</code>, <code>stop</code>/<code>stop-video</code>, <code>health-check</code>). <code>rebootDevice</code> :288-301 (ssh <code>sudo reboot</code>). <code>emergencyStop</code> :777-846 (also broadcasts <code>stop-video</code> to Goblins when run fleet-wide).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-routes">3.3 Routes</h3>
+<p>Mounts: <code>server.js:595</code> <code>/video-library</code>, <code>:596</code> <code>/goblin-management</code>, <code>:682</code> <code>/api/orchestration</code>. <code>server.js:693-722</code> add aliases <code>POST /api/goblins/register</code>, <code>POST /api/goblins/:id/heartbeat</code> and <code>GET /api/goblins</code>. No authentication anywhere (<code>docs/api/routes.md:4</code>).</p>
+<p><strong><code>routes/videoLibrary.js</code></strong> (the Video Control page and API)
+- Read-only and safe:
+  - <code>GET /api/goblins/board[?playbackOnly=1]</code> (:518)
+  - <code>GET /api/goblins/:id/playback</code> (:469)
+  - <code>GET /api/goblins/:id/videos</code> (:455)
+  - <code>GET /api/library</code>, <code>GET /api/videos</code>, <code>GET /api/video/:id</code> and its <code>/stream</code>, <code>/download</code>, <code>/thumbnail</code>, <code>GET /api/stats</code> (:79-:642)
+- Caution:
+  - <code>GET /api/goblins/:id/videos?rescan=1</code> forces a device directory rescan.
+  - <code>GET /api/goblins/:id/thumbnail?filename=</code> is served from the cache <code>data/video-library/goblin-thumbnails/</code>. For an uncached filename it SSHes the Goblin. All 72 show clips are cached locally (computed: 72/72, 18 of those are near-black frames).
+- State-changing (never call in this recon):
+  - <code>POST /api/goblins/control {action:'play'|'loop'|'stop'|'resume', filename?, goblinIds:[…]}</code> (:555)
+  - <code>POST /api/goblins/:id/play {filename, mode:'once'|'loop'}</code> (:483)
+  - <code>POST /api/goblins/:id/stop</code> (:502)
+  - <code>POST /api/goblins/:id/resume</code> (:610)
+  - <code>POST /api/deploy {videoId, goblinId}</code> (:131)
+  - <code>POST /api/video/:id/deploy</code> (:356)
+  - <code>POST /api/video/:id/play-on-goblin {goblinId, mode, deploy}</code> (:376)
+  - <code>POST /api/upload</code>, and <code>PUT</code>/<code>DELETE /api/video/:id</code></p>
+<p><strong><code>routes/goblinManagement.js</code></strong> (the older page)
+- Read-only:
+  - <code>GET /api/goblins</code> (:109)
+  - <code>GET /api/goblin/:id</code> (:133)
+  - <code>GET /api/goblin/:id/status</code> (:311, device <code>/health</code> live)
+  - <code>GET /api/stats</code> (:377)
+  - <code>GET /api/playlists[?goblinId=&amp;search=]</code> (:562)
+  - <code>GET /api/playlists/:id</code> (:580)
+  - <code>GET /api/goblins/:id/videos</code> (:488, cached)
+  - <code>GET /api/videos/all</code> (:506)
+  - <code>GET /api/goblins/:id/status</code> (:547)
+- Changes the registry or playlist file only: <code>POST /api/register</code> (:28), <code>DELETE /api/goblin/:id</code> (:91), <code>PUT /api/goblin/:id/settings</code> (:151), lock, unlock, heartbeat, and playlist POST/PUT/DELETE (:598, :616, :634).
+- Touches a Goblin:
+  - <code>POST /api/goblins/:id/scan-videos</code> (:457) and <code>POST /api/goblins/scan-all-videos</code> (:475) force device rescans.
+  - <code>POST /api/goblin/:id/deploy-video</code> (:236) rsyncs over ssh.
+  - <code>POST /api/goblin/:id/play-video</code> (:254) is device-proven.
+  - <code>POST /api/goblins/:id/play-video</code> (:519) is unproven.
+  - <code>POST /api/goblin/:id/stop-all</code> (:278).
+  - <code>POST /api/playlists/:id/deploy</code> (:652).
+- <strong>Dangerous:</strong>
+  - <code>POST /api/broadcast</code> (:390) POSTs <code>${endpoint}/${command}</code> to every available Goblin, i.e. an arbitrary device route such as <code>queue/clear</code> or <code>stop-all</code>.
+  - <code>POST /api/deploy-and-register</code> (:47) is the facehugger SSH deploy.</p>
+<p><strong><code>routes/api/orchestrationRoutes.js</code></strong>
+- <code>POST /api/orchestration/broadcast/goblins {command, params}</code> (:126)
+- <code>POST /api/orchestration/reboot/goblins</code> (:224). <strong>With no <code>ids</code> it ssh-reboots EVERY Goblin.</strong>
+- <code>POST /api/orchestration/emergency-stop</code> stops all Goblins.</p>
+<p><strong>Browser behaviour that destroys a loop.</strong> The goblin-management queue modal's per-video "Play" (<code>public/js/goblin-management.js:1390-1440</code>) calls the Goblin directly and runs <code>/queue/stop</code>, <code>/queue/clear</code>, <code>/queue/enqueue-priority</code>, then <code>/queue/start</code> with no loopMode. The loop is replaced by one non-looping clip. If the queue was not playing, <code>enqueue-priority</code> already starts it, so two starts fire back to back. Use Video Control instead.</p>
+<hr />
+<h2 id="4-playlists">4. Playlists</h2>
+<p><strong>What one is.</strong> A MonsterBox-side record in <code>data/goblin-playlists.json</code>, loaded at <code>goblinPlaylistService.js:15</code>. Shape <code>{id (uuid), name, description, goblinId (a registry id or "all"), videos:[{filename, order, duration}], loopMode, createdAt, updatedAt, lastDeployed}</code>. <code>createPlaylist</code> is at :62-94 and the default <code>loopMode</code> is <code>'queue'</code> (:64). It validates only that name, goblinId and a videos array are present. It does not check that the Goblin or the filenames exist.</p>
+<p><strong>Three other "playlist-like" things are not the same:</strong>
+- The device queue <code>queue.json</code> (the real source of truth).
+- <code>goblin/playlists/{Fire,Poltergeist,Spinster}.json</code> are unused samples (nothing reads them, grep). Their names such as <code>541_Fire_Idle_H.mp4</code> and <code>Poltergeist/PHA_…</code> exist on no device, and their loopModes <code>continuous</code>/<code>sequential</code> are not understood by the device.
+- <code>routes/scenes/armed-mode.js</code> has an unrelated scene playlist.</p>
+<p><strong>Assigned to a Goblin by deploy only.</strong> The registry has no assignment field. <code>playlist.goblinId</code> is the intended target and <code>lastDeployed</code> is the only record. <code>POST /goblin-management/api/playlists/:id/deploy {goblinIds:[id,…]|'all', startImmediately:true}</code> runs <code>deployPlaylist</code> (:200-283). On the device it sends <code>/queue/clear</code>, then <code>/queue/add {filename}</code> per video, then <code>/queue/start {loopMode: playlist.loopMode}</code>. The device persists this into <code>queue.json</code>, so the next boot autostarts it. <code>GET /queue</code> is the only truth of what a Goblin holds.</p>
+<p><strong>Known sharp edges in <code>deployPlaylist</code> <code>[read]</code></strong>
+- It trusts the registry's stored <code>status</code> and does not ping (:232-237). It refuses for about 30 s after every MonsterBox restart, and for any Goblin flagged offline.
+- There is no presence check against the device's <code>/media</code>. A missing file means mpv exit 2 and a respawn storm with no backoff (KNOWN-BUGS:2099-2109, 2199-2204).
+- There is no proof of playing. <code>deployed:[id]</code> means only that the HTTP calls succeeded.
+- <code>/queue/clear</code> takes the mpv kill path. An empty <code>videos</code> list would make <code>/queue/start</code> fail.</p>
+<p><strong>Loop by default</strong> is the combination of:
+- <code>loopMode:'queue'</code> on the device.
+- <code>goblin-autostart.sh</code> re-posting <code>{"loopMode":"queue"}</code> at boot.
+- A non-empty <code>queue.json</code>.
+- Nothing restores it after Emergency Stop.</p>
+<p><strong>Existing data <code>[obs]</code>:</strong> 69 playlists, all <code>goblin-three</code>, 47 <code>queue</code> and 22 <code>single</code>, names like "Test Playlist", "Deploy Test", created 2025-10-21 to 11-01, 13 with a non-null <code>lastDeployed</code>. 26 distinct filenames are referenced (mostly <code>307 Jb Hd.mp4</code>). KNOWN-BUGS:2194-2198 calls it test artefacts. The 2026-07-17 file is untouched by this session.</p>
+<p><strong>Docs that overstate:</strong> <code>docs/usage.md:93-97</code>, <code>README.md:954-958</code> and <code>docs/development/goblin-management.md:91-94, 252-324</code> describe Save, Load and Distribute playlist buttons. No such UI exists: grep of <code>views/</code> and <code>public/js/</code> finds no Goblin playlist references.</p>
+<hr />
+<h2 id="5-video-inventory">5. Video inventory</h2>
+<p><strong>On the Goblins</strong> (the real show library). 72 clips plus 3 stray <code>.gcode</code> files on the 09-25 snapshots of .40 and .14.
+- <code>[obs]</code> The live <code>/media</code> of .14 and .106 equals the gold manifest exactly (72 names, same sha1 of the sorted names, same total of 622,179,984 B). .40 and .244 are unreachable. .40 and .244 were provisioned from .14, so they should hold the same 72 <code>[doc]</code>, but I could not check.
+- Source of truth for real metadata: <code>backups/goblins-gold-2026-09-25/goblin-192-168-8-14/videos.manifest.tsv</code> (name, bytes, sha256, ffprobe video stream). It records the video stream only, so no audio info.
+- Total runtime is about 35.2 min.</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>n</th>
+<th>Spec</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NNN Jb Hd.mp4</code></td>
+<td>39</td>
+<td>all 1280x720 at 30 fps, 6.4-30 s, 779-14,165 kbps. Silent by content <code>[mem]</code>.</td>
+</tr>
+<tr>
+<td><code>Pha … Win H.mp4</code></td>
+<td>18</td>
+<td>1280x720 at 29.97 fps (one is 1280x646), 15-90 s, 21-1,360 kbps. Audio <code>[mem]</code>.</td>
+</tr>
+<tr>
+<td>Singletons</td>
+<td>15</td>
+<td>see below</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>NNN</code> clips are 307, 312, 403, 404, 407, 415, 487, 488, 490, 494, 497, 499, 541-560, 682-684, 687-689 and 694. The <code>Pha</code> set is Poltergeist x4, Siren x4, Spinster x4, Wraith x5, plus <code>Pha Buffer Black H</code> (a 15 s black clip at 21 kbps).</p>
+<p>Singletons (resolution, fps, duration, kbps):
+- Batattack: 960x540, 23.98, 10.0 s, 1186
+- Bigskull: 1280x720, 29.97, 30.4 s, 814
+- Firepumpkin: 960x540, 25, 30.0 s, 1051
+- Floatinglady: 1280x720, 30, 12.1 s, 1095
+- Greenskull: 1280x720, 29.97, 31.0 s, 1338
+- Hugeskelly: 1280x720, 30, 6.0 s, 945
+- Monstergoop: 1002x720, 24, 10.7 s, 2138
+- Moon: 1280x720, 29.97, 30.8 s, 883
+- Sauron: 640x360, 25, 58.9 s, 661
+- Scary Face: 1280x720, 30, 9.9 s, 2838
+- Skellycrawler: 1280x720, 30, 20.3 s, 908
+- Skellyskrape: 1280x720, 23.98, 14.0 s, 1097
+- Skullfire: 616x510, 24, 6.2 s, 473
+- Skullfloor: 1280x710, 24, 30.0 s, 456
+- Stumblingelectricsman: 560x540, 30, 32.5 s, 548</p>
+<p><strong>Orientation.</strong> Every clip is landscape. There is no portrait clip (h&gt;w: none). The nearest to portrait or square are Stumblingelectricsman (560x540) and Skullfire (616x510). Goblin 3's vertical window would get letterboxed landscape unless clips are pre-rotated or cropped. No rotation is configured anywhere.</p>
+<p><strong>Audio.</strong> <code>[doc]</code> <code>CHANGELOG.md:166</code>: "24 of the 72 clips carry an audio track". The names are <code>[mem]</code> only: all 18 "Pha …" plus Firepumpkin, Skullfloor, Bigskull, Greenskull, Floatinglady and Stumblingelectricsman. 18+6 = 24. I could not re-verify per clip, because the clips are not local and ffprobe over HTTP is impossible. Audio is OFF by default on the devices (<code>GOBLIN_AUDIO</code> unset, <code>mpvController.js:48-51</code>; CHANGELOG:148-152). The registry's <code>settings.volume</code> and <code>audioEnabled</code> are inert, since the device has no <code>/settings</code> or volume route.</p>
+<p><strong>Heavy or short clips, for playback planning.</strong>
+- Highest bitrate: 688 (14.2 Mbps), 683 (9.4), 553 (8.3), 694 (7.6), 404 (7.3).
+- Shortest: Hugeskelly 6.0 s, Skullfire 6.2 s, 547 6.4 s, 543 6.7 s.</p>
+<p><strong>MonsterBox library <code>data/video-library/</code> (<code>library.json</code>).</strong>
+- Five entries, all with <code>duration:0, resolution:"unknown"</code>. My local ffprobe of the files:
+  - <code>water.mp4</code>: 3840x2160, 29.97 fps, 6.0 s, no audio, 16.8 MB.
+  - <code>fire.mp4</code>: 3840x2160, 25 fps, 30.1 s, AAC audio, 59.2 MB.
+  - <code>fire_test.mp4</code>: 1920x1080, 30 fps, 5 s, no audio.
+  - <code>water_test.mp4</code>: 1920x1080, 30 fps, 5 s, no audio.
+  - <code>test-video.mp4</code>: 16 bytes, "moov atom not found", a junk fixture.
+- Its <code>deployments</code> map records <code>fire_test.mp4</code> on .106 and .14 on 09-26, but that file is not on those Goblins now. The map is a stale record, not live truth.
+- <code>data/goblin-videos/</code> holds 720p60 transcodes of four of those files (made by <code>scripts/prepare-goblin-videos.sh</code>, manual).
+- The 72 show clips are not in the library. They came from operator USB sticks and were rsynced Goblin to Goblin (KNOWN-BUGS:2004, 2116).</p>
+<p><strong>Deployment path</strong> (library to Goblin)
+- <code>POST /video-library/api/deploy {videoId, goblinId}</code> uses <code>deployLibraryVideo</code> (<code>routes/videoLibrary.js:30-45</code>). The target name is <code>goblinFilenameFor</code> (:20-25): <code>originalName</code> if its extension is library-valid, else <code>${title}.${format}</code>, else the UUID name, then <code>path.basename</code>, then <code>sanitizeGoblinFilename</code>.
+- It rsyncs to <code>/home/remote/media/video/&lt;name&gt;</code> (<code>goblinManagerService.js:62-82</code>), then forces <code>/api/videos/scan</code> and reports success only if the device lists the exact name at the source size (:682-694).
+- The live MonsterBox process has <code>MONSTERBOX_SSH_PASSWORD</code> in its environment <code>[obs]</code> (presence check only, value not printed), so rsync and thumbnail ssh will authenticate.
+- Constraints:
+  - A bare basename with <code>.mp4/.mov/.avi/.mkv</code>.
+  - No subdirectory targets.
+  - There is no transcode step in the deploy path. The player expects 720p-class H.264 (README: 720p30, <code>prepare-goblin-videos.sh</code>: 720p60). The library's 4K files would be unsuitable on a Pi 3B.</p>
+<hr />
+<h2 id="6-the-scene-goblin-video-step">6. The scene <code>goblin-video</code> step</h2>
+<p><strong>Fields.</strong>
+- <code>type:'goblin-video'</code>, with <code>'goblin'</code> accepted as an alias (<code>sceneExecutor.js:895-897</code>).
+- <code>goblinId</code>: the registry id.
+- <code>videoId</code>: actually a device filename.
+- <code>loop</code>: boolean, top-level (the Studio writes it); <code>options.loop</code> is honoured for legacy scenes (:377).
+- <code>requireLock</code>: optional, checks the registry lock (:363-369).
+- <code>concurrent</code>: generic.
+- <code>volume</code> is inert (removed from the UI).
+- Schema: <code>config/schemas/scenes.schema.json:30</code> only enumerates the type. Other fields are unconstrained.</p>
+<p><strong>Executor</strong> (<code>sceneExecutor.js:344-408</code>)
+- <code>getGoblin(goblinId)</code> is an exact id lookup. There is no name resolver (grep).
+- It then calls <code>playVideoOnGoblin(goblinId, videoId, {loop, returnToQueue: !loop})</code> (:378-381).
+- The step throws unless the device proof passes, and the result carries <code>willReturnToQueue</code>.
+- Failure is non-fatal for <code>goblin-video</code> (<code>NON_FATAL_STEP_TYPES</code>, :937-945). It is fatal for the <code>goblin</code> alias.</p>
+<p><strong>Once</strong> (<code>loop</code> false or absent)
+- Presence check (<code>/media</code>, then a forced <code>/api/videos/scan</code> on a miss), then <code>POST /api/video/play-immediate {filename, returnToQueue:true}</code>.
+- After 1.5 s it requires <code>mpvRunning &amp;&amp; currentVideo===filename</code>. The step does not wait for the clip to end.
+- The Goblin returns to its own loop only if its queue was playing at cast time. A stopped or empty queue (both online Goblins right now) means the screen goes blank after the clip.</p>
+<p><strong>Loop</strong> (<code>loop:true</code>) calls <code>loopVideoOnGoblin</code>: stop-all, clear, add, start <code>loopMode:'queue'</code>. That REPLACES the Goblin's own show with that one clip until something else changes it. Nothing restores the original queue.</p>
+<p><strong>Authoring.</strong> <code>views/scenes/studio.ejs:1150-1185</code> shows the Goblin by name but stores <code>g.id</code>. The video list comes live from the device (<code>GET /video-library/api/goblins/:id/videos</code>, :1132-1148). A new step defaults <code>loop=false</code> (:1263).</p>
+<p><strong>Existing goblin steps</strong> (Orlok <code>data/character-3/scenes.json</code>; 113 and 114 are uncommitted):
+- Scene 107, :155-156: <code>{goblinId:"goblin-192-168-8-14"}</code> with no <code>videoId</code>, so the executor throws "requires videoId" (logged in <code>monsterbox.err</code>).
+- Scene 113 "Lurk: Fire of Wallachia", :345-347: Goblin 3, <code>Skullfire.mp4</code>, <code>loop:false</code>, <code>concurrent:true</code>.
+- Scene 114 "Lurk: The Moon Spell", :414-416: Goblin 2, <code>Moon.mp4</code>, same flags.
+- Both are in the armed lurk rotation (currently suppressed by the speaker mute).
+- Memory notes casts on other nodes' scenes. Those are node-local data, not in this checkout, and I did not verify them.</p>
+<hr />
+<h2 id="7-hazards">7. Hazards</h2>
+<table>
+<thead>
+<tr>
+<th>Hazard</th>
+<th>Evidence</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>One-mpv rule.</strong> After ANY stop or restart, <code>pgrep -c mpv</code> must equal 1 (needs ssh). A stop that fails to kill mpv puts the server into a one-per-second respawn storm.</td>
+<td>KNOWN-BUGS:2099-2109 ("do not stop/restart a playing Goblin unless you can check <code>pgrep -c mpv</code> afterwards"), :2008. Code comments <code>mpvController.js:101-104, 172-188</code>: SIGTERM only, never SIGKILL.</td>
+<td><code>[doc]</code></td>
+</tr>
+<tr>
+<td><strong>Double-spawn race in the device code.</strong> <code>mpv.play()</code> while mpv runs and <code>queue.playing</code> is true: the old mpv's exit handler fires <code>onEnd</code>, then <code>queue.onVideoEnd</code> → <code>playNext</code> → spawns the queue's next clip. Meanwhile <code>stop()</code>'s wait loop sees the new process, waits 1 s, then nulls <code>this.process</code>, orphaning it, and the original <code>play()</code> spawns a second mpv. This explains the "40 s old mpv beside a 1 s old one". It affects <code>/play-video</code>, <code>/queue/skip</code>, <code>/queue/start</code> while playing, play-immediate with <code>returnToQueue:false</code>, and <strong>two overlapping casts to one Goblin</strong>. play-immediate with <code>returnToQueue:true</code> avoids it only for the first cast, because the second cast sees <code>wasPlaying=false</code>.</td>
+<td><code>goblin/server.js:335-380</code>, <code>mpvController.js:101-209</code>, <code>queueManager.js:134-143</code>.</td>
+<td><code>[inf]</code> from the code, not reproduced on a device</td>
+</tr>
+<tr>
+<td><strong>Empty-queue blank screen.</strong> <code>/queue/start</code> throws on an empty queue and autostart ignores it, so a unit looks healthy but is dark. Seen now on .106. Non-atomic <code>queue.json</code> writes (<code>queueManager.js:45-55</code>) plus the catch-all load (<code>:35-43</code>) mean a power cut mid-save yields an empty queue at next boot.</td>
+<td><code>queueManager.js:97</code>, <code>goblin-autostart.sh:9-18</code>, KNOWN-BUGS:2174-2176, <code>[obs]</code> on .106. The 2026-10-05 write-up is <code>[mem]</code>. The power-cut mechanism is <code>[inf]</code>.</td>
+<td>mixed</td>
+</tr>
+<tr>
+<td><strong>No reboots at night.</strong> A reboot can cost a unit. After the 09-26 fleet reboots, one Goblin never rejoined, one was up on the radio but not booted into service, and one stalled at boot. A Goblin not on the network needs a power cycle. The explicit rule ("never reboot a Goblin to verify late at night") is only in the memory note.</td>
+<td>KNOWN-BUGS:2130-2138, :2161-2167. <code>scripts/goblin-os/stabilize-goblin.sh</code> header ("an upgrade mid-show is a reboot risk").</td>
+<td><code>[doc]</code> symptoms, <code>[mem]</code> rule</td>
+</tr>
+<tr>
+<td><strong><code>GOBLIN_DRM_MODE</code>.</strong> <code>hdmi_mode</code> in <code>config.txt</code> is ignored under vc4-kms-v3d. If a TV negotiates 1080p, mpv burns about 300% CPU and a Pi 3B hits 70 °C in 40 s. Pin 720p with a <code>goblin.service.d</code> drop-in setting <code>GOBLIN_DRM_MODE=1280x720</code>. Only Goblin 4 is documented as having it.</td>
+<td><code>docs/development/goblin-management.md:341-342</code>, KNOWN-BUGS:2014-2018, <code>mpvController.js:127-132</code>.</td>
+<td><code>[doc]</code></td>
+</tr>
+<tr>
+<td><strong>Audio off by default.</strong> <code>GOBLIN_AUDIO=on</code> is required in the unit environment (a systemd drop-in, so ssh plus sudo, operator only). HDMI mixer on Goblin 2 reads 78%. The unit's broken <code>GOBLIN_MPV_EXTRA_ARGS</code> line does not silence audio (section 3.1).</td>
+<td><code>mpvController.js:22-51</code>, CHANGELOG:148-152, <code>backups/goblins-gold-2026-09-25/README.md:83-93</code>, KNOWN-BUGS:2168-2173.</td>
+<td><code>[doc]</code></td>
+</tr>
+<tr>
+<td><strong>SSH penalty on trixie.</strong> Failed or dropped ssh connections get <code>kex_exchange_identification: Connection reset by peer</code>, and sshd resets all connections for about 10 min. Do not probe or hammer ssh; wait. MonsterBox's deploy and thumbnail paths ssh the Goblins (<code>ConnectTimeout=8</code>). The mechanism text is only in the memory note.</td>
+<td>Symptom: KNOWN-BUGS:2133-2135. Mechanism: memory note.</td>
+<td><code>[doc]</code> symptom, <code>[mem]</code> mechanism</td>
+</tr>
+<tr>
+<td><strong>Fleet Emergency Stop blanks all Goblins and nothing resumes them</strong> (by design). The orchestration system test fires a REAL emergency stop on port 3100, so never run it during a show.</td>
+<td>KNOWN-BUGS:2020-2034, <code>tests/system/orchestration.test.js:75, 144, 354</code>.</td>
+<td><code>[doc]</code></td>
+</tr>
+<tr>
+<td><strong>Repo <code>goblin/goblin-setup.sh</code> kills mpv</strong> (<code>:31-32</code>, live pkill lines). The deployed copies comment them out. Never copy the repo version over.</td>
+<td>diff of repo vs gold</td>
+<td><code>[read]</code></td>
+</tr>
+<tr>
+<td><strong>Wrong unit source.</strong> Never restore from the repo <code>goblin/systemd/</code> (absent ExecStart, WatchdogSec, MONSTERBOX_URL pointing at Mina). Restore from the gold snapshot (README:58-81).</td>
+<td><code>backups/goblins-gold-2026-09-25/README.md:58-81</code></td>
+<td><code>[doc]</code></td>
+</tr>
+<tr>
+<td><strong>Leftover crash-looping units</strong> on .40 and .106 (<code>monsterbox-goblin</code>, <code>goblin-autoqueue</code>, <code>goblin-hide-console</code>). A second server on :3001 appears if <code>src/server.js</code> ever shows up. The facehugger deploy would create exactly that.</td>
+<td>KNOWN-BUGS:2185-2193</td>
+<td><code>[doc]</code></td>
+</tr>
+<tr>
+<td><strong>Thermal and CPU.</strong> <code>--vo=drm</code> costs about 240% CPU. .106 had throttle flag <code>0x80008</code> at the 09-25 snapshot, <code>0x0</code> on .14. Goblin 4 sits near 71 °C and needs a heatsink or fan. No thermal readout over HTTP.</td>
+<td><code>backups/…/README.md:80-81</code>, KNOWN-BUGS:2083-2098, :2016-2018</td>
+<td><code>[doc]</code></td>
+</tr>
+<tr>
+<td><strong>Wi-Fi only.</strong> All Goblins are on <code>wlan0</code> and drop off after reboots.</td>
+<td>KNOWN-BUGS:2130-2138; the 2026-10-05 repeat is <code>[mem]</code></td>
+<td><code>[doc]</code></td>
+</tr>
+<tr>
+<td><strong>Heavy ops on playing units.</strong> Hashing 700 MB per Goblin (<code>scripts/backup-goblins.sh</code>) drives load to about 8. Run it outside show hours.</td>
+<td>gold README:130-132</td>
+<td><code>[doc]</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-what-it-would-take">8. What it would take</h2>
+<h3 id="a-build-and-assign-a-new-looping-playlist-per-goblin">(a) Build and assign a new looping playlist per Goblin</h3>
+<p><strong>Prerequisites (hands, not API)</strong>
+1. Goblin 1 (.40) and Goblin 4 (.244) must be physically revived (power, PSU, SD, Wi-Fi). No HTTP path reaches them. Goblin 1 is the "clearest spot" display.
+2. Operator answers:
+   - Confirm which physical TV is Goblin 1, 2 and 3.
+   - What is Goblin 3's orientation: a portrait-mounted TV, or a landscape TV behind a tall window?
+   - Which clips are wanted per Goblin?
+   - Is Goblin 3's TV powered and on the right input?
+   - Is audio wanted? (Audio is off, and enabling it needs a unit drop-in, so ssh plus sudo.)</p>
+<p><strong>Content</strong>
+- All 72 clips are already on .14 and .106, so no deploy is needed unless new or rotated assets are required.
+- New assets go through library upload then <code>POST /video-library/api/deploy</code> (rsync + ssh), or the operator's USB route. Pre-convert to 720p H.264 first, because the library does not transcode.
+- Portrait for Goblin 3 needs pre-rotated or cropped files (<code>ffmpeg</code> is on Orlok, 5.1.9). The player has no rotate flag, and adding one needs a corrected, quoted unit drop-in (ssh plus sudo).
+- A single pre-concatenated "reel" file per Goblin deployed with the <code>loop</code> action gives one mpv <code>--loop</code> process. That is the mode the repo proved stable, with no respawn flash and no kill path. A multi-clip queue respawns mpv every clip. This is a recommendation, not an existing feature.</p>
+<p><strong>Records and deploy</strong>
+3. Pre-flight per Goblin: <code>GET /video-library/api/goblins/board?playbackOnly=1</code>, then <code>/media</code>. Every filename must match exactly, including case and spaces.
+4. Create playlists with the real <code>goblinId</code> (<code>goblin-192-168-8-14</code> and so on), <code>loopMode:'queue'</code>, and filenames copied from the device list: <code>POST /goblin-management/api/playlists</code>.
+5. Deploy with <code>POST /goblin-management/api/playlists/:id/deploy</code>, or script the same device calls in the order <code>loopVideoOnGoblin</code> uses (stop-all, clear, add xN, start <code>loopMode:'queue'</code>, verify). <code>deployPlaylist</code> needs hardening before it is trusted (section 4). Without it, add your own presence check, ping-first, proof and a per-Goblin serialisation lock.
+6. Archive or remove the 69 junk playlists, and note the assignment somewhere (no registry field exists).
+7. Add a keep-alive. Nothing restores a loop after an Emergency Stop or a power cut. A watchdog calling <code>resumeGoblinQueue</code> when <code>mpvRunning:false</code> and <code>queue.videos.length&gt;0</code> is not in the repo.
+8. Persist display hints (placement, orientation) in the registry. Options: <code>POST /goblin-management/api/register</code> (overwrites name, location and description; resets <code>capabilities</code>, <code>platform</code> and <code>version</code> to defaults if omitted; forces <code>status:'online'</code>) or <code>PUT …/settings</code>.</p>
+<h3 id="b-verify-each-is-really-playing">(b) Verify each is really playing</h3>
+<p><strong>Evidence from HTTP</strong> (two reads at least 10 s apart; one should span a clip boundary for multi-clip lists):
+- <code>/health.ok</code> true and <code>uptime</code> strictly increasing (no restart).
+- <code>/playback-status</code>:
+  - <code>mpvRunning===true</code>
+  - <code>playing===true</code>
+  - <code>basename(currentVideo)</code> is a playlist member
+  - <code>queue.playing===true</code>
+  - <code>queue.loopMode==='queue'</code> (or <code>single</code>)
+  - <code>queue.videos[].filename</code> equals the playlist in order, and <code>currentIndex</code> is valid
+- <code>playCount</code> cadence:
+  - single-clip loop under the fixed <code>queueManager</code>: Δ=0
+  - multi-clip: about +1 per clip length
+  - much faster is a respawn storm (as Goblin 3's 42,680)
+- MonsterBox single call: <code>GET /video-library/api/goblins/board?playbackOnly=1</code> returns <code>entry.online</code> plus <code>playback.*</code>. The code's own pass rule is <code>mpvRunning &amp;&amp; currentVideo===filename</code> 1.5 s after the command (<code>goblinManagerService.js:830-844</code>), plus <code>loopMode==='queue'</code> for loops (:759-766).</p>
+<p><strong>Not proof:</strong>
+- Device <code>success:true</code> (answers at spawn).
+- <code>deployPlaylist.deployed</code>.
+- Registry <code>status:'online'</code>.
+- <code>/health.ok</code>.
+- <code>queue.playing</code> alone.
+- <code>lastDeployed</code>.
+- <code>library.json</code> <code>deployments</code>.</p>
+<p><strong>HTTP cannot see pixels.</strong> No screenshot or HDMI-state endpoint exists on the device. Real proofs need ssh (not allowed in this recon) or a person at the TV:
+- <code>pgrep -c mpv</code> equals 1.
+- <code>ps -o pcpu -C mpv</code>.
+- <code>vcgencmd get_throttled</code>.
+- <code>/sys/class/drm/card0-HDMI-A-1/status</code>.
+- <code>/proc/asound/card*/pcm0p/sub0/status</code> (audio).</p>
+<p><strong>Baseline now:</strong> none of the four passes.</p>
+<h3 id="c-let-scenes-cast-to-a-specific-goblin-by-name">(c) Let scenes cast to a specific Goblin by name</h3>
+<ul>
+<li><strong>Today.</strong> The step stores an IP-derived id. The Studio shows names but writes <code>goblinId</code> (<code>studio.ejs:1153-1156</code>). There is no resolver. Names are free text and not enforced unique.</li>
+<li><strong>Resolver.</strong> Add <code>resolveGoblin(nameOrId)</code> to <code>goblinManagerService</code>: exact id, else case-insensitive name, ambiguity is an error. Call it from <code>executeGoblinVideoStep</code> (:344), <code>orchestrationService.broadcastToGoblins</code> (<code>params.ids</code>), <code>/video-library/api/goblins/control</code> (<code>goblinIds</code>) and playlist deploy.</li>
+<li><strong>Step and UI.</strong> The schema does not constrain step fields, so a <code>goblinName</code> field (or a name in <code>goblinId</code>) needs no schema change. Update the Studio form (:1150-1185, :1224-1226).</li>
+<li><strong>Name stability.</strong> Names equal hostnames equal TV labels, set by the operator. Keep that invariant, and keep the router's DHCP reservations so ids do not drift.</li>
+<li><strong>Cast semantics.</strong></li>
+<li>The executor default of play-once plus return-to-queue already exists. But "return" works only if the target's queue was playing, so the loops must be healthy and resumed first.</li>
+<li>Serialise casts per Goblin (the race in section 7). The 6.25 s Skullfire and 30.8 s Moon casts are the exposure.</li>
+<li>Verify <code>willReturnToQueue:true</code> in the step result.</li>
+<li><strong>Content fit.</strong> The cast clip must exist on that Goblin's disk. A miss costs a forced device rescan. Casting a 16:9 clip to the vertical window needs a portrait asset. Casts are silent while audio is off.</li>
+<li><strong>Cross-node.</strong> Other nodes' scenes run through their own <code>goblinManagerService</code> and their own <code>data/goblins.json</code> registry. I could not verify that those registries carry the same ids and names.</li>
+<li><strong>Offline target.</strong> The manager pings first and returns "is not online" after about 3 s. The goblin-video step is non-fatal, so the scene continues.</li>
+</ul>
+<hr />
+<h2 id="9-safe-and-unsafe-calls-for-the-next-phase">9. Safe and unsafe calls for the next phase</h2>
+<p><strong>Safe reads:</strong>
+- Device GETs: <code>/health</code>, <code>/playback-status</code>, <code>/queue</code>, <code>/media</code>.
+- MonsterBox GETs: <code>/video-library/api/goblins/board?playbackOnly=1</code>, <code>/video-library/api/goblins/:id/playback</code>, <code>/video-library/api/goblins/:id/videos</code>, <code>/goblin-management/api/goblins</code>, <code>/api/playlists</code>, <code>/goblin-management/api/goblin/:id/status</code>.
+- The board can write a registry status transition when a Goblin returns.</p>
+<p><strong>Do not call without an explicit go-ahead:</strong>
+- Any device POST or DELETE.
+- Device <code>GET /api/videos/scan</code>, and MonsterBox <code>…/videos?rescan=1</code>.
+- All state-changing video-library and goblin-management routes in section 3.3.
+- Specifically dangerous: <code>POST /goblin-management/api/broadcast</code>, <code>POST /goblin-management/api/deploy-and-register</code>, <code>POST /api/orchestration/emergency-stop</code>, <code>/broadcast/goblins</code>, <code>/reboot/goblins</code>, and <code>tests/system/orchestration.test.js</code>.
+- Thumbnail requests for uncached names (ssh).
+- Anything ssh to a Goblin.</p>
+<hr />
+<h2 id="10-not-found-stale-docs-corrections">10. Not found, stale docs, corrections</h2>
+<p><strong>Not found</strong>
+- Display hints (placement, orientation) for any Goblin.
+- A name resolver.
+- A playlist UI.
+- A post-stop auto-resume or keep-alive.
+- A device thumbnail, screenshot, thermal or throttle endpoint.
+- Rotation config.
+- Per-clip audio flags in the repo (only the count of 24).
+- <code>GOBLIN_DRM_MODE</code> for Goblins 1-3 (only Goblin 4 is documented).
+- Which <code>queueManager</code> or <code>mpvController</code> version each live device runs.
+- Whether <code>stabilize-goblin.sh</code> has been run on each device.
+- The exact time of the emergency stop.</p>
+<p><strong>Stale docs</strong>
+- <code>goblin/README.md</code> (Docker, upload, WebSocket design never built).
+- <code>docs/development/goblin-management.md</code> (loopModes <code>sequential</code>/<code>continuous</code>, playlist buttons, <code>deploy-goblin.sh</code>, <code>/status</code>).
+- <code>README.md:960-967</code> (step example with <code>goblinId:"goblin-three"</code> and a step-level <code>returnToQueue</code> the executor ignores).
+- <code>README.md</code> and <code>docs/networking.md</code> list Goblin 4 as Operational, but it is not answering now <code>[obs]</code>.
+- <code>goblin/playlists/*.json</code>.
+- Legacy scripts use phantom IPs (<code>scripts/goblin-video-loop.sh</code> .160, <code>scripts/play-goblin-videos.sh</code> .161, <code>scripts/auto-deploy-goblins.sh</code> .161/.162).</p>
+<p><strong>Context for the next steps.</strong> The Goblins are Pi 3B/3B+ on Wi-Fi, and it is currently night (20:50 CDT). Anything that restarts, reboots or power-cycles should wait for daylight and an operator present."</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["navigation.instant", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "content.code.annotate", "search.suggest", "search.highlight", "search.share"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
