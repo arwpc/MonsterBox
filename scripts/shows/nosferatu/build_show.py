@@ -192,21 +192,25 @@ for s in sfx:
 
 # ---- parts ------------------------------------------------------------------------------
 parts = {cid: np.zeros((N, 1), np.float32) for cid in SLUG}
+# Voice level per line (dBFS RMS). Operator 2026-10-23: "they all need to be louder" -> -13 (was -18).
+# Renfield only -16: his XVF3800 trips the Pi's USB over-current above his 0.70 sink cap, and a trip
+# resets the array mid-show, so his extra level is kept small.
+VOICE_DB = {6: -16}
 for ln in lines:
     v = load(f"{SHOW}/voices/{ln['id']}.mp3", ch=1)
-    put(parts[ln['cid']], ln['start'], v * (db(-18) / rms(v)))
+    put(parts[ln['cid']], ln['start'], v * (db(VOICE_DB.get(ln['cid'], -13)) / rms(v)))
 
 
 def write(path, x, br, gain_db=0.0):
     """Float buffer to mp3 through a limiter, so an SFX hit can be loud without clipping."""
     raw = (x * db(gain_db)).astype(np.float32).tobytes()
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'f32le', '-ar', str(SR), '-ac', str(x.shape[1]), '-i', '-',
-                    '-af', 'alimiter=limit=0.8:level=disabled', '-b:a', br, path], input=raw, check=True)
+                    '-af', 'alimiter=limit=0.94:level=disabled', '-b:a', br, path], input=raw, check=True)
 
 
 for cid, slug in SLUG.items():
     write(f'{SHOW}/audio/nosferatu-part-{slug}.mp3', parts[cid], '128k')
-write(f'{SHOW}/audio/nosferatu-groundbreaker-score.mp3', score, '256k', gain_db=-1)
+write(f'{SHOW}/audio/nosferatu-groundbreaker-score.mp3', score, '256k', gain_db=2)  # +3 dB (operator: louder)
 mix = score * db(-4) + np.repeat(sum(parts.values()), 2, axis=1)
 write(f'{SHOW}/work/preview-mix.mp3', mix, '192k')
 

@@ -63,15 +63,21 @@ def sweep(part, t0, t1, lo, hi, every, ms, k=0):
     return out
 
 
+# Orlok's right arm: full travel is about 5 s at 90% (operator 2026-10-23: 1.5 s at 50% raised it only
+# about 15% of the way). A gesture is a full lift, a short hold at the top, and all the way back down.
+ARM_UP_MS, ARM_DOWN_MS, ARM_SPEED = 4500, 5000, 90
+
+
 def arm_gestures(cues, gap=4.4):
-    """Right-arm extends on the given (time, hold) cues, dropping any that would start
-    before the previous extend+retract has finished: the actuator must never overlap itself."""
+    """Full right-arm lifts on the given (time, hold) cues, dropping any that would start before the
+    previous lift and lowering have finished: the actuator must never overlap itself."""
     out, free_at = [], -1.0
     for t, hold in sorted(cues):
         if t < free_at:
             continue
-        out += [(t, act_('1', 'extend', 1500)), (t + max(hold, 1.6), act_('1', 'retract', 2200))]
-        free_at = t + max(hold, 1.6) + 2.2 + 0.3
+        down = t + ARM_UP_MS / 1000 + min(max(hold, 1.0), 3.0)
+        out += [(t, act_('1', 'extend', ARM_UP_MS, ARM_SPEED)), (down, act_('1', 'retract', ARM_DOWN_MS, ARM_SPEED))]
+        free_at = down + ARM_DOWN_MS / 1000 + 0.3
     return out
 
 
@@ -100,7 +106,7 @@ def orlok():
         m.append((t + k * 0.4, light('8', k % 2 == 0)))
     m.append((t + 4.2, light('8', False)))
     m += [(L['o9'] + 0.3 + k * 0.55, servo('15', 72 if k % 2 else 108, 450)) for k in range(7)]
-    m += [(L['o9'] + 0.5, act_('1', 'extend', 1200, 70)), (L['o9'] + 5.0, act_('1', 'retract', 2600, 35)),
+    m += [(L['o9'] + 0.2, act_('1', 'extend', ARM_UP_MS, ARM_SPEED)), (L['o9'] + 5.0, act_('1', 'retract', 7000, 60)),
           (L['o9'] + 6.0, servo('15', 80, 3000)), (E['k18'] + 0.5, servo('15', 90, 1500))]
     return m
 
@@ -122,8 +128,10 @@ def mina():
     m += [(L['r5'] + 0.2, servo('3', 64, 300)), (L['r5'] + 0.4, servo('2', 104, 900)),                   # her name
           (L['o5'] + 0.3, servo('3', 60, 300)), (E['o5'] + 2.0, servo('3', 89, 700)), (E['o5'] + 2.2, servo('2', 90, 1500))]
     # Act III: the door draws partway shut, the rose lights, and she rises as she speaks
-    m += [(a3 + 0.5, act_('4', 'retract', 2500, 95)), (L['k17'] + 2.0, light('5', True)),
-          (L['m1'] - 2.5, act_('4', 'extend', 3500, 95))]
+    # Her door (full travel ~15 s at 95%) draws more than half shut as Act II ends, and opens all the
+    # way as she speaks to him (the executor trims the extend at fully open). It rests open.
+    m += [(E['p4'] + 0.5, act_('4', 'retract', 9000, 95)), (L['k17'] + 2.0, light('5', True)),
+          (max(L['m1'], E['p4'] + 10.0), act_('4', 'extend', 10000, 95))]
     for ln in LINES:
         if ln['act'] != 3 or ln['start'] < L['m1'] or ln['id'] in ('o9', 'm4', 'k18'):
             continue
