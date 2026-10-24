@@ -82,8 +82,9 @@ describe('fleet-event conductor files', function () {
     const ids = files.map(f => JSON.parse(fs.readFileSync(path.join(CONDUCTORS, f), 'utf8')).id);
     expect(new Set(ids).size).to.equal(ids.length);
     // Events with a "node" are that node's own scenes (the Slipknot and Nosferatu conductors live on
-    // Groundbreaker, built from show assets that are not in git), so only local events have a file here.
-    expect(ids.map(Number).sort()).to.deep.equal(events.filter(e => !e.node).map(e => Number(e.sceneId)).sort());
+    // Groundbreaker, built from show assets that are not in git), so only local events need a file here.
+    // A file with no event is a retired conductor (101-103 since the 2026-10-23 fleetshow rebuild).
+    expect(ids.map(Number)).to.include.members(events.filter(e => !e.node).map(e => Number(e.sceneId)));
   });
 
   it('a node-hosted event names a node in the fleet registry', function () {

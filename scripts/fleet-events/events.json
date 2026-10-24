@@ -1,6 +1,6 @@
 {
   "_readme": [
-    "Fleet events: the orchestrated shows (docs/characters/FLEET-EVENTS.md). Each is a conductor scene hosted on",
+    "Fleet events: the orchestrated shows (docs/characters/FLEET-EVENTS.md). Since 2026-10-23 every event is a full fleet show built with scripts/shows/fleetshow and hosted on Groundbreaker (\"node\"); the old Orlok-hosted 101-103 conductors stay on Orlok unused. run-next.mjs rotates through `events` in order, one per invocation,",
     "this node's selected character (Orlok). run-next.mjs rotates through `events` in order, one per invocation,",
     "and is fired by the managed crontab every half hour in show hours (see README.md).",
     "quietHours: the runner refuses to start a show between start and end (local time, America/Chicago on every Pi).",
@@ -12,16 +12,19 @@
   ],
   "events": [
     {
-      "sceneId": 101,
-      "name": "The Lighting of the Castle"
+      "sceneId": 23,
+      "name": "The Lighting of the Castle",
+      "node": "Groundbreaker"
     },
     {
-      "sceneId": 102,
-      "name": "The Count's Orders"
+      "sceneId": 25,
+      "name": "The Count's Orders",
+      "node": "Groundbreaker"
     },
     {
-      "sceneId": 103,
-      "name": "One Song for Warner Castle"
+      "sceneId": 27,
+      "name": "One Song for Warner Castle",
+      "node": "Groundbreaker"
     }
   ],
   "quietHours": {
