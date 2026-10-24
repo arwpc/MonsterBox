@@ -1,5 +1,17 @@
 # Fleet events
 
+> **ALL scheduled events run ONLY from Alpha (operator rule, 2026-10-24).** Alpha's managed crontab
+> (`/schedule` on https://192.168.8.223:3000) is the only place a show is scheduled, and every conductor is an
+> Alpha scene (character 7): Slipknot 19, Nosferatu 20, Lighting 23, Count's Orders 25, One Song 27
+> (`events.json` → `"node": "Alpha"`). No animatronic schedules or conducts a show: their crontabs keep only
+> `@reboot start-audio.sh`, and their own scene loops (lurk scenes, idle loop) are not scheduled events.
+> Alpha has no speakers, so show music is played by the parts: the score at **100% inside Groundbreaker's part**
+> and at **50% inside Orlok's part**; the Alpha conductor waits out the score's length. A show still runs (without
+> Groundbreaker's score) while he is down. Lurk background music plays **only on Groundbreaker** so every other
+> character's speaker stays free for its own lurk scenes.
+>
+> The text below describes the original 2026-10 Orlok-hosted design (101–103); those conductors are retired.
+
 The three orchestrated shows of Warner Castle (scripts in `docs/characters/FLEET-EVENTS.md`): **The Lighting of
 the Castle** (conductor scene 101), **The Count's Orders** (102) and **One Song for Warner Castle** (103). Each
 conductor is an ordinary scene in the host character's `scenes.json` (Orlok's node) built from the fleet step

@@ -1,5 +1,11 @@
 # Warner Castle fleet events — the three shows (scripts for scenes 8, 9, 10 of every character)
 
+> **Current rule (operator, 2026-10-24): ALL scheduled events run ONLY from Alpha.** Alpha's cron fires
+> `scripts/fleet-events/run-next.mjs`, and every conductor is an Alpha scene (character 7: 19 Slipknot,
+> 20 Nosferatu, 23 Lighting, 25 Count's Orders, 27 One Song). Show music: 100% on Groundbreaker, 50% on Orlok,
+> both inside their parts. Lurk background music: Groundbreaker only. See `scripts/fleet-events/README.md`. The
+> Orlok-hosted 101–103 design below is historical.
+
 Written 2026-10-09 (castle-tuning mission, phase 3a). Three orchestrated events, each a conductor scene hosted on
 Orlok (ids 101, 102, 103) that calls every character's event part with `fleet-scene`, casts video to the Goblins,
 and runs one shared music bed on every node. One of them runs every half hour in show hours
