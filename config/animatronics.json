@@ -43,8 +43,8 @@
       "characterId": 4,
       "agentId": "agent_7901k3f1dza1ee68w1257zh3s9x6",
       "defaultSceneId": 1,
-      "sinkVolume": 1.0,
-      "_sinkVolume": "1.00 (2026-10-23, operator: 'they all need to be louder'): full hardware scale on his XVF3800 (anything above is software gain that clips). 0.70/0.85/1.00 measured free of USB over-current on 2026-10-18. Raised 0.55 -> 0.85 on 2026-10-18 after the first Slipknot rehearsal: the operator heard him as silent under Groundbreaker's song. 0.55 (-15 dB on the XVF3800's attenuator) was tuned for his OLD speaker (BENCH-CHECKLIST K4.5 flagged it for a re-tune). Measured on the node: his cached line at 0.70 / 0.85 / 1.00 tripped no USB over-current; 0.85 keeps the same margin as Groundbreaker. Room level is the speaker's own knob."
+      "sinkVolume": 0.85,
+      "_sinkVolume": "0.85 (2026-10-23 19:22): at 1.00 with the louder Nosferatu tracks he logged 52 USB over-current trips in 12 minutes (each resets his XVF3800: 'clipped and keeps getting interrupted'); 0.85 logged none. Raise the room level on his powered speakers' own knob, not here. 1.00 (2026-10-23, operator: 'they all need to be louder'): full hardware scale on his XVF3800 (anything above is software gain that clips). 0.70/0.85/1.00 measured free of USB over-current on 2026-10-18. Raised 0.55 -> 0.85 on 2026-10-18 after the first Slipknot rehearsal: the operator heard him as silent under Groundbreaker's song. 0.55 (-15 dB on the XVF3800's attenuator) was tuned for his OLD speaker (BENCH-CHECKLIST K4.5 flagged it for a re-tune). Measured on the node: his cached line at 0.70 / 0.85 / 1.00 tripped no USB over-current; 0.85 keeps the same margin as Groundbreaker. Room level is the speaker's own knob."
     },
     {
       "id": 5,

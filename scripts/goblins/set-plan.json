@@ -1,0 +1,33 @@
+{
+  "_readme": [
+    "Coordinated Goblin reels (operator 2026-10-23): the windows play the SAME subject at the same time, a set at a",
+    "time, instead of three unrelated loops. Every set is exactly `setSeconds` on every reel, so reels of the same",
+    "length stay in step once Alpha starts them together (scripts/goblins/sync-reels.mjs, run after every scheduled show).",
+    "g1 showcase (seen close), g2 big front window (bold shapes), g3 tall narrow roof window (center strip around",
+    "the subject), g4 the garage windows behind Groundbreaker (abstract only: no figures, faces or skulls).",
+    "Build: python3 scripts/goblins/build_set_reels.py SOURCE_DIR OUT_DIR"
+  ],
+  "setSeconds": 30,
+  "reels": {
+    "g1": { "file": "reel-sets-goblin1.mp4", "mode": "full", "goblin": "Goblin 1" },
+    "g2": { "file": "reel-sets-goblin2.mp4", "mode": "full", "goblin": "Goblin 2" },
+    "g3": { "file": "reel-sets-goblin3.mp4", "mode": "center-strip", "stripAspect": 0.5625, "goblin": "Goblin 3" },
+    "g4": { "file": "reel-sets-goblin4.mp4", "mode": "full", "goblin": "Goblin 4" }
+  },
+  "sets": [
+    { "name": "House on fire", "g1": "552 Jb Hd.mp4", "g2": "560 Jb Hd.mp4", "g3": "542 Jb Hd.mp4", "g4": "554 Jb Hd.mp4" },
+    { "name": "Full moon", "g1": "Hugeskelly.mp4", "g2": "Moon.mp4", "g3": "Batattack.mp4", "g4": "404 Jb Hd.mp4" },
+    { "name": "Rise of the wraiths", "g1": "Pha Wraith Riseofthewraiths Win H.mp4", "g2": "Pha Wraith Startlescare Win H.mp4", "g3": "Pha Wraith Faceofdeath Win H.mp4", "g4": "415 Jb Hd.mp4" },
+    { "name": "Lightning storm", "g1": "688 Jb Hd.mp4", "g2": "683 Jb Hd.mp4", "g3": "687 Jb Hd.mp4", "g4": "684 Jb Hd.mp4" },
+    { "name": "Sea of sirens", "g1": "Pha Siren Seaofsirens Win H.mp4", "g2": "Pha Siren Sirenssway Win H.mp4", "g3": "Pha Siren Startlescare Win H.mp4", "g4": "312 Jb Hd.mp4" },
+    { "name": "Pumpkin fire", "g1": "Firepumpkin.mp4", "g2": "546 Jb Hd.mp4", "g3": "Firepumpkin.mp4", "g4": "547 Jb Hd.mp4" },
+    { "name": "The Spinster", "g1": "Pha Spinster Teafortwo Win H.mp4", "g2": "Pha Spinster Startlescare Win H.mp4", "g3": "Pha Spinster Behaveorbedead Win H.mp4", "g4": "407 Jb Hd.mp4" },
+    { "name": "Portal", "g1": "497 Jb Hd.mp4", "g2": "487 Jb Hd.mp4", "g3": "488 Jb Hd.mp4", "g4": "494 Jb Hd.mp4" },
+    { "name": "Poltergeist storm", "g1": "Pha Poltergeist Ampedup Win H.mp4", "g2": "Pha Poltergeist Discharged Win H.mp4", "g3": "Pha Poltergeist Startlescare Win H.mp4", "g4": "682 Jb Hd.mp4" },
+    { "name": "Skulls", "g1": "Skullfire.mp4", "g2": "Skullfloor.mp4", "g3": "549 Jb Hd.mp4", "g4": "559 Jb Hd.mp4" },
+    { "name": "Haunted rooms", "g1": "Floatinglady.mp4", "g2": "Scary Face.mp4", "g3": "Monstergoop.mp4", "g4": "307 Jb Hd.mp4" },
+    { "name": "Inferno", "g1": "553 Jb Hd.mp4", "g2": "557 Jb Hd.mp4", "g3": "558 Jb Hd.mp4", "g4": "543 Jb Hd.mp4" },
+    { "name": "Bones", "g1": "Skellycrawler.mp4", "g2": "Skellyskrape.mp4", "g3": "Stumblingelectricsman.mp4", "g4": "403 Jb Hd.mp4" },
+    { "name": "Golden spirits", "g1": "689 Jb Hd.mp4", "g2": "544 Jb Hd.mp4", "g3": "490 Jb Hd.mp4", "g4": "499 Jb Hd.mp4" }
+  ]
+}

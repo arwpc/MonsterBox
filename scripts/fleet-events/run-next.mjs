@@ -221,6 +221,16 @@ function performMoment(file) {
   });
 }
 
+/** Put the Goblins' coordinated set reels back in step after the casts (scripts/goblins/sync-reels.mjs). */
+function syncGoblinReels() {
+  return new Promise((done) => {
+    const child = spawn(process.execPath, [join(ROOT, 'scripts', 'goblins', 'sync-reels.mjs'), '--base', BASE],
+      { cwd: ROOT, stdio: ['ignore', 'inherit', 'inherit'] });
+    child.on('exit', () => done());
+    child.on('error', (err) => { warn('goblin sync failed to start:', err.message); done(); });
+  });
+}
+
 /** Belt and braces after a show: every node is told the event is over, whether or not the conductor got there. */
 async function releaseAll(nodes, reason) {
   const results = await Promise.all(nodes.filter((n) => n.online).map(async (n) => {
@@ -386,6 +396,7 @@ async function main() {
       await releaseAll(nodes, `fleet-events ${event.sceneId} ${outcome.status}`);
       if (INTERRUPT) await lurkAll(nodes);
       await goblinStatus();
+      if (cfg.syncGoblinReels) await syncGoblinReels();
     }
     record(state, { at: new Date().toISOString(), sceneId: event.sceneId, name: event.name, dryRun: DRY, ...outcome });
     return outcome.status === 'failed' ? 1 : 0;
