@@ -452,6 +452,27 @@ describe('lurk state machine — transitions', () => {
         expect(m.getGateState(CID)).to.equal('lurking');
     });
 
+    it('lurkHead idle: the idle loop owns the head while lurking, a wake still tracks, lurking again lets go', async () => {
+        const { m, f } = await bootedMachine();
+        expect(f.state.headActive).to.equal(true);
+        const set = await m.setPrefs(CID, { lurkHead: 'idle' });
+        expect(set.success).to.equal(true);
+        expect(f.state.headActive).to.equal(false);
+        expect(f.state.idleRunning).to.equal(true);
+        await m.wake(CID, { source: 'api' });
+        expect(f.state.headActive).to.equal(true);
+        await m.aiOff(CID);
+        expect(m.getState(CID)).to.equal('lurking');
+        expect(f.state.headActive).to.equal(false);
+        await m.eventHold(CID, { reason: 'show' });
+        await m.eventRelease(CID);
+        expect(f.state.headActive).to.equal(false);
+        expect(f.state.idleRunning).to.equal(true);
+        expect((await m.setPrefs(CID, { lurkHead: 'track' })).success).to.equal(true);
+        expect(f.state.headActive).to.equal(true);
+        expect(validatePrefsPatch({ lurkHead: 'sweep' })).to.have.length(1);
+    });
+
     it('event hold and release are idempotent and self-expire', async () => {
         const { m, f } = await bootedMachine();
         const h1 = await m.eventHold(CID, { reason: 'ceremony', maxMs: 60000 });

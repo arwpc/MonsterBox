@@ -205,11 +205,19 @@ export function normalizePrefs(raw) {
         pirQuietHours,
         capabilityOptOut: Array.isArray(src.capabilityOptOut)
             ? [...new Set(src.capabilityOptOut.filter(c => OPTABLE_CAPABILITIES.includes(c)))]
-            : []
+            : [],
+        // Who owns the pan servo while LURKING. 'track' (default): head tracking,
+        // as before. 'idle': tracking stops on entering lurk and the idle loop's
+        // head poses sweep the head slowly; a wake still starts tracking. Operator
+        // 2026-10-24: Orlok's lurking head jerked after every flicker of motion in
+        // the yard instead of panning slowly.
+        lurkHead: LURK_HEAD_MODES.includes(src.lurkHead) ? src.lurkHead : 'track'
     };
 }
 
 /** Mark opted-out capabilities unavailable (with the reason) — never mutates the input. */
+export const LURK_HEAD_MODES = Object.freeze(['track', 'idle']);
+
 export function applyOptOut(caps = {}, optOut = []) {
     if (!Array.isArray(optOut) || optOut.length === 0) return caps;
     const out = { ...caps };
@@ -240,6 +248,9 @@ export function validatePrefsPatch(raw) {
     if (raw.pirWake !== undefined && typeof raw.pirWake !== 'boolean') errors.push('pirWake must be a boolean');
     if (raw.pirQuietHours !== undefined && raw.pirQuietHours !== null && !validQuietHours(raw.pirQuietHours)) {
         errors.push('pirQuietHours must be null or { start: "HH:MM", end: "HH:MM" }');
+    }
+    if (raw.lurkHead !== undefined && !LURK_HEAD_MODES.includes(raw.lurkHead)) {
+        errors.push(`lurkHead must be one of: ${LURK_HEAD_MODES.join(', ')}`);
     }
     if (raw.capabilityOptOut !== undefined && (!Array.isArray(raw.capabilityOptOut)
         || raw.capabilityOptOut.some(c => !OPTABLE_CAPABILITIES.includes(c)))) {
@@ -1053,9 +1064,13 @@ export class LurkStateMachine {
             if (entry.state !== OFF && patch.pirWake !== undefined) {
                 pir = await this._ensurePir(entry, await this._caps(entry));
             }
+            let headTracking = null;
+            if (entry.state === LURKING && !entry.eventHold && patch.lurkHead !== undefined) {
+                headTracking = await this._ensureHead(entry, await this._caps(entry));
+            }
             if (entry.state === AWAKE) this._scheduleSleepCheck(entry);
             await this._persist(entry);
-            return { prefs: entry.prefs, pir };
+            return { prefs: entry.prefs, pir, headTracking };
         });
     }
 
@@ -1690,6 +1705,11 @@ export class LurkStateMachine {
         const cap = caps.headTracking;
         if (!cap || !cap.available) return { enabled: false, reason: (cap && cap.reason) || 'not supported' };
         if (entry.eventHold) return { enabled: false, reason: 'fleet event hold' };
+        if ((entry.transitioning || entry.state) === LURKING && entry.prefs.lurkHead === 'idle') {
+            // The idle loop can only claim the pan servo once tracking lets go of it.
+            const stopped = await this._stopHead(entry, { force: true });
+            return { enabled: false, reason: 'lurkHead idle: the idle loop sweeps the head while lurking', stopped };
+        }
         try {
             if (await this.deps.head.isOperatorOff(entry.characterId)) {
                 return { enabled: false, reason: 'switched off by the operator this session' };
