@@ -77,6 +77,27 @@ test.describe('Fleet Command Center', () => {
         await expect(page.locator('#estop')).toContainText('EMERGENCY STOP');
     });
 
+    // Run Show sits in the row directly under Volume / Start Loops, lists Alpha's
+    // scheduled shows and posts {confirm:true} only after the confirm dialog. The
+    // hazard guard answers the POST, so no show actually fires.
+    test('Run Show lists the scheduled shows under the transport row and confirms before firing', async () => {
+        const rows = page.locator('#fccBarRows > .fcc-row');
+        await expect(rows.nth(0).locator('#startLoops')).toBeVisible();
+        await expect(rows.nth(1)).toHaveAttribute('id', 'showRow');
+        await expect(page.locator('#showSel')).toBeVisible();
+        // The list is Alpha's; wait for it to load (or report that it could not).
+        await expect(page.locator('#showStatus')).not.toHaveText('', { timeout: 20000 });
+        const options = await page.locator('#showSel option').count();
+        test.skip(options < 2, 'Alpha unreachable from this server: no shows to pick');
+        await page.locator('#showSel').selectOption({ index: 1 });
+        const reqPromise = page.waitForRequest(r => r.method() === 'POST' && /\/api\/orchestration\/shows\/[^/]+\/run(\?|$)/.test(r.url()));
+        await page.locator('#runShow').click();
+        await expect(page.locator('#fccConfirm')).toBeVisible();
+        await page.locator('#fccConfirmOk').click();
+        const req = await reqPromise;
+        expect(req.postDataJSON()).toEqual({ confirm: true });
+    });
+
     test('shows master volume, say-all, and target controls', async () => {
         await expect(page.locator('#masterVol')).toBeVisible();
         await expect(page.locator('#sayAllText')).toBeVisible();

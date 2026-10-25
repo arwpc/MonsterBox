@@ -971,89 +971,116 @@ router.post('/animatronic/:id/say', express.json(), async (req, res) => {
 });
 
 /**
- * Ask AI on a specific animatronic
+ * Command / Ask AI on a specific animatronic.
+ *
+ * WHY it goes to the node's /conversation/api/ask-ai: the old target, the node's
+ * /api/elevenlabs/agent-speak, is a "fast mode" that speaks the INPUT text with the
+ * character's voice and never consults the agent, and its fallback was a plain TTS of
+ * the same text. So every Command from the Fleet Command Center was repeated back word
+ * for word (operator, 2026-10-24: "right now they just repeat what is entered").
+ * /conversation/api/ask-ai hands the text to the character's own ElevenLabs agent
+ * (on the live session when the character is awake, otherwise one short operator-
+ * initiated turn), so the character interprets it and answers in character.
+ * There is deliberately no TTS fallback: speaking the instruction aloud is the bug.
+ * Literal speech stays on /animatronic/:id/say ("say <words>" in the fleet prompt).
  */
 router.post('/animatronic/:id/ask-ai', express.json(), async (req, res) => {
+    const animatronicId = parseInt(req.params.id);
+    const animatronic = orchestrationService.getAnimatronicById(animatronicId);
+    const text = req.body && req.body.text ? String(req.body.text).trim() : '';
+
+    if (!animatronic) {
+        return res.status(404).json({ success: false, error: `Animatronic ${animatronicId} not found` });
+    }
+    if (!text) {
+        return res.status(400).json({ success: false, error: 'text is required' });
+    }
+
+    const url = `https://${animatronic.ip}:${animatronic.port}/conversation/api/ask-ai?characterId=${encodeURIComponent(animatronic.characterId)}`;
     try {
-        const animatronicId = parseInt(req.params.id);
-        const animatronic = orchestrationService.getAnimatronicById(animatronicId);
-        const { text } = req.body;
-
-        if (!animatronic) {
-            return res.status(404).json({
-                success: false,
-                error: `Animatronic ${animatronicId} not found`
-            });
+        const response = await axiosHttps.post(url, { question: text }, { timeout: 90000 });
+        const data = response.data || {};
+        if (!data.success) {
+            return res.status(502).json({ success: false, error: `${animatronic.name}'s agent did not answer`, message: data.error || data.details });
         }
-
-        if (!text) {
-            return res.status(400).json({
-                success: false,
-                error: 'text is required'
-            });
-        }
-
-        // Prefer device agent-speak API with explicit characterId to avoid reliance on device-selected character
-        // Using top-level axiosHttps instance
-        const url = `https://${animatronic.ip}:${animatronic.port}/api/elevenlabs/agent-speak`;
-        try {
-            const response = await axiosHttps.post(
-                url,
-                { text, characterId: animatronic.characterId, fallbackToTTS: true },
-                { timeout: 60000 }
-            );
-
-            if (response.data && response.data.success) {
-                // Extract the actual AI response text
-                const aiResponseText = response.data.personalityText || response.data.text || response.data.response || response.data.agentResponse || 'Response generated';
-
-                return res.json({
-                    success: true,
-                    message: `AI responded from ${animatronic.name}`,
-                    data: {
-                        ...response.data,
-                        text: aiResponseText  // Always include the actual response text
-                    }
-                });
-            }
-
-            // Fallback to simple TTS generate-and-play if agent fails
-            const details = response.data && (response.data.error || response.data.message);
-            console.warn(`Ask-AI primary failed for ${animatronic.name} -> ${url}: ${details || 'unknown error'}, trying generate-and-play`);
-        } catch (e) {
-            const status = e?.response?.status;
-            const data = e?.response?.data;
-            console.warn(`Ask-AI proxy error -> ${url} [${status || 'no-status'}]:`, e.message, data ? `payload: ${JSON.stringify(data).slice(0, 500)}` : '', 'Using TTS fallback...');
-        }
-
-        // Fallback path: use generate-and-play which is widely available across device versions
-        try {
-            const ttsUrl = `https://${animatronic.ip}:${animatronic.port}/api/elevenlabs/generate-and-play`;
-            const tts = await axiosHttps.post(ttsUrl, { text, characterId: animatronic.characterId }, { timeout: 60000 });
-            if (tts.data && tts.data.success) {
-                return res.json({
-                    success: true,
-                    message: `AI (TTS) responded from ${animatronic.name}`,
-                    data: {
-                        ...tts.data,
-                        text: text,  // Return the original text as the response for TTS fallback
-                        fallback: 'generate-and-play'
-                    }
-                });
-            }
-            const d = tts.data && (tts.data.error || tts.data.message);
-            return res.status(500).json({ success: false, error: 'Ask AI failed', message: d || 'TTS fallback failed', device: { url: ttsUrl } });
-        } catch (fbErr) {
-            const fbs = fbErr?.response?.status;
-            const fbd = fbErr?.response?.data;
-            console.error(`Ask-AI TTS fallback error for ${animatronic.name} -> generate-and-play [${fbs || 'no-status'}]:`, fbErr.message, fbd ? `payload: ${JSON.stringify(fbd).slice(0, 500)}` : '');
-            return res.status(500).json({ success: false, error: 'Failed to ask AI', message: fbErr.message, status: fbs, details: fbd && (fbd.error || fbd.message) });
-        }
+        return res.json({
+            success: true,
+            message: `${animatronic.name}'s agent answered`,
+            data: { ...data, text: data.response || '' }
+        });
     } catch (error) {
-        console.error(`Error asking AI on animatronic ${req.params.id}:`, error.message);
-        res.status(500).json({
+        const status = error?.response?.status;
+        const body = error?.response?.data;
+        const detail = (body && (body.error || body.message)) || error.message;
+        console.error(`Ask-AI on ${animatronic.name} -> ${url} [${status || 'no-status'}]:`, detail);
+        return res.status(status && status < 500 ? status : 502).json({
             success: false,
-            error: 'Failed to ask AI',
+            error: `${animatronic.name}'s agent could not take the command`,
+            message: detail
+        });
+    }
+});
+
+/**
+ * Run Show: the Fleet Command Center's dropdown of scheduled events.
+ *
+ * Every scheduled event runs ONLY from Alpha (operator rule 2026-10-24), so whichever
+ * node serves this page proxies to Alpha's schedule API: the list comes from
+ * GET /api/schedule/ and a run is Alpha's POST /api/schedule/:id/run-now, which
+ * fires the event's own cron command (the fleet-event runner: interrupt, play,
+ * release, back to lurk, one shared lock). A conductor is never played directly.
+ * Alpha is the registry entry with deploy:"console".
+ */
+function showHost() {
+    return orchestrationService.getAnimatronics().find(a => a.deploy === 'console') || null;
+}
+
+// Only events that perform something in the yard belong in the dropdown (not, e.g.,
+// the nightly memory harvest).
+function isShowCommand(command) {
+    return /fleet-events\/run-next\.mjs|yard-theater\/perform\.mjs/.test(String(command || ''));
+}
+
+router.get('/shows', async (req, res) => {
+    const host = showHost();
+    if (!host) return res.status(503).json({ success: false, error: 'No show host (deploy:"console") in config/animatronics.json' });
+    try {
+        const r = await axiosHttps.get(`https://${host.ip}:${host.port}/api/schedule/`, { timeout: 15000 });
+        const events = ((r.data && r.data.events) || [])
+            .filter(e => isShowCommand(e.command))
+            .map(e => ({
+                id: e.id,
+                name: e.name,
+                enabled: !!e.enabled,
+                nextRunText: e.schedule && e.schedule.valid ? e.schedule.nextRunText : null,
+                description: e.schedule && e.schedule.valid ? e.schedule.description : null
+            }));
+        res.json({ success: true, host: { id: host.id, name: host.name }, shows: events });
+    } catch (error) {
+        console.error(`Run Show: could not list ${host.name}'s schedule:`, error.message);
+        res.status(502).json({ success: false, error: `Could not reach ${host.name} for the show list`, message: error.message });
+    }
+});
+
+router.post('/shows/:id/run', express.json(), async (req, res) => {
+    const host = showHost();
+    if (!host) return res.status(503).json({ success: false, error: 'No show host (deploy:"console") in config/animatronics.json' });
+    if (!req.body || req.body.confirm !== true) {
+        return res.status(428).json({ success: false, error: 'Run Show requires an explicit confirmation. It fires the show now, for real.' });
+    }
+    try {
+        const r = await axiosHttps.post(
+            `https://${host.ip}:${host.port}/api/schedule/${encodeURIComponent(req.params.id)}/run-now`,
+            { confirm: true }, { timeout: 15000 });
+        res.json({ success: true, host: { id: host.id, name: host.name }, started: r.data && r.data.started });
+    } catch (error) {
+        const status = error?.response?.status;
+        const body = error?.response?.data || {};
+        console.error(`Run Show ${req.params.id} on ${host.name}: [${status || 'no-status'}]`, body.error || error.message);
+        res.status(status && status < 500 ? status : 502).json({
+            success: false,
+            busy: !!body.busy,
+            error: body.error || `Could not start the show on ${host.name}`,
             message: error.message
         });
     }

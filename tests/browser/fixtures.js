@@ -55,8 +55,10 @@ export const INTERCEPTED = [
   ['POST', /\/api\/elevenlabs\/(play-audio|generate-and-play|agent-speak)(\?|$)/],
   ['POST', /\/api\/system\/restart-service(\?|$)/],
   // Fleet fan-out: one click here acts on every node in the castle.
-  ['POST', /\/api\/orchestration\/(restart-services|say-all|start-all-queue-loops|stop-all-queue-loops|emergency-stop|superpower\/[^/?]+|volume\/restore-canonical|fleet-mode\/[^/?]+)(\?|$)/],
-  ['POST', /\/api\/orchestration\/animatronic\/[^/]+\/(say|play-audio|auto-ai\/start|restart|reboot)(\?|$)/],
+  ['POST', /\/api\/orchestration\/(restart-services|say-all|start-all-queue-loops|stop-all-queue-loops|emergency-stop|superpower\/[^/?]+|volume\/restore-canonical|fleet-mode\/[^/?]+|shows\/[^/?]+\/run)(\?|$)/],
+  // Fires a scheduled show for real (Alpha's runner: interrupt, play, release).
+  ['POST', /\/api\/schedule\/[^/?]+\/run-now(\?|$)/],
+  ['POST', /\/api\/orchestration\/animatronic\/[^/]+\/(say|ask-ai|play-audio|auto-ai\/start|restart|reboot)(\?|$)/],
   ['PUT', /\/api\/orchestration\/volume(\?|$)/],
 ];
 

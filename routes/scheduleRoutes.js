@@ -157,6 +157,25 @@ apiRouter.post('/:id/toggle', async (req, res) => {
 });
 
 /**
+ * The fleet-event runner's lock (scripts/fleet-events/run-next.mjs) names the pid
+ * playing a show. run-now spawns the event's command detached and cannot see the
+ * runner refuse it, so check the lock here and say "already playing" instead of
+ * reporting a start that the runner then silently declines. Mirrors the runner's
+ * own staleness rule: a dead pid, or one older than the play timeout plus a minute,
+ * is not a show in progress.
+ */
+function showInProgress() {
+    try {
+        const held = JSON.parse(fs.readFileSync(path.join(scheduleService.REPO_ROOT, 'data', 'fleet-events.lock'), 'utf8'));
+        try { process.kill(held.pid, 0); } catch (_) { return null; }
+        const ageMs = Date.now() - new Date(held.startedAt).getTime();
+        return ageMs < 13 * 60 * 1000 ? `started ${held.startedAt}` : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+/**
  * Fire an event RIGHT NOW, for real. Requires an explicit confirm token so a
  * stray click cannot start a show: this moves servo-driven hardware and plays
  * loud audio outdoors, potentially near people.
@@ -168,6 +187,10 @@ apiRouter.post('/:id/run-now', async (req, res) => {
                 success: false,
                 error: 'Run-now requires an explicit confirmation. This fires the event immediately, for real.'
             });
+        }
+        const busy = showInProgress();
+        if (busy) {
+            return res.status(409).json({ success: false, busy: true, error: `A show is already playing (${busy}). Wait for it to finish.` });
         }
         const started = await scheduleService.runEventNow(req.params.id);
         res.json({ success: true, started });

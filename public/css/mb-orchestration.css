@@ -49,6 +49,11 @@
   width: 130px;
 }
 
+.fcc-show-sel {
+  max-width: 360px;
+  flex: 0 1 300px;
+}
+
 .fcc-vol-val {
   width: 3em;
   font-variant-numeric: tabular-nums;
