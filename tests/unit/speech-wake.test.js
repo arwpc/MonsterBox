@@ -11,6 +11,7 @@ import { expect } from 'chai';
 import {
     createSpeechGate,
     isOwnEcho,
+    stripSoundAnnotations,
     pcmRms,
     pcmToWav,
     SpeechWakeListener,
@@ -113,6 +114,11 @@ describe('speech wake — detector', () => {
         expect(isOwnEcho('hello is anyone in there', ['Come closer, child.'])).to.equal(false);
         expect(isOwnEcho('', ['anything'])).to.equal(false);
     });
+
+    it('strips Scribe sound annotations so they are not words', () => {
+        expect(stripSoundAnnotations('[background noise]')).to.equal('');
+        expect(stripSoundAnnotations('(music) hello there')).to.equal('hello there');
+    });
 });
 
 describe('speech wake — listener yields the microphone', () => {
@@ -197,9 +203,10 @@ describe('speech wake — pure decisions', () => {
         expect(speechConfirmBudget({ now, times: old }).ok).to.equal(true);
     });
 
-    it('prefs: speech wake defaults on, its level clamps, patches validate', () => {
+    it('prefs: speech wake defaults off (opt-in), its level clamps, patches validate', () => {
         const d = normalizePrefs(null);
-        expect(d.speechWake).to.equal(true);
+        expect(d.speechWake).to.equal(false);
+        expect(normalizePrefs({ speechWake: true }).speechWake).to.equal(true);
         expect(d.speechWakeMinRms).to.equal(DEFAULT_MIN_RMS);
         expect(normalizePrefs({ speechWake: false }).speechWake).to.equal(false);
         expect(normalizePrefs({ speechWakeMinRms: 9 }).speechWakeMinRms).to.equal(0.5);
@@ -264,7 +271,8 @@ function fakeDeps(over = {}) {
         testMode: () => false,
         log: () => {},
         warn: () => {},
-        readState: async () => null,
+        // Speech wake is opt-in (2026-10-27); these tests exercise it.
+        readState: async () => (over.storedState !== undefined ? over.storedState : { prefs: { speechWake: true } }),
         writeState: async () => {},
         capabilities: async () => (over.caps ? over.caps() : CAPS()),
         agent: {
@@ -507,5 +515,11 @@ describe('speech wake — the lurk machine', () => {
         await bare.fireDue(b);
         expect(b.getState(CID)).to.equal('lurking');
         expect(b.getStatus(CID).speech.listener).to.equal(null);
+    });
+
+    it('a node that never opted in never listens (peer voices woke the yard 2026-10-26)', async () => {
+        const { f } = await lurkingMachine({ storedState: null });
+        expect(f.state.listening).to.equal(false);
+        expect(f.names()).to.not.include('speech.start');
     });
 });

@@ -1954,6 +1954,17 @@ needs, and only one holder can capture at a time.
 
 ## Cross-Cutting Software Bugs
 
+### Opened 2026-10-27: speech wake cascade
+
+- 🟡 **Speech wake woke five characters off each other's voices** (2026-10-26 ~20:16 CDT, a minute after the
+  v10.9 deploy). Contained: `speechWake` is opt-in now (default off) and Scribe's `[background noise]`-style
+  annotations no longer pass the words check. OPEN: peer-voice rejection (fuzzy-match a candidate against
+  every peer's recent `/conversation/api/speech-log` lines) before re-enabling it on more than one node.
+- 🟠 **Orlok, Mina, Sir Dragomir and PumpkinHead dropped off the network together at ~20:17-20:18** right
+  after the cascade (ARP FAILED, no ping) while Renfield and Groundbreaker stayed up. Cause not established
+  remotely (shared power circuit or Wi-Fi). Check on next power-up: `journalctl -b -1 -n 50`,
+  `vcgencmd get_throttled`.
+
 ### Fixed 2026-10-26 (v10.9.0)
 
 - ✅ **A deploy deleted every node's show audio.** `rsync --delete` over `data/audio-library/` removed files

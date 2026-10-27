@@ -260,7 +260,7 @@
             var pir = $('lurkPirWake');
             if (pir) pir.checked = p.pirWake !== false;
             var speech = $('lurkSpeechWake');
-            if (speech) speech.checked = p.speechWake !== false;
+            if (speech) speech.checked = p.speechWake === true;
             renderOptOut(ls.capabilities || {}, Array.isArray(p.capabilityOptOut) ? p.capabilityOptOut : []);
         }
         reflectWakeSleep(ls.state, ls.agentLive);

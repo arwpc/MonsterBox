@@ -5,6 +5,18 @@ A guest speaking to a lurking character wakes it, and the agent answers what the
 Operator, 2026-10-26: *"make sure that both SPEECH from a microphone and PIR Motion sensors can both
 trigger wake up of AI - when someone speaks these animatronics should answer."*
 
+## Status: opt-in (2026-10-27)
+
+On 2026-10-26, a minute after the fleet deploy, five characters woke each other off their own greetings
+(each node's Scribe confirmation heard a PEER's line; `isOwnEcho` only covers the node's own lines), and
+Groundbreaker woke on Scribe's literal `[background noise]`. `speechWake` now defaults to **off**: a node
+listens only when its `lurk-state.json` prefs say `true` (set it on `/ai-settings` or
+`POST /conversation/api/lurk-state/prefs {"speechWake":true}`). Annotations like `[background noise]` /
+`(music)` are stripped before the words check. Before enabling it on more than one node in the yard,
+add peer rejection: drop a candidate that fuzzily matches any PEER's recent line (peer
+`/conversation/api/speech-log` through `orchestrationService.httpNode`), then trial ONE node for a show
+night.
+
 ## Why it exists
 
 Before v10.9 a lurking node woke on the PIR, a schedule `wake`, or AI on. On 2026-10-26 the PIR picture was:

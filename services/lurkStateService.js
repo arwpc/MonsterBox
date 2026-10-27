@@ -45,7 +45,7 @@ import { writeJsonAtomic } from './atomicStore.js';
 import { isInQuietHours } from './backgroundMusicService.js';
 import { resolveCharacterDataDir } from './characterService.js';
 import { forgetRuntimeToggle, rememberRuntimeToggle, runtimeToggleOverride } from './characterConfigLock.js';
-import { DEFAULT_MIN_RMS, MAX_MIN_RMS, MIN_MIN_RMS, isOwnEcho } from './speechWakeService.js';
+import { DEFAULT_MIN_RMS, MAX_MIN_RMS, MIN_MIN_RMS, isOwnEcho, stripSoundAnnotations } from './speechWakeService.js';
 
 export const STATE_FILE = 'lurk-state.json';
 
@@ -232,9 +232,12 @@ export function normalizePrefs(raw) {
         // (a dead or floating sensor). A sensor listed in physical-faults.json is
         // never armed regardless.
         pirWake: src.pirWake !== false,
-        // Default ON, like the PIR: a guest who speaks to a lurking character
-        // wakes it. speechWakeMinRms is the detector's floor for this node's mic.
-        speechWake: src.speechWake !== false,
+        // Default OFF (opt-in), unlike the PIR: on 2026-10-26 five characters in
+        // the yard woke each other off their own greetings within a minute, and
+        // isOwnEcho only rejects a node's OWN lines, not a peer's. Stays opt-in
+        // until a peer's recent speech is rejected too. speechWakeMinRms is the
+        // detector's floor for this node's mic.
+        speechWake: src.speechWake === true,
         speechWakeMinRms: normalizeMinRms(src.speechWakeMinRms),
         pirQuietHours,
         capabilityOptOut: Array.isArray(src.capabilityOptOut)
@@ -1521,7 +1524,9 @@ export class LurkStateMachine {
         } finally {
             sp.confirming = false;
         }
-        if (!/[\p{L}\p{N}]/u.test(text)) return this._speechIgnored(entry, 'no-words', { ...level, text });
+        // Scribe annotates non-speech as "[background noise]" / "(music)"; those
+        // letters are not a guest's words (Groundbreaker woke on one 2026-10-26).
+        if (!/[\p{L}\p{N}]/u.test(stripSoundAnnotations(text))) return this._speechIgnored(entry, 'no-words', { ...level, text });
         if (isOwnEcho(text, this._recentCharacterLines(id))) return this._speechIgnored(entry, 'own-voice', { ...level, text });
         sp.lastHeard = { at: this.deps.now(), text, ...level };
         return this._wakeOnSpeech(entry, text, {});

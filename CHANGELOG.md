@@ -4,6 +4,17 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [10.9.0] - 2026-10-26: a guest who speaks wakes the character
 
+### Fixed (2026-10-27)
+
+- **Speech wake woke the yard off its own voices.** Minutes after the 10.9 fleet deploy, a wake on Sir
+  Dragomir made him greet, PumpkinHead's confirmation heard that greeting and woke him, his greeting woke
+  Mina, and so on: five billed agents talking to each other in about 40 s. `isOwnEcho` only rejects a
+  node's OWN recent lines, never a peer's. Groundbreaker separately woke on Scribe's literal
+  `[background noise]`, whose letters passed the has-words check. Speech wake is now **opt-in**
+  (`speechWake` defaults to off; a node listens only when its `lurk-state.json` says `true`) until a
+  peer's recent speech is rejected too, and Scribe's bracketed or parenthesised sound annotations are
+  stripped before the words check.
+
 ### Added
 
 - **Speech wake.** A guest speaking to a lurking character now wakes it, as the PIR does, and the agent
@@ -16,7 +27,7 @@ All notable changes to MonsterBox are documented in this file.
   a rest after a false wake. Its own echo (`own-voice`) and wordless noise (`no-words`) never wake it.
   The 90 s no-guest grace applies; a speech source that wakes the node for nobody rests 2, 4, 8, 16, then
   30 minutes, reset by the first real guest; the PIR's rest is untouched. The listener yields the mic to
-  every conversation. New: `services/speechWakeService.js`, prefs `speechWake` (default on) and
+  every conversation. New: `services/speechWakeService.js`, prefs `speechWake` (default on; opt-in since 2026-10-27, see Fixed) and
   `speechWakeMinRms` (0.02), `POST /conversation/api/speech-wake/simulate`, a `speech` block in
   `GET /conversation/api/lurk-state`, an `/ai-settings` checkbox. Design and tuning:
   `docs/development/SPEECH-WAKE.md`. 32 unit tests (`tests/unit/speech-wake.test.js`). Proven live on

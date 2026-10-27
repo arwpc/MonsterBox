@@ -148,6 +148,14 @@ export function pcmToWav(pcm, sampleRate = SAMPLE_RATE) {
 const words = (text) => String(text || '').toLowerCase().match(/[\p{L}\p{N}']+/gu) || [];
 
 /**
+ * Drop Scribe's non-speech annotations ("[background noise]", "(music)") so
+ * only words a person said are left to judge.
+ */
+export function stripSoundAnnotations(text) {
+    return String(text || '').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').trim();
+}
+
+/**
  * Is this transcript the character's own recent line coming back through its
  * microphone? Word overlap against what it said in the last few seconds.
  */
