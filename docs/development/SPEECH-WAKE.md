@@ -1,0 +1,92 @@
+# Speech wake
+
+A guest speaking to a lurking character wakes it, and the agent answers what they said.
+
+Operator, 2026-10-26: *"make sure that both SPEECH from a microphone and PIR Motion sensors can both
+trigger wake up of AI - when someone speaks these animatronics should answer."*
+
+## Why it exists
+
+Before v10.9 a lurking node woke on the PIR, a schedule `wake`, or AI on. On 2026-10-26 the PIR picture was:
+
+| Node | PIR | PIR wakes, last ~week |
+|------|-----|-----------------------|
+| PumpkinHead (1) | dead, listed in `config/physical-faults.json` | never armed |
+| Mina (2) | works | 25 to 85 a day |
+| Orlok (3) | works | 20 to 116 a day |
+| Sir Dragomir (4) | GPIO 26 has never risen (wiring, KNOWN-BUGS) | 0 |
+| Groundbreaker (5) | none fitted | n/a |
+| Renfield (6) | proven by a wave test on GPIO 17, silent in the yard | 0 |
+
+So for four of six characters a guest walking up and talking got silence. Every animatronic has a
+microphone (five XVF3800 arrays, one USB mic).
+
+## How it works
+
+```
+lurking ──mic frames──▶ local detector ──candidate──▶ lurk machine gates ──▶ one Scribe call
+   ▲                    (free, 100 ms RMS,             (state, hold, quiet       │ real words, not
+   │                     adaptive floor)                hours, cooldown,         │ its own echo
+   │                                                    own speaker, budget)     ▼
+   └──── sleep (no guest in 90 s → escalating rest) ◀── AWAKE: agent starts with no greeting,
+                                                        the guest's words are its first turn
+```
+
+1. **Listen locally** (`services/speechWakeService.js`). While the node is LURKING, one capture process
+   streams 16 kHz PCM through the same path the agent uses (`serverSTTListener.startContinuousCapture`,
+   PyAudio first). Each 100 ms frame is voiced when its RMS is at least `max(speechWakeMinRms, floor x 2.5)`.
+   The floor follows quiet frames in about 2 s and absorbs a sustained noise in about 50 s. An utterance
+   is a run of frames ending in 600 ms of silence; it is a candidate when at least 400 ms of it was
+   voiced. The first 3 s after a (re)start only learn the room. Nothing here is billed.
+2. **Gate cheaply** (`LurkStateMachine.handleSpeechCandidate`). These are checked before any money is
+   spent: the same `decideMotion` rules as the PIR (lurking, no fleet-event hold, boot grace, quiet hours
+   `pirQuietHours`, the speech rest), the character's own speaker playing (`recentlyPlaying`), and the
+   confirmation budget (one at a time, 4 s apart, 60 an hour).
+3. **Confirm with Scribe.** One batch `scribe_v2` call on the candidate's audio (a few seconds at most).
+   No letters or digits means no wake (`no-words`). Mostly the same words the character said in the last
+   20 s means its own echo (`own-voice`).
+4. **Wake and answer.** The guest's line goes into the speech log *before* the wake (so it is not counted
+   as the guest staying), the agent starts with `noGreeting`, and
+   `elevenLabsWebSocketService.handGuestTurnToAgent()` sends the words as the session's first
+   `user_message`. If the hand-off fails the node is still awake and listening; the guest just has to
+   speak again.
+5. **Give the mic back.** The listener yields to every conversation (the same mic-holder signal Follow
+   Orders uses), stops when the node wakes or is switched off, and starts again on lurking.
+
+## Why not energy alone
+
+Measured 2026-10-26: guest speech on Mina's array reads 0.02 to 0.12 RMS, and her quiet yard reaches
+0.04 at p90 with peaks of 0.13 (the neighbours' lurk lines carry). Quiet-yard p50 per node at 100 ms:
+Renfield 0.002, Groundbreaker 0.004, PumpkinHead 0.012, Mina 0.016, Sir Dragomir 0.027. No single
+level separates a guest from the yard, and every false wake is a billed agent session (up to the
+90 s grace). The Scribe check costs a few seconds of batch audio, at most about 3 minutes an hour.
+
+## Cost policy
+
+This is not the "always-on agent/STT stream" the ElevenLabs cost policy forbids: the stream is local,
+and Scribe sees only energy-gated utterances that could wake the node, under a hard hourly cap. A
+false speech wake is bounded the same way as a false PIR wake (the 90 s `wakeGuestGraceMs`), and it
+then rests the speech source for 2, 4, 8, 16, then 30 minutes in a row until a wake finds a real guest.
+The PIR's own 2-minute rest is untouched.
+
+## Operating it
+
+- Status: `GET /conversation/api/lurk-state` → `speech` (`listener.gate.floor/threshold`, `candidates`,
+  `confirmsLastHour`, `wakes`, `lastHeard`, `lastIgnored.reason`, `falseWakeStreak`, `rewakeCooldownMs`).
+- Switch / tune per node: `/ai-settings` checkbox, or
+  `POST /conversation/api/lurk-state/prefs {"speechWake": false}` / `{"speechWakeMinRms": 0.04}`
+  (0.005 to 0.5, default 0.02). Stored in `lurk-state.json` (runtime state, works on a locked character).
+- Prove the wake-and-answer path without a guest (skips the mic and Scribe, nothing else):
+  `POST /conversation/api/speech-wake/simulate {"text":"hello, who are you?", "force": true}`.
+- Log lines: `[Lurk] character N: guest spoke — "..."`, `lurking → AWAKE (speech)`,
+  `🗣️ Speech wake: guest's words handed to the agent`, and at most one `speech ignored (<reason>)` per
+  reason per 10 minutes.
+
+## Tuning notes
+
+- A node that wakes for the neighbours: raise `speechWakeMinRms` (try 0.04), or check `lastIgnored` and
+  the floor in the status first.
+- A node that never wakes for a real guest: `candidates` stays 0 means the detector never fired (lower
+  `speechWakeMinRms`); candidates with `no-words` means the speech was too faint for Scribe.
+- Background music on a node raises its floor (by design); a guest still has to be clearly louder than
+  the music at the array.

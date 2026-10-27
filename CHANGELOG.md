@@ -2,6 +2,37 @@
 
 All notable changes to MonsterBox are documented in this file.
 
+## [10.9.0] - 2026-10-26: a guest who speaks wakes the character
+
+### Added
+
+- **Speech wake.** A guest speaking to a lurking character now wakes it, as the PIR does, and the agent
+  answers their words instead of reciting its greeting (operator 2026-10-26). Four of six animatronics had
+  no PIR that fires in the yard (PumpkinHead's is dead, Sir Dragomir's and Renfield's have not fired in a
+  week, Groundbreaker has none), so a guest talking to them got silence. Every node with a microphone and
+  an agent listens while lurking: local 100 ms frame energy against an adaptive floor (free), then one
+  short batch Scribe confirmation (one at a time, 4 s apart, 60 an hour) before it wakes. Ignored without
+  any spend: fleet-event holds, quiet hours (`pirQuietHours`), boot grace, the character's own speaker,
+  a rest after a false wake. Its own echo (`own-voice`) and wordless noise (`no-words`) never wake it.
+  The 90 s no-guest grace applies; a speech source that wakes the node for nobody rests 2, 4, 8, 16, then
+  30 minutes, reset by the first real guest; the PIR's rest is untouched. The listener yields the mic to
+  every conversation. New: `services/speechWakeService.js`, prefs `speechWake` (default on) and
+  `speechWakeMinRms` (0.02), `POST /conversation/api/speech-wake/simulate`, a `speech` block in
+  `GET /conversation/api/lurk-state`, an `/ai-settings` checkbox. Design and tuning:
+  `docs/development/SPEECH-WAKE.md`. 22 unit tests (`tests/unit/speech-wake.test.js`).
+
+### Fixed
+
+- `npm run gate` failed on `main`: two comments added after GOLD named a character
+  (`audit:independence`). Reworded; the allowlist did not grow.
+
+### Since GOLD (shipped under 10.8.0)
+
+The Nosferatu story, the Slipknot show and the fleetshow engine (Lighting, Count's Orders, One Song) with
+generated scores and Goblin reels; every scheduled event conducted only from Alpha; the Fleet Command
+Center's Run Show dropdown and a real agent turn for Command/Ask; `lurkHead: 'idle'`; Groundbreaker's
+ReSpeaker and turn motor; the 15-minute playback ceiling. See `git log v10.8.0..v10.9.0`.
+
 ## [10.8.0] - 2026-10-17: GOLD release — Halloween 2026 working version
 
 The operator's sign-off: every animatronic deployed, running and working together. This is the version the

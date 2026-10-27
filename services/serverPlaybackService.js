@@ -48,7 +48,7 @@ function _playbackTimeoutMs(buffer, contentType = '') {
   // A genuinely stuck device still fails: the budget is scaled to the audio's own length.
   // The ceiling matches the scene executor's AUDIO_TIMEOUT_CAP_MS. At 300000 it SIGTERMed every
   // jaw-synced show track at the five-minute mark: in the 8-minute Nosferatu fleet show
-  // (2026-10-18) Orlok, Mina and Sir Dragomir all went silent at 5:00, mid-dialogue.
+  // (2026-10-18) three of the speaking characters went silent at 5:00, mid-dialogue.
   const CEILING_MS = 15 * 60 * 1000;
   const len = (buffer && buffer.length) || 0;
   if (!len) return FLOOR_MS;

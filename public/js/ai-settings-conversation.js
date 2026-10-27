@@ -259,6 +259,8 @@
             if (inact) inact.value = Math.round((Number(p.inactivityTimeoutMs) || 0) / 1000);
             var pir = $('lurkPirWake');
             if (pir) pir.checked = p.pirWake !== false;
+            var speech = $('lurkSpeechWake');
+            if (speech) speech.checked = p.speechWake !== false;
             renderOptOut(ls.capabilities || {}, Array.isArray(p.capabilityOptOut) ? p.capabilityOptOut : []);
         }
         reflectWakeSleep(ls.state, ls.agentLive);
@@ -317,6 +319,7 @@
         var body = {
             inactivityTimeoutMs: secsVal * 1000,
             pirWake: !!($('lurkPirWake') || {}).checked,
+            speechWake: !!($('lurkSpeechWake') || {}).checked,
             capabilityOptOut: optOut
         };
         if (result) result.textContent = 'Saving…';

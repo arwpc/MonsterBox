@@ -1773,6 +1773,38 @@ class ElevenLabsWebSocketService extends EventEmitter {
         this.activeConnections.delete(sessionId);
     }
 
+    /** The character's capture device, as the agent's own mic loop resolves it. */
+    getMicrophoneDeviceForCharacter(characterId) {
+        return getMicrophoneDeviceForCharacter(characterId);
+    }
+
+    /**
+     * Speech wake: the guest spoke to the character while it lurked, the lurk
+     * machine confirmed real words with Scribe and started this headless
+     * session without its greeting. Their words become the session's first
+     * user turn, so the character answers what was said. The server mic loop
+     * is already streaming, which gives the turn detector the audio edge a
+     * text frame needs to commit (see askAgentQuestion).
+     */
+    handGuestTurnToAgent(characterId, text) {
+        const line = String(text || '').trim();
+        if (characterId == null || !line) return { sent: false, reason: 'nothing to say' };
+        const sessionId = this.headlessSessions.get(String(characterId));
+        const c = sessionId ? this.activeConnections.get(sessionId) : null;
+        if (!c || !c.isActive || !c.conversationReady || !c.elevenLabsWs || c.elevenLabsWs.readyState !== WebSocket.OPEN) {
+            return { sent: false, reason: 'no ready agent session' };
+        }
+        this._startTurn(c, { source: 'speech-wake', speechEndMs: null, transcriptAtMs: Date.now(), text: line });
+        try {
+            c.elevenLabsWs.send(JSON.stringify({ type: 'user_message', text: line }));
+        } catch (err) {
+            return { sent: false, reason: `send failed: ${err.message}` };
+        }
+        import('./ledInteractionService.js').then(m => m.default.setInteractionState(c.characterId, 'thinking')).catch(() => {});
+        console.log(`🗣️ Speech wake: guest's words handed to the agent for character ${characterId} (${sessionId}): "${line.slice(0, 80)}"`);
+        return { sent: true, sessionId };
+    }
+
     /**
      * True if a headless agent session is currently live for a character.
      */
@@ -2119,6 +2151,15 @@ class ElevenLabsWebSocketService extends EventEmitter {
         import('./followOrders/followOrdersListener.js')
             .then(m => {
                 const listener = m.default || m;
+                if (event === 'start') listener.onConversationMicStart(characterId);
+                else listener.onConversationMicStop(characterId);
+            })
+            .catch(() => { /* noop */ });
+        // The lurk speech-wake listener steps aside for every conversation too
+        // (a browser chat, an ask, an agent someone started outside the lurk machine).
+        import('./speechWakeService.js')
+            .then(m => {
+                const listener = m.default;
                 if (event === 'start') listener.onConversationMicStart(characterId);
                 else listener.onConversationMicStop(characterId);
             })
@@ -2551,7 +2592,7 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 
     _turnIsPrompted(turn) {
-        return !!(turn && (turn.source === 'speech' || turn.source === 'ask-ai' || turn.source === 'one-shot'));
+        return !!(turn && (turn.source === 'speech' || turn.source === 'speech-wake' || turn.source === 'ask-ai' || turn.source === 'one-shot'));
     }
 
     _emitActivity(connection, kind, extra = {}) {

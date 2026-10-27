@@ -45,6 +45,7 @@ import { writeJsonAtomic } from './atomicStore.js';
 import { isInQuietHours } from './backgroundMusicService.js';
 import { resolveCharacterDataDir } from './characterService.js';
 import { forgetRuntimeToggle, rememberRuntimeToggle, runtimeToggleOverride } from './characterConfigLock.js';
+import { DEFAULT_MIN_RMS, MAX_MIN_RMS, MIN_MIN_RMS, isOwnEcho } from './speechWakeService.js';
 
 export const STATE_FILE = 'lurk-state.json';
 
@@ -65,8 +66,23 @@ export const MAX_WAKE_GUEST_GRACE_MS = 30 * 60 * 1000;
 // session after session.
 export const WAKE_GUEST_COOLDOWN_MS = 2 * 60 * 1000;
 // Same window callouts, lurk scenes and background music default to: a cat at
-// 03:00 must not open an agent session that greets the household.
+// 03:00 must not open an agent session that greets the household. Speech wake
+// honours it too (a television through an open window at 02:00).
 export const DEFAULT_PIR_QUIET_HOURS = Object.freeze({ start: '23:00', end: '08:00' });
+
+// Speech wake (services/speechWakeService.js). Each local candidate costs one
+// short batch Scribe call before it may wake the node, so the confirmations are
+// budgeted: never two at once, a breather between them, and a ceiling per hour
+// that a yard full of chatter cannot exceed (~60 x 3 s = 3 min of audio/hour).
+export const SPEECH_CONFIRM_MIN_GAP_MS = 4 * 1000;
+export const SPEECH_CONFIRMS_PER_HOUR = 60;
+// A speech wake that no guest answers was the neighbours or the music. The
+// rest after one doubles with every such wake in a row (2, 4, 8 ... 30 min) and
+// resets as soon as a wake finds a real guest.
+export const SPEECH_FALSE_WAKE_COOLDOWN_MS = 2 * 60 * 1000;
+export const SPEECH_FALSE_WAKE_COOLDOWN_MAX_MS = 30 * 60 * 1000;
+// The character's own lines heard back within this long are its echo, not a guest.
+const OWN_ECHO_WINDOW_MS = 20 * 1000;
 
 // A floating PIR line reads HIGH at start-up and used to fire a wake during the
 // busiest moment of boot — PumpkinHead's self-sustaining reset loop
@@ -112,6 +128,18 @@ export const NO_GUEST_CEILING_FACTOR = 3;
 export function isGuestActivity(kind) {
     return !/^(agent|speaker-audio|motion|speech:character|speech:system)/i.test(String(kind || ''));
 }
+
+// A machine built without a speech-wake dependency (unit tests, a minimal
+// harness) has no microphone listening and nothing to hand off.
+const NO_SPEECH_WAKE = Object.freeze({
+    start: async () => ({ wanted: false, skipped: 'no speech-wake dependency' }),
+    stop: async () => {},
+    yieldMic: async () => {},
+    statusSync: () => null,
+    confirm: async () => '',
+    recordGuest: () => {},
+    handOff: async () => ({ sent: false, reason: 'no speech-wake dependency' })
+});
 
 // Throttle for "motion ignored" lines: a floating line can fire every second.
 const IGNORED_MOTION_LOG_MS = 10 * 60 * 1000;
@@ -202,6 +230,10 @@ export function normalizePrefs(raw) {
         // (a dead or floating sensor). A sensor listed in physical-faults.json is
         // never armed regardless.
         pirWake: src.pirWake !== false,
+        // Default ON, like the PIR: a guest who speaks to a lurking character
+        // wakes it. speechWakeMinRms is the detector's floor for this node's mic.
+        speechWake: src.speechWake !== false,
+        speechWakeMinRms: normalizeMinRms(src.speechWakeMinRms),
         pirQuietHours,
         capabilityOptOut: Array.isArray(src.capabilityOptOut)
             ? [...new Set(src.capabilityOptOut.filter(c => OPTABLE_CAPABILITIES.includes(c)))]
@@ -209,10 +241,16 @@ export function normalizePrefs(raw) {
         // Who owns the pan servo while LURKING. 'track' (default): head tracking,
         // as before. 'idle': tracking stops on entering lurk and the idle loop's
         // head poses sweep the head slowly; a wake still starts tracking. Operator
-        // 2026-10-24: Orlok's lurking head jerked after every flicker of motion in
+        // 2026-10-24: a lurking head (char 3) jerked after every flicker of motion in
         // the yard instead of panning slowly.
         lurkHead: LURK_HEAD_MODES.includes(src.lurkHead) ? src.lurkHead : 'track'
     };
+}
+
+function normalizeMinRms(value) {
+    const n = Number(value);
+    if (value == null || !Number.isFinite(n)) return DEFAULT_MIN_RMS;
+    return Math.min(MAX_MIN_RMS, Math.max(MIN_MIN_RMS, n));
 }
 
 /** Mark opted-out capabilities unavailable (with the reason) — never mutates the input. */
@@ -246,6 +284,13 @@ export function validatePrefsPatch(raw) {
         }
     }
     if (raw.pirWake !== undefined && typeof raw.pirWake !== 'boolean') errors.push('pirWake must be a boolean');
+    if (raw.speechWake !== undefined && typeof raw.speechWake !== 'boolean') errors.push('speechWake must be a boolean');
+    if (raw.speechWakeMinRms !== undefined) {
+        const n = Number(raw.speechWakeMinRms);
+        if (raw.speechWakeMinRms === null || !Number.isFinite(n) || n < MIN_MIN_RMS || n > MAX_MIN_RMS) {
+            errors.push(`speechWakeMinRms must be between ${MIN_MIN_RMS} and ${MAX_MIN_RMS}`);
+        }
+    }
     if (raw.pirQuietHours !== undefined && raw.pirQuietHours !== null && !validQuietHours(raw.pirQuietHours)) {
         errors.push('pirQuietHours must be null or { start: "HH:MM", end: "HH:MM" }');
     }
@@ -260,7 +305,8 @@ export function validatePrefsPatch(raw) {
 }
 
 /**
- * What one PIR edge (or a simulated one) should do.
+ * What one PIR edge (or a simulated one), or one confirmed guest utterance
+ * (source 'speech'), should do.
  * @returns {{action: 'wake'|'activity'|'ignore', reason: string}}
  */
 export function decideMotion(s = {}) {
@@ -276,23 +322,53 @@ export function decideMotion(s = {}) {
     // ceremony must not start an agent session in the middle of it.
     if (s.eventHold && !s.force) return { action: 'ignore', reason: 'event-hold' };
     if (s.source === 'pir' && s.pirWake === false && !s.force) return { action: 'ignore', reason: 'pir-wake-off' };
+    if (s.source === 'speech' && s.speechWake === false && !s.force) return { action: 'ignore', reason: 'speech-wake-off' };
     if (s.force) return { action: 'wake', reason: 'forced' };
     if (s.inBootGrace) return { action: 'ignore', reason: 'boot-grace' };
-    // After a no-guest sleep, the same restless PIR would wake the node again at
-    // once; it gets one inactivity timeout of rest first.
-    if (s.source === 'pir' && s.inRewakeCooldown) return { action: 'ignore', reason: 'rewake-cooldown' };
+    // After a no-guest sleep, the same restless PIR (or chattering yard) would
+    // wake the node again at once; the source gets a rest first.
+    if (isSensorSource(s.source) && s.inRewakeCooldown) return { action: 'ignore', reason: 'rewake-cooldown' };
     if (s.inArmGrace) return { action: 'ignore', reason: 'arm-grace' };
     if (s.inQuietHours) return { action: 'ignore', reason: 'quiet-hours' };
-    return { action: 'wake', reason: 'motion' };
+    return { action: 'wake', reason: s.source === 'speech' ? 'speech' : 'motion' };
+}
+
+/** A wake the node's own sensors fired (PIR, microphone), as opposed to an operator or schedule. */
+export function isSensorSource(source) {
+    return source === 'pir' || source === 'speech';
 }
 
 /**
- * When does a PIR wake that no guest has answered run out? Null when the check
- * does not apply: an explicit wake (AI button, schedule, fleet), a guest already
- * heard, or the window switched off.
+ * The rest a speech source gets after its Nth no-guest wake in a row:
+ * 2, 4, 8, 16, 30, 30 ... minutes.
+ */
+export function speechFalseWakeCooldownMs(streak) {
+    const n = Math.max(1, Math.floor(Number(streak) || 1));
+    return Math.min(SPEECH_FALSE_WAKE_COOLDOWN_MAX_MS, SPEECH_FALSE_WAKE_COOLDOWN_MS * 2 ** Math.min(n - 1, 10));
+}
+
+/**
+ * May one more Scribe confirmation run now? Pure: `times` are the start times
+ * of earlier confirmations (any age; only the last hour counts).
+ */
+export function speechConfirmBudget({ now, times = [], inFlight = false }) {
+    if (inFlight) return { ok: false, reason: 'confirm-in-flight' };
+    const recent = times.filter(t => now - t < 60 * 60 * 1000);
+    const last = recent.length ? Math.max(...recent) : null;
+    if (last != null && now - last < SPEECH_CONFIRM_MIN_GAP_MS) return { ok: false, reason: 'confirm-rate', recent };
+    if (recent.length >= SPEECH_CONFIRMS_PER_HOUR) return { ok: false, reason: 'confirm-budget', recent };
+    return { ok: true, recent };
+}
+
+/**
+ * When does a sensor wake (PIR or speech) that no guest has answered run out?
+ * Null when the check does not apply: an explicit wake (AI button, schedule,
+ * fleet), a guest already heard, or the window switched off. A speech wake's
+ * own trigger line is recorded BEFORE the wake, so it does not count as the
+ * guest answering.
  */
 export function wakeGuestDeadline({ wake, since, lastGuestAt, wakeGuestGraceMs }) {
-    if (!wake || wake.source !== 'pir' || wake.explicit || !wakeGuestGraceMs) return null;
+    if (!wake || !isSensorSource(wake.source) || wake.explicit || !wakeGuestGraceMs) return null;
     if (!Number.isFinite(since)) return null;
     if (Number.isFinite(lastGuestAt) && lastGuestAt > since) return null;
     return since + wakeGuestGraceMs;
@@ -324,13 +400,13 @@ export function summarizeResults(results = {}) {
     const order = [
         ['agent', 'agent'], ['jaw', 'jaw'], ['led', 'led'], ['headTracking', 'head'],
         ['aiMotion', 'aiMotion'], ['followOrders', 'orders'], ['randomPoses', 'sway'],
-        ['idle', 'idle'], ['pir', 'pir'], ['music', 'music']
+        ['idle', 'idle'], ['pir', 'pir'], ['speech', 'speech'], ['music', 'music']
     ];
     const parts = [];
     for (const [key, label] of order) {
         const r = results[key];
         if (!r) continue;
-        const on = r.enabled === true || r.armed === true || r.resumed === true;
+        const on = r.enabled === true || r.armed === true || r.resumed === true || r.listening === true;
         let text = `${label}:${on ? 'on' : 'off'}`;
         if (!on && (r.reason || r.error)) text = `${label}:n/a(${r.reason || r.error})`;
         if (on && r.error) text += `(${r.error})`;
@@ -499,6 +575,14 @@ export async function detectCapabilities(characterId, src = defaultCapabilitySou
     if (!sensor) caps.motionSensor = { available: false, reason: 'no motion sensor' };
     else if (await broken(sensor.id)) caps.motionSensor = { available: false, partId: sensor.id, reason: 'motion sensor is listed broken' };
     else caps.motionSensor = { available: true, partId: sensor.id, pin: sensor.pin, part: sensor };
+
+    // Speech wake listens on the character's own microphone and wakes the agent,
+    // so it needs both.
+    const mic = enabled.find(p => normType(p.type) === 'microphone');
+    if (!mic) caps.microphone = { available: false, reason: 'no microphone' };
+    else if (await broken(mic.id)) caps.microphone = { available: false, partId: mic.id, reason: 'microphone is listed broken' };
+    else if (!caps.agent.available) caps.microphone = { available: false, partId: mic.id, reason: 'no agent to wake' };
+    else caps.microphone = { available: true, partId: mic.id };
 
     const music = await safe(() => src.readMusic(id), null);
     caps.music = music && music.enabled && Array.isArray(music.tracks) && music.tracks.length > 0
@@ -768,6 +852,46 @@ function defaultDeps() {
             }
         },
 
+        speechWake: {
+            async start(id, opts) {
+                if (isTestMode()) return { listening: false, skipped: 'test-mode' };
+                const sw = await load('sw', './speechWakeService.js');
+                const ws = await load('ws', './elevenLabsWebSocketService.js');
+                let deviceId = 'default';
+                try { deviceId = await ws.getMicrophoneDeviceForCharacter(id); } catch (_) { /* default source */ }
+                return sw.start(id, { ...opts, deviceId });
+            },
+            async stop() { if (mods.sw) await mods.sw.stop(); },
+            /** Let go of the microphone for the agent, keeping the listener wanted. */
+            async yieldMic() { if (mods.sw) await mods.sw.yieldMic(); },
+            statusSync() {
+                try { return mods.sw ? mods.sw.status() : null; } catch (_) { return null; }
+            },
+            /** One batch Scribe call on the candidate's audio; '' when nothing was said. */
+            async confirm(id, pcm) {
+                const { pcmToWav } = await import('./speechWakeService.js');
+                const stt = await load('stt', './elevenLabsSTTService.js');
+                let language;
+                try {
+                    const { getSTTConfig } = await import('./aiConfigStore.js');
+                    const cfg = await getSTTConfig();
+                    if (cfg && cfg.language && cfg.language !== 'auto') language = cfg.language;
+                } catch (_) { /* auto-detect */ }
+                const r = await stt.transcribeAudio(pcmToWav(pcm), { mimeType: 'audio/wav', model: 'scribe_v2', language });
+                if (!r || !r.success) throw new Error((r && r.error && (r.error.message || r.error)) || 'STT failed');
+                return String(r.transcript || r.text || '').trim();
+            },
+            /** The guest's line goes in the speech log like any guest turn (before the wake). */
+            recordGuest(id, text) {
+                try { if (mods.speech) mods.speech.recordSpeech(id, { speaker: 'guest', source: 'speech-wake', text }); } catch (_) { /* advisory */ }
+            },
+            /** Give the freshly started agent the guest's words as its first turn. */
+            async handOff(id, text) {
+                const ws = await load('ws', './elevenLabsWebSocketService.js');
+                return ws.handGuestTurnToAgent(id, text);
+            }
+        },
+
         music: {
             async resume(id) {
                 const m = await load('bgm', './backgroundMusicService.js');
@@ -872,6 +996,11 @@ export class LurkStateMachine {
             lastTransition: null,          // { from, to, reason, at, ms, results }
             capabilities: null,
             pir: { armedAt: null, lastMotionAt: null, count: 0, lastIgnored: null, ignoredLoggedAt: 0 },
+            speech: {
+                candidates: 0, confirms: [], confirming: false, wakes: 0,
+                falseWakeStreak: 0, cooldownUntil: 0,
+                lastHeard: null, lastIgnored: null, ignoredLoggedAt: 0
+            },
             transitioning: null,
             transitions: 0,                // bumped by every transition (event release compares it)
             eventHold: null                // { since, until, reason, holds, transitionsAtHold, remembered }
@@ -914,12 +1043,13 @@ export class LurkStateMachine {
         return this.getStatus(id);
     }
 
-    /** Stop timers and the PIR watcher (graceful shutdown). */
+    /** Stop timers, the PIR watcher and the speech listener (graceful shutdown). */
     async shutdown() {
         this._clearBootTimer();
         this._clearSleepTimer();
         this._clearHoldTimer();
         try { await this.deps.watcher.stop(); } catch (_) { /* noop */ }
+        try { if (this.deps.speechWake) await this.deps.speechWake.stop(); } catch (_) { /* noop */ }
     }
 
     _clearHoldTimer() {
@@ -1054,7 +1184,7 @@ export class LurkStateMachine {
         return this.disarm(characterId, { ...opts, force: true, reason: 'panic' });
     }
 
-    /** Update preferences (inactivity timeout, PIR wake, PIR quiet hours). */
+    /** Update preferences (inactivity timeout, PIR wake, speech wake, wake quiet hours). */
     setPrefs(characterId, patch = {}, opts = {}) {
         const errors = validatePrefsPatch(patch);
         if (errors.length) return Promise.resolve({ success: false, error: errors.join('; '), errors });
@@ -1064,13 +1194,18 @@ export class LurkStateMachine {
             if (entry.state !== OFF && patch.pirWake !== undefined) {
                 pir = await this._ensurePir(entry, await this._caps(entry));
             }
+            // The listener only runs while lurking; awake and off pick the change up on their way back.
+            let speech = null;
+            if (entry.state === LURKING && (patch.speechWake !== undefined || patch.speechWakeMinRms !== undefined)) {
+                speech = await this._ensureSpeechWake(entry, await this._caps(entry));
+            }
             let headTracking = null;
             if (entry.state === LURKING && !entry.eventHold && patch.lurkHead !== undefined) {
                 headTracking = await this._ensureHead(entry, await this._caps(entry));
             }
             if (entry.state === AWAKE) this._scheduleSleepCheck(entry);
             await this._persist(entry);
-            return { prefs: entry.prefs, pir, headTracking };
+            return { prefs: entry.prefs, pir, speech, headTracking };
         });
     }
 
@@ -1303,6 +1438,122 @@ export class LurkStateMachine {
         });
     }
 
+    _decideSpeech(entry, { force = false } = {}) {
+        const now = this.deps.now();
+        return decideMotion({
+            state: entry.state,
+            source: 'speech',
+            force,
+            eventHold: !!entry.eventHold,
+            speechWake: entry.prefs.speechWake,
+            inBootGrace: this.bootAt != null && now - this.bootAt < PIR_BOOT_GRACE_MS,
+            inArmGrace: false,          // the detector learns the room before it can fire
+            inRewakeCooldown: now < (entry.speech.cooldownUntil || 0),
+            inQuietHours: isInQuietHours(entry.prefs.pirQuietHours, new Date(now))
+        });
+    }
+
+    _speechIgnored(entry, reason, extra = {}) {
+        const now = this.deps.now();
+        entry.speech.lastIgnored = { at: now, reason, ...extra };
+        // A chattering yard produces a candidate every few seconds: one line per
+        // reason per ten minutes is plenty for the log on an SD card.
+        const key = `${reason}`;
+        if (entry.speech.ignoredLoggedKey !== key || now - entry.speech.ignoredLoggedAt > IGNORED_MOTION_LOG_MS) {
+            entry.speech.ignoredLoggedAt = now;
+            entry.speech.ignoredLoggedKey = key;
+            this.deps.log(`[Lurk] character ${entry.characterId}: speech ignored (${reason})${extra.text ? ` "${String(extra.text).slice(0, 60)}"` : ''}`);
+        }
+        return { action: 'ignore', reason, state: entry.state };
+    }
+
+    /** What the character itself said in the last few seconds (its echo is not a guest). */
+    _recentCharacterLines(id) {
+        try {
+            const { entries } = this.deps.speech.since(id, 0);
+            const cutoff = this.deps.now() - OWN_ECHO_WINDOW_MS;
+            return (entries || [])
+                .filter(e => e && e.speaker === 'character' && Date.parse(e.at) >= cutoff)
+                .map(e => e.text);
+        } catch (_) { return []; }
+    }
+
+    /**
+     * One utterance the speech listener heard while lurking. The cheap gates run
+     * first; only a candidate that could wake the node now spends a Scribe call,
+     * and only real words that are not the character's own echo wake it. The
+     * guest's words are handed to the agent so the character answers them.
+     *
+     * candidate: { pcm, voicedMs, peakRms, floor, threshold }.
+     */
+    async handleSpeechCandidate(characterId, candidate = {}) {
+        const id = toId(characterId);
+        const entry = this.entry;
+        if (id == null || !entry || entry.characterId !== id) return { action: 'ignore', reason: 'not-bound' };
+        const sp = entry.speech;
+        sp.candidates += 1;
+        const level = { peakRms: Number((candidate.peakRms || 0).toFixed(3)), floor: Number((candidate.floor || 0).toFixed(3)) };
+
+        const pre = this._decideSpeech(entry);
+        if (pre.action !== 'wake') return this._speechIgnored(entry, pre.reason, level);
+        if (this.deps.audio.recentlyPlaying(id, this.deps.now())) return this._speechIgnored(entry, 'own-speaker', level);
+        if (!candidate.pcm || !candidate.pcm.length) return this._speechIgnored(entry, 'no-audio', level);
+        const budget = speechConfirmBudget({ now: this.deps.now(), times: sp.confirms, inFlight: sp.confirming });
+        sp.confirms = budget.recent || sp.confirms;
+        if (!budget.ok) return this._speechIgnored(entry, budget.reason, level);
+
+        sp.confirming = true;
+        sp.confirms.push(this.deps.now());
+        let text = '';
+        try {
+            text = await this._speechWake().confirm(id, candidate.pcm);
+        } catch (e) {
+            return this._speechIgnored(entry, 'confirm-failed', { ...level, error: e && e.message });
+        } finally {
+            sp.confirming = false;
+        }
+        if (!/[\p{L}\p{N}]/u.test(text)) return this._speechIgnored(entry, 'no-words', { ...level, text });
+        if (isOwnEcho(text, this._recentCharacterLines(id))) return this._speechIgnored(entry, 'own-voice', { ...level, text });
+        sp.lastHeard = { at: this.deps.now(), text, ...level };
+        return this._wakeOnSpeech(entry, text, {});
+    }
+
+    /**
+     * Speech without the microphone: an operator proving the wake-and-answer
+     * path on a node nobody is standing at. opts.force bypasses quiet hours,
+     * cooldowns and the boot grace (never a fleet-event hold).
+     */
+    simulateSpeech(characterId, text, opts = {}) {
+        const id = toId(characterId);
+        const entry = this.entry;
+        if (id == null || !entry || entry.characterId !== id) return Promise.resolve({ action: 'ignore', reason: 'not-bound' });
+        const line = String(text || '').trim();
+        if (!line) return Promise.resolve({ action: 'ignore', reason: 'no-words' });
+        entry.speech.candidates += 1;
+        entry.speech.lastHeard = { at: this.deps.now(), text: line, simulated: true };
+        return this._wakeOnSpeech(entry, line, { force: !!opts.force });
+    }
+
+    _wakeOnSpeech(entry, text, { force }) {
+        return this._serialize(async () => {
+            if (this.entry !== entry) return { action: 'ignore', reason: 'not-bound' };
+            // Re-decided inside the chain: a PIR wake or a fleet event may have
+            // landed while Scribe was listening.
+            const decision = this._decideSpeech(entry, { force: force && !entry.eventHold });
+            if (decision.action === 'activity') {
+                this._noteActivity(entry, 'guest_speech');
+                return { ...decision, state: entry.state };
+            }
+            if (decision.action !== 'wake') return this._speechIgnored(entry, decision.reason, { text });
+            // Logged BEFORE the wake: the trigger is not evidence the guest stayed.
+            this._speechWake().recordGuest(entry.characterId, text);
+            this.deps.log(`[Lurk] character ${entry.characterId}: guest spoke — "${text.slice(0, 80)}"`);
+            const r = await this._enterAwake(entry, { source: 'speech', explicit: false, force, guestText: text });
+            if (r.changed) entry.speech.wakes += 1;
+            return { ...decision, ...r, text, state: entry.state };
+        });
+    }
+
     /**
      * Activity that keeps an awake character awake: guest/agent speech, operator
      * chat. Cheap and synchronous; the inactivity timer reads it when it fires.
@@ -1392,6 +1643,20 @@ export class LurkStateMachine {
                 lastIgnored: entry.pir.lastIgnored,
                 rewakeCooldownMs: Math.max(0, (entry.pirCooldownUntil || 0) - now)
             },
+            speech: {
+                available: !!(caps && caps.microphone && caps.microphone.available),
+                reason: caps && caps.microphone && !caps.microphone.available ? caps.microphone.reason : null,
+                wakeEnabled: entry.prefs.speechWake,
+                minRms: entry.prefs.speechWakeMinRms,
+                listener: this._speechWake().statusSync(),
+                candidates: entry.speech.candidates,
+                confirmsLastHour: entry.speech.confirms.filter(t => now - t < 60 * 60 * 1000).length,
+                wakes: entry.speech.wakes,
+                lastHeard: entry.speech.lastHeard,
+                lastIgnored: entry.speech.lastIgnored,
+                falseWakeStreak: entry.speech.falseWakeStreak,
+                rewakeCooldownMs: Math.max(0, (entry.speech.cooldownUntil || 0) - now)
+            },
             music: this.deps.music.statusSync ? this.deps.music.statusSync(id) : null
         };
     }
@@ -1432,6 +1697,7 @@ export class LurkStateMachine {
         results.headTracking = await this._ensureHead(entry, caps);
         results.idle = await this._ensureIdle(entry, caps);
         results.pir = await this._ensurePir(entry, caps);
+        results.speech = await this._ensureSpeechWake(entry, caps);
         results.music = await this._resumeMusic(entry, caps);
         entry.state = LURKING;
         entry.armed = true;
@@ -1445,7 +1711,7 @@ export class LurkStateMachine {
         return { changed: from !== LURKING, state: LURKING, results };
     }
 
-    async _enterAwake(entry, { source, explicit, force }) {
+    async _enterAwake(entry, { source, explicit, force, guestText = null }) {
         const started = this.deps.now();
         const from = entry.state;
         const id = entry.characterId;
@@ -1468,9 +1734,23 @@ export class LurkStateMachine {
         const results = {};
 
         // 1-2. Movers pause, then the agent starts ALONE (see WAKE_SETTLE_MS).
+        // Woken by a guest's words: no walk-up greeting; the agent answers them.
         results.agent = caps.agent.available
-            ? await this._startAgentAlone(entry)
+            ? await this._startAgentAlone(entry, guestText ? { noGreeting: true } : undefined)
             : { enabled: false, reason: caps.agent.reason };
+        if (guestText && results.agent.enabled) {
+            try {
+                const h = await this._speechWake().handOff(id, guestText);
+                results.agent = { ...results.agent, answered: !!(h && h.sent), ...(h && !h.sent ? { handOff: h.reason } : {}) };
+            } catch (e) {
+                results.agent = { ...results.agent, answered: false, handOff: e.message };
+            }
+            if (!results.agent.answered) {
+                this.deps.warn(`[Lurk] character ${id}: could not hand the guest's words to the agent (${results.agent.handOff || 'unknown'}) — it is listening for them again`);
+            }
+        }
+        // The conversation owns the microphone now; speech wake resumes on lurking.
+        try { await this._speechWake().stop(); results.speech = { listening: false }; } catch (e) { results.speech = { listening: false, error: e.message }; }
         await this.deps.settle(WAKE_SETTLE_MS);
 
         // 3. Jaw and LED sync — in-memory switches every playback path reads.
@@ -1523,6 +1803,7 @@ export class LurkStateMachine {
         entry.pendingStart = false;
         const results = {};
         try { await this.deps.watcher.stop(); results.pir = { armed: false }; } catch (e) { results.pir = { armed: false, error: e.message }; }
+        try { await this._speechWake().stop(); results.speech = { listening: false }; } catch (e) { results.speech = { listening: false, error: e.message }; }
         try {
             if (await this.deps.idle.isRunning(null)) await this.deps.idle.stop();
             results.idle = { enabled: false };
@@ -1582,10 +1863,17 @@ export class LurkStateMachine {
         const timeout = entry.prefs.inactivityTimeoutMs;
         const deadline = wakeGuestDeadline({ wake: entry.wake, since: entry.since, lastGuestAt: entry.lastGuestAt, wakeGuestGraceMs: entry.prefs.wakeGuestGraceMs });
         if (deadline != null && now >= deadline && !this.deps.audio.recentlyPlaying(entry.characterId, now)) {
-            entry.pirCooldownUntil = now + WAKE_GUEST_COOLDOWN_MS;
+            if (entry.wake && entry.wake.source === 'speech') {
+                entry.speech.falseWakeStreak += 1;
+                entry.speech.cooldownUntil = now + speechFalseWakeCooldownMs(entry.speech.falseWakeStreak);
+            } else {
+                entry.pirCooldownUntil = now + WAKE_GUEST_COOLDOWN_MS;
+            }
             await this._sleepToRest(entry, { reason: 'no-guest-after-wake' });
             return { slept: true, reason: 'no-guest-after-wake' };
         }
+        // A guest answered this wake: whatever the speech source got wrong before, it is right now.
+        if (Number.isFinite(entry.lastGuestAt) && entry.lastGuestAt > entry.since) entry.speech.falseWakeStreak = 0;
         if (!timeout) {
             if (deadline != null) this._scheduleSleepCheck(entry);
             return { slept: false };
@@ -1637,6 +1925,8 @@ export class LurkStateMachine {
 
     async _startAgentAlone(entry, opts) {
         const id = entry.characterId;
+        // The agent's recorder opens the microphone the speech listener holds.
+        try { await this._speechWake().yieldMic(); } catch (_) { /* best-effort */ }
         // The idle loop is the mover that can drive a motor; stop it so the
         // agent's websocket + mic + audio pipeline cold-start on a quiet supply.
         let paused = false;
@@ -1771,6 +2061,39 @@ export class LurkStateMachine {
             return { armed: !(r && r.armed === false), partId: cap.partId, pin: cap.pin, ...(r && r.skipped ? { skipped: r.skipped } : {}) };
         } catch (e) {
             return { armed: false, error: e.message };
+        }
+    }
+
+    _speechWake() {
+        return this.deps.speechWake || NO_SPEECH_WAKE;
+    }
+
+    /** Lurking: listen for a guest speaking (yields to any conversation on its own). */
+    async _ensureSpeechWake(entry, caps) {
+        const cap = caps.microphone;
+        const sw = this._speechWake();
+        try {
+            if (!cap || !cap.available) {
+                await sw.stop();
+                return { listening: false, reason: (cap && cap.reason) || 'no microphone' };
+            }
+            if (!entry.prefs.speechWake) {
+                await sw.stop();
+                return { listening: false, reason: 'speech wake switched off' };
+            }
+            const id = entry.characterId;
+            const r = await sw.start(id, {
+                minRms: entry.prefs.speechWakeMinRms,
+                // The character's own speaker (a lurk line, a callout) is not a guest.
+                isSuppressed: () => this.deps.audio.recentlyPlaying(id, this.deps.now()),
+                onCandidate: (cand) => {
+                    this.handleSpeechCandidate(id, cand)
+                        .catch(e => this.deps.warn(`[Lurk] speech handling failed for character ${id}: ${e && e.message}`));
+                }
+            });
+            return { listening: !(r && r.skipped) && !(r && r.wanted === false), partId: cap.partId, ...(r && r.skipped ? { skipped: r.skipped } : {}) };
+        } catch (e) {
+            return { listening: false, error: e.message };
         }
     }
 

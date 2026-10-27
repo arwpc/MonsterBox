@@ -1458,6 +1458,33 @@ router.post('/api/motion-sensor/simulate', express.json(), async (req, res) => {
   }
 });
 
+// POST /conversation/api/speech-wake/simulate { text, force? } — behave as if a
+// guest said `text` to the lurking character (the microphone and the Scribe
+// confirmation are skipped; everything after them is the real path): the node
+// wakes and its agent answers the words. Same decision as real speech (quiet
+// hours, cooldowns, fleet-event holds) unless force.
+router.post('/api/speech-wake/simulate', express.json(), async (req, res) => {
+  try {
+    if (inTestMode()) return res.json({ success: true, testMode: true, fired: false });
+    const characterId = getCurrentCharacterId(req);
+    if (!characterId) return res.status(400).json({ success: false, error: 'No character selected' });
+    const text = req.body && typeof req.body.text === 'string' ? req.body.text.trim() : '';
+    if (!text) return res.status(400).json({ success: false, error: 'text is required (what the guest says)' });
+    const force = !!(req.body && req.body.force === true);
+    const decision = await lurkStateService.simulateSpeech(characterId, text.slice(0, 300), { force });
+    const fired = decision.action !== 'ignore';
+    res.json({
+      success: fired,
+      fired,
+      ...decision,
+      ...(fired ? {} : { error: `speech ignored: ${decision.reason}` }),
+      status: lurkStateService.getStatus(characterId)
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e && e.message });
+  }
+});
+
 // ─── Callout mode ─────────────────────────────────────────────────────
 // One short in-character line every few minutes instead of an open agent session
 // (services/calloutService.js). Runtime state, so it works on a LOCKED character.
