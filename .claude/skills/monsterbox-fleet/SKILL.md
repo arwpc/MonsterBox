@@ -9,11 +9,11 @@ description: Working across MonsterBox nodes — who they are, how to reach them
 
 | ID | Character | Host | IP | Status norm |
 |----|-----------|------|-----|-------------|
-| 1 | PumpkinHead | pumpkinhead | 192.168.8.150 | **in storage — offline is expected, never a finding** |
+| 1 | PumpkinHead | pumpkinhead | 192.168.8.150 | live in the yard (Halloween 2026); LOCKED config; PIR dead |
 | 2 | Mina | mina.local | 192.168.8.140 | live; hardware-unstable (hard power-loss events 2026-08-20) |
 | 3 | Orlok | orlok.local | 192.168.8.120 | live; holds fleet SSH trust and the GitHub deploy key |
 | 4 | Sir Dragomir | sirdragomir.local | 192.168.8.130 | live |
-| 5 | Groundbreaker | — | 192.168.8.200 | **in storage — offline is expected** |
+| 5 | Groundbreaker | — | 192.168.8.200 | live in the yard (Halloween 2026); ReSpeaker; no PIR; turn motor 1500 ms cap |
 | 6 | Renfield | renfield | 192.168.8.249 | live (Pi 4B since 2026-09-27); has its own GitHub deploy key — commits and pushes directly (`MB_TEST_MODE=1 CI=true git push`) |
 
 `config/animatronics.json` is the registry; live discovery overlays it via mDNS
@@ -28,6 +28,10 @@ description: Working across MonsterBox nodes — who they are, how to reach them
   landed by grepping the node for the actual symbol** (`/fleet-verify` does this).
 - Deploy excludes `.git`, `.claude`, and node-local state — after a deploy, a node's
   `.claude/` and `.gitignore` may be stale relative to origin.
+- Show audio is pushed straight to the node that plays it, so a node's
+  `data/audio-library/files/` holds files no other tree has. Since v10.9 the deploy
+  protects them from `--delete` and never ships `library.json`; **always dry-run a deploy
+  from a new source tree** (`--dry-run`, grep `^deleting`) before the real one.
 
 ## Node-local files — never cross nodes, never commit casually
 

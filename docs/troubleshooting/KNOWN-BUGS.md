@@ -1450,6 +1450,12 @@ verified. Still offline for the entire v9.2.0 session." Also the historical v9.2
 line above scoring Groundbreaker `OFFLINE — untestable, not passing` is now obsolete.
 
 ### Renfield — char 6 · `192.168.8.249` · Raspberry Pi 4B (since 2026-09-27)
+🟡 **2026-10-26: his PIR (part 6, GPIO 17) has not fired once in the yard in a week.** Zero `AWAKE (pir` lines in
+four rotated logs, `motionDetectedCount: 0`; the watcher process is alive and GPIO 17 reads `ip pd | lo`. The
+sensor passed a wave test on GPIO 17 at the bench (see below), so suspect its aim or sensitivity pot in the
+yard, or a lead that came loose in the move. **Daylight test:** wave at it and watch
+`GET /conversation/api/lurk-mode/motion-status` (`motionDetectedCount`). Since v10.9 he wakes when a guest
+speaks to him anyway (speech wake).
 🟡 **2026-10-10: Orlok has no SSH key trust to his new Pi.** An `ssh-copy-id` from the agent session was refused by
 its permission layer, so his deploy and show push used the fleet password through `MONSTERBOX_SSH_PASSWORD`
 (`push-show.sh` gained that fallback, `1bd09408`). **Operator action:** from Orlok, `ssh-copy-id remote@192.168.8.249`;
@@ -1947,6 +1953,17 @@ needs, and only one holder can capture at a time.
 ---
 
 ## Cross-Cutting Software Bugs
+
+### Fixed 2026-10-26 (v10.9.0)
+
+- ✅ **A deploy deleted every node's show audio.** `rsync --delete` over `data/audio-library/` removed files
+  the show deploy scripts had pushed straight to a node (dry run from Alpha: 8 to 15 tracks per
+  animatronic) and replaced each node's `library.json`. Protected (`--filter 'P /data/audio-library/files/**'`)
+  and excluded. Groundbreaker's `data/calibration-backups/` was also on the delete list; now excluded.
+- ✅ **`npm run gate` failed on `main`** (`audit:independence`, two post-GOLD comments naming a character).
+- ✅ **No guest could wake four of six characters.** Speech wake (`docs/development/SPEECH-WAKE.md`).
+  Open: tune per node if the yard wakes one (`speechWakeMinRms`); watch `speech.lastIgnored` and
+  `falseWakeStreak` in `GET /conversation/api/lurk-state` over a full show night.
 
 ### Opened from the 2026-10-12 move of every scheduled show to Alpha
 

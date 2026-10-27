@@ -19,10 +19,18 @@ All notable changes to MonsterBox are documented in this file.
   every conversation. New: `services/speechWakeService.js`, prefs `speechWake` (default on) and
   `speechWakeMinRms` (0.02), `POST /conversation/api/speech-wake/simulate`, a `speech` block in
   `GET /conversation/api/lurk-state`, an `/ai-settings` checkbox. Design and tuning:
-  `docs/development/SPEECH-WAKE.md`. 22 unit tests (`tests/unit/speech-wake.test.js`).
+  `docs/development/SPEECH-WAKE.md`. 32 unit tests (`tests/unit/speech-wake.test.js`). Proven live on
+  Renfield: a guest's line was answered 866 ms after the hand-off. A scene on the character's own
+  speaker (`sceneExecutor.isSceneActive()`) never wakes it.
 
 ### Fixed
 
+- **Deploys deleted show audio.** `deploy-to-animatronic.sh` ran `rsync --delete` over
+  `data/audio-library/`, but show audio is pushed straight to the node that plays it, so a dry run from
+  Alpha on 2026-10-26 would have deleted 8 to 15 show tracks from every animatronic and replaced every
+  node's `library.json`. Node audio files are now protected from `--delete` (new shared audio still
+  travels), and `library.json` and `data/calibration-backups/` are node-local excludes. Same for the
+  console node.
 - `npm run gate` failed on `main`: two comments added after GOLD named a character
   (`audit:independence`). Reworded; the allowlist did not grow.
 

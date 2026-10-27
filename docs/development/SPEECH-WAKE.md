@@ -41,15 +41,20 @@ lurking ──mic frames──▶ local detector ──candidate──▶ lurk m
 2. **Gate cheaply** (`LurkStateMachine.handleSpeechCandidate`). These are checked before any money is
    spent: the same `decideMotion` rules as the PIR (lurking, no fleet-event hold, boot grace, quiet hours
    `pirQuietHours`, the speech rest), the character's own speaker playing (`recentlyPlaying`), and the
-   confirmation budget (one at a time, 4 s apart, 60 an hour).
+   confirmation budget (one at a time, 4 s apart, 60 an hour). "Own speaker" covers both the playback
+   service's last play and any scene playing for the character (`sceneExecutor.isSceneActive()`, with a
+   2.5 s tail): lurk barks and played scenes go through a player the playback record does not see, and
+   their text is not in the speech log, so without it a character would wake itself with every bark.
 3. **Confirm with Scribe.** One batch `scribe_v2` call on the candidate's audio (a few seconds at most).
    No letters or digits means no wake (`no-words`). Mostly the same words the character said in the last
    20 s means its own echo (`own-voice`).
 4. **Wake and answer.** The guest's line goes into the speech log *before* the wake (so it is not counted
    as the guest staying), the agent starts with `noGreeting`, and
    `elevenLabsWebSocketService.handGuestTurnToAgent()` sends the words as the session's first
-   `user_message`. If the hand-off fails the node is still awake and listening; the guest just has to
-   speak again.
+   `user_message`, followed 150 ms later by a short commit frame of silence. Without that frame the agent
+   sat on the words: the turn detector commits on an audio edge, and a gated mic supplies none (the same
+   trap `askAgentQuestion` documents). If the hand-off fails the node is still awake and listening; the
+   guest just has to speak again.
 5. **Give the mic back.** The listener yields to every conversation (the same mic-holder signal Follow
    Orders uses), stops when the node wakes or is switched off, and starts again on lurking.
 
@@ -68,6 +73,18 @@ and Scribe sees only energy-gated utterances that could wake the node, under a h
 false speech wake is bounded the same way as a false PIR wake (the 90 s `wakeGuestGraceMs`), and it
 then rests the speech source for 2, 4, 8, 16, then 30 minutes in a row until a wake finds a real guest.
 The PIR's own 2-minute rest is untouched.
+
+## Proven live (2026-10-26, Renfield)
+
+- A real yard utterance woke him: 1.6 s of audio, Scribe heard "Nobody", `lurking → AWAKE (speech)` in 4.1 s.
+- Simulated guest line "Hello Renfield, what are you writing?": `src=speech-wake` turn, first reply audio
+  866 ms after the hand-off on his XVF3800 sink; he answered "The registry, the REGISTRY. Let me write that
+  down. What name shall I enter for the docket?".
+- A recording on his own array heard only background noise during the reply: the XVF3800's echo
+  canceller removes its own speaker from its processed mic, so a node's own array is not an ear-check
+  witness. Use another node's microphone.
+- A simulated PIR edge on Sir Dragomir still wakes him with his greeting; the listener releases the mic
+  while awake and resumes on lurking.
 
 ## Operating it
 
