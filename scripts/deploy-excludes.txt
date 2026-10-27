@@ -26,6 +26,7 @@ data/goblin-keepalive-state.json
 data/fleet-events-state.json
 data/fleet-events.lock
 data/calibration_profiles.json
+/data/calibration-backups/
 data/actuator-positions.json
 data/speaker-state.json
 data/monsterbox.pid
