@@ -77,8 +77,10 @@ done < <(node -e "
 
 RSYNC_DRY=""
 [ "$DRY_RUN" = "1" ] && RSYNC_DRY="-n"
+# Same audio protection as deploy-to-animatronic.sh: never delete a node's own show audio.
 rsync -e "${RSYNC_RSH}" -az ${RSYNC_DRY} --delete --itemize-changes \
     "${LOCK_EXCLUDES[@]}" \
+    --filter 'P /data/audio-library/files/**' \
     --exclude-from "${REPO_DIR}/scripts/deploy-excludes.txt" \
     ./ ${REMOTE_USER}@${IP_ADDRESS}:${TREE}/ | grep -vE '^\.[fdL] ' | tail -40
 RSYNC_RC=${PIPESTATUS[0]}

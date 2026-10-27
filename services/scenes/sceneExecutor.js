@@ -1255,10 +1255,26 @@ export async function releaseNodeAfterScene(hold) {
   }
 }
 
+// Scenes playing right now, per character, and when the last one ended. The lurk
+// speech-wake listener reads this: a lurk bark or a played scene coming back
+// through the character's own microphone is not a guest, and scene audio plays
+// through a player the playback service's last-play record does not see.
+const activeScenes = new Map();   // characterId(String) -> count
+const sceneEndedAt = new Map();   // characterId(String) -> ms
+
+/** Is a scene playing for this character, or did one end within tailMs? */
+export function isSceneActive(characterId, tailMs = 0, now = Date.now()) {
+  const key = String(characterId);
+  if ((activeScenes.get(key) || 0) > 0) return true;
+  const ended = sceneEndedAt.get(key);
+  return ended != null && now - ended < tailMs;
+}
+
 export async function executeScene(scene, characterId, emit, options) {
   const steps = Array.isArray(scene.steps) ? scene.steps : [];
   const results = [];
   const opts = options || {};
+  const activeKey = !opts.dryRun && characterId != null ? String(characterId) : null;
   const startTime = new Date().toISOString();
   const startTs = Date.now();
   let stepsExecuted = 0;
@@ -1266,6 +1282,7 @@ export async function executeScene(scene, characterId, emit, options) {
   emit && emit({ type: 'scene', status: 'start', id: scene.id, name: scene.name, totalSteps: steps.length, dryRun: !!opts.dryRun });
 
   const nodeHold = await holdNodeForScene(characterId, `scene:${scene.id != null ? scene.id : (scene.name || 'unnamed')}`, opts);
+  if (activeKey) activeScenes.set(activeKey, (activeScenes.get(activeKey) || 0) + 1);
   try {
     const execResult = await executeStepsWithConcurrency(steps, characterId, emit, opts);
     results.push(...execResult.results);
@@ -1322,6 +1339,10 @@ export async function executeScene(scene, characterId, emit, options) {
     }
     throw error;
   } finally {
+    if (activeKey) {
+      activeScenes.set(activeKey, Math.max(0, (activeScenes.get(activeKey) || 0) - 1));
+      sceneEndedAt.set(activeKey, Date.now());
+    }
     await releaseNodeAfterScene(nodeHold);
   }
 }

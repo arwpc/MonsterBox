@@ -36,6 +36,8 @@ data/scene-analytics.json
 data/movement-telemetry.json
 /data/tts-cache/
 config/app-config.json
+# Each node's audio library index lists the show audio pushed to that node; another tree's copy drops it.
+/data/audio-library/library.json
 /data/ai-config/
 /certs/
 /.claude/settings.local.json

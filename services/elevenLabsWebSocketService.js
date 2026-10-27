@@ -1800,6 +1800,16 @@ class ElevenLabsWebSocketService extends EventEmitter {
         } catch (err) {
             return { sent: false, reason: `send failed: ${err.message}` };
         }
+        // Same as askAgentQuestion: the turn detector commits on an audio edge,
+        // not on the text frame, and a quiet (gated) mic never supplies one, so
+        // the agent sat on the guest's words in silence (Renfield, 2026-10-26).
+        setTimeout(() => {
+            try {
+                if (c.elevenLabsWs && c.elevenLabsWs.readyState === WebSocket.OPEN) {
+                    c.elevenLabsWs.send(JSON.stringify({ user_audio_chunk: TURN_COMMIT_FRAME_B64 }));
+                }
+            } catch (_) { /* non-fatal */ }
+        }, 150);
         import('./ledInteractionService.js').then(m => m.default.setInteractionState(c.characterId, 'thinking')).catch(() => {});
         console.log(`🗣️ Speech wake: guest's words handed to the agent for character ${characterId} (${sessionId}): "${line.slice(0, 80)}"`);
         return { sent: true, sessionId };

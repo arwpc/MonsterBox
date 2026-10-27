@@ -162,8 +162,14 @@ done < <(node -e "
   } catch (_) { /* no lock file: nothing locked */ }
 " 2>/dev/null)
 
+# Show audio is pushed straight to the node that plays it (the show deploy
+# scripts), so a node's audio library holds files no other tree has. --delete
+# used to erase them: a 2026-10-26 dry run from Alpha would have removed 8 to 15
+# show tracks from every animatronic. New shared audio still travels; nothing
+# already on the node is deleted. (Its library.json index is in the excludes.)
 ${RSYNC_RUN} -e "ssh ${SSH_OPTS}" -avz ${RSYNC_DRY} --delete \
     "${LOCK_EXCLUDES[@]}" \
+    --filter 'P /data/audio-library/files/**' \
     --exclude-from "${REPO_DIR}/scripts/deploy-excludes.txt" \
     ./ ${REMOTE_USER}@${IP_ADDRESS}:${REMOTE_PATH}/
 RSYNC_RC=$?

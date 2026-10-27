@@ -112,6 +112,8 @@ const PRE_AGENT_SETTLE_MS = 750;
 // Reply audio still draining from the speaker means the conversation is not
 // over, whatever the timers say.
 const AUDIO_ACTIVITY_GRACE_MS = 3000;
+// Room reverb and a concurrent audio step can outlast the scene that played them.
+const SCENE_AUDIO_TAIL_MS = 2500;
 const UNKNOWN_PLAYBACK_MS = 4000;
 
 // Agent speech counts as activity, but an agent that keeps answering room
@@ -929,7 +931,14 @@ function defaultDeps() {
                     return now < last.ts + est + AUDIO_ACTIVITY_GRACE_MS;
                 } catch (_) { return false; }
             },
-            async preload() { mods.playback = await load('playback', './serverPlaybackService.js'); }
+            /** Is a scene (a lurk bark, a played scene) on this character's speaker, or just ended? */
+            sceneActive(id, now = Date.now()) {
+                try { return !!(mods.scenes && mods.scenes.isSceneActive(id, SCENE_AUDIO_TAIL_MS, now)); } catch (_) { return false; }
+            },
+            async preload() {
+                mods.playback = await load('playback', './serverPlaybackService.js');
+                mods.scenes = await import('./scenes/sceneExecutor.js');
+            }
         },
 
         /**
@@ -1496,7 +1505,7 @@ export class LurkStateMachine {
 
         const pre = this._decideSpeech(entry);
         if (pre.action !== 'wake') return this._speechIgnored(entry, pre.reason, level);
-        if (this.deps.audio.recentlyPlaying(id, this.deps.now())) return this._speechIgnored(entry, 'own-speaker', level);
+        if (this._ownAudioBusy(id)) return this._speechIgnored(entry, 'own-speaker', level);
         if (!candidate.pcm || !candidate.pcm.length) return this._speechIgnored(entry, 'no-audio', level);
         const budget = speechConfirmBudget({ now: this.deps.now(), times: sp.confirms, inFlight: sp.confirming });
         sp.confirms = budget.recent || sp.confirms;
@@ -2068,6 +2077,13 @@ export class LurkStateMachine {
         return this.deps.speechWake || NO_SPEECH_WAKE;
     }
 
+    /** Anything on this character's own speaker: the playback service's last play, or a scene. */
+    _ownAudioBusy(id) {
+        const now = this.deps.now();
+        if (this.deps.audio.recentlyPlaying(id, now)) return true;
+        try { return !!(this.deps.audio.sceneActive && this.deps.audio.sceneActive(id, now)); } catch (_) { return false; }
+    }
+
     /** Lurking: listen for a guest speaking (yields to any conversation on its own). */
     async _ensureSpeechWake(entry, caps) {
         const cap = caps.microphone;
@@ -2084,8 +2100,8 @@ export class LurkStateMachine {
             const id = entry.characterId;
             const r = await sw.start(id, {
                 minRms: entry.prefs.speechWakeMinRms,
-                // The character's own speaker (a lurk line, a callout) is not a guest.
-                isSuppressed: () => this.deps.audio.recentlyPlaying(id, this.deps.now()),
+                // The character's own speaker (a lurk bark, a callout, a scene) is not a guest.
+                isSuppressed: () => this._ownAudioBusy(id),
                 onCandidate: (cand) => {
                     this.handleSpeechCandidate(id, cand)
                         .catch(e => this.deps.warn(`[Lurk] speech handling failed for character ${id}: ${e && e.message}`));

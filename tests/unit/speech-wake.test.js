@@ -298,7 +298,7 @@ function fakeDeps(over = {}) {
         },
         music: { resume: async () => ({ resumed: true }), nudge: async () => {}, statusSync: () => null },
         speech: { since: (id, seq) => (seq >= state.speech.seq ? { entries: seq === 0 ? state.speech.entries : [], seq: state.speech.seq } : state.speech) },
-        audio: { recentlyPlaying: () => state.playing },
+        audio: { recentlyPlaying: () => state.playing, sceneActive: () => !!state.scenePlaying },
         subscribeActivity: async () => null
     };
     return {
@@ -387,6 +387,26 @@ describe('speech wake — the lurk machine', () => {
         m.entry.prefs.speechWake = false;
         expect((await m.handleSpeechCandidate(CID, candidate())).reason).to.equal('speech-wake-off');
         expect(f.names()).to.not.include('speech.confirm');
+    });
+
+    it('a lurk bark or any scene on its own speaker is not a guest (frames suppressed, no Scribe call)', async () => {
+        const { m, f } = await lurkingMachine();
+        f.state.scenePlaying = true;
+        expect(f.state.listenOpts.isSuppressed()).to.equal(true);
+        expect((await m.handleSpeechCandidate(CID, candidate())).reason).to.equal('own-speaker');
+        f.state.scenePlaying = false;
+        expect(f.state.listenOpts.isSuppressed()).to.equal(false);
+        expect(f.names()).to.not.include('speech.confirm');
+    });
+
+    it('the scene executor reports a scene for its character until a tail after it ends', async () => {
+        const { executeScene, isSceneActive } = await import('../../services/scenes/sceneExecutor.js');
+        expect(isSceneActive(CID, 2500)).to.equal(false);
+        await executeScene({ id: 'sw-test', name: 'empty', steps: [] }, CID, null, {});
+        expect(isSceneActive(CID, 2500)).to.equal(true);
+        expect(isSceneActive(CID, 2500, Date.now() + 3000)).to.equal(false);
+        await executeScene({ id: 'sw-dry', name: 'dry', steps: [] }, CID + 1, null, { dryRun: true });
+        expect(isSceneActive(CID + 1, 2500)).to.equal(false);
     });
 
     it('a fleet event hold ignores speech', async () => {
