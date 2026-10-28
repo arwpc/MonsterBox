@@ -1963,7 +1963,16 @@ needs, and only one holder can capture at a time.
 - 🟠 **Orlok, Mina, Sir Dragomir and PumpkinHead dropped off the network together at ~20:17-20:18** right
   after the cascade (ARP FAILED, no ping) while Renfield and Groundbreaker stayed up. Cause not established
   remotely (shared power circuit or Wi-Fi). Check on next power-up: `journalctl -b -1 -n 50`,
-  `vcgencmd get_throttled`.
+  `vcgencmd get_throttled`. 2026-10-28: both PumpkinHead's and Sir Dragomir's journals end mid-stream at
+  20:17:35 with no shutdown sequence (hard power cut, not a crash). Power returned 2026-10-28 ~16:54, then
+  PumpkinHead, Mina, Sir Dragomir, Groundbreaker and Renfield all rebooted again within ~2 minutes
+  (~16:56), and that second cut interrupted a deploy mid-rsync. Throttled 0x0 after. Orlok stayed dark.
+- 🟠 **Sir Dragomir's USB camera does not enumerate** (2026-10-28, also failing 2026-10-26 before the
+  outage): `usb 1-1.1: device not accepting address, error -71` / `unable to enumerate USB device`, no
+  `/dev/video0`, mjpg-launcher loops on `init_VideoIn failed`, so lurk head tracking cannot start
+  (`motion tracker failed to start for webcam 4`). The XVF3800 on the same hub (1-1.2) disconnected and
+  re-enumerated at the same moment. Physical: reseat or replace the camera cable, or move the hub to
+  external power.
 
 ### Fixed 2026-10-26 (v10.9.0)
 
