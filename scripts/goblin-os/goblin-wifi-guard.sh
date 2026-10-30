@@ -16,6 +16,10 @@
 #   20 misses -> reboot (only after 15 min uptime, at most 2 guard reboots per 6 h, so a dead
 #                access point cannot reboot-loop the show; video keeps playing meanwhile)
 # Logs only on state changes (SD card).
+#
+# Also runs on an animatronic with a weak link (Renfield, 2026-10-30: -72..-75 dBm, bursts of 55% loss,
+# brcmf firmware timeouts): install it as monsterbox-wifi-guard.service with
+# GOBLIN_WIFI_PROFILE=<nmcli connection name>. With no backup dir the profile-restore step is a no-op.
 set -u
 PROFILE_DIR=/etc/NetworkManager/system-connections
 BACKUP_DIR=/etc/goblin/wifi
@@ -47,6 +51,8 @@ restore_profile() {
 }
 
 profile_id() {
+    # A MonsterBox animatronic has no Goblin backup; its netplan-generated profile is named here.
+    if [ -n "${GOBLIN_WIFI_PROFILE:-}" ]; then echo "$GOBLIN_WIFI_PROFILE"; return; fi
     local f; f=$(backup_file)
     [ -n "$f" ] && sed -n 's/^id=//p' "$f" | head -1
 }
