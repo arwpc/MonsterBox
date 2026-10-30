@@ -204,6 +204,42 @@ export function isPeerVoice(text, peerLines = []) {
     return false;
 }
 
+// A neighbour's line can reach a mic while it is still being spoken, and an
+// agent's text lands in its log as the turn starts, so look a little further
+// back than the own-echo window.
+export const PEER_ECHO_WINDOW_MS = 30 * 1000;
+// Asked beside a Scribe call or an agent turn; a node that does not answer in
+// this long is skipped rather than holding up a real guest.
+const PEER_LOOKUP_TIMEOUT_MS = 1500;
+
+/**
+ * What every OTHER character said recently, from each peer's
+ * /conversation/api/speech-log. A peer that is down or slow contributes
+ * nothing, a test run asks nobody, and this never throws.
+ */
+export async function recentPeerLines(characterId, { windowMs = PEER_ECHO_WINDOW_MS, now = Date.now() } = {}) {
+    // Same test-mode rule as orchestrationService: a suite never asks the real yard.
+    if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true' || process.env.NODE_ENV === 'test') return [];
+    try {
+        const orch = (await import('./orchestrationService.js')).default;
+        const cutoff = now - windowMs;
+        const peers = orch.getControllableAnimatronics().filter(a => String(a.id) !== String(characterId));
+        const settled = await Promise.allSettled(peers.map(node =>
+            orch.httpNode(node, { path: '/conversation/api/speech-log', timeout: PEER_LOOKUP_TIMEOUT_MS })));
+        const lines = [];
+        for (const r of settled) {
+            if (r.status !== 'fulfilled' || !r.value || String(r.value.characterId) === String(characterId)) continue;
+            for (const e of r.value.entries || []) {
+                if (e && e.speaker === 'character' && e.text && Date.parse(e.at) >= cutoff) lines.push(e.text);
+            }
+        }
+        return lines;
+    } catch (e) {
+        console.warn(`[SpeechWake] peer lookup failed: ${e && e.message}`);
+        return [];
+    }
+}
+
 /**
  * The listener: one capture process while wanted and no conversation holds the
  * microphone. Every utterance candidate goes to onCandidate; the lurk machine

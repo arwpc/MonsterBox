@@ -23,6 +23,7 @@ import serverSTTListener from './serverSTTListener.js';
 import * as jawAnimationService from './jawAnimationSuperPowerService.js';
 import gestureEngineService from './gestureEngineService.js';
 import { recordSpeech } from './speechLogService.js';
+import { isPeerVoice, recentPeerLines } from './speechWakeService.js';
 
 // Absolute floor below which a frame is never treated as speech, whatever the
 // adaptive estimate says.
@@ -1283,22 +1284,12 @@ class ElevenLabsWebSocketService extends EventEmitter {
                             // its cooldown window.
                             this._followOrdersHook(connection.characterId, userText, { sessionId, source: 'agent_asr' });
 
-                            // Speech log: what the guest said, so the dashboard AI
-                            // panel shows the whole conversation even when nobody
-                            // has the page open on the mic session.
-                            recordSpeech(connection.characterId, {
-                                speaker: 'guest', source: 'agent', text: userText
-                            });
-
                             // Guest finished a turn — show "thinking" on the eyes
                             // while the agent composes its reply (no-op without an
                             // LED ring; speaking then takes over during playback).
                             import('./ledInteractionService.js').then(m => m.default.setInteractionState(connection.characterId, 'thinking')).catch(() => {});
 
-                            // Guest speech is activity (keeps the character awake);
-                            // ASR noise ("...") is not.
                             const noise = isNoiseTranscript(userText);
-                            if (!noise) this._emitActivity(connection, 'guest_speech', { text: userText });
 
                             // Start the turn clock at the guest's last voiced frame,
                             // if the mic heard one recently enough to be this turn's.
@@ -1310,6 +1301,10 @@ class ElevenLabsWebSocketService extends EventEmitter {
                                 transcriptAtMs: nowT,
                                 text: userText
                             });
+
+                            // Speech log + activity, once we know whether a guest
+                            // said it or a neighbour's voice carried to this mic.
+                            this._recordHeardLine(connection, userText, noise);
 
                             // Send user transcript event to client (single event, no duplicates)
                             this.sendToClient(sessionId, {
@@ -2602,7 +2597,34 @@ class ElevenLabsWebSocketService extends EventEmitter {
     }
 
     _turnIsPrompted(turn) {
-        return !!(turn && (turn.source === 'speech' || turn.source === 'speech-wake' || turn.source === 'ask-ai' || turn.source === 'one-shot'));
+        // A reply to a neighbour's voice answers nobody standing here.
+        return !!(turn && !turn.peer && (turn.source === 'speech' || turn.source === 'speech-wake' || turn.source === 'ask-ai' || turn.source === 'one-shot'));
+    }
+
+    /**
+     * Log what the agent's mic heard and, if a guest said it, count it as guest
+     * activity. Two awake characters in earshot hear each other's replies as
+     * guests: PumpkinHead and Sir Dragomir talked to each other for minutes on
+     * 2026-10-29, each keeping the other awake and billed. A transcript that
+     * matches a neighbour's recent line is logged as 'peer', counts as nothing,
+     * and the agent's reply to it is not a prompted answer.
+     */
+    async _recordHeardLine(connection, text, noise) {
+        const turn = connection._turn;
+        let peer = false;
+        if (!noise) {
+            try { peer = isPeerVoice(text, await recentPeerLines(connection.characterId)); } catch (_) { /* a guest, then */ }
+        }
+        if (peer) {
+            if (turn) turn.peer = true;
+            console.log(`[Conversation] character ${connection.characterId}: a neighbour's voice, not a guest — "${String(text).slice(0, 80)}"`);
+        }
+        // Speech log: so the dashboard AI panel shows the whole conversation even
+        // when nobody has the page open on the mic session.
+        recordSpeech(connection.characterId, { speaker: peer ? 'peer' : 'guest', source: 'agent', text });
+        // Guest speech is activity (keeps the character awake); ASR noise ("...")
+        // and a neighbour's voice are not.
+        if (!noise && !peer) this._emitActivity(connection, 'guest_speech', { text });
     }
 
     _emitActivity(connection, kind, extra = {}) {

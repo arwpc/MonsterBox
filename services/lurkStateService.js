@@ -83,12 +83,6 @@ export const SPEECH_FALSE_WAKE_COOLDOWN_MS = 2 * 60 * 1000;
 export const SPEECH_FALSE_WAKE_COOLDOWN_MAX_MS = 30 * 60 * 1000;
 // The character's own lines heard back within this long are its echo, not a guest.
 const OWN_ECHO_WINDOW_MS = 20 * 1000;
-// A neighbour's line can reach this mic while it is still being spoken, and an
-// agent's text lands in its log as the turn starts, so look a little further back.
-const PEER_ECHO_WINDOW_MS = 30 * 1000;
-// The peer lookup runs beside the Scribe call; a node that does not answer in
-// this long is skipped rather than holding up a real guest.
-const PEER_LOOKUP_TIMEOUT_MS = 1500;
 
 // A floating PIR line reads HIGH at start-up and used to fire a wake during the
 // busiest moment of boot — PumpkinHead's self-sustaining reset loop
@@ -134,7 +128,7 @@ export const NO_GUEST_CEILING_FACTOR = 3;
 
 /** Is this activity kind evidence of a guest/operator (vs. the agent, the speaker or the PIR)? */
 export function isGuestActivity(kind) {
-    return !/^(agent|speaker-audio|motion|speech:character|speech:system)/i.test(String(kind || ''));
+    return !/^(agent|speaker-audio|motion|speech:character|speech:system|speech:peer)/i.test(String(kind || ''));
 }
 
 // A machine built without a speech-wake dependency (unit tests, a minimal
@@ -922,25 +916,10 @@ function defaultDeps() {
         },
 
         peers: {
-            /**
-             * What every OTHER character said in the last PEER_ECHO_WINDOW_MS,
-             * from each peer's /conversation/api/speech-log. A peer that is down
-             * or slow contributes nothing; this never throws.
-             */
+            /** What every OTHER character said in the last 30 s (never throws). */
             async recentLines(id) {
-                const orch = await load('orch', './orchestrationService.js');
-                const cutoff = Date.now() - PEER_ECHO_WINDOW_MS;
-                const peers = orch.getControllableAnimatronics().filter(a => String(a.id) !== String(id));
-                const settled = await Promise.allSettled(peers.map(node =>
-                    orch.httpNode(node, { path: '/conversation/api/speech-log', timeout: PEER_LOOKUP_TIMEOUT_MS })));
-                const lines = [];
-                for (const r of settled) {
-                    if (r.status !== 'fulfilled' || !r.value || String(r.value.characterId) === String(id)) continue;
-                    for (const e of r.value.entries || []) {
-                        if (e && e.speaker === 'character' && e.text && Date.parse(e.at) >= cutoff) lines.push(e.text);
-                    }
-                }
-                return lines;
+                const sw = await import('./speechWakeService.js');
+                return sw.recentPeerLines(id);
             }
         },
 
@@ -1953,15 +1932,19 @@ export class LurkStateMachine {
             const { entries, seq } = this.deps.speech.since(entry.characterId, entry.speechSeq || 0);
             if (!seq || seq <= (entry.speechSeq || 0)) return;
             entry.speechSeq = seq;
+            // A neighbour's voice on this mic ('peer') is nobody talking to this
+            // character: two awake characters in earshot otherwise keep each
+            // other awake all night (PumpkinHead and Sir Dragomir, 2026-10-29).
+            const heard = (Array.isArray(entries) ? entries : []).filter(e => e && e.speaker !== 'peer');
             // A guest line with real words is guest activity; ASR noise ("...")
             // is logged as guest speech too, and must not count.
-            for (const e of Array.isArray(entries) ? entries : []) {
-                if (e && e.speaker !== 'character' && e.speaker !== 'system' && /[a-z0-9]/i.test(String(e.text || ''))) {
+            for (const e of heard) {
+                if (e.speaker !== 'character' && e.speaker !== 'system' && /[a-z0-9]/i.test(String(e.text || ''))) {
                     const t = Date.parse(e.at);
                     if (Number.isFinite(t)) entry.lastGuestAt = Math.max(entry.lastGuestAt || 0, Math.min(t, this.deps.now()));
                 }
             }
-            const last = Array.isArray(entries) && entries.length ? entries[entries.length - 1] : null;
+            const last = heard.length ? heard[heard.length - 1] : null;
             const at = last ? Date.parse(last.at) : NaN;
             if (Number.isFinite(at) && at > (entry.lastActivityAt || 0)) {
                 entry.lastActivityAt = Math.min(at, this.deps.now());

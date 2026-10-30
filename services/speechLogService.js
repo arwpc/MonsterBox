@@ -52,7 +52,7 @@ function bucketFor(characterId) {
  * @param {string|number} characterId
  * @param {object} entry
  * @param {string} entry.text        - what was said
- * @param {string} [entry.speaker]   - 'character' | 'guest' | 'operator' | 'system'
+ * @param {string} [entry.speaker]   - 'character' | 'guest' | 'peer' (a neighbour's voice on this mic) | 'operator' | 'system'
  * @param {string} [entry.source]    - where it came from: 'ask-ai', 'agent', 'scene',
  *                                     'follow-orders', 'motion', 'tts', 'system'
  * @returns {object|null} the stored entry, or null if it was not recorded

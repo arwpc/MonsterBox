@@ -1017,6 +1017,7 @@
             // Label by who spoke, and name the autonomous sources so the panel
             // reads as a record rather than a chat the operator half-remembers.
             var who = e.speaker === 'guest' ? 'You (mic)'
+              : e.speaker === 'peer' ? 'Neighbour (mic)'
               : e.source === 'scene' ? 'AI (scene)'
               : e.source === 'follow-orders' ? 'AI (orders)'
               : 'AI';

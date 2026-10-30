@@ -407,6 +407,17 @@ describe('speech wake — the lurk machine', () => {
         expect((await b.m.handleSpeechCandidate(CID, candidate())).action).to.equal('wake');
     });
 
+    it('a neighbour\'s voice heard while awake is not a guest, so two characters in earshot still sleep', async () => {
+        const { m, f } = await lurkingMachine();
+        await m.handleSpeechCandidate(CID, candidate());
+        const before = m.entry.lastGuestAt;
+        f.advance(60 * 1000);
+        f.state.speech = { entries: [...f.state.speech.entries, { at: new Date(f.now).toISOString(), speaker: 'peer', text: 'Stand straight, Bob.' }], seq: f.state.speech.seq + 1 };
+        m.getStatus(CID);
+        expect(m.entry.lastGuestAt).to.equal(before);
+        expect(m.entry.lastActivityKind).to.not.equal('speech:peer');
+    });
+
     it('spends no Scribe call when the node could not wake anyway', async () => {
         const { m, f } = await lurkingMachine();
         f.state.playing = true;

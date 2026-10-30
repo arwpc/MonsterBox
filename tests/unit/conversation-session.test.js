@@ -252,10 +252,12 @@ describe('Conversation D1: sessions against a fake agent', function () {
         sock.push(audioMsg(9));
         sock.push(audioMsg(9));
         await sleep(20);
-        expect(events.map(e => e.kind)).to.deep.equal(['guest_speech', 'agent_speech']);
-        expect(events[0]).to.include({ characterId: CHAR, headless: true, text: 'Who goes there?' });
+        // Guest speech is reported once the line is known not to be a
+        // neighbour's voice, so it may land after the reply's first audio.
+        expect(events.map(e => e.kind).sort()).to.deep.equal(['agent_speech', 'guest_speech']);
+        expect(events.find(e => e.kind === 'guest_speech')).to.include({ characterId: CHAR, headless: true, text: 'Who goes there?' });
         // A reply to a real guest is prompted activity.
-        expect(events[1].prompted).to.equal(true);
+        expect(events.find(e => e.kind === 'agent_speech').prompted).to.equal(true);
         off();
         sock.push({ type: 'user_transcript', user_transcription_event: { user_transcript: 'Again?' } });
         expect(events).to.have.length(2);
