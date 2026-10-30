@@ -45,7 +45,7 @@ import { writeJsonAtomic } from './atomicStore.js';
 import { isInQuietHours } from './backgroundMusicService.js';
 import { resolveCharacterDataDir } from './characterService.js';
 import { forgetRuntimeToggle, rememberRuntimeToggle, runtimeToggleOverride } from './characterConfigLock.js';
-import { DEFAULT_MIN_RMS, MAX_MIN_RMS, MIN_MIN_RMS, isOwnEcho, stripSoundAnnotations } from './speechWakeService.js';
+import { DEFAULT_MIN_RMS, MAX_MIN_RMS, MIN_MIN_RMS, isOwnEcho, isPeerVoice, stripSoundAnnotations } from './speechWakeService.js';
 
 export const STATE_FILE = 'lurk-state.json';
 
@@ -83,6 +83,12 @@ export const SPEECH_FALSE_WAKE_COOLDOWN_MS = 2 * 60 * 1000;
 export const SPEECH_FALSE_WAKE_COOLDOWN_MAX_MS = 30 * 60 * 1000;
 // The character's own lines heard back within this long are its echo, not a guest.
 const OWN_ECHO_WINDOW_MS = 20 * 1000;
+// A neighbour's line can reach this mic while it is still being spoken, and an
+// agent's text lands in its log as the turn starts, so look a little further back.
+const PEER_ECHO_WINDOW_MS = 30 * 1000;
+// The peer lookup runs beside the Scribe call; a node that does not answer in
+// this long is skipped rather than holding up a real guest.
+const PEER_LOOKUP_TIMEOUT_MS = 1500;
 
 // A floating PIR line reads HIGH at start-up and used to fire a wake during the
 // busiest moment of boot — PumpkinHead's self-sustaining reset loop
@@ -142,6 +148,9 @@ const NO_SPEECH_WAKE = Object.freeze({
     recordGuest: () => {},
     handOff: async () => ({ sent: false, reason: 'no speech-wake dependency' })
 });
+
+// No fleet to ask (unit tests, a single node): nothing is a neighbour's voice.
+const NO_PEERS = Object.freeze({ recentLines: async () => [] });
 
 // Throttle for "motion ignored" lines: a floating line can fire every second.
 const IGNORED_MOTION_LOG_MS = 10 * 60 * 1000;
@@ -233,10 +242,10 @@ export function normalizePrefs(raw) {
         // never armed regardless.
         pirWake: src.pirWake !== false,
         // Default OFF (opt-in), unlike the PIR: on 2026-10-26 five characters in
-        // the yard woke each other off their own greetings within a minute, and
-        // isOwnEcho only rejects a node's OWN lines, not a peer's. Stays opt-in
-        // until a peer's recent speech is rejected too. speechWakeMinRms is the
-        // detector's floor for this node's mic.
+        // the yard woke each other off their own greetings within a minute. A
+        // peer's recent line is now rejected ('peer-voice'), but each node is
+        // still switched on deliberately. speechWakeMinRms is the detector's
+        // floor for this node's mic.
         speechWake: src.speechWake === true,
         speechWakeMinRms: normalizeMinRms(src.speechWakeMinRms),
         pirQuietHours,
@@ -912,6 +921,29 @@ function defaultDeps() {
             }
         },
 
+        peers: {
+            /**
+             * What every OTHER character said in the last PEER_ECHO_WINDOW_MS,
+             * from each peer's /conversation/api/speech-log. A peer that is down
+             * or slow contributes nothing; this never throws.
+             */
+            async recentLines(id) {
+                const orch = await load('orch', './orchestrationService.js');
+                const cutoff = Date.now() - PEER_ECHO_WINDOW_MS;
+                const peers = orch.getControllableAnimatronics().filter(a => String(a.id) !== String(id));
+                const settled = await Promise.allSettled(peers.map(node =>
+                    orch.httpNode(node, { path: '/conversation/api/speech-log', timeout: PEER_LOOKUP_TIMEOUT_MS })));
+                const lines = [];
+                for (const r of settled) {
+                    if (r.status !== 'fulfilled' || !r.value || String(r.value.characterId) === String(id)) continue;
+                    for (const e of r.value.entries || []) {
+                        if (e && e.speaker === 'character' && e.text && Date.parse(e.at) >= cutoff) lines.push(e.text);
+                    }
+                }
+                return lines;
+            }
+        },
+
         speech: {
             since(id, seq) {
                 try { return mods.speech ? mods.speech.speechSince(id, seq) : { entries: [], seq: 0 }; } catch (_) { return { entries: [], seq: 0 }; }
@@ -1516,6 +1548,8 @@ export class LurkStateMachine {
 
         sp.confirming = true;
         sp.confirms.push(this.deps.now());
+        // Asked while Scribe listens, so a guest waits no longer for it.
+        const peerLines = (this.deps.peers || NO_PEERS).recentLines(id).catch(() => []);
         let text = '';
         try {
             text = await this._speechWake().confirm(id, candidate.pcm);
@@ -1528,6 +1562,7 @@ export class LurkStateMachine {
         // letters are not a guest's words (Groundbreaker woke on one 2026-10-26).
         if (!/[\p{L}\p{N}]/u.test(stripSoundAnnotations(text))) return this._speechIgnored(entry, 'no-words', { ...level, text });
         if (isOwnEcho(text, this._recentCharacterLines(id))) return this._speechIgnored(entry, 'own-voice', { ...level, text });
+        if (isPeerVoice(text, await peerLines)) return this._speechIgnored(entry, 'peer-voice', { ...level, text });
         sp.lastHeard = { at: this.deps.now(), text, ...level };
         return this._wakeOnSpeech(entry, text, {});
     }

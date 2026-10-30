@@ -11,6 +11,7 @@ import { expect } from 'chai';
 import {
     createSpeechGate,
     isOwnEcho,
+    isPeerVoice,
     stripSoundAnnotations,
     pcmRms,
     pcmToWav,
@@ -113,6 +114,16 @@ describe('speech wake — detector', () => {
         expect(isOwnEcho('come closer child', ['Come closer, child. The night is long.'])).to.equal(true);
         expect(isOwnEcho('hello is anyone in there', ['Come closer, child.'])).to.equal(false);
         expect(isOwnEcho('', ['anything'])).to.equal(false);
+    });
+
+    it('recognises a neighbour\'s line even when Scribe garbles it across the yard', () => {
+        // 2026-10-26: PumpkinHead's greeting reached a peer as this.
+        expect(isPeerVoice('Pumpkin Head is Pumpkin Head', ['Pumpkinhead hears you. Pumpkinhead is watching.'])).to.equal(true);
+        expect(isPeerVoice('You there on the road, hold and', ['You there on the road, hold and be counted!'])).to.equal(true);
+        expect(isPeerVoice('hello is anyone in there', ['You there on the road, hold and be counted!'])).to.equal(false);
+        // A guest's short word is never thrown away on a coincidence.
+        expect(isPeerVoice('hello', ['Hello, traveller.'])).to.equal(false);
+        expect(isPeerVoice('anything at all', [])).to.equal(false);
     });
 
     it('strips Scribe sound annotations so they are not words', () => {
@@ -305,6 +316,7 @@ function fakeDeps(over = {}) {
             handOff: async (id, text) => { log('speech.handOff', text); return state.handOff; }
         },
         music: { resume: async () => ({ resumed: true }), nudge: async () => {}, statusSync: () => null },
+        peers: { recentLines: async () => { log('peers.lines'); if (state.peerLines instanceof Error) throw state.peerLines; return state.peerLines || []; } },
         speech: { since: (id, seq) => (seq >= state.speech.seq ? { entries: seq === 0 ? state.speech.entries : [], seq: state.speech.seq } : state.speech) },
         audio: { recentlyPlaying: () => state.playing, sceneActive: () => !!state.scenePlaying },
         subscribeActivity: async () => null
@@ -382,6 +394,17 @@ describe('speech wake — the lurk machine', () => {
         b.f.state.speech = { entries: [{ at: new Date(b.f.now).toISOString(), speaker: 'character', text: 'Come closer, child.' }], seq: 1 };
         expect((await b.m.handleSpeechCandidate(CID, candidate())).reason).to.equal('own-voice');
         expect(b.m.getState(CID)).to.equal('lurking');
+    });
+
+    it('a neighbour\'s line does not wake it; a peer that cannot be asked does not block a guest', async () => {
+        const a = await lurkingMachine({ heard: 'Pumpkin Head is Pumpkin Head' });
+        a.f.state.peerLines = ['Pumpkinhead hears you. Pumpkinhead is watching.'];
+        expect((await a.m.handleSpeechCandidate(CID, candidate())).reason).to.equal('peer-voice');
+        expect(a.m.getState(CID)).to.equal('lurking');
+
+        const b = await lurkingMachine();
+        b.f.state.peerLines = new Error('peer down');
+        expect((await b.m.handleSpeechCandidate(CID, candidate())).action).to.equal('wake');
     });
 
     it('spends no Scribe call when the node could not wake anyway', async () => {

@@ -171,6 +171,39 @@ export function isOwnEcho(text, recentLines = []) {
     return false;
 }
 
+// Letter trigrams over the words run together, so a split or merged word still
+// matches: "Pumpkin Head" and "Pumpkinhead" share every trigram.
+function trigrams(text) {
+    const joined = words(text).join('');
+    const grams = new Set();
+    for (let i = 0; i + 3 <= joined.length; i++) grams.add(joined.slice(i, i + 3));
+    return grams;
+}
+
+// Fewer trigrams than this is a word or two; too little to call it a peer's
+// line, and a guest's short "hello" must never be thrown away on a coincidence.
+const MIN_PEER_TRIGRAMS = 6;
+
+/**
+ * Is this transcript a NEIGHBOUR's recent line carried across the yard? On
+ * 2026-10-26 five characters woke each other off their greetings. Scribe
+ * garbles a distant voice ("Pumpkin Head is Pumpkin Head" for "Pumpkinhead
+ * hears you"), so word overlap alone misses it; this asks how much of what was
+ * heard is contained in a peer's line, by letter trigrams.
+ */
+export function isPeerVoice(text, peerLines = []) {
+    const heard = trigrams(text);
+    if (heard.size < MIN_PEER_TRIGRAMS) return false;
+    for (const line of peerLines) {
+        const said = trigrams(line);
+        if (said.size === 0) continue;
+        let hits = 0;
+        for (const g of heard) if (said.has(g)) hits += 1;
+        if (hits / heard.size >= 0.6) return true;
+    }
+    return false;
+}
+
 /**
  * The listener: one capture process while wanted and no conversation holds the
  * microphone. Every utterance candidate goes to onCandidate; the lurk machine
