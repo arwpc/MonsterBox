@@ -29,6 +29,14 @@ check (`_recordHeardLine` in `elevenLabsWebSocketService.js`): a neighbour's lin
 real guest falls asleep on the normal inactivity rules. The agent still hears and may answer a neighbour
 once or twice; this bounds the session, it does not mute the mic.
 
+**Lookup that keeps up (2026-10-29).** The first version gave each peer 1.5 s; a peer whose own agent is
+talking answered in up to 2.6 s, so the lookup skipped exactly the neighbour who was speaking, and 90 to
+100% matches were logged as guests. The lookup now waits 4 s, fetches `?since=<seq>` and keeps a per-peer
+cache of the last 30 s (a slow peer still counts with what it said before; a peer whose seq went backwards
+restarted and is read again from 0). Lines of fewer than 6 trigrams ("Wait.", "Pumpkin.") count as a
+neighbour's only when 80% of them is in a line that peer started in the last 15 s; guest fillers heard
+beside the pair ("So what", "Mm-hmm", "It's a heist") scored 0 to 12%.
+
 ## Why it exists
 
 Before v10.9 a lurking node woke on the PIR, a schedule `wake`, or AI on. On 2026-10-26 the PIR picture was:

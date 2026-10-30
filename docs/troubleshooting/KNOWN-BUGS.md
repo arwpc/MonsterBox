@@ -1958,8 +1958,21 @@ needs, and only one holder can capture at a time.
 
 - 🟡 **Speech wake woke five characters off each other's voices** (2026-10-26 ~20:16 CDT, a minute after the
   v10.9 deploy). Contained: `speechWake` is opt-in now (default off) and Scribe's `[background noise]`-style
-  annotations no longer pass the words check. OPEN: peer-voice rejection (fuzzy-match a candidate against
-  every peer's recent `/conversation/api/speech-log` lines) before re-enabling it on more than one node.
+  annotations no longer pass the words check. 2026-10-29: peer-voice rejection shipped (letter-trigram
+  containment against every peer's last 30 s of lines, on the wake path AND on an awake agent's
+  transcripts, which are logged as speaker `peer` and never count as guest activity). Enabled on
+  PumpkinHead, Sir Dragomir and Renfield; all three woke for real guests within 20 s.
+- 🟡 **Awake PumpkinHead and Sir Dragomir keep each other awake** (2026-10-29). They stand in earshot, so each
+  live agent hears the other's replies as guest turns. Fixed in three steps the same night: peer lines no
+  longer count as guests, the lookup's 1.5 s timeout (busy peers answer in up to 2.6 s and were skipped)
+  went to 4 s with an incremental per-peer cache, and short fragments a peer is saying right now count as
+  theirs. Verify on the next show night: `GET /conversation/api/speech-log` on both should show mostly
+  `peer`, and `guestIdleMs` in `/conversation/api/lurk-state` should climb until they sleep when no real
+  guest is there. The agents still hear and answer each other while awake; if that alone keeps costing,
+  the next lever is gating the agent mic while a neighbour is mid-line.
+- 🟡 **Billed agent sessions with no guest, 2026-10-05 to 10-09** (about 840 sessions, zero guest lines;
+  ElevenLabs history). Nearly all were `(Stage direction, not a guest speaking.)` lurk cues. Recent
+  nights run 30 to 50 sessions, so it appears to have stopped; not traced to a commit.
 - 🟠 **Orlok, Mina, Sir Dragomir and PumpkinHead dropped off the network together at ~20:17-20:18** right
   after the cascade (ARP FAILED, no ping) while Renfield and Groundbreaker stayed up. Cause not established
   remotely (shared power circuit or Wi-Fi). Check on next power-up: `journalctl -b -1 -n 50`,

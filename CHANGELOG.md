@@ -4,6 +4,19 @@ All notable changes to MonsterBox are documented in this file.
 
 ## [10.9.0] - 2026-10-26: a guest who speaks wakes the character
 
+### Fixed (2026-10-29)
+
+- **Characters woke and kept each other awake off a neighbour's voice.** A speech-wake candidate, and every
+  transcript an awake agent hears, is checked against every peer's last 30 s of character lines
+  (`speechWakeService.recentPeerLines` / `isPeerVoice`: letter-trigram containment, so Scribe's garbling of
+  a distant voice still matches). A wake candidate that matches is ignored (`peer-voice`); an awake
+  transcript that matches is logged as speaker `peer`, never counts as guest activity, and the reply to it
+  is not a prompted answer, so two characters in earshot fall asleep when no guest is there. The lookup
+  waits 4 s (busy peers took up to 2.6 s), fetches incrementally with a per-peer cache, and treats a short
+  fragment as a neighbour's only when 80% of it is in a line a peer started in the last 15 s. The
+  dashboard AI panel labels these lines "Neighbour (mic)". Speech wake stays opt-in; it is on for
+  PumpkinHead, Sir Dragomir and Renfield.
+
 ### Fixed (2026-10-27)
 
 - **Speech wake woke the yard off its own voices.** Minutes after the 10.9 fleet deploy, a wake on Sir
