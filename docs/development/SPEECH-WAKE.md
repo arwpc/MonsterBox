@@ -5,17 +5,29 @@ A guest speaking to a lurking character wakes it, and the agent answers what the
 Operator, 2026-10-26: *"make sure that both SPEECH from a microphone and PIR Motion sensors can both
 trigger wake up of AI - when someone speaks these animatronics should answer."*
 
-## Status: opt-in (2026-10-27)
+## Status: opt-in per node, peer voices rejected (2026-10-29)
 
 On 2026-10-26, a minute after the fleet deploy, five characters woke each other off their own greetings
 (each node's Scribe confirmation heard a PEER's line; `isOwnEcho` only covers the node's own lines), and
-Groundbreaker woke on Scribe's literal `[background noise]`. `speechWake` now defaults to **off**: a node
-listens only when its `lurk-state.json` prefs say `true` (set it on `/ai-settings` or
+Groundbreaker woke on Scribe's literal `[background noise]`. `speechWake` therefore defaults to **off**: a
+node listens only when its `lurk-state.json` prefs say `true` (set it on `/ai-settings` or
 `POST /conversation/api/lurk-state/prefs {"speechWake":true}`). Annotations like `[background noise]` /
-`(music)` are stripped before the words check. Before enabling it on more than one node in the yard,
-add peer rejection: drop a candidate that fuzzily matches any PEER's recent line (peer
-`/conversation/api/speech-log` through `orchestrationService.httpNode`), then trial ONE node for a show
-night.
+`(music)` are stripped before the words check.
+
+**Peer rejection (2026-10-29).** `speechWakeService.recentPeerLines()` asks every other node's
+`/conversation/api/speech-log` (through `orchestrationService.httpNode`, 1.5 s timeout, in parallel with the
+Scribe call) for the character lines of the last 30 s. `isPeerVoice()` rejects a transcript when 60% of its
+letter trigrams are contained in one of those lines; trigrams survive Scribe's garbling of a distant voice
+("Pumpkin Head is Pumpkin Head" for "Pumpkinhead hears you"). Fewer than 6 trigrams (a guest's "hello")
+is never rejected. The ignore reason is `peer-voice`.
+
+**Awake cross-talk (2026-10-29).** Switched on for PumpkinHead, Sir Dragomir and Renfield, all three woke
+for real guests within 20 s; then PumpkinHead and Sir Dragomir's live agents heard each other's replies as
+guest turns and kept each other awake. Now every transcript the agent's mic hears goes through the same
+check (`_recordHeardLine` in `elevenLabsWebSocketService.js`): a neighbour's line is logged as speaker
+`peer`, is never guest activity, and the agent's reply to it is not a prompted answer, so a pair with no
+real guest falls asleep on the normal inactivity rules. The agent still hears and may answer a neighbour
+once or twice; this bounds the session, it does not mute the mic.
 
 ## Why it exists
 
