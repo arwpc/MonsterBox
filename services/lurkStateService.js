@@ -1541,7 +1541,7 @@ export class LurkStateMachine {
         // letters are not a guest's words (Groundbreaker woke on one 2026-10-26).
         if (!/[\p{L}\p{N}]/u.test(stripSoundAnnotations(text))) return this._speechIgnored(entry, 'no-words', { ...level, text });
         if (isOwnEcho(text, this._recentCharacterLines(id))) return this._speechIgnored(entry, 'own-voice', { ...level, text });
-        if (isPeerVoice(text, await peerLines)) return this._speechIgnored(entry, 'peer-voice', { ...level, text });
+        if (isPeerVoice(text, await peerLines, { now: this.deps.now() })) return this._speechIgnored(entry, 'peer-voice', { ...level, text });
         sp.lastHeard = { at: this.deps.now(), text, ...level };
         return this._wakeOnSpeech(entry, text, {});
     }

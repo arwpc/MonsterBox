@@ -181,8 +181,23 @@ function trigrams(text) {
 }
 
 // Fewer trigrams than this is a word or two; too little to call it a peer's
-// line, and a guest's short "hello" must never be thrown away on a coincidence.
+// line on its own, and a guest's short "hello" must never be thrown away on a
+// coincidence.
 const MIN_PEER_TRIGRAMS = 6;
+// A short line ("Wait.", "Pumpkin.") is a neighbour's only when one of them was
+// saying it just now, and nearly all of it is in their line. Guest fillers heard
+// beside PumpkinHead and Sir Dragomir on 2026-10-29 ("So what", "Mm-hmm",
+// "It's a heist") scored 0 to 12% against them; their own fragments scored 100%.
+const SPEAKING_NOW_MS = 15 * 1000;
+const SHORT_LINE_CONTAINMENT = 0.8;
+
+function containment(heard, line) {
+    const said = trigrams(line);
+    if (said.size === 0) return 0;
+    let hits = 0;
+    for (const g of heard) if (said.has(g)) hits += 1;
+    return hits / heard.size;
+}
 
 /**
  * Is this transcript a NEIGHBOUR's recent line carried across the yard? On
@@ -190,16 +205,23 @@ const MIN_PEER_TRIGRAMS = 6;
  * garbles a distant voice ("Pumpkin Head is Pumpkin Head" for "Pumpkinhead
  * hears you"), so word overlap alone misses it; this asks how much of what was
  * heard is contained in a peer's line, by letter trigrams.
+ *
+ * peerLines: strings, or { text, at } from recentPeerLines (at enables the
+ * short-line rule).
  */
-export function isPeerVoice(text, peerLines = []) {
+export function isPeerVoice(text, peerLines = [], { now = Date.now() } = {}) {
     const heard = trigrams(text);
-    if (heard.size < MIN_PEER_TRIGRAMS) return false;
+    if (heard.size < 2) return false;
     for (const line of peerLines) {
-        const said = trigrams(line);
-        if (said.size === 0) continue;
-        let hits = 0;
-        for (const g of heard) if (said.has(g)) hits += 1;
-        if (hits / heard.size >= 0.6) return true;
+        const lineText = typeof line === 'string' ? line : (line && line.text);
+        if (!lineText) continue;
+        const c = containment(heard, lineText);
+        if (heard.size >= MIN_PEER_TRIGRAMS) {
+            if (c >= 0.6) return true;
+            continue;
+        }
+        const at = line && typeof line === 'object' ? Date.parse(line.at) : NaN;
+        if (Number.isFinite(at) && now - at <= SPEAKING_NOW_MS && c >= SHORT_LINE_CONTAINMENT) return true;
     }
     return false;
 }
@@ -208,30 +230,53 @@ export function isPeerVoice(text, peerLines = []) {
 // agent's text lands in its log as the turn starts, so look a little further
 // back than the own-echo window.
 export const PEER_ECHO_WINDOW_MS = 30 * 1000;
-// Asked beside a Scribe call or an agent turn; a node that does not answer in
-// this long is skipped rather than holding up a real guest.
-const PEER_LOOKUP_TIMEOUT_MS = 1500;
+// A busy peer (its own agent talking) took up to 2.6 s to answer on
+// 2026-10-29; at 1.5 s the lookup skipped exactly the neighbour who was
+// talking. Nobody waits on this beyond the Scribe call or the reply.
+const PEER_LOOKUP_TIMEOUT_MS = 4000;
+
+// Per peer: the last seq seen and its recent character lines, so each lookup
+// fetches only what is new and a peer that is slow this time still counts
+// with what it said before.
+const peerCache = new Map();   // node id -> { seq, lines: [{ text, at }] }
+
+async function refreshPeer(orch, node, characterId) {
+    const key = String(node.id);
+    let cached = peerCache.get(key) || { seq: 0, lines: [] };
+    let data = await orch.httpNode(node, { path: `/conversation/api/speech-log?since=${cached.seq}`, timeout: PEER_LOOKUP_TIMEOUT_MS });
+    if (!data || String(data.characterId) === String(characterId)) return;
+    // The peer restarted: its seq began again, so read its whole (new) log.
+    if (Number(data.seq) < cached.seq) {
+        cached = { seq: 0, lines: [] };
+        data = await orch.httpNode(node, { path: '/conversation/api/speech-log?since=0', timeout: PEER_LOOKUP_TIMEOUT_MS });
+        if (!data) return;
+    }
+    for (const e of data.entries || []) {
+        if (e && e.speaker === 'character' && e.text) cached.lines.push({ text: e.text, at: e.at });
+    }
+    cached.seq = Number(data.seq) || cached.seq;
+    peerCache.set(key, cached);
+}
 
 /**
- * What every OTHER character said recently, from each peer's
- * /conversation/api/speech-log. A peer that is down or slow contributes
- * nothing, a test run asks nobody, and this never throws.
+ * What every OTHER character said recently ({ text, at }), from each peer's
+ * /conversation/api/speech-log. A peer that is down or slow contributes what
+ * it said before, a test run asks nobody, and this never throws.
  */
-export async function recentPeerLines(characterId, { windowMs = PEER_ECHO_WINDOW_MS, now = Date.now() } = {}) {
+export async function recentPeerLines(characterId, { windowMs = PEER_ECHO_WINDOW_MS } = {}) {
     // Same test-mode rule as orchestrationService: a suite never asks the real yard.
     if (process.env.MB_TEST_MODE === '1' || process.env.MB_TEST_MODE === 'true' || process.env.NODE_ENV === 'test') return [];
     try {
         const orch = (await import('./orchestrationService.js')).default;
-        const cutoff = now - windowMs;
         const peers = orch.getControllableAnimatronics().filter(a => String(a.id) !== String(characterId));
-        const settled = await Promise.allSettled(peers.map(node =>
-            orch.httpNode(node, { path: '/conversation/api/speech-log', timeout: PEER_LOOKUP_TIMEOUT_MS })));
+        await Promise.allSettled(peers.map(node => refreshPeer(orch, node, characterId)));
+        const cutoff = Date.now() - windowMs;
         const lines = [];
-        for (const r of settled) {
-            if (r.status !== 'fulfilled' || !r.value || String(r.value.characterId) === String(characterId)) continue;
-            for (const e of r.value.entries || []) {
-                if (e && e.speaker === 'character' && e.text && Date.parse(e.at) >= cutoff) lines.push(e.text);
-            }
+        for (const node of peers) {
+            const cached = peerCache.get(String(node.id));
+            if (!cached) continue;
+            cached.lines = cached.lines.filter(l => Date.parse(l.at) >= cutoff);
+            lines.push(...cached.lines);
         }
         return lines;
     } catch (e) {

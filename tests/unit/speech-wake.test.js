@@ -123,6 +123,12 @@ describe('speech wake — detector', () => {
         expect(isPeerVoice('hello is anyone in there', ['You there on the road, hold and be counted!'])).to.equal(false);
         // A guest's short word is never thrown away on a coincidence.
         expect(isPeerVoice('hello', ['Hello, traveller.'])).to.equal(false);
+        // ...but a fragment of what a neighbour is saying right now is theirs (2026-10-29).
+        const now = Date.parse('2026-10-30T00:42:30Z');
+        const said = { text: 'Smile at mine, and wait. The iron gate holds.', at: '2026-10-30T00:42:22Z' };
+        expect(isPeerVoice('Wait.', [said], { now })).to.equal(true);
+        expect(isPeerVoice('So what', [said], { now })).to.equal(false);
+        expect(isPeerVoice('Wait.', [{ ...said, at: '2026-10-30T00:42:00Z' }], { now })).to.equal(false);
         expect(isPeerVoice('anything at all', [])).to.equal(false);
     });
 
