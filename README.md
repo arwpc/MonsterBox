@@ -33,7 +33,9 @@ agent answers what they said instead of reciting its greeting. Listening is loca
 an adaptive noise floor, nothing billed); a candidate is confirmed by one short, rate-capped Scribe call
 before the node wakes, so the yard's chatter and the neighbours' lines do not open agent sessions.
 Quiet hours, fleet-event holds and the 90 s no-guest grace apply as for the PIR, and a speech source
-that wakes the node for nobody rests 2, 4, 8 ... 30 minutes. Toggle per node on `/ai-settings` or
+that wakes the node for nobody rests 2, 4, 8 ... 30 minutes. A neighbour's voice never wakes a node and,
+heard by an awake agent, never counts as a guest (matched against every peer's recent lines). Speech wake
+is opt-in per node (on for PumpkinHead, Sir Dragomir and Renfield). Toggle per node on `/ai-settings` or
 `POST /conversation/api/lurk-state/prefs {speechWake, speechWakeMinRms}`; prove a node with
 `POST /conversation/api/speech-wake/simulate {text}`. Design: `docs/development/SPEECH-WAKE.md`.
 
