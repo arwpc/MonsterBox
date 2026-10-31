@@ -1,0 +1,66 @@
+[
+ {
+  "turn": 1,
+  "speaker": "Mina",
+  "listener": "Orlok",
+  "said": "Wait — is someone there? Don't go… [whispers] I dreamed someone would come tonight. Come near the wall — who are you?",
+  "heard": "Wait, is someone there? Don't go Come near the wall. Who are you?",
+  "recallPct": 65.0
+ },
+ {
+  "turn": 2,
+  "speaker": "Orlok",
+  "listener": "Mina",
+  "said": "You there — come closer… closer. [breathes] Your Lord will have your name.",
+  "heard": "You there Come closer Closer Your Lord will have your name [drum beat]",
+  "recallPct": 91.7
+ },
+ {
+  "turn": 3,
+  "speaker": "Mina",
+  "listener": "Orlok",
+  "said": "Wait — is someone there? Don't go… [whispers] I dreamed someone would come tonight. Come near the wall — who are you?",
+  "heard": "Wait. Is someone there? Don't go Come near the wall. Who are you?",
+  "recallPct": 65.0
+ },
+ {
+  "turn": 4,
+  "speaker": "Mina",
+  "listener": "Orlok",
+  "said": "Nani, nani, puiul mamei... nani, nani, puișor... Dormi în pace, dragul mamei... somn ușor, îngerașul meu... Of, inima mea, of, inima mea... departe, departe, peste dealuri...",
+  "heard": "Nani nani, where your mommy? Nani nani qui shori Dormi în pace, dragul mamei Somn ușor, îngerașul meu! Oh, fini mamma mia. Oh, fini mamma mia Departe, departe, peste dealuri",
+  "recallPct": 65.4
+ },
+ {
+  "turn": 5,
+  "speaker": "Mina",
+  "listener": "Orlok",
+  "said": "Wait — is someone there? Don't go… [whispers] I dreamed someone would come tonight. Come near the wall — who are you?",
+  "heard": "Wait, is someone there? Don't go. I- Come near the wall. Who are you?",
+  "recallPct": 70.0
+ },
+ {
+  "turn": 6,
+  "speaker": "Mina",
+  "listener": "Orlok",
+  "said": "[sings]\nCând luna-n geamuri a bătut,\nTu ai plecat şi n-ai tăcut,\nDar inima ți-o port în gând,\nPân la răsărit, pân la pământ.\n\n...my mother's tongue. The dark is very heavy tonight, is it not. Why do you tell him I am here?",
+  "heard": "Anja, uită-mă tu, tu ai plecat și n-ai trecut [singing] My mother's tongue The dark is very heavy tonight, is it not? Why do you tell him I am here?",
+  "recallPct": 53.2
+ },
+ {
+  "turn": 7,
+  "speaker": "Orlok",
+  "listener": "Mina",
+  "said": "[Romanian accent] [labored breath] Anja — a name that carries the scent of old cemeteries and lost summers. Your song was… lingering—like a fever that refuses to break. Why do you wake the stone of Warner Castle with such memories? Tell me—who guided you to my door?",
+  "heard": "Friend, who is it that knocks upon my walls tonight? Guide us A name that carries the scent of old cemeteries and lost summers. Your song was lingering like a fever that refuses to break. Why do you wake the stone of",
+  "recallPct": 66.7
+ },
+ {
+  "turn": 8,
+  "speaker": "Mina",
+  "listener": "Orlok",
+  "said": "[exhales] Scare-ooce... a name that tastes of dust and forgotten things. You ask of my days, but they are measured only in the space between heartbeats and the weight of the lid above me. I have no covenant other than the one I made with the rising sun, which I choose, even when the shadow tries to claim it. Are you... like the others, an echo of what was once alive?",
+  "heard": "A name that tastes of dust And forgotten things You ask of my days But they are measured only in the space between heart heartbeats and the weight of the lid of I have no covenant other than the one I made with the rising sun Sun which I choose even when the shadow tries to claim it Are you, like the others, an echo of what was once alive?",
+  "recallPct": 93.1
+ }
+]
